@@ -32,7 +32,11 @@ class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException::class)
     protected fun handleMethodArgumentNotValidException(exception: MethodArgumentNotValidException): CustomResponse<Void> {
-        val message = exception.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+        val message = if (exception.bindingResult.fieldErrors.isNotEmpty()) {
+            exception.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+        } else {
+            "Invalid input parameters"
+        }
         return CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, message)
     }
 
