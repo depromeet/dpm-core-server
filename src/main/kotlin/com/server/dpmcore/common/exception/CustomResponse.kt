@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonPropertyOrder
 import org.springframework.http.HttpStatus
 
-@JsonPropertyOrder("status", "code", "message", "data")
+@JsonPropertyOrder("status", "message", "code", "data")
 data class CustomResponse<T>(
     val status: HttpStatus,
     val message: String,
@@ -13,14 +13,9 @@ data class CustomResponse<T>(
     val data: T? = null
 ) {
     companion object {
-        fun <T> ok(): CustomResponse<T> =
-            CustomResponse(
-                GlobalExceptionCode.SUCCESS.status,
-                GlobalExceptionCode.SUCCESS.message,
-                GlobalExceptionCode.SUCCESS.code
-            )
+        fun <T> ok(): CustomResponse<T> = ok(null)
 
-        fun <T> ok(data: T): CustomResponse<T> =
+        fun <T> ok(data: T?): CustomResponse<T> =
             CustomResponse(
                 GlobalExceptionCode.SUCCESS.status,
                 GlobalExceptionCode.SUCCESS.message,
@@ -29,11 +24,7 @@ data class CustomResponse<T>(
             )
 
         fun error(exceptionCode: ExceptionCode): CustomResponse<Void> =
-            CustomResponse(
-                exceptionCode.getStatus(),
-                exceptionCode.getMessage(),
-                exceptionCode.getCode()
-            )
+            error(exceptionCode, exceptionCode.getMessage())
 
         fun error(exceptionCode: ExceptionCode, message: String): CustomResponse<Void> =
             CustomResponse(
