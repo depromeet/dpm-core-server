@@ -1,0 +1,49 @@
+package com.server.dpmcore.common.exception
+
+import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestControllerAdvice
+
+@RestControllerAdvice
+class GlobalExceptionHandler {
+
+    private val logger = KotlinLogging.logger { GlobalExceptionHandler::class.java }
+
+    @ExceptionHandler(BusinessException::class)
+    protected fun handleBusinessException(
+        exception: BusinessException,
+        response: HttpServletResponse
+    ): CustomResponse<Void> {
+        response.status = exception.getCode().getStatus().value()
+
+        logger.error {
+            "${exception.getCode()} Exception ${
+                exception.getCode().getCode()
+            }: ${exception.getCode().getMessage()}"
+        }
+
+        return CustomResponse.error(exception.getCode())
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    protected fun handleMethodArgumentNotValidException(exception: MethodArgumentNotValidException): CustomResponse<Void> {
+        val message = if (exception.bindingResult.fieldErrors.isNotEmpty()) {
+            exception.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+        } else {
+            "Invalid input parameters"
+        }
+        return CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, message)
+    }
+
+    @ExceptionHandler(Exception::class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    protected fun handleException(exception: Exception): CustomResponse<Void> {
+        logger.error { "Exception: ${exception.javaClass.simpleName} - ${exception.message}" }
+        return CustomResponse.error(GlobalExceptionCode.SERVER_ERROR)
+    }
+}
