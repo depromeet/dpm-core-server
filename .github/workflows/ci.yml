@@ -35,4 +35,12 @@ jobs:
       - name: "Kotlin 소스를 컴파일한다."
         run: ./gradlew compileJava --configuration-cache --build-cache
 
-# 추후 slack 알림을 추가
+      - name: "Slack으로 빌드 실패를 알린다."
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          author_name: 'GitHub Actions'
+          fields: repo,message,commit,author
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # 추후 웹훅 추가
