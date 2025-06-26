@@ -33,7 +33,7 @@ jobs:
             gradle-${{ runner.os }}-caches-
 
       - name: "Kotlin 소스를 컴파일한다."
-        run: ./gradlew compileJava --configuration-cache --build-cache
+        run: ./gradlew compileKotlin --configuration-cache --build-cache
 
       - name: "Slack으로 빌드 실패를 알린다."
         if: failure()
