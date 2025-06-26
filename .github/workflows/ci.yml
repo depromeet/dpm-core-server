@@ -33,6 +33,6 @@ jobs:
             gradle-${{ runner.os }}-caches-
 
       - name: "Kotlin 소스를 컴파일한다."
-        run: ./gradlew compileJava --configuration-cache --build-cache
+        run: ./gradlew compileKotlin --configuration-cache --build-cache
 
 # 추후 slack 알림을 추가
