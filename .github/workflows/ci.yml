@@ -1,0 +1,46 @@
+name: CI on Pull Request
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  compile:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: "레포지토리를 체크아웃한다."
+        uses: actions/checkout@v4
+
+      - name: "Gradle Wrapper 무결성을 검증한다."
+        uses: gradle/wrapper-validation-action@v3
+
+      - name: "JDK 21을 설정한다."
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: "Gradle 캐시로 CI 속도를 향상시킨다."
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-caches-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-caches-
+
+      - name: "Kotlin 소스를 컴파일한다."
+        run: ./gradlew compileKotlin --configuration-cache --build-cache
+
+      - name: "Slack으로 빌드 실패를 알린다."
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          author_name: 'GitHub Actions'
+          fields: repo,message,commit,author
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # 추후 웹훅 추가
