@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus
 enum class GlobalExceptionCode(
     @JvmField val status: HttpStatus,
     @JvmField val code: String,
-    @JvmField val message: String
+    @JvmField val message: String,
 ) : ExceptionCode {
     SUCCESS(HttpStatus.OK, "G000", "요청에 성공했습니다"),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "G400", "올바른 입력 형식이 아닙니다."),

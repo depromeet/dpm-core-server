@@ -10,7 +10,7 @@ data class CustomResponse<T>(
     val message: String,
     val code: String,
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    val data: T? = null
+    val data: T? = null,
 ) {
     companion object {
         fun <T> ok(): CustomResponse<T> = ok(null)
@@ -20,7 +20,7 @@ data class CustomResponse<T>(
                 GlobalExceptionCode.SUCCESS.status,
                 GlobalExceptionCode.SUCCESS.message,
                 GlobalExceptionCode.SUCCESS.code,
-                data
+                data,
             )
 
         fun error(exceptionCode: ExceptionCode): CustomResponse<Void> =
@@ -30,8 +30,7 @@ data class CustomResponse<T>(
             CustomResponse(
                 exceptionCode.getStatus(),
                 message,
-                exceptionCode.getCode()
+                exceptionCode.getCode(),
             )
     }
-
 }
