@@ -1,0 +1,11 @@
+#!/bin/sh
+echo "[PRE-COMMIT] Running spotlessApply..."
+./gradlew spotlessApply
+
+echo "[PRE-COMMIT] Running spotlessCheck..."
+./gradlew spotlessCheck
+
+if [ $? -ne 0 ]; then
+  echo "[PRE-COMMIT] 코드 스타일 오류가 있습니다. 커밋을 중단합니다."
+  exit 1
+fi
