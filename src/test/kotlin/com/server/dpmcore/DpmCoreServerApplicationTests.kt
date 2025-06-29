@@ -9,5 +9,4 @@ class DpmCoreServerApplicationTests {
     @Test
     fun contextLoads() {
     }
-
 }

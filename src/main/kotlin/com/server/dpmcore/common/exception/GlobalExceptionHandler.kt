@@ -16,7 +16,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException::class)
     protected fun handleBusinessException(
         exception: BusinessException,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): CustomResponse<Void> {
         response.status = exception.getCode().getStatus().value()
 
@@ -31,7 +31,9 @@ class GlobalExceptionHandler {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    protected fun handleMethodArgumentNotValidException(exception: MethodArgumentNotValidException): CustomResponse<Void> {
+    protected fun handleMethodArgumentNotValidException(
+        exception: MethodArgumentNotValidException,
+    ): CustomResponse<Void> {
         val message = if (exception.bindingResult.fieldErrors.isNotEmpty()) {
             exception.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
         } else {
