@@ -1,0 +1,13 @@
+package com.server.dpmcore.authority.domain
+
+import java.util.UUID
+
+@JvmInline
+value class AuthorityId(private val value: UUID) {
+    companion object {
+        fun generate(): AuthorityId = AuthorityId(UUID.randomUUID())
+    }
+
+    override fun toString(): String = value.toString()
+}
+
