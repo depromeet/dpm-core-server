@@ -8,5 +8,5 @@ data class Team(
     val number: Int,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
-    val cohortId: CohortId
+    val cohortId: CohortId,
 )

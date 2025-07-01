@@ -21,5 +21,4 @@ enum class MemberPart {
     DESIGN,
     IOS,
     ANDROID,
-    ;
 }

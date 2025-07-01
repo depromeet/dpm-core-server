@@ -18,5 +18,4 @@ enum class MemberStatus {
     ACTIVE,
     INACTIVE,
     WITHDRAWN,
-    ;
 }

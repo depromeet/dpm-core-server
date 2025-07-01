@@ -10,5 +10,4 @@ package com.server.dpmcore.member.memberOAuth.domain
  */
 enum class OAuthProvider {
     KAKAO,
-    ;
 }

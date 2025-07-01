@@ -6,5 +6,5 @@ data class MemberOAuth(
     val id: MemberOAuthId,
     val externalId: String,
     val provider: OAuthProvider,
-    val memberId: MemberId
+    val memberId: MemberId,
 )

@@ -6,5 +6,5 @@ import com.server.dpmcore.member.member.domain.MemberId
 data class MemberAuthority(
     val id: MemberAuthorityId,
     val memberId: MemberId,
-    val authorityId: AuthorityId
+    val authorityId: AuthorityId,
 )

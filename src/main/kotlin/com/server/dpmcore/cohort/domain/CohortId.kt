@@ -10,4 +10,3 @@ value class CohortId(private val value: UUID) {
 
     override fun toString(): String = value.toString()
 }
-

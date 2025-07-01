@@ -6,5 +6,5 @@ import com.server.dpmcore.team.domain.TeamId
 data class MemberTeam(
     val id: MemberTeamId,
     val memberId: MemberId,
-    val teamId: TeamId
+    val teamId: TeamId,
 )
