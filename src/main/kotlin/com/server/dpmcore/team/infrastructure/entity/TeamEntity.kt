@@ -32,5 +32,5 @@ class TeamEntity(
     val createdAt: LocalDateTime,
 
     @UpdateTimestamp
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
 )

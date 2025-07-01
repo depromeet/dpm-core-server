@@ -27,4 +27,3 @@ class MemberCohortEntity(
     @JoinColumn(name = "cohort_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val cohort: CohortEntity,
 )
-
