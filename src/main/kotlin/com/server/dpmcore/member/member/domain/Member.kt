@@ -17,7 +17,7 @@ data class Member(
     val email: String,
     val part: MemberPart,
     val status: MemberStatus,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null,
     val deletedAt: LocalDateTime? = null,
 )

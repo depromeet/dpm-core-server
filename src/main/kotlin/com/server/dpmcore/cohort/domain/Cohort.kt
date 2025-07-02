@@ -14,6 +14,6 @@ import java.time.LocalDateTime
 data class Cohort(
     val id: CohortId,
     val value: String,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null,
 )

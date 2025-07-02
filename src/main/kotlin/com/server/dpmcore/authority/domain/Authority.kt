@@ -22,6 +22,6 @@ import java.time.LocalDateTime
 data class Authority(
     val id: AuthorityId,
     val name: String,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null,
 )
