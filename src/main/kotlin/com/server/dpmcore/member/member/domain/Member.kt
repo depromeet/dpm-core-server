@@ -36,5 +36,4 @@ data class Member(
     }
 
     override fun hashCode(): Int = id.hashCode()
-
 }
