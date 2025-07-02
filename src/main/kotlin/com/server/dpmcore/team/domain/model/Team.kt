@@ -2,7 +2,6 @@ package com.server.dpmcore.team.domain.model
 
 import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
-import java.time.LocalDateTime
 
 /**
  * 팀(Team)을 표현하는 도메인 모델입니다.
@@ -22,8 +21,8 @@ import java.time.LocalDateTime
 data class Team(
     val id: TeamId? = null,
     val number: Int,
-    val createdAt: LocalDateTime? = null,
-    val updatedAt: LocalDateTime? = null,
+    val createdAt: Long? = null,
+    val updatedAt: Long? = null,
     val cohortId: CohortId,
     val memberTeams: List<MemberTeam> = emptyList(),
 ) {

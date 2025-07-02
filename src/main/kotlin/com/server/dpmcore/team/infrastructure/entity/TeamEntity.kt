@@ -15,9 +15,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UpdateTimestamp
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "team")
@@ -34,11 +31,11 @@ class TeamEntity(
     @JoinColumn(name = "cohort_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val cohort: CohortEntity,
 
-    @CreationTimestamp
-    val createdAt: LocalDateTime,
+    @Column(nullable = false, updatable = false)
+    val createdAt: Long,
 
-    @UpdateTimestamp
-    val updatedAt: LocalDateTime,
+    @Column(nullable = false)
+    val updatedAt: Long,
 
     @OneToMany(mappedBy = "team", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),

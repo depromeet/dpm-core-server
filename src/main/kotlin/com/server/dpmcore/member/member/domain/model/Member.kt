@@ -3,7 +3,6 @@ package com.server.dpmcore.member.member.domain.model
 import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
 import com.server.dpmcore.member.memberCohort.domain.MemberCohort
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
-import java.time.LocalDateTime
 
 /**
  * 회원(Member)을 표현하는 도메인 모델이며, 애그리거트 루트입니다.
@@ -26,9 +25,9 @@ data class Member(
     val email: String,
     val part: MemberPart,
     val status: MemberStatus,
-    val createdAt: LocalDateTime? = null,
-    val updatedAt: LocalDateTime? = null,
-    val deletedAt: LocalDateTime? = null,
+    val createdAt: Long? = null,
+    val updatedAt: Long? = null,
+    val deletedAt: Long? = null,
     val memberAuthorities: List<MemberAuthority> = emptyList(),
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),

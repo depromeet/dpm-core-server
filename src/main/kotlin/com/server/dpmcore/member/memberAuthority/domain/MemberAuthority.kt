@@ -2,14 +2,13 @@ package com.server.dpmcore.member.memberAuthority.domain
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.domain.model.MemberId
-import java.time.LocalDateTime
 
 data class MemberAuthority(
     val id: MemberAuthorityId? = null,
     val memberId: MemberId,
     val authorityId: AuthorityId,
-    val grantedAt: LocalDateTime? = null,
-    val deletedAt: LocalDateTime? = null,
+    val grantedAt: Long? = null,
+    val deletedAt: Long? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

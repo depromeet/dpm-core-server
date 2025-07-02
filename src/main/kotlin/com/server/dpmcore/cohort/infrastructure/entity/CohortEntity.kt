@@ -11,9 +11,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.UpdateTimestamp
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "cohort")
@@ -26,11 +23,11 @@ class CohortEntity(
     @Column(nullable = false, unique = true)
     val value: String,
 
-    @CreationTimestamp
-    val createdAt: LocalDateTime,
+    @Column(nullable = false, updatable = false)
+    val createdAt: Long,
 
-    @UpdateTimestamp
-    val updatedAt: LocalDateTime,
+    @Column(nullable = false)
+    val updatedAt: Long,
 
     @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val teams: MutableList<TeamEntity> = mutableListOf(),

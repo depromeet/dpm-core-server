@@ -13,8 +13,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.CreationTimestamp
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "member_authority")
@@ -32,9 +30,9 @@ class MemberAuthorityEntity(
     @JoinColumn(name = "authority_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val authority: AuthorityEntity,
 
-    @CreationTimestamp
-    val grantedAt: LocalDateTime,
+    @Column(nullable = false, updatable = false)
+    val grantedAt: Long,
 
     @Column
-    val deletedAt: LocalDateTime? = null,
+    val deletedAt: Long? = null,
 )
