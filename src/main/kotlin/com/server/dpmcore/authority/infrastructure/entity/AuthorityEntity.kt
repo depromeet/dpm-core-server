@@ -1,8 +1,12 @@
 package com.server.dpmcore.authority.infrastructure.entity
 
+import com.server.dpmcore.member.memberAuthority.infrastructure.entity.MemberAuthorityEntity
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
@@ -23,4 +27,7 @@ class AuthorityEntity(
 
     @UpdateTimestamp
     val updatedAt: LocalDateTime,
+
+    @OneToMany(mappedBy = "authority", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val memberAuthorities: List<MemberAuthorityEntity> = mutableListOf(),
 )

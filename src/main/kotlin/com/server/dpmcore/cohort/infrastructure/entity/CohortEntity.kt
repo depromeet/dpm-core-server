@@ -1,8 +1,13 @@
 package com.server.dpmcore.cohort.infrastructure.entity
 
+import com.server.dpmcore.member.memberCohort.infrastructure.entity.MemberCohortEntity
+import com.server.dpmcore.team.infrastructure.entity.TeamEntity
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
@@ -23,4 +28,10 @@ class CohortEntity(
 
     @UpdateTimestamp
     val updatedAt: LocalDateTime,
+
+    @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val teams: List<TeamEntity> = mutableListOf(),
+
+    @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val memberCohorts: List<MemberCohortEntity> = mutableListOf(),
 )
