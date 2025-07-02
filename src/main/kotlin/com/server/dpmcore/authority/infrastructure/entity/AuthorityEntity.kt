@@ -20,7 +20,7 @@ class AuthorityEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "authority_id", nullable = false, updatable = false)
-    val id: String,
+    val id: Long,
 
     @Column(nullable = false)
     val name: String,

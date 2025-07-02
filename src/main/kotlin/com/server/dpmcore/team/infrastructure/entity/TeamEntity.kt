@@ -25,7 +25,7 @@ class TeamEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "team_id", nullable = false, updatable = false)
-    val id: String,
+    val id: Long,
 
     @Column(nullable = false)
     val number: Int,

@@ -21,7 +21,7 @@ class CohortEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cohort_id", nullable = false, updatable = false)
-    val id: String,
+    val id: Long,
 
     @Column(nullable = false, unique = true)
     val value: String,

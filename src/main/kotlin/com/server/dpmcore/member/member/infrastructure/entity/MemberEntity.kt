@@ -22,7 +22,7 @@ class MemberEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id", nullable = false, updatable = false)
-    val id: String,
+    val id: Long,
 
     @Column(nullable = false)
     val name: String,
