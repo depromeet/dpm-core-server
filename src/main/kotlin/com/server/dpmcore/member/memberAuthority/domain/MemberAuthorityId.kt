@@ -1,12 +1,6 @@
 package com.server.dpmcore.member.memberAuthority.domain
 
-import java.util.UUID
-
 @JvmInline
-value class MemberAuthorityId(val value: UUID) {
-    companion object {
-        fun generate(): MemberAuthorityId = MemberAuthorityId(UUID.randomUUID())
-    }
-
+value class MemberAuthorityId(val value: Long) {
     override fun toString(): String = value.toString()
 }

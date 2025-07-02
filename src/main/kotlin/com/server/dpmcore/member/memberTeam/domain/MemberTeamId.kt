@@ -1,12 +1,6 @@
 package com.server.dpmcore.member.memberTeam.domain
 
-import java.util.UUID
-
 @JvmInline
-value class MemberTeamId(val value: UUID) {
-    companion object {
-        fun generate(): MemberTeamId = MemberTeamId(UUID.randomUUID())
-    }
-
+value class MemberTeamId(val value: Long) {
     override fun toString(): String = value.toString()
 }

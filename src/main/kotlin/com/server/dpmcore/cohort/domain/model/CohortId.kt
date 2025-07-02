@@ -1,12 +1,6 @@
 package com.server.dpmcore.cohort.domain.model
 
-import java.util.UUID
-
 @JvmInline
-value class CohortId(val value: UUID) {
-    companion object {
-        fun generate(): CohortId = CohortId(UUID.randomUUID())
-    }
-
+value class CohortId(val value: Long) {
     override fun toString(): String = value.toString()
 }
