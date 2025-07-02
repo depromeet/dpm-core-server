@@ -1,5 +1,6 @@
 package com.server.dpmcore.authority.domain.model
 
+import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
 import java.time.LocalDateTime
 
 /**
@@ -30,10 +31,12 @@ data class Authority(
     val name: String,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
+    val memberAuthorities: List<MemberAuthority> = emptyList()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Authority) return false
+
         return id == other.id && name == other.name
     }
 
@@ -43,4 +46,3 @@ data class Authority(
         return result
     }
 }
-

@@ -1,6 +1,7 @@
 package com.server.dpmcore.team.domain.model
 
 import com.server.dpmcore.cohort.domain.model.CohortId
+import com.server.dpmcore.member.memberTeam.domain.MemberTeam
 import java.time.LocalDateTime
 
 /**
@@ -24,6 +25,7 @@ data class Team(
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
     val cohortId: CohortId,
+    val memberTeams: List<MemberTeam> = emptyList(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

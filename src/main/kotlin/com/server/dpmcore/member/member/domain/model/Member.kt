@@ -1,5 +1,8 @@
 package com.server.dpmcore.member.member.domain.model
 
+import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
+import com.server.dpmcore.member.memberCohort.domain.MemberCohort
+import com.server.dpmcore.member.memberTeam.domain.MemberTeam
 import java.time.LocalDateTime
 
 /**
@@ -26,6 +29,9 @@ data class Member(
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
     val deletedAt: LocalDateTime? = null,
+    val memberAuthorities: List<MemberAuthority> = emptyList(),
+    val memberCohorts: List<MemberCohort> = emptyList(),
+    val memberTeams: List<MemberTeam> = emptyList(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
