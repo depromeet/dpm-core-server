@@ -3,7 +3,7 @@ package com.server.dpmcore.member.memberOAuth.domain
 import java.util.UUID
 
 @JvmInline
-value class MemberOAuthId(private val value: UUID) {
+value class MemberOAuthId(val value: UUID) {
     companion object {
         fun generate(): MemberOAuthId = MemberOAuthId(UUID.randomUUID())
     }

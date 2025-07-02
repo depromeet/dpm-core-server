@@ -3,7 +3,7 @@ package com.server.dpmcore.cohort.domain
 import java.util.UUID
 
 @JvmInline
-value class CohortId(private val value: UUID) {
+value class CohortId(val value: UUID) {
     companion object {
         fun generate(): CohortId = CohortId(UUID.randomUUID())
     }

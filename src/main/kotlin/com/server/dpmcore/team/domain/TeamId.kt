@@ -3,7 +3,7 @@ package com.server.dpmcore.team.domain
 import java.util.UUID
 
 @JvmInline
-value class TeamId(private val value: UUID) {
+value class TeamId(val value: UUID) {
     companion object {
         fun generate(): TeamId = TeamId(UUID.randomUUID())
     }
