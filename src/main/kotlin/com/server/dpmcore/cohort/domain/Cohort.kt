@@ -17,7 +17,7 @@ import java.time.LocalDateTime
  *
  */
 data class Cohort(
-    val id: CohortId,
+    val id: CohortId = CohortId.generate(),
     val value: String,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
