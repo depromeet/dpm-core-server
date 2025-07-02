@@ -43,11 +43,11 @@ class MemberEntity(
     val deletedAt: LocalDateTime? = null,
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val memberAuthorities: List<MemberAuthorityEntity> = mutableListOf(),
+    val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val memberCohorts: List<MemberCohortEntity> = mutableListOf(),
+    val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val memberTeams: List<MemberTeamEntity> = mutableListOf(),
+    val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),
 )

@@ -38,5 +38,5 @@ class TeamEntity(
     val updatedAt: LocalDateTime,
 
     @OneToMany(mappedBy = "team", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val memberTeams: List<MemberTeamEntity> = mutableListOf(),
+    val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),
 )

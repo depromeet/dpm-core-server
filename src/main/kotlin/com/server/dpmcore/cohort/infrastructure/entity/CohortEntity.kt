@@ -30,8 +30,8 @@ class CohortEntity(
     val updatedAt: LocalDateTime,
 
     @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val teams: List<TeamEntity> = mutableListOf(),
+    val teams: MutableList<TeamEntity> = mutableListOf(),
 
     @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val memberCohorts: List<MemberCohortEntity> = mutableListOf(),
+    val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
 )

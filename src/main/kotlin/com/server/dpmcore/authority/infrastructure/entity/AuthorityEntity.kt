@@ -29,5 +29,5 @@ class AuthorityEntity(
     val updatedAt: LocalDateTime,
 
     @OneToMany(mappedBy = "authority", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val memberAuthorities: List<MemberAuthorityEntity> = mutableListOf(),
+    val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
 )
