@@ -10,12 +10,19 @@ data class MemberOAuth(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is MemberOAuth) return false
 
-        other as MemberOAuth
-
-        return id == other.id
+        return id == other.id &&
+            externalId == other.externalId &&
+            provider == other.provider &&
+            memberId == other.memberId
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + externalId.hashCode()
+        result = 31 * result + provider.hashCode()
+        result = 31 * result + memberId.hashCode()
+        return result
+    }
 }

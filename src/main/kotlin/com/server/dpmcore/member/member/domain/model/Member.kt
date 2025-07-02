@@ -12,8 +12,9 @@ import java.time.LocalDateTime
  * 이메일은 소셜 로그인(예: Kakao)에서 제공받은 이메일 주소입니다.
  *
  * equals와 hashCode 구현 규칙:
- * - equals는 동일성 판단을 위해 id만 비교합니다.
- * - hashCode는 equals와 일치하도록 id의 해시코드를 반환해야 합니다.
+ * - equals는 동일성 판단을 위해 핵심 필드인 id, name, email, part를 함께 비교합니다.
+ * - 두 Member 객체의 id, name, email, part가 모두 같을 때 동등한 것으로 간주합니다.
+ * - hashCode는 id, name, email, part를 조합하여 계산하며, equals 규칙과 일관성을 유지합니다.
  *
  */
 data class Member(
@@ -28,12 +29,19 @@ data class Member(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is Member) return false
 
-        other as Member
-
-        return id == other.id
+        return id == other.id &&
+            name == other.name &&
+            email == other.email &&
+            part == other.part
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + name.hashCode()
+        result = 31 * result + email.hashCode()
+        result = 31 * result + part.hashCode()
+        return result
+    }
 }

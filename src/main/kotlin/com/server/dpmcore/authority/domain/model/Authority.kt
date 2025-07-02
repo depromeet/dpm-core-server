@@ -20,8 +20,9 @@ import java.time.LocalDateTime
  * 추후 필요에 따라 권한은 자유롭게 추가될 수 있습니다.
  *
  * equals와 hashCode 구현 규칙:
- * - equals는 동일성 판단을 위해 id만 비교합니다.
- * - hashCode는 equals와 일치하도록 id의 해시코드를 반환해야 합니다.
+ * - equals는 동일성 판단을 위해 핵심 필드인 id와 name을 함께 비교합니다.
+ * - 두 Authority 객체의 id와 name이 모두 같을 때 동등한 것으로 간주합니다.
+ * - hashCode는 id와 name을 조합하여 계산하며, equals 규칙과 일관성을 유지합니다.
  *
  */
 data class Authority(
@@ -32,12 +33,14 @@ data class Authority(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Authority
-
-        return id == other.id
+        if (other !is Authority) return false
+        return id == other.id && name == other.name
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + name.hashCode()
+        return result
+    }
 }
+

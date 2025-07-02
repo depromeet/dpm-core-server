@@ -12,8 +12,9 @@ import java.time.LocalDateTime
  * 한 명의 회원은 여러 기수를 수료할 수 있으며, 활동 이력으로서 다수의 기수에 소속될 수 있습니다.
  *
  * equals와 hashCode 구현 규칙:
- * - equals는 동일성 판단을 위해 id만 비교합니다.
- * - hashCode는 equals와 일치하도록 id의 해시코드를 반환해야 합니다.
+ * - equals는 동일성 판단을 위해 핵심 필드인 id와 value를 함께 비교합니다.
+ * - 두 Cohort 객체의 id와 value가 모두 같을 때 동등한 것으로 간주합니다.
+ * - hashCode는 id와 value를 조합하여 계산하며, equals 규칙과 일관성을 유지합니다.
  *
  */
 data class Cohort(
@@ -24,12 +25,14 @@ data class Cohort(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is Cohort) return false
 
-        other as Cohort
-
-        return id == other.id
+        return id == other.id && value == other.value
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + value.hashCode()
+        return result
+    }
 }

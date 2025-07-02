@@ -10,12 +10,17 @@ data class MemberTeam(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is MemberTeam) return false
 
-        other as MemberTeam
-
-        return id == other.id
+        return id == other.id &&
+            memberId == other.memberId &&
+            teamId == other.teamId
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + memberId.hashCode()
+        result = 31 * result + teamId.hashCode()
+        return result
+    }
 }

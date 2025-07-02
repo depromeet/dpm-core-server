@@ -13,8 +13,9 @@ import java.time.LocalDateTime
  * 예를 들어 number가 1이면 "1팀"을 의미합니다.
  *
  * equals와 hashCode 구현 규칙:
- * - equals는 동일성 판단을 위해 id만 비교합니다.
- * - hashCode는 equals와 일치하도록 id의 해시코드를 반환해야 합니다.
+ * - equals는 동일성 판단을 위해 핵심 필드인 id, number, cohortId를 함께 비교합니다.
+ * - 두 Team 객체의 id, number, cohortId가 모두 같을 때 동등한 것으로 간주합니다.
+ * - hashCode는 id, number, cohortId를 조합하여 계산하며, equals 규칙과 일관성을 유지합니다.
  *
  */
 data class Team(
@@ -26,12 +27,17 @@ data class Team(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is Team) return false
 
-        other as Team
-
-        return id == other.id
+        return id == other.id &&
+            number == other.number &&
+            cohortId == other.cohortId
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + number.hashCode()
+        result = 31 * result + cohortId.hashCode()
+        return result
+    }
 }
