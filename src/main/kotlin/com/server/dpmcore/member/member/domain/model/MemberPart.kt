@@ -1,4 +1,4 @@
-package com.server.dpmcore.member.member.domain
+package com.server.dpmcore.member.member.domain.model
 
 /**
  * 서비스 내 회원의 파트를 나타냅니다.

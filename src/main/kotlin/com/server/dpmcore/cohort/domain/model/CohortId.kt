@@ -1,4 +1,4 @@
-package com.server.dpmcore.cohort.domain
+package com.server.dpmcore.cohort.domain.model
 
 import java.util.UUID
 

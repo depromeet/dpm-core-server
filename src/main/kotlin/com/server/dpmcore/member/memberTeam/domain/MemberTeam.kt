@@ -1,7 +1,7 @@
 package com.server.dpmcore.member.memberTeam.domain
 
-import com.server.dpmcore.member.member.domain.MemberId
-import com.server.dpmcore.team.domain.TeamId
+import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.team.domain.model.TeamId
 
 data class MemberTeam(
     val id: MemberTeamId = MemberTeamId.generate(),

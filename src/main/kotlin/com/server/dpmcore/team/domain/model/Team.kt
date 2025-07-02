@@ -1,6 +1,6 @@
-package com.server.dpmcore.team.domain
+package com.server.dpmcore.team.domain.model
 
-import com.server.dpmcore.cohort.domain.CohortId
+import com.server.dpmcore.cohort.domain.model.CohortId
 import java.time.LocalDateTime
 
 /**

@@ -1,7 +1,7 @@
 package com.server.dpmcore.member.memberAuthority.domain
 
-import com.server.dpmcore.authority.domain.AuthorityId
-import com.server.dpmcore.member.member.domain.MemberId
+import com.server.dpmcore.authority.domain.model.AuthorityId
+import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.LocalDateTime
 
 data class MemberAuthority(

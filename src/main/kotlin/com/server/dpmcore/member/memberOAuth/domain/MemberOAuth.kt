@@ -1,6 +1,6 @@
 package com.server.dpmcore.member.memberOAuth.domain
 
-import com.server.dpmcore.member.member.domain.MemberId
+import com.server.dpmcore.member.member.domain.model.MemberId
 
 data class MemberOAuth(
     val id: MemberOAuthId = MemberOAuthId.generate(),

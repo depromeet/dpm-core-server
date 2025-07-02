@@ -1,4 +1,4 @@
-package com.server.dpmcore.team.domain
+package com.server.dpmcore.team.domain.model
 
 import java.util.UUID
 

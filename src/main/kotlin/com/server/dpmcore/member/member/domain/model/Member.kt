@@ -1,4 +1,4 @@
-package com.server.dpmcore.member.member.domain
+package com.server.dpmcore.member.member.domain.model
 
 import java.time.LocalDateTime
 
