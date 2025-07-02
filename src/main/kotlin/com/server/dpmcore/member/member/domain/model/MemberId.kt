@@ -4,4 +4,3 @@ package com.server.dpmcore.member.member.domain.model
 value class MemberId(val value: Long) {
     override fun toString(): String = value.toString()
 }
-

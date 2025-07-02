@@ -18,7 +18,7 @@ import java.time.LocalDateTime
  *
  */
 data class Team(
-    val id: TeamId = TeamId.generate(),
+    val id: TeamId? = null,
     val number: Int,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,

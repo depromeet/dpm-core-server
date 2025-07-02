@@ -3,7 +3,7 @@ package com.server.dpmcore.member.memberOAuth.domain
 import com.server.dpmcore.member.member.domain.model.MemberId
 
 data class MemberOAuth(
-    val id: MemberOAuthId = MemberOAuthId.generate(),
+    val id: MemberOAuthId? = null,
     val externalId: String,
     val provider: OAuthProvider,
     val memberId: MemberId,

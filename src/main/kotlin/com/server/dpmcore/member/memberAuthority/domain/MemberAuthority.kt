@@ -5,7 +5,7 @@ import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.LocalDateTime
 
 data class MemberAuthority(
-    val id: MemberAuthorityId = MemberAuthorityId.generate(),
+    val id: MemberAuthorityId? = null,
     val memberId: MemberId,
     val authorityId: AuthorityId,
     val grantedAt: LocalDateTime? = null,

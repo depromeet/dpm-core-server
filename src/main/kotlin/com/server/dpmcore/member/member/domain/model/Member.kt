@@ -17,7 +17,7 @@ import java.time.LocalDateTime
  *
  */
 data class Member(
-    val id: MemberId = MemberId.generate(),
+    val id: MemberId? = null,
     val name: String,
     val email: String,
     val part: MemberPart,

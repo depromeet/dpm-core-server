@@ -4,7 +4,7 @@ import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.team.domain.model.TeamId
 
 data class MemberTeam(
-    val id: MemberTeamId = MemberTeamId.generate(),
+    val id: MemberTeamId? = null,
     val memberId: MemberId,
     val teamId: TeamId,
 ) {
