@@ -10,6 +10,11 @@ import java.time.LocalDateTime
  * 외부에서는 해당 루트를 통해서만 관련 도메인 객체에 접근하거나 변경할 수 있습니다.
  *
  * 이메일은 소셜 로그인(예: Kakao)에서 제공받은 이메일 주소입니다.
+ *
+ * equals와 hashCode 구현 규칙:
+ * - equals는 동일성 판단을 위해 id만 비교합니다.
+ * - hashCode는 equals와 일치하도록 id의 해시코드를 반환해야 합니다.
+ *
  */
 data class Member(
     val id: MemberId,
@@ -20,4 +25,16 @@ data class Member(
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
     val deletedAt: LocalDateTime? = null,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Member
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+
+}

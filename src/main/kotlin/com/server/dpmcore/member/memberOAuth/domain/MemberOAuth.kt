@@ -7,4 +7,15 @@ data class MemberOAuth(
     val externalId: String,
     val provider: OAuthProvider,
     val memberId: MemberId,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as MemberOAuth
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

@@ -11,6 +11,11 @@ import java.time.LocalDateTime
  *
  * 팀 번호는 정수형으로 저장되며, "1팀", "2팀"과 같은 형태를 숫자로 표현합니다.
  * 예를 들어 number가 1이면 "1팀"을 의미합니다.
+ *
+ * equals와 hashCode 구현 규칙:
+ * - equals는 동일성 판단을 위해 id만 비교합니다.
+ * - hashCode는 equals와 일치하도록 id의 해시코드를 반환해야 합니다.
+ *
  */
 data class Team(
     val id: TeamId,
@@ -18,4 +23,15 @@ data class Team(
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
     val cohortId: CohortId,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Team
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

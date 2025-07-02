@@ -7,4 +7,15 @@ data class MemberTeam(
     val id: MemberTeamId,
     val memberId: MemberId,
     val teamId: TeamId,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as MemberTeam
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

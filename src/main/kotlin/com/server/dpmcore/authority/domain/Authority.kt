@@ -18,10 +18,26 @@ import java.time.LocalDateTime
  * - 디퍼(일반 부원)
  *
  * 추후 필요에 따라 권한은 자유롭게 추가될 수 있습니다.
+ *
+ * equals와 hashCode 구현 규칙:
+ * - equals는 동일성 판단을 위해 id만 비교합니다.
+ * - hashCode는 equals와 일치하도록 id의 해시코드를 반환해야 합니다.
+ *
  */
 data class Authority(
     val id: AuthorityId,
     val name: String,
     val createdAt: LocalDateTime? = null,
     val updatedAt: LocalDateTime? = null,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Authority
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}
