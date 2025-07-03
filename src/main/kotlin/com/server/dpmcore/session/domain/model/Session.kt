@@ -1,7 +1,10 @@
 package com.server.dpmcore.session.domain.model
 
+<<<<<<< HEAD
 import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
+=======
+>>>>>>> 91b27ce (feat: Session 애그리거트 도메인 모델 구현 (#19))
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
