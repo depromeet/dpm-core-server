@@ -1,7 +1,7 @@
 package com.server.dpmcore.cohort.domain.model
 
-import com.server.dpmcore.member.memberCohort.domain.MemberCohort
-import com.server.dpmcore.team.domain.model.Team
+import com.server.dpmcore.member.memberCohort.domain.MemberCohortId
+import com.server.dpmcore.team.domain.model.TeamId
 
 /**
  * 기수(Cohort)를 표현하는 도메인 모델입니다.
@@ -23,8 +23,8 @@ data class Cohort(
     val value: String,
     val createdAt: Long? = null,
     val updatedAt: Long? = null,
-    val teams: List<Team> = emptyList(),
-    val memberCohorts: List<MemberCohort> = emptyList(),
+    val teamIds: List<TeamId> = emptyList(),
+    val memberCohortIds: List<MemberCohortId> = emptyList(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -1,7 +1,7 @@
 package com.server.dpmcore.team.domain.model
 
 import com.server.dpmcore.cohort.domain.model.CohortId
-import com.server.dpmcore.member.memberTeam.domain.MemberTeam
+import com.server.dpmcore.member.memberTeam.domain.MemberTeamId
 
 /**
  * 팀(Team)을 표현하는 도메인 모델입니다.
@@ -24,7 +24,7 @@ data class Team(
     val createdAt: Long? = null,
     val updatedAt: Long? = null,
     val cohortId: CohortId,
-    val memberTeams: List<MemberTeam> = emptyList(),
+    val memberTeamIds: List<MemberTeamId> = emptyList(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

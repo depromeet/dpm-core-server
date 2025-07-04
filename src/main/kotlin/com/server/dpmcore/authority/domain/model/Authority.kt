@@ -1,6 +1,6 @@
 package com.server.dpmcore.authority.domain.model
 
-import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
+import com.server.dpmcore.member.memberAuthority.domain.MemberAuthorityId
 
 /**
  * 권한(Authority)을 표현하는 도메인 모델입니다.
@@ -30,7 +30,7 @@ data class Authority(
     val name: String,
     val createdAt: Long? = null,
     val updatedAt: Long? = null,
-    val memberAuthorities: List<MemberAuthority> = emptyList(),
+    val memberAuthorityIds: List<MemberAuthorityId> = emptyList(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
