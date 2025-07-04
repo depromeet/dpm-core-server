@@ -59,9 +59,6 @@ dependencies {
 
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
 
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
-
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     runtimeOnly("com.mysql:mysql-connector-j")
