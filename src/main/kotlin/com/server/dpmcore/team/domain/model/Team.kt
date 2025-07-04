@@ -46,6 +46,4 @@ class Team(
         return "Team(id=$id, number=$number, createdAt=$createdAt, updatedAt=$updatedAt, cohortId=$cohortId, " +
             "memberTeamIds=$memberTeamIds)"
     }
-
-
 }

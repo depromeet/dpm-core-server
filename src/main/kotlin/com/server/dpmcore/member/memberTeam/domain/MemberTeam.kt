@@ -27,6 +27,4 @@ class MemberTeam(
     override fun toString(): String {
         return "MemberTeam(id=$id, memberId=$memberId, teamId=$teamId)"
     }
-
-
 }

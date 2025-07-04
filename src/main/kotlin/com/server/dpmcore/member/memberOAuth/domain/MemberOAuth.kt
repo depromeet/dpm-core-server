@@ -29,6 +29,4 @@ class MemberOAuth(
     override fun toString(): String {
         return "MemberOAuth(id=$id, externalId='$externalId', provider=$provider, memberId=$memberId)"
     }
-
-
 }

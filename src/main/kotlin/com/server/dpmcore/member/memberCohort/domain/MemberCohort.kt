@@ -27,6 +27,4 @@ class MemberCohort(
     override fun toString(): String {
         return "MemberCohort(id=$id, memberId=$memberId, cohortId=$cohortId)"
     }
-
-
 }

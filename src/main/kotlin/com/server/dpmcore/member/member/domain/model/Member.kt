@@ -55,5 +55,4 @@ class Member(
             "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
             "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
     }
-
 }

@@ -43,6 +43,4 @@ class Cohort(
         return "Cohort(id=$id, value='$value', createdAt=$createdAt, updatedAt=$updatedAt, teamIds=$teamIds, " +
             "memberCohortIds=$memberCohortIds)"
     }
-
-
 }

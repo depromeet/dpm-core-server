@@ -30,6 +30,4 @@ class MemberAuthority(
         return "MemberAuthority(id=$id, memberId=$memberId, authorityId=$authorityId, grantedAt=$grantedAt, " +
             "deletedAt=$deletedAt)"
     }
-
-
 }
