@@ -2,7 +2,7 @@ package com.server.dpmcore.member.memberOAuth.domain
 
 import com.server.dpmcore.member.member.domain.model.MemberId
 
-data class MemberOAuth(
+class MemberOAuth(
     val id: MemberOAuthId? = null,
     val externalId: String,
     val provider: OAuthProvider,
@@ -25,4 +25,10 @@ data class MemberOAuth(
         result = 31 * result + memberId.hashCode()
         return result
     }
+
+    override fun toString(): String {
+        return "MemberOAuth(id=$id, externalId='$externalId', provider=$provider, memberId=$memberId)"
+    }
+
+
 }

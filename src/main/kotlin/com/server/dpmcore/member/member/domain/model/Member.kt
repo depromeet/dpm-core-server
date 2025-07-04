@@ -19,7 +19,7 @@ import com.server.dpmcore.member.memberTeam.domain.MemberTeam
  * - hashCode는 id, name, email, part를 조합하여 계산하며, equals 규칙과 일관성을 유지합니다.
  *
  */
-data class Member(
+class Member(
     val id: MemberId? = null,
     val name: String,
     val email: String,
@@ -49,4 +49,11 @@ data class Member(
         result = 31 * result + part.hashCode()
         return result
     }
+
+    override fun toString(): String {
+        return "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
+            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
+            "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
+    }
+
 }

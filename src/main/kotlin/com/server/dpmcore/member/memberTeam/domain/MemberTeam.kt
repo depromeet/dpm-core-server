@@ -3,7 +3,7 @@ package com.server.dpmcore.member.memberTeam.domain
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.team.domain.model.TeamId
 
-data class MemberTeam(
+class MemberTeam(
     val id: MemberTeamId? = null,
     val memberId: MemberId,
     val teamId: TeamId,
@@ -23,4 +23,10 @@ data class MemberTeam(
         result = 31 * result + teamId.hashCode()
         return result
     }
+
+    override fun toString(): String {
+        return "MemberTeam(id=$id, memberId=$memberId, teamId=$teamId)"
+    }
+
+
 }

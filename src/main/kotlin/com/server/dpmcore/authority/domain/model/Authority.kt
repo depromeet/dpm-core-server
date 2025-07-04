@@ -25,7 +25,7 @@ import com.server.dpmcore.member.memberAuthority.domain.MemberAuthorityId
  * - hashCode는 id와 name을 조합하여 계산하며, equals 규칙과 일관성을 유지합니다.
  *
  */
-data class Authority(
+class Authority(
     val id: AuthorityId? = null,
     val name: String,
     val createdAt: Long? = null,
@@ -44,4 +44,10 @@ data class Authority(
         result = 31 * result + name.hashCode()
         return result
     }
+
+    override fun toString(): String {
+        return "Authority(id=$id, name='$name', createdAt=$createdAt, updatedAt=$updatedAt, " +
+            "memberAuthorityIds=$memberAuthorityIds)"
+    }
+
 }

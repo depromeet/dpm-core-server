@@ -3,7 +3,7 @@ package com.server.dpmcore.member.memberAuthority.domain
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.domain.model.MemberId
 
-data class MemberAuthority(
+class MemberAuthority(
     val id: MemberAuthorityId? = null,
     val memberId: MemberId,
     val authorityId: AuthorityId,
@@ -25,4 +25,11 @@ data class MemberAuthority(
         result = 31 * result + authorityId.hashCode()
         return result
     }
+
+    override fun toString(): String {
+        return "MemberAuthority(id=$id, memberId=$memberId, authorityId=$authorityId, grantedAt=$grantedAt, " +
+            "deletedAt=$deletedAt)"
+    }
+
+
 }

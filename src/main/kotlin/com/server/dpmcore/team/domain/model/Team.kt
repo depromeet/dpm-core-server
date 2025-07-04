@@ -18,7 +18,7 @@ import com.server.dpmcore.member.memberTeam.domain.MemberTeamId
  * - hashCode는 id, number, cohortId를 조합하여 계산하며, equals 규칙과 일관성을 유지합니다.
  *
  */
-data class Team(
+class Team(
     val id: TeamId? = null,
     val number: Int,
     val createdAt: Long? = null,
@@ -41,4 +41,11 @@ data class Team(
         result = 31 * result + cohortId.hashCode()
         return result
     }
+
+    override fun toString(): String {
+        return "Team(id=$id, number=$number, createdAt=$createdAt, updatedAt=$updatedAt, cohortId=$cohortId, " +
+            "memberTeamIds=$memberTeamIds)"
+    }
+
+
 }
