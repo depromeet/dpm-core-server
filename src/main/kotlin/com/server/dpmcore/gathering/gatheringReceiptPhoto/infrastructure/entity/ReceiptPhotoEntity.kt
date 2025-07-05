@@ -28,7 +28,7 @@ class ReceiptPhotoEntity(
     @Column(name = "url", nullable = false)
     val url: String,
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
 
     @Column(name = "updated_at", nullable = false)

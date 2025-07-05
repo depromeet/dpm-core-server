@@ -1,10 +1,9 @@
 package com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity
 
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
-import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity.ReceiptPhotoEntity
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Entity
 @Table(name = "receipts")
@@ -13,10 +12,6 @@ class ReceiptEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "receipt_id", nullable = false, updatable = false)
     val id: Long = 0,
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gathering_id", nullable = false)
-    val gathering: GatheringEntity,
 
     @Column(name = "split_amount", nullable = false)
     val splitAmount: Int,
@@ -30,15 +25,19 @@ class ReceiptEntity(
     @Column(name = "is_completed", nullable = false)
     val isCompleted: Boolean = false,
 
-    @OneToMany(mappedBy = "receipt", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "receipt", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val receiptPhoto: MutableList<ReceiptPhotoEntity> = mutableListOf(),
 
-    @Column(name = "created_at", nullable = false)
-    val createdAt: LocalDateTime,
+    @Column(name = "created_at", nullable = false, updatable = false)
+    val createdAt: Instant,
 
     @Column(name = "updated_at", nullable = false)
-    val updatedAt: LocalDateTime,
+    val updatedAt: Instant,
 
     @Column(name = "deleted_at")
-    val deletedAt: LocalDateTime? = null
+    val deletedAt: Instant? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gathering_id", nullable = false)
+    val gathering: GatheringEntity,
 )

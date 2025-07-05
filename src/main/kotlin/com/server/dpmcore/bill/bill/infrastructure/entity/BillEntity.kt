@@ -18,15 +18,18 @@ class BillEntity(
     @JoinColumn(name = "bill_account_id", nullable = false)
     val billAccount: BillAccountEntity,
 
-    @OneToMany(mappedBy = "bill", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "bill", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val gatherings: MutableList<GatheringEntity> = mutableListOf(),
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "completed_at")
+    val completedAt: Instant? = null,
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
 
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
 
-    @Column(name = "completed_at")
-    val completedAt: Instant? = null
+    @Column(name = "deleted_at")
+    val deletedAt: Instant? = null
 )

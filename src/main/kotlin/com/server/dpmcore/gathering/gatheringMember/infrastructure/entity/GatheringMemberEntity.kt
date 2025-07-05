@@ -23,9 +23,15 @@ class GatheringMemberEntity(
     @Column(name = "is_checked", nullable = false)
     val isChecked: Boolean = false,
 
-    @Column(name = "is_completed", nullable = false)
-    val isCompleted: Boolean = false,
-
     @Column(name = "completed_at")
-    val completedAt: Instant? = null
+    val completedAt: Instant? = null,
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    val createdAt: Instant,
+
+    @Column(name = "updated_at", nullable = false)
+    val updatedAt: Instant,
+
+    @Column(name = "deleted_at")
+    val deletedAt: Instant? = null
 )

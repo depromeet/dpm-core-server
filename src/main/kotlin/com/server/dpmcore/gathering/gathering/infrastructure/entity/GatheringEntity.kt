@@ -38,14 +38,14 @@ class GatheringEntity(
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
 
-    @Column(name = "deleted_at", nullable = false)
-    val deletedAt: Instant,
+    @Column(name = "deleted_at")
+    val deletedAt: Instant? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_id", nullable = false)
     val bill: BillEntity,
 
-    @OneToMany(mappedBy = "gathering", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val members: MutableList<GatheringMemberEntity> = mutableListOf()
+    @OneToMany(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val gatheringMembers: MutableList<GatheringMemberEntity> = mutableListOf()
 
 )
