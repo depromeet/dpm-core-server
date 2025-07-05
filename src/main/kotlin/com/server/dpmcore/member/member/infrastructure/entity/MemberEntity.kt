@@ -20,34 +20,24 @@ class MemberEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id", nullable = false, updatable = false)
     val id: Long,
-
     @Column(nullable = false)
     val name: String,
-
     @Column(nullable = false, unique = true)
     val email: String,
-
     @Column(nullable = false)
     val part: String,
-
     @Column(nullable = false)
     val status: String,
-
     @Column(nullable = false, updatable = false)
     val createdAt: Long,
-
     @Column(nullable = false)
     val updatedAt: Long,
-
     @Column
     val deletedAt: Long? = null,
-
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
-
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
-
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),
 )

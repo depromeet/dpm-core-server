@@ -20,13 +20,10 @@ class MemberOAuthEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_oauth_id", nullable = false, updatable = false)
     val id: Long,
-
     @Column(nullable = false, updatable = false, unique = true)
     val externalId: String,
-
     @Column(nullable = false)
     val provider: String,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
