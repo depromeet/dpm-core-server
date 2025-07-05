@@ -15,7 +15,7 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "session")
+@Table(name = "sessions")
 class SessionEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
