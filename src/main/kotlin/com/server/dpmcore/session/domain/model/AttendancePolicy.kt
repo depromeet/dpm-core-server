@@ -17,7 +17,7 @@ data class AttendancePolicy(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is AttendancePolicy) return false
-
+:
         return attendanceStart == other.attendanceStart &&
             attendanceEnd == other.attendanceEnd &&
             latenessStart == other.latenessStart &&
