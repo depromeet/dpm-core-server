@@ -26,8 +26,7 @@ class MemberAuthority(
         return result
     }
 
-    override fun toString(): String {
-        return "MemberAuthority(id=$id, memberId=$memberId, authorityId=$authorityId, grantedAt=$grantedAt, " +
+    override fun toString(): String =
+        "MemberAuthority(id=$id, memberId=$memberId, authorityId=$authorityId, grantedAt=$grantedAt, " +
             "deletedAt=$deletedAt)"
-    }
 }

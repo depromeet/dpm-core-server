@@ -46,7 +46,6 @@ class SessionEntity(
             isOnline = this.isOnline,
             place = this.place,
             eventName = this.eventName,
-            attachments = this.attachments.map { it.toDomain() }.toMutableList(),
         )
 
     companion object {

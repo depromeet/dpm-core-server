@@ -21,7 +21,7 @@ ktlint {
     }
     filter {
         exclude("**/generated/**")
-        include("**/kotlin/**")
+        include("**/*.kt, **/*.kts")
     }
 }
 

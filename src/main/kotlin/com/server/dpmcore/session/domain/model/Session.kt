@@ -16,10 +16,10 @@ class Session internal constructor(
     val date: Instant,
     val week: Int,
     val attendancePolicy: AttendancePolicy,
+    private val attachments: MutableList<SessionAttachment> = mutableListOf(),
     place: String?,
     eventName: String?,
     isOnline: Boolean = false,
-    attachments: MutableList<SessionAttachment> = mutableListOf(),
 ) {
     var place: String? = place
         private set
@@ -27,8 +27,6 @@ class Session internal constructor(
         private set
     var isOnline: Boolean = isOnline
         private set
-
-    private val attachments: MutableList<SessionAttachment> = mutableListOf()
 
     fun getAttachments(): List<SessionAttachment> = attachments.toList()
 
