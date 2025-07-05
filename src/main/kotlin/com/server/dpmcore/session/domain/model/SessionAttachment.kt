@@ -1,11 +1,13 @@
 package com.server.dpmcore.session.domain.model
 
+import com.server.dpmcore.session.domain.port.inbound.command.SessionAttachmentCreateCommand
+
 /**
  * 세션 첨부파일(SessionAttachment) 도메인 모델
  * 세션 첨부파일은 특정 세션에 대한 파일 첨부 정보를 나타냅니다.
- * 이 모델은 세션에 첨부된 파일의 메타데이터를 관리합니다.
+ * 이 모델은 세션에 첨부된 파일 혹은 링크에 대한 메타데이터를 관리합니다.
  */
-class SessionAttachment private constructor(
+class SessionAttachment internal constructor(
     val id: SessionAttachmentId? = null,
     val sessionId: SessionId,
     val title: String,
@@ -29,7 +31,7 @@ class SessionAttachment private constructor(
     }
 
     companion object {
-        fun create(command: CreateCommand): SessionAttachment {
+        fun create(command: SessionAttachmentCreateCommand): SessionAttachment {
             require(command.path.isNotBlank()) { "첨부파일 경로는 비어 있을 수 없습니다." }
             require(command.title.isNotBlank()) { "첨부파일 제목은 비어 있을 수 없습니다." }
 
@@ -41,11 +43,4 @@ class SessionAttachment private constructor(
             )
         }
     }
-
-    data class CreateCommand(
-        val sessionId: SessionId,
-        val title: String,
-        val path: String,
-        val idx: Int? = null,
-    )
 }
