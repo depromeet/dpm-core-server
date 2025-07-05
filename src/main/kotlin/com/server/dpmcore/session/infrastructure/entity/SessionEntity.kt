@@ -1,9 +1,5 @@
 package com.server.dpmcore.session.infrastructure.entity
 
-<<<<<<< HEAD
-import com.server.dpmcore.cohort.domain.model.CohortId
-=======
->>>>>>> 8cdf6f1 (feat: Session JPA 엔티티 구현 (#19))
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import jakarta.persistence.CascadeType
@@ -43,18 +39,15 @@ class SessionEntity(
 ) {
     fun toDomain(): Session =
         Session(
-            id = SessionId(this.id),
-            cohortId = CohortId(this.cohortId),
+            id = SessionId(this.sessionId),
+            cohortId = this.cohortId,
             date = this.date,
             week = this.week,
             attendancePolicy = this.attendancePolicy.toDomain(),
             isOnline = this.isOnline,
             place = this.place,
             eventName = this.eventName,
-<<<<<<< HEAD
-=======
             attachments = this.attachments.map { it.toDomain() }.toMutableList(),
->>>>>>> 8cdf6f1 (feat: Session JPA 엔티티 구현 (#19))
         )
 
     companion object {
