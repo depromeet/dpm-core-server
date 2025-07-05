@@ -21,7 +21,7 @@ class SessionAttachmentEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "session_attachment_id", nullable = false, updatable = false)
-    val sessionAttachmentId: Long,
+    val id: Long,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val session: SessionEntity,
@@ -33,8 +33,8 @@ class SessionAttachmentEntity(
 ) {
     fun toDomain(): SessionAttachment =
         SessionAttachment(
-            id = SessionAttachmentId(this.sessionAttachmentId),
-            sessionId = SessionId(this.session.sessionId),
+            id = SessionAttachmentId(this.id),
+            sessionId = SessionId(this.session.id),
             title = this.title,
             path = this.path,
             idx = this.idx ?: -1,
@@ -46,7 +46,7 @@ class SessionAttachmentEntity(
             domainModel: SessionAttachment,
         ): SessionAttachmentEntity =
             SessionAttachmentEntity(
-                sessionAttachmentId = domainModel.id?.value ?: 0L,
+                id = domainModel.id?.value ?: 0L,
                 session = sessionEntity,
                 title = domainModel.title,
                 path = domainModel.path,

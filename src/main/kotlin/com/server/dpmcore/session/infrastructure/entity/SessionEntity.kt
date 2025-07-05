@@ -20,7 +20,7 @@ class SessionEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "session_id", nullable = false, updatable = false)
-    val sessionId: Long,
+    val id: Long,
     val cohortId: Long,
     @Column(nullable = false)
     val date: Instant,
@@ -38,7 +38,7 @@ class SessionEntity(
 ) {
     fun toDomain(): Session =
         Session(
-            id = SessionId(this.sessionId),
+            id = SessionId(this.id),
             cohortId = this.cohortId,
             date = this.date,
             week = this.week,
@@ -52,7 +52,7 @@ class SessionEntity(
         fun from(domainModel: Session): SessionEntity {
             val sessionEntity =
                 SessionEntity(
-                    sessionId = domainModel.id?.value ?: 0L,
+                    id = domainModel.id?.value ?: 0L,
                     cohortId = domainModel.cohortId,
                     date = domainModel.date,
                     week = domainModel.week,
