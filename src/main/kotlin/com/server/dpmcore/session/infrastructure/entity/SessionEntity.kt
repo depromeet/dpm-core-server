@@ -1,6 +1,9 @@
 package com.server.dpmcore.session.infrastructure.entity
 
+<<<<<<< HEAD
 import com.server.dpmcore.cohort.domain.model.CohortId
+=======
+>>>>>>> 8cdf6f1 (feat: Session JPA 엔티티 구현 (#19))
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import jakarta.persistence.CascadeType
@@ -48,6 +51,10 @@ class SessionEntity(
             isOnline = this.isOnline,
             place = this.place,
             eventName = this.eventName,
+<<<<<<< HEAD
+=======
+            attachments = this.attachments.map { it.toDomain() }.toMutableList(),
+>>>>>>> 8cdf6f1 (feat: Session JPA 엔티티 구현 (#19))
         )
 
     companion object {

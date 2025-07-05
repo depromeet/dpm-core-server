@@ -34,7 +34,7 @@ class SessionAttachmentEntity(
     fun toDomain(): SessionAttachment =
         SessionAttachment(
             id = SessionAttachmentId(this.id),
-            sessionId = SessionId(this.session.id),
+            sessionId = SessionId(this.session.sessionId),
             title = this.title,
             path = this.path,
             idx = this.idx ?: -1,
