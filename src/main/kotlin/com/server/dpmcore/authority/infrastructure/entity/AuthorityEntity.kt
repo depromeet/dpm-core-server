@@ -12,7 +12,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "authority")
+@Table(name = "authorities")
 class AuthorityEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
