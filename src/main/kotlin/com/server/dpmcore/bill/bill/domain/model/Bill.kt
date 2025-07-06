@@ -29,6 +29,7 @@ class Bill(
     val billAccount: BillAccount? = null,
     val gatherings: List<Gathering> = listOf(),
     val completedAt: Instant? = null,
+    val billStatus: BillStatus = BillStatus.PENDING,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
