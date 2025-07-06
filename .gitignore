@@ -45,4 +45,5 @@ out/
 **/*.yaml
 **/*.yml
 **/*.properties
+**/*.env
 

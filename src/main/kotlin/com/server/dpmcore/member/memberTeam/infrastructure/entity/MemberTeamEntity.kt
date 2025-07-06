@@ -21,11 +21,9 @@ class MemberTeamEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_team_id", nullable = false, updatable = false)
     val id: Long,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val team: TeamEntity,

@@ -19,19 +19,14 @@ class CohortEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cohort_id", nullable = false, updatable = false)
     val id: Long,
-
     @Column(nullable = false, unique = true)
     val value: String,
-
     @Column(nullable = false, updatable = false)
     val createdAt: Long,
-
     @Column(nullable = false)
     val updatedAt: Long,
-
     @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val teams: MutableList<TeamEntity> = mutableListOf(),
-
     @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
 )
