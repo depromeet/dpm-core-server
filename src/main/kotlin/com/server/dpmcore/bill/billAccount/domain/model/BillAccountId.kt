@@ -1,4 +1,4 @@
-package com.server.dpmcore.bill.billAccount.domain
+package com.server.dpmcore.bill.billAccount.domain.model
 
 @JvmInline
 value class BillAccountId(val value: Long) {

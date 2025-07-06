@@ -1,4 +1,4 @@
-package com.server.dpmcore.bill.billAccount.domain
+package com.server.dpmcore.bill.billAccount.domain.model
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import java.time.Instant

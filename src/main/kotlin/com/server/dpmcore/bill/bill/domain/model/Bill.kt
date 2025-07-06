@@ -1,6 +1,6 @@
 package com.server.dpmcore.bill.bill.domain.model
 
-import com.server.dpmcore.bill.billAccount.domain.BillAccount
+import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import java.time.Instant
 
