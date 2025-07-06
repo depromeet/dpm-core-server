@@ -1,5 +1,6 @@
 package com.server.dpmcore.session.infrastructure.entity
 
+import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import jakarta.persistence.CascadeType
@@ -21,6 +22,7 @@ class SessionEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "session_id", nullable = false, updatable = false)
     val id: Long,
+    @Column(nullable = false)
     val cohortId: Long,
     @Column(nullable = false)
     val date: Instant,
@@ -39,7 +41,7 @@ class SessionEntity(
     fun toDomain(): Session =
         Session(
             id = SessionId(this.id),
-            cohortId = this.cohortId,
+            cohortId = CohortId(this.cohortId),
             date = this.date,
             week = this.week,
             attendancePolicy = this.attendancePolicy.toDomain(),
@@ -53,7 +55,7 @@ class SessionEntity(
             val sessionEntity =
                 SessionEntity(
                     id = domainModel.id?.value ?: 0L,
-                    cohortId = domainModel.cohortId,
+                    cohortId = domainModel.cohortId.value,
                     date = domainModel.date,
                     week = domainModel.week,
                     attendancePolicy = EmbeddedAttendancePolicy.from(domainModel.attendancePolicy),
