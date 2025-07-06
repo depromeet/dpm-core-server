@@ -1,5 +1,6 @@
 package com.server.dpmcore.session.infrastructure.entity
 
+import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import jakarta.persistence.CascadeType
@@ -39,15 +40,14 @@ class SessionEntity(
 ) {
     fun toDomain(): Session =
         Session(
-            id = SessionId(this.sessionId),
-            cohortId = this.cohortId,
+            id = SessionId(this.id),
+            cohortId = CohortId(this.cohortId),
             date = this.date,
             week = this.week,
             attendancePolicy = this.attendancePolicy.toDomain(),
             isOnline = this.isOnline,
             place = this.place,
             eventName = this.eventName,
-            attachments = this.attachments.map { it.toDomain() }.toMutableList(),
         )
 
     companion object {
