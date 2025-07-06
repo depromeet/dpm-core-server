@@ -1,5 +1,6 @@
 package com.server.dpmcore.session.domain.model
 
+import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -12,7 +13,7 @@ import kotlin.random.Random
  */
 class Session internal constructor(
     val id: SessionId? = null,
-    val cohortId: Long,
+    val cohortId: CohortId,
     val date: Instant,
     val week: Int,
     val attendancePolicy: AttendancePolicy,
@@ -48,7 +49,7 @@ class Session internal constructor(
             fun generateAttendanceCode(): String = Random.nextInt(1000, 10000).toString()
 
             return Session(
-                cohortId = command.cohortId,
+                cohortId = CohortId(command.cohortId),
                 date = command.date,
                 week = command.week,
                 place = command.place ?: "온라인",
