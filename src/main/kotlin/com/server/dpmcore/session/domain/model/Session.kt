@@ -1,5 +1,7 @@
 package com.server.dpmcore.session.domain.model
 
+import com.server.dpmcore.cohort.domain.model.CohortId
+import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
@@ -64,13 +66,4 @@ class Session internal constructor(
             )
         }
     }
-
-    data class CreateCommand(
-        val cohortId: Long,
-        val date: Instant,
-        val week: Int,
-        val place: String?,
-        val eventName: String?,
-        val isOnline: Boolean?,
-    )
 }
