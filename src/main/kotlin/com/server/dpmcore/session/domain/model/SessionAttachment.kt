@@ -5,7 +5,7 @@ import com.server.dpmcore.session.domain.port.inbound.command.SessionAttachmentC
 /**
  * 세션 첨부파일(SessionAttachment) 도메인 모델
  * 세션 첨부파일은 특정 세션에 대한 파일 첨부 정보를 나타냅니다.
- * 이 모델은 세션에 첨부된 파일 혹은 링크에 대한 메타데이터를 관리합니다.
+ * 이 모델은 세션에 첨부된 파일의 메타데이터를 관리합니다.
  */
 class SessionAttachment internal constructor(
     val id: SessionAttachmentId? = null,
@@ -21,7 +21,7 @@ class SessionAttachment internal constructor(
         if (this === other) return true
         if (other !is SessionAttachment) return false
 
-        return id == other.id
+        return id == other.id && title == other.title
     }
 
     override fun hashCode(): Int {

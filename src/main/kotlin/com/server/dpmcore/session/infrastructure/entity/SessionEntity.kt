@@ -29,7 +29,6 @@ class SessionEntity(
     @Column(nullable = false)
     val week: Int,
     @Embedded
-    @Column(nullable = false)
     val attendancePolicy: EmbeddedAttendancePolicy,
     @Column(nullable = false)
     val isOnline: Boolean,
@@ -48,6 +47,7 @@ class SessionEntity(
             isOnline = this.isOnline,
             place = this.place,
             eventName = this.eventName,
+            attachments = this.attachments.map { it.toDomain() }.toMutableList(),
         )
 
     companion object {
