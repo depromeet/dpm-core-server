@@ -18,16 +18,12 @@ class AuthorityEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "authority_id", nullable = false, updatable = false)
     val id: Long,
-
     @Column(nullable = false)
     val name: String,
-
     @Column(nullable = false, updatable = false)
     val createdAt: Long,
-
     @Column(nullable = false)
     val updatedAt: Long,
-
     @OneToMany(mappedBy = "authority", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
 )

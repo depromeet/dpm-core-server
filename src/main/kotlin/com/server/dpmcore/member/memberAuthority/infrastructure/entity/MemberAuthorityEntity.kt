@@ -21,18 +21,14 @@ class MemberAuthorityEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_authority_id", nullable = false, updatable = false)
     val id: Long,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "authority_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val authority: AuthorityEntity,
-
     @Column(nullable = false, updatable = false)
     val grantedAt: Long,
-
     @Column
     val deletedAt: Long? = null,
 )
