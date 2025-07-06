@@ -21,7 +21,7 @@ class SessionAttachment internal constructor(
         if (this === other) return true
         if (other !is SessionAttachment) return false
 
-        return id == other.id
+        return id == other.id && title == other.title
     }
 
     override fun hashCode(): Int {
