@@ -19,15 +19,6 @@ class ReceiptEntity(
     @Column(name = "amount", nullable = false)
     val amount: Int,
 
-    @Column(name = "bill_paper_url", nullable = false)
-    val billPaperUrl: String,
-
-    @Column(name = "is_completed", nullable = false)
-    val isCompleted: Boolean = false,
-
-    @OneToMany(mappedBy = "receipt", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val receiptPhoto: MutableList<ReceiptPhotoEntity> = mutableListOf(),
-
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
 
@@ -36,6 +27,9 @@ class ReceiptEntity(
 
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
+
+    @OneToMany(mappedBy = "receipt", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val receiptPhotos: MutableList<ReceiptPhotoEntity> = mutableListOf(),
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id", nullable = false)

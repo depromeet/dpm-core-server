@@ -21,10 +21,6 @@ class ReceiptPhotoEntity(
     @Column(name = "receipt_photo_id", nullable = false, updatable = false)
     val id: Long = 0,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receipt_id", nullable = false)
-    val receipt: ReceiptEntity,
-
     @Column(name = "url", nullable = false)
     val url: String,
 
@@ -35,5 +31,9 @@ class ReceiptPhotoEntity(
     val updatedAt: Instant,
 
     @Column(name = "deleted_at")
-    val deletedAt: Instant? = null
+    val deletedAt: Instant? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receipt_id", nullable = false)
+    val receipt: ReceiptEntity
 )
