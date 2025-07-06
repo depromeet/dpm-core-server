@@ -28,4 +28,13 @@ class AttendancePolicy(
         result = 31 * result + attendanceCode.hashCode()
         return result
     }
+
+    override fun toString(): String =
+        "AttendancePolicy(" +
+            "attendanceStart=$attendanceStart, " +
+            "attendanceEnd=$attendanceEnd, " +
+            "latenessStart=$latenessStart, " +
+            "latenessEnd=$latenessEnd, " +
+            "attendanceCode='$attendanceCode" +
+            "')"
 }

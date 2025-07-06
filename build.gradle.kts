@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.builtins.StandardNames.FqNames.target
+
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"

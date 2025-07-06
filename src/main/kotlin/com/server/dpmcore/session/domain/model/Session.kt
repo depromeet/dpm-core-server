@@ -35,7 +35,7 @@ class Session internal constructor(
         if (this === other) return true
         if (other !is Session) return false
 
-        return id == other.id
+        return id == other.id && date == other.date
     }
 
     override fun hashCode(): Int {
