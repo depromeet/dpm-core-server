@@ -32,9 +32,6 @@ class GatheringEntity(
     @Column(name = "round_number", nullable = false)
     val roundNumber: Int,
 
-    @Column(name = "is_completed", nullable = false)
-    val isCompleted: Boolean = false,
-
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
 

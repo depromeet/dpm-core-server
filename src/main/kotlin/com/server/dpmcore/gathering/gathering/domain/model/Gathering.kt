@@ -25,7 +25,6 @@ class Gathering(
     val category: GatheringCategory? = null,
     val hostUserId: MemberId? = null,
     val roundNumber: Int,
-    val isCompleted: Boolean = false,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
