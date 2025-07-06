@@ -6,7 +6,7 @@ import jakarta.persistence.Embeddable
 import java.time.Instant
 
 @Embeddable
-data class EmbeddedAttendancePolicy(
+class EmbeddedAttendancePolicy(
     @Column(nullable = false)
     val attendanceStart: Instant,
     @Column(nullable = false)
