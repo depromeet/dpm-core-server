@@ -17,7 +17,7 @@ class BillAccount(
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
-    val bills: List<Bill>? = listOf(),
+    val bills: MutableList<Bill>? = mutableListOf(),
 ) {
 
     fun isDeleted(): Boolean = deletedAt != null

@@ -14,11 +14,11 @@ import java.time.Instant
 class Receipt(
     val id: ReceiptId? = null,
     val splitAmount: Int,
-    val amount: Int,
+    val totalAmount: Int,
     val createdAt: Instant,
     val updatedAt: Instant,
     val deletedAt: Instant? = null,
-    val receiptPhotos: List<ReceiptPhoto> = listOf(),
+    val receiptPhotos: MutableList<ReceiptPhoto> = mutableListOf(),
     val gathering: Gathering,
 ) {
 

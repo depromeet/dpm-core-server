@@ -29,7 +29,7 @@ class Gathering(
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
     val bill: Bill? = null,
-    val gatheringMembers: List<GatheringMember>? = listOf(),
+    val gatheringMembers: MutableList<GatheringMember>? = mutableListOf(),
 ) {
 
     fun isDeleted(): Boolean = deletedAt != null

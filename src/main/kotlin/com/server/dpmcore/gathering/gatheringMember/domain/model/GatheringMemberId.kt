@@ -1,4 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.model
 
-class GatheringMemberId {
+@JvmInline
+value class GatheringMemberId(val value: Long) {
+    override fun toString(): String = value.toString()
 }

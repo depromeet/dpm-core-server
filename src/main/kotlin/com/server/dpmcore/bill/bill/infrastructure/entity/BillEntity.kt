@@ -11,7 +11,7 @@ class BillEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "bill_id", nullable = false, updatable = false)
-    val id: Long = 0,
+    val id: Long,
 
 
     @ManyToOne(fetch = FetchType.LAZY)

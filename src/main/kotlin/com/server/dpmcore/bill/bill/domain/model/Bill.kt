@@ -25,9 +25,9 @@ import java.time.Instant
  * 8. 정산 완료
  **/
 class Bill(
-    val id: Long? = null,
+    val id: BillId? = null,
     val billAccount: BillAccount? = null,
-    val gatherings: List<Gathering> = listOf(),
+    val gatherings: MutableList<Gathering> = mutableListOf(),
     val completedAt: Instant? = null,
     val billStatus: BillStatus = BillStatus.PENDING,
     val createdAt: Instant? = null,
