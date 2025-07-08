@@ -2,6 +2,7 @@ package com.server.dpmcore.session.presentation.mapper
 
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
+import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import java.time.Instant
@@ -40,4 +41,17 @@ object SessionMapper {
 
     private fun instantToLocalDateTime(instant: Instant): LocalDateTime =
         LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+
+    fun toSessionDetailResponse(session: Session): SessionDetailResponse =
+        with(session) {
+            SessionDetailResponse(
+                sessionId = id!!.value,
+                week = week,
+                eventName = eventName,
+                place = place,
+                isOnline = isOnline,
+                date = instantToLocalDateTime(date),
+                attendanceStartTime = session.attendancePolicy.attendanceStart.let { instantToLocalDateTime(it) },
+            )
+        }
 }

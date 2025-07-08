@@ -1,7 +1,9 @@
 package com.server.dpmcore.session.application
 
 import com.server.dpmcore.cohort.domain.model.CohortId
+import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
+import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.domain.port.outbound.SessionPersistencePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,4 +21,8 @@ class SessionReadService(
     }
 
     fun getAllSessions(cohortId: CohortId): List<Session> = sessionPersistencePort.findAllSessions(cohortId)
+
+    fun getSessionById(sessionId: SessionId): Session =
+        sessionPersistencePort.findSessionById(sessionId)
+            ?: throw SessionNotFoundException()
 }
