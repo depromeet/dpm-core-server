@@ -18,13 +18,13 @@ class Session internal constructor(
     val week: Int,
     val attendancePolicy: AttendancePolicy,
     private val attachments: MutableList<SessionAttachment> = mutableListOf(),
-    place: String?,
-    eventName: String?,
+    place: String,
+    eventName: String,
     isOnline: Boolean = false,
 ) {
-    var place: String? = place
+    var place: String = place
         private set
-    var eventName: String? = eventName
+    var eventName: String = eventName
         private set
     var isOnline: Boolean = isOnline
         private set
