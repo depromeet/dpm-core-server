@@ -13,7 +13,7 @@ object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
         with(session) {
             NextSessionResponse(
-                sessionId = id!!.value,
+                sessionId = id?.value ?: throw IllegalStateException("Session ID cannot be null"),
                 week = week,
                 eventName = eventName,
                 place = place,
@@ -40,7 +40,7 @@ object SessionMapper {
         }
 
     private fun instantToLocalDateTime(instant: Instant): LocalDateTime =
-        LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+        LocalDateTime.ofInstant(instant, ZoneId.of("Asia/Seoul"))
 
     fun toSessionDetailResponse(session: Session): SessionDetailResponse =
         with(session) {
