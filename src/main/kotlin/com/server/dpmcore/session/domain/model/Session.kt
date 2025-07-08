@@ -58,9 +58,6 @@ class Session internal constructor(
                 attendancePolicy =
                     AttendancePolicy(
                         attendanceStart = command.date.plus(14, ChronoUnit.HOURS),
-                        attendanceEnd = command.date.plus(14, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES),
-                        latenessStart = command.date.plus(14, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES),
-                        latenessEnd = command.date.plus(14, ChronoUnit.HOURS).plus(30, ChronoUnit.MINUTES),
                         attendanceCode = generateAttendanceCode(),
                     ),
             )
