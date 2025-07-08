@@ -1,3 +1,8 @@
 package com.server.dpmcore.session.domain.port.outbound
 
-interface SessionPersistencePort
+import com.server.dpmcore.session.domain.model.Session
+import java.time.Instant
+
+interface SessionPersistencePort {
+    fun findNextSessionBy(currentTime: Instant): Session?
+}
