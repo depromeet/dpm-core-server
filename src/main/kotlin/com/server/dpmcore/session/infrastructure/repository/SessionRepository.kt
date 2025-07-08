@@ -2,6 +2,8 @@ package com.server.dpmcore.session.infrastructure.repository
 
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
+import com.linecorp.kotlinjdsl.spring.data.listQuery
+import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.common.jdsl.singleQueryOrNull
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.port.outbound.SessionPersistencePort
@@ -24,4 +26,13 @@ class SessionRepository(
                 )
                 orderBy(col(SessionEntity::date).asc())
             }?.toDomain()
+
+    override fun findAllSessions(cohortId: CohortId): List<Session> =
+        queryFactory
+            .listQuery<SessionEntity> {
+                select(entity(SessionEntity::class))
+                from(entity(SessionEntity::class))
+                where(col(SessionEntity::cohortId).equal(cohortId.value))
+                orderBy(col(SessionEntity::id).asc())
+            }.map { it.toDomain() }
 }

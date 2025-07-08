@@ -1,5 +1,6 @@
 package com.server.dpmcore.session.application
 
+import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.port.outbound.SessionPersistencePort
 import org.springframework.stereotype.Service
@@ -16,4 +17,6 @@ class SessionReadService(
 
         return sessionPersistencePort.findNextSessionBy(currentTime)
     }
+
+    fun getAllSessions(cohortId: CohortId): List<Session> = sessionPersistencePort.findAllSessions(cohortId)
 }

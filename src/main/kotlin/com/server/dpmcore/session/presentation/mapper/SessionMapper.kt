@@ -2,20 +2,41 @@ package com.server.dpmcore.session.presentation.mapper
 
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
+import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
+import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
-        NextSessionResponse(
-            sessionId = session.id!!.value,
-            week = session.week,
-            eventName = session.eventName,
-            place = session.place,
-            isOnline = session.isOnline,
-            date = instantToLocalDateTime(session.date),
-        )
+        with(session) {
+            NextSessionResponse(
+                sessionId = id!!.value,
+                week = week,
+                eventName = eventName,
+                place = place,
+                isOnline = isOnline,
+                date = instantToLocalDateTime(date),
+            )
+        }
+
+    fun toSessionListResponse(sessions: List<Session>): SessionListResponse =
+        sessions.run {
+            if (isEmpty()) return SessionListResponse(sessions = emptyList())
+
+            SessionListResponse(
+                sessions =
+                    map {
+                        SessionListDetailResponse(
+                            id = it.id!!.value,
+                            week = it.week,
+                            eventName = it.eventName,
+                            date = instantToLocalDateTime(it.date),
+                        )
+                    },
+            )
+        }
 
     private fun instantToLocalDateTime(instant: Instant): LocalDateTime =
         LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
