@@ -6,7 +6,7 @@ import com.linecorp.kotlinjdsl.spring.data.singleQuery
 import jakarta.persistence.NoResultException
 
 inline fun <reified T : Any> SpringDataQueryFactory.singleQueryOrNull(
-    noinline dsl: SpringDataCriteriaQueryDsl<T>.() -> kotlin.Unit,
+    noinline dsl: SpringDataCriteriaQueryDsl<T>.() -> Unit,
 ): T? =
     try {
         this.singleQuery(dsl)
