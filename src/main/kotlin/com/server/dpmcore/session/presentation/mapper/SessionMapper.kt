@@ -5,9 +5,7 @@ import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
@@ -38,9 +36,6 @@ object SessionMapper {
                     },
             )
         }
-
-    private fun instantToLocalDateTime(instant: Instant): LocalDateTime =
-        LocalDateTime.ofInstant(instant, ZoneId.of("Asia/Seoul"))
 
     fun toSessionDetailResponse(session: Session): SessionDetailResponse =
         with(session) {
