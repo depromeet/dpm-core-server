@@ -57,7 +57,7 @@ class Session internal constructor(
                 isOnline = command.isOnline ?: true,
                 attendancePolicy =
                     AttendancePolicy(
-                        attendanceStart = command.date.plus(14, ChronoUnit.HOURS),
+                        attendanceStart = command.date.plus(command.startHour, ChronoUnit.HOURS),
                         attendanceCode = generateAttendanceCode(),
                     ),
             )
