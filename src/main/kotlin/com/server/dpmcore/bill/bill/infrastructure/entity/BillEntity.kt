@@ -13,10 +13,15 @@ class BillEntity(
     @Column(name = "bill_id", nullable = false, updatable = false)
     val id: Long,
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_account_id", nullable = false)
     val billAccount: BillAccountEntity,
+
+    @Column(name = "title", nullable = false)
+    val title: String,
+
+    @Column(name = "description")
+    val description: String,
 
     @OneToMany(mappedBy = "bill", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val gatherings: MutableList<GatheringEntity> = mutableListOf(),

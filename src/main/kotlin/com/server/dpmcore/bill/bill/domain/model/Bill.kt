@@ -27,6 +27,8 @@ import java.time.Instant
 class Bill(
     val id: BillId? = null,
     val billAccount: BillAccount? = null,
+    val title: String,
+    val description: String? = null,
     val gatherings: MutableList<Gathering> = mutableListOf(),
     val completedAt: Instant? = null,
     val billStatus: BillStatus = BillStatus.PENDING,
@@ -45,6 +47,8 @@ class Bill(
         return Bill(
             id = id,
             billAccount = billAccount,
+            title = title,
+            description = description,
             gatherings = gatherings,
             completedAt = now,
             createdAt = createdAt,
