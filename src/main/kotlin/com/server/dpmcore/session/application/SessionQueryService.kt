@@ -11,7 +11,7 @@ import java.time.Instant
 
 @Service
 @Transactional(readOnly = true)
-class SessionReadService(
+class SessionQueryService(
     private val sessionPersistencePort: SessionPersistencePort,
 ) {
     fun getNextSession(): Session? {
