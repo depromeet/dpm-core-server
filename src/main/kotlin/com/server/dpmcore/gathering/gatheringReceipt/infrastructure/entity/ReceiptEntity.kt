@@ -16,8 +16,8 @@ class ReceiptEntity(
     @Column(name = "split_amount", nullable = false)
     val splitAmount: Int,
 
-    @Column(name = "total_amount", nullable = false)
-    val totalAmount: Int,
+    @Column(name = "amount", nullable = false)
+    val amount: Int,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,

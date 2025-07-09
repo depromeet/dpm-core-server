@@ -14,7 +14,7 @@ import java.time.Instant
 class Receipt(
     val id: ReceiptId? = null,
     val splitAmount: Int,
-    val totalAmount: Int,
+    val amount: Int,
     val createdAt: Instant,
     val updatedAt: Instant,
     val deletedAt: Instant? = null,
