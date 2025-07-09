@@ -18,16 +18,16 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/sessions")
 class SessionController(
     private val sessionReadService: SessionReadService,
-) {
+) : SessionApi {
     @GetMapping("/next")
-    fun getNextSession(): CustomResponse<NextSessionResponse> {
+    override fun getNextSession(): CustomResponse<NextSessionResponse> {
         val nextSession = sessionReadService.getNextSession()
 
         return CustomResponse.ok(nextSession?.let { SessionMapper.toNextSessionResponse(it) })
     }
 
     @GetMapping
-    fun getAllSessions(
+    override fun getAllSessions(
         @RequestParam(name = "cohortId") cohortId: CohortId,
     ): CustomResponse<SessionListResponse> {
         val sessions = sessionReadService.getAllSessions(cohortId)
@@ -36,7 +36,7 @@ class SessionController(
     }
 
     @GetMapping("/{sessionId}")
-    fun getSessionById(
+    override fun getSessionById(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<SessionDetailResponse> {
         val session = sessionReadService.getSessionById(sessionId)
