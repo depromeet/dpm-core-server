@@ -10,17 +10,17 @@ import org.springframework.stereotype.Component
 
 @Component
 class CustomAuthenticationFailureHandler(
-    private val securityProperties: SecurityProperties
+    private val securityProperties: SecurityProperties,
 ) : AuthenticationFailureHandler {
 
     override fun onAuthenticationFailure(
         request: HttpServletRequest?,
         response: HttpServletResponse?,
-        exception: AuthenticationException?
+        exception: AuthenticationException?,
     ) {
         response?.sendRedirect(
-            securityProperties.loginUrl + "?error=true&exception="
-                    + OAuthExceptionCode.AUTHENTICATION_FAILED
+            securityProperties.loginUrl + "?error=true&exception=" +
+                OAuthExceptionCode.AUTHENTICATION_FAILED,
         )
     }
 }

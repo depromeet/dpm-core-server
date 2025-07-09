@@ -40,7 +40,7 @@ class AuthorizationRequestCookieValueMapper {
     }
 
     abstract class AuthorizationGrantTypeMixin @JsonCreator constructor(
-        @JsonProperty("value") value: String
+        @JsonProperty("value") value: String,
     )
 
     abstract class OAuth2AuthorizationRequestMixin {
@@ -49,6 +49,6 @@ class AuthorizationRequestCookieValueMapper {
     }
 
     abstract class OAuth2AuthorizationResponseTypeMixin @JsonCreator constructor(
-        @JsonProperty("value") value: String
+        @JsonProperty("value") value: String,
     )
 }

@@ -23,7 +23,7 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
     override fun saveAuthorizationRequest(
         authorizationRequest: OAuth2AuthorizationRequest?,
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ) {
         if (authorizationRequest == null) {
             deleteCookie(request, response)
@@ -32,13 +32,13 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
 
         addCookie(
             response = response,
-            value = authorizationRequestCookieValueMapper.serialize(authorizationRequest)
+            value = authorizationRequestCookieValueMapper.serialize(authorizationRequest),
         )
     }
 
     override fun removeAuthorizationRequest(
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): OAuth2AuthorizationRequest? {
         val authRequest = loadAuthorizationRequest(request)
         deleteCookie(request, response)

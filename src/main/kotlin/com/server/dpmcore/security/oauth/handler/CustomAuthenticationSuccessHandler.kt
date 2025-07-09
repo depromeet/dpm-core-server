@@ -10,13 +10,13 @@ import org.springframework.stereotype.Component
 
 @Component
 class CustomAuthenticationSuccessHandler(
-    private val securityProperties: SecurityProperties
+    private val securityProperties: SecurityProperties,
 ) : AuthenticationSuccessHandler {
 
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        authentication: Authentication
+        authentication: Authentication,
     ) {
         val result = resolveLoginResultFromAuthentication(authentication)
         // TODO: 쿠키에 토큰을 주입 로직 추가

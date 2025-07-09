@@ -20,7 +20,7 @@ class JwtAuthenticationFilter(
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        filterChain: FilterChain
+        filterChain: FilterChain,
     ) {
         val authorizationHeader = request.getHeader(HEADER_AUTHORIZATION)
         val token = getAccessToken(authorizationHeader)

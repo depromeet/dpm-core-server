@@ -50,7 +50,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation ("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -60,7 +60,7 @@ dependencies {
 
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
 
-    implementation ("io.jsonwebtoken:jjwt:0.12.6")
+    implementation("io.jsonwebtoken:jjwt:0.12.6")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 

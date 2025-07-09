@@ -46,7 +46,7 @@ class JwtTokenProvider(
         return UsernamePasswordAuthenticationToken(
             User(claims.subject, "", authorities),
             token,
-            authorities
+            authorities,
         )
     }
 

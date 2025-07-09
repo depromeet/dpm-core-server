@@ -18,7 +18,7 @@ class CustomOAuth2UserService : DefaultOAuth2UserService() {
             authorities = listOf(SimpleGrantedAuthority("ROLE_USER")),
             attributes = oAuth2User.attributes,
             nameAttributeKey = clientRegistration.providerDetails.userInfoEndpoint.userNameAttributeName,
-            authAttributes = OAuthAttributes.of(clientRegistration.registrationId.uppercase(), oAuth2User.attributes)
+            authAttributes = OAuthAttributes.of(clientRegistration.registrationId.uppercase(), oAuth2User.attributes),
         )
     }
 }

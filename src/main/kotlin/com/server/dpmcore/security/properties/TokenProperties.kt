@@ -11,6 +11,6 @@ data class TokenProperties(
 ) {
     data class ExpirationTime(
         @Min(0) val accessToken: Long,
-        @Min(0) val refreshToken: Long
+        @Min(0) val refreshToken: Long,
     )
 }

@@ -8,5 +8,5 @@ class CustomOAuth2User(
     authorities: Collection<GrantedAuthority>,
     attributes: Map<String, Any>,
     nameAttributeKey: String,
-    val authAttributes: OAuthAttributes
+    val authAttributes: OAuthAttributes,
 ) : DefaultOAuth2User(authorities, attributes, nameAttributeKey)
