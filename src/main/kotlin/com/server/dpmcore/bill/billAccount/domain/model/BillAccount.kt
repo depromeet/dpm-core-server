@@ -13,6 +13,7 @@ import java.time.Instant
 class BillAccount(
     val id: BillAccountId? = null,
     val billAccountInfo: String,
+    val name: String,
     val isUrl: Boolean = false,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,

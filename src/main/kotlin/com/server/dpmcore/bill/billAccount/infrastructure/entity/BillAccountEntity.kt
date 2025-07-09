@@ -15,6 +15,9 @@ class BillAccountEntity(
     @Column(name = "bill_account_info", nullable = false)
     val billAccountInfo: String,
 
+    @Column(name = "name", nullable = false)
+    val name: String,
+
     @Column(name = "is_url", nullable = false)
     val isUrl: Boolean = false,
 
