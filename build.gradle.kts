@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.builtins.StandardNames.FqNames.target
-
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
@@ -54,6 +52,10 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
+
+    // kotlin-jdsl
+    val jdslVersion = "2.2.1.RELEASE"
+    implementation("com.linecorp.kotlin-jdsl:spring-data-kotlin-jdsl-starter-jakarta:$jdslVersion")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 

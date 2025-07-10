@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import java.time.Instant
 
 @Entity
 @Table(name = "attendances")
@@ -24,6 +25,8 @@ class AttendanceEntity(
     val memberId: Long,
     @Column(nullable = false)
     val status: String,
+    @Column(nullable = true)
+    val attendedAt: Instant? = null,
 ) {
     fun toDomain(): Attendance =
         Attendance(
@@ -31,6 +34,7 @@ class AttendanceEntity(
             sessionId = SessionId(this.sessionId),
             memberId = MemberId(this.memberId),
             status = AttendanceStatus.valueOf(this.status),
+            attendedAt = this.attendedAt,
         )
 
     companion object {
@@ -40,6 +44,7 @@ class AttendanceEntity(
                 sessionId = domainModel.sessionId.value,
                 memberId = domainModel.memberId.value,
                 status = domainModel.status.name,
+                attendedAt = domainModel.attendedAt,
             )
     }
 }

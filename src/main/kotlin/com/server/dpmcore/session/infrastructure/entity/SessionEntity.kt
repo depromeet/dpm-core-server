@@ -32,8 +32,8 @@ class SessionEntity(
     val attendancePolicy: EmbeddedAttendancePolicy,
     @Column(nullable = false)
     val isOnline: Boolean,
-    val place: String?,
-    val eventName: String?,
+    val place: String,
+    val eventName: String,
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val attachments: MutableList<SessionAttachmentEntity> = mutableListOf(),
 ) {

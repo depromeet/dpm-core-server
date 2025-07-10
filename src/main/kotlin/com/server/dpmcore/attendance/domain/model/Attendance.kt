@@ -3,6 +3,7 @@ package com.server.dpmcore.attendance.domain.model
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceCreateCommand
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
+import java.time.Instant
 
 /**
  * 출석(Attendance) 도메인 모델
@@ -13,12 +14,22 @@ class Attendance internal constructor(
     val sessionId: SessionId,
     val memberId: MemberId,
     status: AttendanceStatus,
+    attendedAt: Instant? = null,
 ) {
     var status: AttendanceStatus = status
         private set
 
-    fun updateStatus(newStatus: AttendanceStatus) {
-        this.status = newStatus
+    var attendedAt: Instant? = attendedAt
+        private set
+
+    fun isAttended() = this.status != AttendanceStatus.PENDING
+
+    fun markAttendance(
+        status: AttendanceStatus,
+        attendedAt: Instant,
+    ) {
+        this.status = status
+        this.attendedAt = attendedAt
     }
 
     override fun equals(other: Any?): Boolean {
