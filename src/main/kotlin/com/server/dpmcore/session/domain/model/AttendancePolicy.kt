@@ -2,7 +2,7 @@ package com.server.dpmcore.session.domain.model
 
 import java.time.Instant
 
-class AttendancePolicy(
+data class AttendancePolicy(
     val attendanceStart: Instant,
     val attendanceCode: String,
 ) {
