@@ -44,4 +44,6 @@ class SessionRepository(
                 from(entity(SessionEntity::class))
                 where(col(SessionEntity::id).equal(sessionId.value))
             }?.toDomain()
+
+    override fun save(session: Session): Session = sessionJpaRepository.save(SessionEntity.from(session)).toDomain()
 }

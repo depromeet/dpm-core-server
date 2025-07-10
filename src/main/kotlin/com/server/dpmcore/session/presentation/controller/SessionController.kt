@@ -1,7 +1,9 @@
 package com.server.dpmcore.session.presentation.controller
 
+import com.server.dpmcore.attendance.presentation.dto.request.UpdateAttendanceTimeRequest
 import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.common.exception.CustomResponse
+import com.server.dpmcore.session.application.SessionCommandService
 import com.server.dpmcore.session.application.SessionQueryService
 import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.presentation.dto.response.AttendanceTimeResponse
@@ -9,8 +11,11 @@ import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import com.server.dpmcore.session.presentation.mapper.SessionMapper
+import com.server.dpmcore.session.presentation.mapper.TimeMapper
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -19,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/sessions")
 class SessionController(
     private val sessionQueryService: SessionQueryService,
+    private val sessionCommandService: SessionCommandService,
 ) : SessionApi {
     @GetMapping("/next")
     override fun getNextSession(): CustomResponse<NextSessionResponse> {
@@ -64,5 +70,18 @@ class SessionController(
                 .let { SessionMapper.toAttendanceTimeResponse(it) }
 
         return CustomResponse.ok(response)
+    }
+
+    @PatchMapping("/{sessionId}/attendance-time")
+    override fun updateAttendanceTime(
+        @PathVariable(name = "sessionId") sessionId: SessionId,
+        @RequestBody request: UpdateAttendanceTimeRequest,
+    ): CustomResponse<Void> {
+        sessionCommandService.updateSessionStartTime(
+            sessionId = sessionId,
+            attendanceStartTime = TimeMapper.localDateTimeToInstant(request.attendanceStartTime),
+        )
+
+        return CustomResponse.ok()
     }
 }
