@@ -31,15 +31,9 @@ data class KakaoAuthAttributes(
         }
     }
 
-    override fun getExternalId(): String {
-        return this.externalId
-    }
+    override fun getExternalId(): String = this.externalId
 
-    override fun getProvider(): OAuthProvider {
-        return this.provider
-    }
+    override fun getProvider(): OAuthProvider = this.provider
 
-    override fun getEmail(): String {
-        return this.email
-    }
+    override fun getEmail(): String = this.email
 }
