@@ -1,6 +1,9 @@
 package com.server.dpmcore.session.domain.model
 
+import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.cohort.domain.model.CohortId
+import com.server.dpmcore.session.domain.exception.InvalidAttendanceCodeException
+import com.server.dpmcore.session.domain.exception.TooEarlyAttendanceException
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -18,18 +21,37 @@ class Session internal constructor(
     val week: Int,
     val attendancePolicy: AttendancePolicy,
     private val attachments: MutableList<SessionAttachment> = mutableListOf(),
-    place: String?,
-    eventName: String?,
+    place: String,
+    eventName: String,
     isOnline: Boolean = false,
 ) {
-    var place: String? = place
+    var place: String = place
         private set
-    var eventName: String? = eventName
+    var eventName: String = eventName
         private set
     var isOnline: Boolean = isOnline
         private set
 
     fun getAttachments(): List<SessionAttachment> = attachments.toList()
+
+    fun attend(
+        attendedAt: Instant,
+        inputCode: String,
+    ): AttendanceStatus {
+        if (inputCode != attendancePolicy.attendanceCode) {
+            throw InvalidAttendanceCodeException()
+        }
+
+        return determineAttendanceStatus(attendedAt)
+    }
+
+    private fun determineAttendanceStatus(now: Instant): AttendanceStatus =
+        when {
+            now.isBefore(attendancePolicy.attendanceStart) -> throw TooEarlyAttendanceException()
+            now.isBefore(attendancePolicy.attendanceStart.plus(5, ChronoUnit.MINUTES)) -> AttendanceStatus.PRESENT
+            now.isBefore(attendancePolicy.attendanceStart.plus(30, ChronoUnit.MINUTES)) -> AttendanceStatus.LATE
+            else -> AttendanceStatus.ABSENT
+        }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -57,10 +79,7 @@ class Session internal constructor(
                 isOnline = command.isOnline ?: true,
                 attendancePolicy =
                     AttendancePolicy(
-                        attendanceStart = command.date.plus(14, ChronoUnit.HOURS),
-                        attendanceEnd = command.date.plus(14, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES),
-                        latenessStart = command.date.plus(14, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES),
-                        latenessEnd = command.date.plus(14, ChronoUnit.HOURS).plus(30, ChronoUnit.MINUTES),
+                        attendanceStart = command.date.plus(command.startHour, ChronoUnit.HOURS),
                         attendanceCode = generateAttendanceCode(),
                     ),
             )
