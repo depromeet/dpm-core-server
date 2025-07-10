@@ -4,6 +4,7 @@ import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.session.application.SessionQueryService
 import com.server.dpmcore.session.domain.model.SessionId
+import com.server.dpmcore.session.presentation.dto.response.AttendanceTimeResponse
 import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
@@ -42,5 +43,17 @@ class SessionController(
         val session = sessionQueryService.getSessionById(sessionId)
 
         return CustomResponse.ok(session.let { SessionMapper.toSessionDetailResponse(it) })
+    }
+
+    @GetMapping("/{sessionId}/attendance-time")
+    override fun getAttendanceTime(
+        @PathVariable(name = "sessionId") sessionId: SessionId,
+    ): CustomResponse<AttendanceTimeResponse> {
+        val response =
+            sessionQueryService
+                .getAttendanceTime(sessionId)
+                .let { SessionMapper.toAttendanceTimeResponse(it) }
+
+        return CustomResponse.ok(response)
     }
 }
