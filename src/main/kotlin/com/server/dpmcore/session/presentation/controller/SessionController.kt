@@ -22,27 +22,36 @@ class SessionController(
 ) : SessionApi {
     @GetMapping("/next")
     override fun getNextSession(): CustomResponse<NextSessionResponse> {
-        val nextSession = sessionQueryService.getNextSession()
+        val response =
+            sessionQueryService
+                .getNextSession()
+                ?.let { SessionMapper.toNextSessionResponse(it) }
 
-        return CustomResponse.ok(nextSession?.let { SessionMapper.toNextSessionResponse(it) })
+        return CustomResponse.ok(response)
     }
 
     @GetMapping
     override fun getAllSessions(
         @RequestParam(name = "cohortId") cohortId: CohortId,
     ): CustomResponse<SessionListResponse> {
-        val sessions = sessionQueryService.getAllSessions(cohortId)
+        val response =
+            sessionQueryService
+                .getAllSessions(cohortId)
+                .let { SessionMapper.toSessionListResponse(it) }
 
-        return CustomResponse.ok(SessionMapper.toSessionListResponse(sessions))
+        return CustomResponse.ok(response)
     }
 
     @GetMapping("/{sessionId}")
     override fun getSessionById(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<SessionDetailResponse> {
-        val session = sessionQueryService.getSessionById(sessionId)
+        val response =
+            sessionQueryService
+                .getSessionById(sessionId)
+                .let { SessionMapper.toSessionDetailResponse(it) }
 
-        return CustomResponse.ok(session.let { SessionMapper.toSessionDetailResponse(it) })
+        return CustomResponse.ok(response)
     }
 
     @GetMapping("/{sessionId}/attendance-time")
