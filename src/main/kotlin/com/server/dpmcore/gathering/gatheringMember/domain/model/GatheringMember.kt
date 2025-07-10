@@ -22,7 +22,6 @@ class GatheringMember(
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
 ) {
-
     fun isDeleted(): Boolean = deletedAt != null
 
     fun isConfirmed(): Boolean = completedAt != null
@@ -46,7 +45,7 @@ class GatheringMember(
             completedAt = now,
             createdAt = createdAt,
             updatedAt = now,
-            deletedAt = deletedAt
+            deletedAt = deletedAt,
         )
     }
 

@@ -36,7 +36,6 @@ class Bill(
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
 ) {
-
     fun isCompleted(): Boolean = completedAt != null
 
     fun complete(now: Instant): Bill {
@@ -53,7 +52,7 @@ class Bill(
             completedAt = now,
             createdAt = createdAt,
             updatedAt = now,
-            deletedAt = deletedAt
+            deletedAt = deletedAt,
         )
     }
 
