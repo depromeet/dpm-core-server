@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
 
 @Tag(name = "세션(Session)")
@@ -147,7 +146,5 @@ interface SessionApi {
             ),
         ],
     )
-    fun getSessionById(
-        @PathVariable(name = "sessionId") sessionId: SessionId,
-    ): CustomResponse<SessionDetailResponse>
+    fun getSessionById(sessionId: SessionId): CustomResponse<SessionDetailResponse>
 }

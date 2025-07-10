@@ -15,9 +15,9 @@ import java.time.Instant
 @RestController
 class AttendanceController(
     private val attendanceCommandService: AttendanceCommandService,
-) {
+) : AttendanceApi {
     @PostMapping("/v1/sessions/{sessionId}/attendances")
-    fun createAttendance(
+    override fun createAttendance(
         @PathVariable sessionId: SessionId,
         @RequestBody request: AttendanceCreateRequest,
     ): CustomResponse<AttendanceResponse> {
