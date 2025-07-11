@@ -5,29 +5,25 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
-    id("com.diffplug.spotless") version "6.25.0"
-}
-
-spotless {
-    kotlin {
-        target("**/*.kt")
-        targetExclude("**/build/**/*.kt")
-
-        ktlint("0.50.0")
-    }
-    json {
-        target("src/**/*.json")
-        simple()
-    }
-
-    kotlinGradle {
-        target("*.gradle.kts")
-        ktlint()
-    }
 }
 
 group = "com.server"
 version = "0.0.1-SNAPSHOT"
+
+ktlint {
+    verbose.set(true)
+    outputToConsole.set(true)
+    coloredOutput.set(true)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.JSON)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.HTML)
+    }
+    filter {
+        exclude("**/generated/**")
+        include("**/*.kt, **/*.kts")
+    }
+}
 
 java {
     toolchain {
@@ -61,6 +57,10 @@ dependencies {
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
 
     implementation("io.jsonwebtoken:jjwt:0.12.6")
+    
+    // kotlin-jdsl
+    val jdslVersion = "2.2.1.RELEASE"
+    implementation("com.linecorp.kotlin-jdsl:spring-data-kotlin-jdsl-starter-jakarta:$jdslVersion")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 

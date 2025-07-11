@@ -17,3 +17,6 @@ spring:
       secure: ${COOKIE_SECURE:true}
       http-only: ${COOKIE_HTTP_ONLY:false}
 
+session:
+  attendance:
+    start-hour: 14

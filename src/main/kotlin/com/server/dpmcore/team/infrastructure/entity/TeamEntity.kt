@@ -23,20 +23,15 @@ class TeamEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "team_id", nullable = false, updatable = false)
     val id: Long,
-
     @Column(nullable = false)
     val number: Int,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cohort_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val cohort: CohortEntity,
-
     @Column(nullable = false, updatable = false)
     val createdAt: Long,
-
     @Column(nullable = false)
     val updatedAt: Long,
-
     @OneToMany(mappedBy = "team", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),
 )

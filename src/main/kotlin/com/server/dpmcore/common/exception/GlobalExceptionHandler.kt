@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
-
     private val logger = KotlinLogging.logger { GlobalExceptionHandler::class.java }
 
     @ExceptionHandler(BusinessException::class)
@@ -34,11 +33,12 @@ class GlobalExceptionHandler {
     protected fun handleMethodArgumentNotValidException(
         exception: MethodArgumentNotValidException,
     ): CustomResponse<Void> {
-        val message = if (exception.bindingResult.fieldErrors.isNotEmpty()) {
-            exception.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
-        } else {
-            "Invalid input parameters"
-        }
+        val message =
+            if (exception.bindingResult.fieldErrors.isNotEmpty()) {
+                exception.bindingResult.fieldErrors.joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+            } else {
+                "Invalid input parameters"
+            }
         return CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, message)
     }
 

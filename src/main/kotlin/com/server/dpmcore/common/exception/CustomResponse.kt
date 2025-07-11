@@ -23,10 +23,12 @@ data class CustomResponse<T>(
                 data,
             )
 
-        fun error(exceptionCode: ExceptionCode): CustomResponse<Void> =
-            error(exceptionCode, exceptionCode.getMessage())
+        fun error(exceptionCode: ExceptionCode): CustomResponse<Void> = error(exceptionCode, exceptionCode.getMessage())
 
-        fun error(exceptionCode: ExceptionCode, message: String): CustomResponse<Void> =
+        fun error(
+            exceptionCode: ExceptionCode,
+            message: String,
+        ): CustomResponse<Void> =
             CustomResponse(
                 exceptionCode.getStatus(),
                 message,

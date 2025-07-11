@@ -13,6 +13,8 @@ enum class GlobalExceptionCode(
     ;
 
     override fun getStatus(): HttpStatus = status
+
     override fun getCode(): String = code
+
     override fun getMessage(): String = message
 }

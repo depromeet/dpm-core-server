@@ -21,11 +21,9 @@ class MemberCohortEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_cohort_id", nullable = false, updatable = false)
     val id: Long,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cohort_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val cohort: CohortEntity,
