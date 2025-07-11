@@ -10,4 +10,9 @@ package com.server.dpmcore.member.memberOAuth.domain
  */
 enum class OAuthProvider {
     KAKAO,
+    ;
+
+    fun isProviderOf(provider: String): Boolean {
+        return this.name == provider
+    }
 }
