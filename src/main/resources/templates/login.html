@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>소셜 로그인 테스트 페이지</title>
+
+    <style>
+        div {
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>소셜 로그인 테스트 페이지</h1>
+    <div>
+        <img th:id="kakao_btn" th:src="@{/kakao_login_btn.png}" alt="카카오 로그인" width="200px">
+    </div>
+
+    <script>
+        document.getElementById('kakao_btn').addEventListener('click', function () {
+            location.href = '/oauth2/authorization/kakao';
+        });
+    </script>
+</body>
+</html>

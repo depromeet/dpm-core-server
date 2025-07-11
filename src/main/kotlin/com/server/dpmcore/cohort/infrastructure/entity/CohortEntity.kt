@@ -13,7 +13,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "cohort")
+@Table(name = "cohorts")
 class CohortEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
