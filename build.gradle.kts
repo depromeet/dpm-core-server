@@ -33,10 +33,8 @@ jib {
     to {
         val dockerHubUser = System.getenv("DOCKER_USERNAME") ?: "dpm-core"
         val dockerHubRepository = System.getenv("DOCKER_REPOSITORY") ?: "dpm-core"
-        val gitSha = System.getenv("IMAGE_TAG") ?: "latest"
 
         image = "$dockerHubUser/$dockerHubRepository"
-        tags = setOf(gitSha)
 
         auth {
             username = System.getenv("DOCKER_USERNAME")
@@ -52,7 +50,7 @@ jib {
                 "-Xmx512m",
                 "-Duser.timezone=Asia/Seoul",
                 "-jar",
-                "/dpm-core-server.jar",
+                "/app/libs/dpm-core-server.jar",
             )
     }
 }

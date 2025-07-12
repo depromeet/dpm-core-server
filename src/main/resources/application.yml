@@ -38,7 +38,7 @@ management:
     web:
       exposure:
         include: health
-      base-path: /dpmcore-actuator
+      base-path: /actuator
     jmx:
       exposure:
         exclude: "*"
