@@ -9,6 +9,14 @@ spring:
     hibernate:
       ddl-auto: update
 
+  security:
+    login-url: ${LOGIN_URL:/login}
+    redirect-url: ${REDIRECT_URL:/swagger-ui/index.html}
+    cookie:
+      domain: ${COOKIE_DOMAIN:localhost}
+      secure: ${COOKIE_SECURE:true}
+      http-only: ${COOKIE_HTTP_ONLY:false}
+
 session:
   attendance:
     start-hour: 14
