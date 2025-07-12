@@ -86,7 +86,7 @@ jobs:
           script: |
             cd ~
             chmod +x deploy.sh
-            ./deploy.sh
+            sh deploy.sh ${{ env.IMAGE_TAG }}
 
       - name: "Slack으로 배포 성공 알림을 알린다."
         if: success()
