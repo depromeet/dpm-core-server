@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker 이미지 태그"
+        required: false
+        default: "prod-${{ github.sha }}"
 
 jobs:
   compile:

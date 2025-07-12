@@ -1,9 +1,15 @@
 name: Deploy to Development Server
 
 on:
-  pull_request:
+  push:
     branches:
       - develop
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker 이미지 태그"
+        required: false
+        default: "dev-${{ github.sha }}"
 
 jobs:
   compile:
