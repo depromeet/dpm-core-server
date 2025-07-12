@@ -32,4 +32,25 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
+    login-url: ${LOGIN_URL:/login}
+    redirect-url: ${REDIRECT_URL:/swagger-ui/index.html}
+    cookie:
+      domain: ${COOKIE_DOMAIN:localhost}
+      secure: ${COOKIE_SECURE:true}
+      http-only: ${COOKIE_HTTP_ONLY:false}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      base-path: /actuator
+    jmx:
+      exposure:
+        exclude: "*"
+    access:
+      default: none
+
+  endpoint:
+    health:
+      enabled: true
