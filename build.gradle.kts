@@ -5,6 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    id("com.google.cloud.tools.jib") version "3.4.2"
 }
 
 group = "com.server"
@@ -22,6 +23,37 @@ ktlint {
     filter {
         exclude("**/generated/**")
         include("**/*.kt, **/*.kts")
+    }
+}
+
+jib {
+    from {
+        image = "eclipse-temurin:21-jre"
+    }
+    to {
+        val dockerHubUser = System.getenv("DOCKER_USERNAME") ?: "dpm-core"
+        val dockerHubRepository = System.getenv("DOCKER_REPOSITORY") ?: "dpm-core"
+        val gitSha = System.getenv("IMAGE_TAG") ?: "latest"
+
+        image = "$dockerHubUser/$dockerHubRepository"
+        tags = setOf(gitSha)
+
+        auth {
+            username = System.getenv("DOCKER_USERNAME")
+            password = System.getenv("DOCKER_PASSWORD")
+        }
+    }
+    container {
+        ports = listOf("8080")
+        entrypoint =
+            listOf(
+                "java",
+                "-Xms512m",
+                "-Xmx512m",
+                "-Duser.timezone=Asia/Seoul",
+                "-jar",
+                "/dpm-core-server.jar",
+            )
     }
 }
 
@@ -45,6 +77,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -80,4 +113,8 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveFileName.set("dpm-core-server.jar")
 }

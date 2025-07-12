@@ -9,3 +9,18 @@ spring:
         show_sql: true
         use_sql_comments: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      base-path: /dpmcore-actuator
+    jmx:
+      exposure:
+        exclude: "*"
+    access:
+      default: none
+
+  endpoint:
+    health:
+      enabled: true
