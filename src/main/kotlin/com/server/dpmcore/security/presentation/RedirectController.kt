@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 
 @Controller
 class RedirectController {
-
     @GetMapping("/login")
     fun login(): String = "login"
 

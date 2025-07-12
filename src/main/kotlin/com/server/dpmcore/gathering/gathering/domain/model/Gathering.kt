@@ -31,7 +31,6 @@ class Gathering(
     val bill: Bill? = null,
     val gatheringMembers: MutableList<GatheringMember>? = mutableListOf(),
 ) {
-
     fun isDeleted(): Boolean = deletedAt != null
 
     override fun equals(other: Any?): Boolean {

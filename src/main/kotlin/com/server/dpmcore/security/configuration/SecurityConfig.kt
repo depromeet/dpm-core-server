@@ -27,7 +27,6 @@ class SecurityConfig(
     private val authenticationSuccessHandler: AuthenticationSuccessHandler,
     private val authenticationFailureHandler: AuthenticationFailureHandler,
 ) {
-
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         disabledConfigurations(httpSecurity)
@@ -61,9 +60,10 @@ class SecurityConfig(
             CorsConfiguration().apply {
                 allowedHeaders = listOf("*")
                 allowedMethods = listOf("*")
-                allowedOriginPatterns = listOf(
-                    "https://localhost:3000",
-                )
+                allowedOriginPatterns =
+                    listOf(
+                        "https://localhost:3000",
+                    )
                 allowCredentials = true
             }
         }
@@ -96,21 +96,24 @@ class SecurityConfig(
     }
 
     companion object {
-        private val SWAGGER_PATTERNS = arrayOf(
-            "/swagger-ui/**",
-            "/actuator/**",
-            "/v3/api-docs/**",
-        )
-        private val STATIC_RESOURCES_PATTERNS = arrayOf(
-            "/images/**",
-            "/css/**",
-            "/js/**",
-            "/static/**",
-        )
-        private val PERMIT_ALL_PATTERNS = arrayOf(
-            "/v1/**",
-            "/login",
-            "/error",
-        )
+        private val SWAGGER_PATTERNS =
+            arrayOf(
+                "/swagger-ui/**",
+                "/actuator/**",
+                "/v3/api-docs/**",
+            )
+        private val STATIC_RESOURCES_PATTERNS =
+            arrayOf(
+                "/images/**",
+                "/css/**",
+                "/js/**",
+                "/static/**",
+            )
+        private val PERMIT_ALL_PATTERNS =
+            arrayOf(
+                "/v1/**",
+                "/login",
+                "/error",
+            )
     }
 }

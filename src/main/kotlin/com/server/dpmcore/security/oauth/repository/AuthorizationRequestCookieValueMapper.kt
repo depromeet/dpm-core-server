@@ -14,12 +14,12 @@ import java.util.Base64
 
 @Component
 class AuthorizationRequestCookieValueMapper {
-
-    private val objectMapper: ObjectMapper = ObjectMapper().apply {
-        addMixIn(OAuth2AuthorizationRequest::class.java, OAuth2AuthorizationRequestMixin::class.java)
-        addMixIn(OAuth2AuthorizationResponseType::class.java, OAuth2AuthorizationResponseTypeMixin::class.java)
-        addMixIn(AuthorizationGrantType::class.java, AuthorizationGrantTypeMixin::class.java)
-    }
+    private val objectMapper: ObjectMapper =
+        ObjectMapper().apply {
+            addMixIn(OAuth2AuthorizationRequest::class.java, OAuth2AuthorizationRequestMixin::class.java)
+            addMixIn(OAuth2AuthorizationResponseType::class.java, OAuth2AuthorizationResponseTypeMixin::class.java)
+            addMixIn(AuthorizationGrantType::class.java, AuthorizationGrantTypeMixin::class.java)
+        }
 
     fun serialize(authorizationRequest: OAuth2AuthorizationRequest): String {
         return try {
@@ -39,16 +39,20 @@ class AuthorizationRequestCookieValueMapper {
         }
     }
 
-    abstract class AuthorizationGrantTypeMixin @JsonCreator constructor(
-        @JsonProperty("value") value: String,
-    )
+    abstract class AuthorizationGrantTypeMixin
+        @JsonCreator
+        constructor(
+            @JsonProperty("value") value: String,
+        )
 
     abstract class OAuth2AuthorizationRequestMixin {
         @JsonProperty("grantType")
         lateinit var authorizationGrantType: AuthorizationGrantType
     }
 
-    abstract class OAuth2AuthorizationResponseTypeMixin @JsonCreator constructor(
-        @JsonProperty("value") value: String,
-    )
+    abstract class OAuth2AuthorizationResponseTypeMixin
+        @JsonCreator
+        constructor(
+            @JsonProperty("value") value: String,
+        )
 }

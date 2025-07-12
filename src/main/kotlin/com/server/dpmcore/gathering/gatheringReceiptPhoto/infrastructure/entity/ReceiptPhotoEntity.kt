@@ -15,25 +15,19 @@ import java.time.Instant
 @Entity
 @Table(name = "receipt_photos")
 class ReceiptPhotoEntity(
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "receipt_photo_id", nullable = false, updatable = false)
     val id: Long = 0,
-
     @Column(name = "url", nullable = false)
     val url: String,
-
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
-
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
-
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receipt_id", nullable = false)
-    val receipt: ReceiptEntity
+    val receipt: ReceiptEntity,
 )

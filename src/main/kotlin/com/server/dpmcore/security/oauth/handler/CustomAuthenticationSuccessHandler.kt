@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component
 class CustomAuthenticationSuccessHandler(
     private val securityProperties: SecurityProperties,
 ) : AuthenticationSuccessHandler {
-
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,
         response: HttpServletResponse,

@@ -25,7 +25,10 @@ class JwtTokenProvider(
         return generateToken(externalId, tokenProperties.expirationTime.refreshToken)
     }
 
-    fun generateToken(externalId: String, expirationTime: Long): String {
+    fun generateToken(
+        externalId: String,
+        expirationTime: Long,
+    ): String {
         val currentTimeMillis = System.currentTimeMillis()
         val now = Date(currentTimeMillis)
         val expiration = Date(currentTimeMillis + expirationTime * 1000)

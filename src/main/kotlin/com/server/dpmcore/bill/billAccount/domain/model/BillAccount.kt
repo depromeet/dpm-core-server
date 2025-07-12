@@ -20,7 +20,6 @@ class BillAccount(
     val deletedAt: Instant? = null,
     val bills: MutableList<Bill>? = mutableListOf(),
 ) {
-
     fun isDeleted(): Boolean = deletedAt != null
 
     override fun equals(other: Any?): Boolean {
@@ -35,4 +34,3 @@ class BillAccount(
         return result
     }
 }
-
