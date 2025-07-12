@@ -110,13 +110,3 @@ jobs:
               --update-failure-action pause \
               --update-monitor 30s \
               core-service
-
-      - name: "Slack으로 배포 성공 알림을 알린다."
-        if: success()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: success
-          author_name: 'GitHub Actions'
-          fields: repo,message,commit,author
-        env:
-            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # 추후 웹훅 추가
