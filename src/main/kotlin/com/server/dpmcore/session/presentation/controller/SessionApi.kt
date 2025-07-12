@@ -41,7 +41,7 @@ interface SessionApi {
                                         "message": "요청에 성공했습니다",
                                         "code": "G000",
                                         "data": {
-                                            "sessionId": "1",
+                                            "sessionId": 1,
                                             "week": 1,
                                             "eventName": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
