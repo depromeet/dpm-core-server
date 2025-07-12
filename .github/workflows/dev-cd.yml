@@ -95,6 +95,7 @@ jobs:
           username: ${{ secrets.DEV_SERVER_USERNAME }}
           key: ${{ secrets.DEV_SERVER_SSH_KEY }}
           script: |
+            docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD }}
             cd ~
             chmod +x deploy.sh
             ./deploy.sh ${{ env.IMAGE_TAG }}
