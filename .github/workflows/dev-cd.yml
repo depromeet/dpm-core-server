@@ -60,6 +60,12 @@ jobs:
       - name: "레포지토리를 체크아웃한다."
         uses: actions/checkout@v4
 
+      - name: "JDK 21을 설정한다."
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: "Docker buildx를 설정한다."
         uses: docker/setup-buildx-action@v3
 
