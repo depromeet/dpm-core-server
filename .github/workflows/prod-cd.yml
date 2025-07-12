@@ -1,9 +1,9 @@
-name: Deploy to Dev
+name: Deploy to Production Server
 
 on:
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   compile:
@@ -50,7 +50,7 @@ jobs:
       - compile
     runs-on: ubuntu-22.04
     env:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: prod
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -82,15 +82,20 @@ jobs:
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.PROD_SERVER_USERNAME }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          key: ${{ secrets.PROD_SERVER_SSH_KEY }}
           script: |
             docker pull ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
             docker service update \
               --image ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }} \
+              --env PROD_DB_HOST=${{ secrets.PROD_DB_HOST }} \
+              --env PROD_DB_PORT=${{ secrets.PROD_DB_PORT }} \
+              --env PROD_DB_SCHEMA=${{ secrets.PROD_DB_SCHEMA }} \
+              --env PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }} \
+              --env PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }} \
               --detach=true \
               --update-parallelism 1 \
               --update-delay 10s \
-              --update-failure-action continue \
+              --update-failure-action pause \
               --update-monitor 30s \
               core-service
 
