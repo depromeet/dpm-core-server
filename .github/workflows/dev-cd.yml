@@ -81,7 +81,7 @@ jobs:
             -Djib.to.auth.username=${{ env.DOCKER_USERNAME }} \
             -Djib.to.auth.password=${{ env.DOCKER_PASSWORD }} \
             -Djib.to.image=${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            -Djib.to.tags=latest,${{ env.IMAGE_TAG }} \
+            -Djib.to.tags=${{ env.IMAGE_TAG }} \
         env:
           DOCKER_USERNAME: ${{ env.DOCKER_USERNAME }}
           DOCKER_REPOSITORY: ${{ env.DOCKER_REPOSITORY }}

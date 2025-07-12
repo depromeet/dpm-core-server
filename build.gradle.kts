@@ -43,15 +43,7 @@ jib {
     }
     container {
         ports = listOf("8080")
-        entrypoint =
-            listOf(
-                "java",
-                "-Xms512m",
-                "-Xmx512m",
-                "-Duser.timezone=Asia/Seoul",
-                "-jar",
-                "/app/libs/dpm-core-server.jar",
-            )
+        jvmFlags = listOf("-Xms512m", "-Xmx512m", "-Duser.timezone=Asia/Seoul")
     }
 }
 
