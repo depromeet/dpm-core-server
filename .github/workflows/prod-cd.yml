@@ -54,23 +54,28 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      IMAGE_TAG: prod-${{ github.sha::7 }}
+      IMAGE_TAG: prod-${{ github.sha }}
 
     steps:
       - name: "레포지토리를 체크아웃한다."
         uses: actions/checkout@v4
 
       - name: "Docker buildx를 설정한다."
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: "Dockerhub 로그인"
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_PASSWORD }}
 
       - name: "Jib을 사용하여 Docker 이미지를 빌드 후 Dockerhub에 푸시한다."
-        run: ./gradlew jib
+        run: |
+          ./gradlew jib \
+            -Djib.to.auth.username=${{ env.DOCKER_USERNAME }} \
+            -Djib.to.auth.password=${{ env.DOCKER_PASSWORD }} \
+            -Djib.to.image=${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }} \
+            -Djib.to.tags=latest,${{ env.IMAGE_TAG }} \
         env:
           DOCKER_USERNAME: ${{ env.DOCKER_USERNAME }}
           DOCKER_REPOSITORY: ${{ env.DOCKER_REPOSITORY }}
