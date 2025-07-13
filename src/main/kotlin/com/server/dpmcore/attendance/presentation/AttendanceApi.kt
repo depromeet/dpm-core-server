@@ -55,6 +55,56 @@ interface AttendanceApi {
         request: AttendanceCreateRequest,
     ): CustomResponse<AttendanceResponse>
 
+    @Operation(
+        summary = "세션별 출석 조회",
+        description = "세션에 대한 출석을 조회합니다. 요청 시 출석상태, 팀, 이름, 커서 ID를 기준으로 필터링할 수 있습니다",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션별 출석 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "출석 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "members": [
+                                                {
+                                                    "id": 1,
+                                                    "name": "신민철",
+                                                    "teamNumber": 1,
+                                                    "part": "SERVER",
+                                                    "attendanceStatus": "PRESENT"
+                                                },
+                                                {
+                                                    "id": 1,
+                                                    "name": "이정호",
+                                                    "teamNumber": 2,
+                                                    "part": "WEB",
+                                                    "attendanceStatus": "LATE"
+                                                },
+                                            ],
+                                            "hasNextPage": false,
+                                            "nextCursorId": null
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
     fun getAttendancesBySessionId(
         sessionId: SessionId,
         statuses: List<AttendanceStatus>?,
