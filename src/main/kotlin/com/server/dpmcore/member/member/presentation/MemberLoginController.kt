@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.GetMapping
 class MemberLoginController {
 
     companion object {
-        const val REDIRECT_URL = "redirect:/oauth2/authorization/kakao"
+        const val KAKAO_REDIRECT_URL = "redirect:/oauth2/authorization/kakao"
     }
 
-    @GetMapping("/login")
+    @GetMapping("/v1/login/kakao")
     fun login(): String {
-        return REDIRECT_URL
+        return KAKAO_REDIRECT_URL
     }
 }
