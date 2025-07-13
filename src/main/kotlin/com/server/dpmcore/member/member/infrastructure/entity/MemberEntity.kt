@@ -51,7 +51,7 @@ class MemberEntity(
             id = MemberId(this.id),
             name = name,
             email = email,
-            part = if(this.part != null) MemberPart.valueOf(this.part!!) else null,
+            part = this.part?.let { MemberPart.valueOf(it) },
             status = MemberStatus.valueOf(this.status),
             createdAt = createdAt,
             updatedAt = updatedAt,
