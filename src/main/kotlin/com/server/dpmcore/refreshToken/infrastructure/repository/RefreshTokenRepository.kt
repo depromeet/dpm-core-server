@@ -26,4 +26,12 @@ class RefreshTokenRepository(
             where(col(RefreshTokenEntity::memberId).equal(memberId.value))
         }?.toDomain()
     }
+
+    override fun findByToken(token: String): RefreshToken? {
+        return queryFactory.singleQueryOrNull {
+            select(entity(RefreshTokenEntity::class))
+            from(entity(RefreshTokenEntity::class))
+            where(col(RefreshTokenEntity::token).equal(token))
+        }?.toDomain()
+    }
 }
