@@ -21,11 +21,9 @@ class RefreshTokenRepository(
 
     override fun findByMemberId(memberId: MemberId): RefreshToken? {
         return queryFactory.singleQueryOrNull {
-            select(entity(RefreshToken::class))
-            from(entity(RefreshToken::class))
-            where(col(RefreshToken::memberId).equal(memberId))
-        }?.let { entity ->
-            RefreshToken.create(entity.memberId, entity.token)
-        }
+            select(entity(RefreshTokenEntity::class))
+            from(entity(RefreshTokenEntity::class))
+            where(col(RefreshTokenEntity::memberId).equal(memberId.value))
+        }?.toDomain()
     }
 }

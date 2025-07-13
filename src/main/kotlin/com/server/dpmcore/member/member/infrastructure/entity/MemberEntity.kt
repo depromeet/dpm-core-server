@@ -51,7 +51,7 @@ class MemberEntity(
             id = MemberId(this.id),
             name = name,
             email = email,
-            part = MemberPart.valueOf(this.part!!),
+            part = if(this.part != null) MemberPart.valueOf(this.part!!) else null,
             status = MemberStatus.valueOf(this.status),
             createdAt = createdAt,
             updatedAt = updatedAt,
@@ -69,8 +69,8 @@ class MemberEntity(
                 email = domain.email,
                 part = domain.part?.name,
                 status = domain.status.name,
-                createdAt = domain.createdAt,
-                updatedAt = domain.updatedAt,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now(),
                 deletedAt = domain.deletedAt
             )
     }
