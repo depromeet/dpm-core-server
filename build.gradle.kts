@@ -6,6 +6,7 @@ plugins {
     kotlin("plugin.jpa") version "1.9.25"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
     id("com.google.cloud.tools.jib") version "3.4.2"
+    id("nu.studer.jooq") version "9.0"
 }
 
 group = "com.server"
@@ -85,6 +86,12 @@ dependencies {
     val jdslVersion = "2.2.1.RELEASE"
     implementation("com.linecorp.kotlin-jdsl:spring-data-kotlin-jdsl-starter-jakarta:$jdslVersion")
 
+    implementation("org.jooq:jooq:3.19.1")
+    implementation("org.springframework.boot:spring-boot-starter-jooq")
+    jooqGenerator("org.jooq:jooq-meta:3.19.1")
+    jooqGenerator("org.jooq:jooq-codegen:3.19.1")
+    jooqGenerator("com.mysql:mysql-connector-j")
+
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -92,6 +99,54 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+val dbHost: String = System.getProperty("DB_HOST") ?: "localhost"
+val dbPort: String = System.getProperty("DB_PORT") ?: "3306"
+val dbSchema: String = System.getProperty("DB_SCHEMA") ?: "dpm_core"
+val dbUsername: String = System.getProperty("DB_USERNAME") ?: "root"
+val dbPassword: String = System.getProperty("DB_PASSWORD") ?: "1234"
+
+jooq {
+    configurations {
+        create("dpmcoreDB") {
+            generateSchemaSourceOnCompilation.set(false)
+
+            jooqConfiguration.apply {
+                jdbc.apply {
+                    driver = "com.mysql.cj.jdbc.Driver"
+                    url = "jdbc:mysql://$dbHost:$dbPort/$dbSchema"
+                    user = dbUsername
+                    password = dbPassword
+                }
+                generator.apply {
+                    name = "org.jooq.codegen.KotlinGenerator" // 코틀린 제너레이터 명시
+                    database.apply {
+                        name = "org.jooq.meta.mysql.MySQLDatabase"
+                        inputSchema = "dpm_core"
+                    }
+                    generate.apply {
+                        isDaos = true
+                        isRecords = true
+                        isFluentSetters = true
+                        isJavaTimeTypes = true
+                        isDeprecated = false
+                    }
+                    target.apply {
+                        directory = "build/generated/jooq"
+                    }
+                }
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        kotlin {
+            srcDirs(listOf("src/main/kotlin", "src/generated", "build/generated/jooq"))
+        }
+    }
 }
 
 kotlin {
@@ -112,4 +167,12 @@ tasks.withType<Test> {
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("dpm-core-server.jar")
+}
+
+tasks.named("compileKotlin") {
+    dependsOn("generateDpmcoreDBJooq")
+}
+
+tasks.named("jib") {
+    dependsOn("generateDpmcoreDBJooq")
 }

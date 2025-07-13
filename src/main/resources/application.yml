@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   jpa:
     hibernate:
       ddl-auto: validate
@@ -8,6 +10,9 @@ spring:
         format_sql: true
         show_sql: true
         use_sql_comments: true
+
+  jooq:
+    sql-dialect: mysql
 
   security:
     jwt:
@@ -54,3 +59,6 @@ management:
   endpoint:
     health:
       enabled: true
+logging:
+  level:
+    org.jooq.tools.LoggerListener: INFO

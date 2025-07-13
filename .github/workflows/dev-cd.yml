@@ -83,6 +83,11 @@ jobs:
             -Djib.to.auth.password=${{ env.DOCKER_PASSWORD }} \
             -Djib.to.image=${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }} \
             -Djib.to.tags=${{ env.IMAGE_TAG }} \
+            -DDB_HOST=${{ secrets.DEV_DB_HOST }} \
+            -DDB_PORT=${{ secrets.DEV_DB_PORT }} \
+            -DDB_SCHEMA=${{ secrets.DEV_DB_SCHEMA }} \
+            -DDB_USERNAME=${{ secrets.DEV_DB_USERNAME }} \
+            -DDB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }} \
         env:
           DOCKER_USERNAME: ${{ env.DOCKER_USERNAME }}
           DOCKER_REPOSITORY: ${{ env.DOCKER_REPOSITORY }}
