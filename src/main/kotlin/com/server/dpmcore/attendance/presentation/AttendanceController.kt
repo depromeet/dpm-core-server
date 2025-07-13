@@ -4,9 +4,11 @@ import com.server.dpmcore.attendance.application.AttendanceCommandService
 import com.server.dpmcore.attendance.application.AttendanceQueryService
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
-import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendanceResponse
+import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
+import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.session.domain.model.SessionId
@@ -41,11 +43,31 @@ class AttendanceController(
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
         @RequestParam(name = "name", required = false) name: String?,
         @RequestParam(name = "cursorId", required = false) cursorId: Long?,
-    ): CustomResponse<SessionAttendanceResponse> {
+    ): CustomResponse<SessionAttendancesResponse> {
         val response =
             attendanceQueryService.getAttendancesBySession(
                 GetAttendancesBySessionIdQuery(
                     sessionId = sessionId,
+                    statuses = statuses,
+                    teams = teams,
+                    name = name,
+                    cursorId = cursorId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/members/attendances")
+    override fun getMemberAttendances(
+        @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
+        @RequestParam(name = "teams", required = false) teams: List<Int>?,
+        @RequestParam(name = "name", required = false) name: String?,
+        @RequestParam(name = "cursorId", required = false) cursorId: Long?,
+    ): CustomResponse<MemberAttendancesResponse> {
+        val response =
+            attendanceQueryService.getMemberAttendances(
+                GetMemberAttendancesQuery(
                     statuses = statuses,
                     teams = teams,
                     name = name,

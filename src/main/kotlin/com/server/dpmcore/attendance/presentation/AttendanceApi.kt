@@ -3,7 +3,8 @@ package com.server.dpmcore.attendance.presentation
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
-import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendanceResponse
+import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
+import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.session.domain.model.SessionId
 import io.swagger.v3.oas.annotations.Operation
@@ -111,5 +112,62 @@ interface AttendanceApi {
         teams: List<Int>?,
         name: String?,
         cursorId: Long?,
-    ): CustomResponse<SessionAttendanceResponse>
+    ): CustomResponse<SessionAttendancesResponse>
+
+    @Operation(
+        summary = "사람별 출석 조회",
+        description = "사람별 출석을 조회합니다. 요청 시 출석상태, 팀, 이름, 커서 ID를 기준으로 필터링할 수 있습니다",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "사람별 출석 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "출석 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "members": [
+                                                {
+                                                    "id": 1,
+                                                    "name": "신민철",
+                                                    "teamNumber": 1,
+                                                    "part": "SERVER",
+                                                    "status": "AT_RISK"
+                                                },
+                                                {
+                                                    "id": 1,
+                                                    "name": "이정호",
+                                                    "teamNumber": 2,
+                                                    "part": "WEB",
+                                                    "attendanceStatus": "NORMAL"
+                                                },
+                                            ],
+                                            "hasNextPage": false,
+                                            "nextCursorId": null
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getMemberAttendances(
+        statuses: List<AttendanceStatus>?,
+        teams: List<Int>?,
+        name: String?,
+        cursorId: Long?,
+    ): CustomResponse<MemberAttendancesResponse>
 }

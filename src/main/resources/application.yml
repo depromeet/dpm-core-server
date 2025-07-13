@@ -61,4 +61,4 @@ management:
       enabled: true
 logging:
   level:
-    org.jooq.tools.LoggerListener: INFO
+    org.jooq.tools.LoggerListener: DEBUG
