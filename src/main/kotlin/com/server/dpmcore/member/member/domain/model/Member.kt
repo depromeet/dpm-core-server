@@ -75,6 +75,8 @@ class Member(
             return Member(
                 email = email,
                 status = MemberStatus.PENDING,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
             )
         }
     }

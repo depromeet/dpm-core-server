@@ -69,8 +69,8 @@ class MemberEntity(
                 email = domain.email,
                 part = domain.part?.name,
                 status = domain.status.name,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
+                createdAt = domain.createdAt,
+                updatedAt = domain.updatedAt,
                 deletedAt = domain.deletedAt
             )
     }
