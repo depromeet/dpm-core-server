@@ -1,7 +1,7 @@
 package com.server.dpmcore.refreshToken.infrastructure.repository
 
-import com.server.dpmcore.refreshToken.domain.model.RefreshToken
+import com.server.dpmcore.refreshToken.infrastructure.entity.RefreshTokenEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
-interface RefreshTokenJpaRepository : JpaRepository<RefreshToken, Long> {
+interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenEntity, Long> {
 }

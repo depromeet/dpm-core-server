@@ -1,6 +1,10 @@
 package com.server.dpmcore.member.memberTeam.infrastructure.entity
 
+import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
+import com.server.dpmcore.member.memberTeam.domain.MemberTeam
+import com.server.dpmcore.member.memberTeam.domain.MemberTeamId
+import com.server.dpmcore.team.domain.model.TeamId
 import com.server.dpmcore.team.infrastructure.entity.TeamEntity
 import jakarta.persistence.Column
 import jakarta.persistence.ConstraintMode
@@ -27,4 +31,10 @@ class MemberTeamEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val team: TeamEntity,
-)
+) {
+    fun toDomain() = MemberTeam(
+        id = MemberTeamId(this.id),
+        memberId = MemberId(this.member.id),
+        teamId = TeamId(this.team.id),
+    )
+}

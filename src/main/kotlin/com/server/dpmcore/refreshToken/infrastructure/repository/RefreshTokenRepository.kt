@@ -6,6 +6,7 @@ import com.server.dpmcore.common.jdsl.singleQueryOrNull
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.refreshToken.domain.model.RefreshToken
 import com.server.dpmcore.refreshToken.domain.port.outbound.RefreshTokenPersistencePort
+import com.server.dpmcore.refreshToken.infrastructure.entity.RefreshTokenEntity
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -15,7 +16,7 @@ class RefreshTokenRepository(
 ) : RefreshTokenPersistencePort {
 
     override fun save(refreshToken: RefreshToken): RefreshToken {
-        return refreshTokenJpaRepository.save(refreshToken)
+        return refreshTokenJpaRepository.save(RefreshTokenEntity.toEntity(refreshToken)).toDomain()
     }
 
     override fun findByMemberId(memberId: MemberId): RefreshToken? {
