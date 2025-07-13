@@ -49,7 +49,6 @@ class AttendanceRepository(
     ): List<SessionAttendanceQueryModel> =
         dsl
             .select(
-                ATTENDANCES.ID,
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
@@ -70,7 +69,6 @@ class AttendanceRepository(
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 SessionAttendanceQueryModel(
-                    attendanceId = record[ATTENDANCES.ID]!!,
                     id = record[MEMBERS.MEMBER_ID]!!,
                     name = record[MEMBERS.NAME]!!,
                     teamNumber = record[TEAMS.NUMBER]!!,
