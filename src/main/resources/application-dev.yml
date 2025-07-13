@@ -2,7 +2,6 @@ spring:
   config:
     activate:
       on-profile: dev
-    import: optional:.env
   datasource:
     url: jdbc:mysql://${DEV_DB_HOST:localhost}:${DEV_DB_PORT:3306}/${DEV_DB_SCHEMA:dpm_core}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${DEV_DB_USERNAME}
