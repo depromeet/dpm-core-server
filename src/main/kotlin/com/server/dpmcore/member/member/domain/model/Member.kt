@@ -3,6 +3,7 @@ package com.server.dpmcore.member.member.domain.model
 import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
 import com.server.dpmcore.member.memberCohort.domain.MemberCohort
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
+import java.time.Instant
 
 /**
  * 회원(Member)을 표현하는 도메인 모델이며, 애그리거트 루트입니다.
@@ -21,25 +22,38 @@ import com.server.dpmcore.member.memberTeam.domain.MemberTeam
  */
 class Member(
     val id: MemberId? = null,
-    val name: String,
+    val name: String? = null,
     val email: String,
-    val part: MemberPart,
+    val part: MemberPart? = null,
     val status: MemberStatus,
-    val createdAt: Long? = null,
-    val updatedAt: Long? = null,
-    val deletedAt: Long? = null,
+    createdAt: Instant? = null,
+    updatedAt: Instant? = null,
+    deletedAt: Instant? = null,
     val memberAuthorities: List<MemberAuthority> = emptyList(),
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),
 ) {
+    var createdAt: Instant? = createdAt
+        private set
+
+    var updatedAt: Instant? = updatedAt
+        private set
+
+    var deletedAt: Instant? = deletedAt
+        private set
+
+    fun isAllowed(): Boolean {
+        return status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Member) return false
 
         return id == other.id &&
-            name == other.name &&
-            email == other.email &&
-            part == other.part
+                name == other.name &&
+                email == other.email &&
+                part == other.part
     }
 
     override fun hashCode(): Int {
@@ -52,7 +66,16 @@ class Member(
 
     override fun toString(): String {
         return "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
-            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
-            "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
+                "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
+                "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
+    }
+
+    companion object {
+        fun create(email: String): Member {
+            return Member(
+                email = email,
+                status = MemberStatus.PENDING,
+            )
+        }
     }
 }

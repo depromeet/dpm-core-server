@@ -1,4 +1,4 @@
-package com.server.dpmcore.security.oauth.handler
+package com.server.dpmcore.security.oauth.service
 
 import com.server.dpmcore.security.oauth.domain.CustomOAuth2User
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes

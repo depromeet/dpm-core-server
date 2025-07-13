@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import java.time.Instant
 
 @Entity
 @Table(name = "members")
@@ -20,20 +21,20 @@ class MemberEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id", nullable = false, updatable = false)
     val id: Long,
-    @Column(nullable = false)
+    @Column
     val name: String,
     @Column(nullable = false, unique = true)
     val email: String,
-    @Column(nullable = false)
+    @Column
     val part: String,
     @Column(nullable = false)
     val status: String,
     @Column(nullable = false, updatable = false)
-    val createdAt: Long,
+    val createdAt: Instant ? = null,
     @Column(nullable = false)
-    val updatedAt: Long,
+    val updatedAt: Instant ? = null,
     @Column
-    val deletedAt: Long? = null,
+    val deletedAt: Instant ? = null,
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
