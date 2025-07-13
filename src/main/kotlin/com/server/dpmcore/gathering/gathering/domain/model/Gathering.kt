@@ -29,9 +29,20 @@ class Gathering(
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
     val bill: Bill? = null,
-    val gatheringMembers: MutableList<GatheringMember>? = mutableListOf(),
+    val gatheringMembers: MutableList<GatheringMember> = mutableListOf(),
 ) {
     fun isDeleted(): Boolean = deletedAt != null
+
+    fun getGatheringJoinMemberCount() =
+        gatheringMembers.count { gatheringMember ->
+            gatheringMember.is_joined == true &&
+                gatheringMember.deletedAt != null
+        }
+
+    fun getBillViewCount() =
+        gatheringMembers.count { gatheringMember ->
+            gatheringMember.isChecked == true
+        }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
