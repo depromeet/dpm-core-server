@@ -1,7 +1,9 @@
 package com.server.dpmcore.attendance.presentation
 
+import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
+import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendanceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.session.domain.model.SessionId
 import io.swagger.v3.oas.annotations.Operation
@@ -52,4 +54,12 @@ interface AttendanceApi {
         sessionId: SessionId,
         request: AttendanceCreateRequest,
     ): CustomResponse<AttendanceResponse>
+
+    fun getAttendancesBySessionId(
+        sessionId: SessionId,
+        statuses: List<AttendanceStatus>?,
+        teams: List<Int>?,
+        name: String?,
+        cursorId: Long?,
+    ): CustomResponse<SessionAttendanceResponse>
 }

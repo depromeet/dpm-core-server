@@ -1,19 +1,26 @@
 package com.server.dpmcore.attendance.presentation
 
 import com.server.dpmcore.attendance.application.AttendanceCommandService
+import com.server.dpmcore.attendance.application.AttendanceQueryService
+import com.server.dpmcore.attendance.domain.model.AttendanceStatus
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
+import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendanceResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.session.domain.model.SessionId
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
 @RestController
 class AttendanceController(
+    private val attendanceQueryService: AttendanceQueryService,
     private val attendanceCommandService: AttendanceCommandService,
 ) : AttendanceApi {
     @PostMapping("/v1/sessions/{sessionId}/attendances")
@@ -25,5 +32,27 @@ class AttendanceController(
         val attendanceStatus = attendanceCommandService.attendSession(sessionId, attendedAt, request)
 
         return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
+    }
+
+    @GetMapping("/v1/sessions/{sessionId}/attendances")
+    override fun getAttendancesBySessionId(
+        @PathVariable sessionId: SessionId,
+        @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
+        @RequestParam(name = "teams", required = false) teams: List<Int>?,
+        @RequestParam(name = "name", required = false) name: String?,
+        @RequestParam(name = "cursorId", required = false) cursorId: Long?,
+    ): CustomResponse<SessionAttendanceResponse> {
+        val response =
+            attendanceQueryService.getAttendancesBySession(
+                GetAttendancesBySessionIdQuery(
+                    sessionId = sessionId,
+                    statuses = statuses,
+                    teams = teams,
+                    name = name,
+                    cursorId = cursorId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
     }
 }
