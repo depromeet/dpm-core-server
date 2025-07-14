@@ -19,12 +19,14 @@ class BillAccountEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "bill_account_id", nullable = false, updatable = false)
     val id: Long = 0,
-    @Column(name = "bill_account_info", nullable = false)
-    val billAccountInfo: String,
-    @Column(name = "name", nullable = false)
-    val name: String,
-    @Column(name = "is_url", nullable = false)
-    val isUrl: Boolean = false,
+    @Column(name = "bill_account_value", nullable = false)
+    val billAccountValue: String,
+    @Column(name = "account_holder_name", nullable = false)
+    val accountHolderName: String,
+    @Column(name = "bank_name", nullable = false)
+    val bankName: String,
+    @Column(name = "account_type", nullable = false)
+    val accountType: String,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
     @Column(name = "updated_at", nullable = false)

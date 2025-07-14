@@ -26,7 +26,7 @@ import java.time.Instant
  **/
 class Bill(
     val id: BillId? = null,
-    val billAccount: BillAccount? = null,
+    val billAccount: BillAccount,
     val title: String,
     val description: String? = null,
     val gatherings: MutableList<Gathering> = mutableListOf(),

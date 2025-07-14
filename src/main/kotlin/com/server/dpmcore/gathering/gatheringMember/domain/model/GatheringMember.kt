@@ -16,7 +16,7 @@ class GatheringMember(
     val gathering: Gathering,
     val memberId: MemberId,
     val isChecked: Boolean = false,
-    val is_joined: Boolean = false,
+    val isJoined: Boolean = false,
     val completedAt: Instant? = null,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
