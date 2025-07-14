@@ -41,7 +41,7 @@ class MemberAuthorityEntity(
         id = MemberAuthorityId(this.id),
         memberId = MemberId(this.member.id),
         authorityId = AuthorityId(this.authority.id),
-        grantedAt = grantedAt,
-        deletedAt = deletedAt
+        grantedAt = this.grantedAt,
+        deletedAt = this.deletedAt
     )
 }
