@@ -96,8 +96,6 @@ dependencies {
     jooqGenerator("org.jooq:jooq-meta-extensions:3.19.1")
     jooqGenerator("com.mysql:mysql-connector-j")
 
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
-
     runtimeOnly("com.mysql:mysql-connector-j")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 @Component
 class CustomAuthenticationSuccessHandler(
     private val tokenInjector: JwtTokenInjector,
-    private val handleMemberLoginUseCase: HandleMemberLoginUseCase
+    private val handleMemberLoginUseCase: HandleMemberLoginUseCase,
 ) : AuthenticationSuccessHandler {
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,

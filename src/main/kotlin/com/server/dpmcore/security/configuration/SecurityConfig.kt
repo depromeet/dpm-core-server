@@ -60,10 +60,11 @@ class SecurityConfig(
             CorsConfiguration().apply {
                 allowedHeaders = listOf("*")
                 allowedMethods = listOf("*")
-                allowedOriginPatterns = listOf(
-                    "https://localhost:3000",
-                    "https://local.dpmcore.o-r.kr/"
-                )
+                allowedOriginPatterns =
+                    listOf(
+                        "https://localhost:3000",
+                        "https://local.dpmcore.o-r.kr/",
+                    )
                 allowCredentials = true
             }
         }
