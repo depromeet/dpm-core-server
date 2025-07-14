@@ -1,4 +1,4 @@
-package com.server.dpmcore.security.oauth.repository
+package com.server.dpmcore.security.oauth.repository.mapper
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty

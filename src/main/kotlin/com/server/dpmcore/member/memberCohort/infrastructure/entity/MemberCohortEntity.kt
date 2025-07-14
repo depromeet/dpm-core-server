@@ -1,7 +1,11 @@
 package com.server.dpmcore.member.memberCohort.infrastructure.entity
 
+import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.cohort.infrastructure.entity.CohortEntity
+import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
+import com.server.dpmcore.member.memberCohort.domain.MemberCohort
+import com.server.dpmcore.member.memberCohort.domain.MemberCohortId
 import jakarta.persistence.Column
 import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity
@@ -27,4 +31,10 @@ class MemberCohortEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cohort_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val cohort: CohortEntity,
-)
+) {
+    fun toDomain() = MemberCohort(
+        id = MemberCohortId(this.id),
+        memberId = MemberId(this.member.id),
+        cohortId = CohortId(this.cohort.id),
+    )
+}

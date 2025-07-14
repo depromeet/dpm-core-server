@@ -1,7 +1,11 @@
 package com.server.dpmcore.member.memberAuthority.infrastructure.entity
 
+import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.authority.infrastructure.entity.AuthorityEntity
+import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
+import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
+import com.server.dpmcore.member.memberAuthority.domain.MemberAuthorityId
 import jakarta.persistence.Column
 import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity
@@ -13,6 +17,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import java.time.Instant
 
 @Entity
 @Table(name = "member_authorities")
@@ -28,7 +33,15 @@ class MemberAuthorityEntity(
     @JoinColumn(name = "authority_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val authority: AuthorityEntity,
     @Column(nullable = false, updatable = false)
-    val grantedAt: Long,
+    val grantedAt: Instant? = null,
     @Column
-    val deletedAt: Long? = null,
-)
+    val deletedAt: Instant? = null,
+) {
+    fun toDomain() = MemberAuthority(
+        id = MemberAuthorityId(this.id),
+        memberId = MemberId(this.member.id),
+        authorityId = AuthorityId(this.authority.id),
+        grantedAt = this.grantedAt,
+        deletedAt = this.deletedAt
+    )
+}

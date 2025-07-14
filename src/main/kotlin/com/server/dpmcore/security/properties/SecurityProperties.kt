@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty
 data class SecurityProperties(
     val loginUrl: String,
     val redirectUrl: String,
+    val restrictedRedirectUrl: String,
     @NestedConfigurationProperty val cookie: Cookie,
 ) {
     data class Cookie(
