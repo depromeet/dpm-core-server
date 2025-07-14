@@ -142,7 +142,7 @@ interface AttendanceApi {
                                                     "name": "신민철",
                                                     "teamNumber": 1,
                                                     "part": "SERVER",
-                                                    "status": "AT_RISK"
+                                                    "attendanceStatus": "AT_RISK"
                                                 },
                                                 {
                                                     "id": 1,
