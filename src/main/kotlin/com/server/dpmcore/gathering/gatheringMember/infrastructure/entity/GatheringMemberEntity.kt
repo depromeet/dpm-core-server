@@ -1,6 +1,9 @@
 package com.server.dpmcore.gathering.gatheringMember.infrastructure.entity
 
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
+import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
+import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
+import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -36,4 +39,34 @@ class GatheringMemberEntity(
     val updatedAt: Instant,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
-)
+) {
+    companion object {
+        fun from(gatheringMember: GatheringMember): GatheringMemberEntity {
+            return GatheringMemberEntity(
+                id = gatheringMember.id?.value ?: 0L,
+                gathering = GatheringEntity.from(gatheringMember.gathering),
+                memberId = gatheringMember.memberId.value,
+                isChecked = gatheringMember.isChecked,
+                isJoined = gatheringMember.isJoined,
+                completedAt = gatheringMember.completedAt,
+                createdAt = gatheringMember.createdAt ?: Instant.now(),
+                updatedAt = gatheringMember.updatedAt ?: Instant.now(),
+                deletedAt = gatheringMember.deletedAt,
+            )
+        }
+    }
+
+    fun toDomain(): GatheringMember {
+        return GatheringMember(
+            id = GatheringMemberId(id),
+            gathering = gathering.toDomain(),
+            memberId = MemberId(memberId),
+            isChecked = isChecked,
+            isJoined = isJoined,
+            completedAt = completedAt,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+        )
+    }
+}

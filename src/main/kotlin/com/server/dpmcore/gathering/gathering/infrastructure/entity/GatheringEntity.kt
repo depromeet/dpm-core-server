@@ -1,7 +1,11 @@
 package com.server.dpmcore.gathering.gathering.infrastructure.entity
 
 import com.server.dpmcore.bill.bill.infrastructure.entity.BillEntity
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
+import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -25,7 +29,7 @@ class GatheringEntity(
     @Column(name = "title", nullable = false)
     val title: String,
     @Column(name = "description")
-    val description: String,
+    val description: String? = null,
     @Column(name = "held_at", nullable = false)
     val heldAt: Instant,
     @Column(name = "category", nullable = false)
@@ -45,4 +49,40 @@ class GatheringEntity(
     val bill: BillEntity,
     @OneToMany(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val gatheringMembers: MutableList<GatheringMemberEntity> = mutableListOf(),
-)
+) {
+    companion object {
+        fun from(gathering: Gathering): GatheringEntity {
+            return GatheringEntity(
+                id = gathering.id?.value ?: 0L,
+                title = gathering.title,
+                description = gathering.description,
+                heldAt = gathering.heldAt,
+                category = gathering.category.value,
+                hostUserId = gathering.hostUserId.value,
+                roundNumber = gathering.roundNumber,
+                createdAt = gathering.createdAt ?: Instant.now(),
+                updatedAt = gathering.updatedAt ?: Instant.now(),
+                deletedAt = gathering.deletedAt,
+                bill = BillEntity.from(gathering.bill!!),
+                gatheringMembers = gathering.gatheringMembers.map { GatheringMemberEntity.from(it) }.toMutableList(),
+            )
+        }
+    }
+
+    fun toDomain(): Gathering {
+        return Gathering(
+            id = GatheringId(id),
+            title = title,
+            description = description,
+            heldAt = heldAt,
+            category = GatheringCategory.valueOf(category),
+            hostUserId = MemberId(hostUserId),
+            roundNumber = roundNumber,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+            bill = bill.toDomain(),
+            gatheringMembers = gatheringMembers.map { it.toDomain() }.toMutableList(),
+        )
+    }
+}

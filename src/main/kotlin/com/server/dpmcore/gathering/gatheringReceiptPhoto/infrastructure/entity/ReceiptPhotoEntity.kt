@@ -1,6 +1,8 @@
 package com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity
 
 import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.ReceiptEntity
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhoto
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhotoId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -30,4 +32,28 @@ class ReceiptPhotoEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receipt_id", nullable = false)
     val receipt: ReceiptEntity,
-)
+) {
+    companion object {
+        fun from(receiptPhoto: ReceiptPhoto): ReceiptPhotoEntity {
+            return ReceiptPhotoEntity(
+                id = receiptPhoto.id?.value ?: 0L,
+                url = receiptPhoto.url,
+                createdAt = receiptPhoto.createdAt ?: Instant.now(),
+                updatedAt = receiptPhoto.updatedAt ?: Instant.now(),
+                deletedAt = receiptPhoto.deletedAt,
+                receipt = ReceiptEntity.from(receiptPhoto.receipt),
+            )
+        }
+    }
+
+    fun toDomain(): ReceiptPhoto {
+        return ReceiptPhoto(
+            id = ReceiptPhotoId(id),
+            url = url,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+            receipt = receipt.toDomain(),
+        )
+    }
+}
