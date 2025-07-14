@@ -22,8 +22,8 @@ class Gathering(
     val title: String,
     val description: String? = null,
     val heldAt: Instant,
-    val category: GatheringCategory? = null,
-    val hostUserId: MemberId? = null,
+    val category: GatheringCategory = GatheringCategory.GATHERING,
+    val hostUserId: MemberId,
     val roundNumber: Int,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
@@ -35,7 +35,7 @@ class Gathering(
 
     fun getGatheringJoinMemberCount() =
         gatheringMembers.count { gatheringMember ->
-            gatheringMember.is_joined == true &&
+            gatheringMember.isJoined == true &&
                 gatheringMember.deletedAt != null
         }
 
