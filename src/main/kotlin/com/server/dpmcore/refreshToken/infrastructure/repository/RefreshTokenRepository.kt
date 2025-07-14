@@ -16,7 +16,7 @@ class RefreshTokenRepository(
 ) : RefreshTokenPersistencePort {
 
     override fun save(refreshToken: RefreshToken): RefreshToken {
-        return refreshTokenJpaRepository.save(RefreshTokenEntity.toEntity(refreshToken)).toDomain()
+        return refreshTokenJpaRepository.save(RefreshTokenEntity.from(refreshToken)).toDomain()
     }
 
     override fun findByMemberId(memberId: MemberId): RefreshToken? {

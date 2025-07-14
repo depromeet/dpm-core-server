@@ -23,6 +23,6 @@ class MemberRepository(
     }
 
     override fun save(member: Member): Long {
-        return memberJpaRepository.save(MemberEntity.toEntity(member)).id
+        return memberJpaRepository.save(MemberEntity.from(member)).id
     }
 }

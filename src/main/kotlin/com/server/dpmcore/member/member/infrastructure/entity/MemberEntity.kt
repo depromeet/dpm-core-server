@@ -62,7 +62,7 @@ class MemberEntity(
         )
 
     companion object {
-        fun toEntity(domain: Member): MemberEntity =
+        fun from(domain: Member): MemberEntity =
             MemberEntity(
                 id = domain.id?.value ?: 0L,
                 name = domain.name,

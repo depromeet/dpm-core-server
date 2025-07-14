@@ -26,7 +26,7 @@ class RefreshTokenEntity(
         )
 
     companion object {
-        fun toEntity(domain: RefreshToken) =
+        fun from(domain: RefreshToken) =
             RefreshTokenEntity(
                 memberId = domain.memberId.value,
                 token = domain.token
