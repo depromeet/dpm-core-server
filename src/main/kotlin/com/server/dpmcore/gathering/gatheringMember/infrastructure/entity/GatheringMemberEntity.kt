@@ -41,10 +41,10 @@ class GatheringMemberEntity(
     val deletedAt: Instant? = null,
 ) {
     companion object {
-        fun from(gatheringMember: GatheringMember): GatheringMemberEntity {
-            return GatheringMemberEntity(
+        fun from(gatheringMember: GatheringMember): GatheringMemberEntity =
+            GatheringMemberEntity(
                 id = gatheringMember.id?.value ?: 0L,
-                gathering = GatheringEntity.from(gatheringMember.gathering),
+                gathering = GatheringEntity.from(gatheringMember.gathering!!),
                 memberId = gatheringMember.memberId.value,
                 isChecked = gatheringMember.isChecked,
                 isJoined = gatheringMember.isJoined,
@@ -53,11 +53,10 @@ class GatheringMemberEntity(
                 updatedAt = gatheringMember.updatedAt ?: Instant.now(),
                 deletedAt = gatheringMember.deletedAt,
             )
-        }
     }
 
-    fun toDomain(): GatheringMember {
-        return GatheringMember(
+    fun toDomain(): GatheringMember =
+        GatheringMember(
             id = GatheringMemberId(id),
             gathering = gathering.toDomain(),
             memberId = MemberId(memberId),
@@ -68,5 +67,4 @@ class GatheringMemberEntity(
             updatedAt = updatedAt,
             deletedAt = deletedAt,
         )
-    }
 }

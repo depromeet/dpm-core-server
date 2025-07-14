@@ -43,8 +43,8 @@ class BillEntity(
     val deletedAt: Instant? = null,
 ) {
     companion object {
-        fun from(bill: Bill): BillEntity {
-            return BillEntity(
+        fun from(bill: Bill): BillEntity =
+            BillEntity(
                 id = bill.id?.value ?: 0L,
                 billAccount = BillAccountEntity.from(bill.billAccount),
                 title = bill.title,
@@ -55,11 +55,10 @@ class BillEntity(
                 updatedAt = bill.updatedAt ?: Instant.now(),
                 deletedAt = bill.deletedAt,
             )
-        }
     }
 
-    fun toDomain(): Bill {
-        return Bill(
+    fun toDomain(): Bill =
+        Bill(
             id = BillId(id),
             billAccount = billAccount.toDomain(),
             title = title,
@@ -70,5 +69,4 @@ class BillEntity(
             updatedAt = updatedAt,
             deletedAt = deletedAt,
         )
-    }
 }
