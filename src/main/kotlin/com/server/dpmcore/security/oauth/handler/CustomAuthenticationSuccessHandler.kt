@@ -1,7 +1,9 @@
 package com.server.dpmcore.security.oauth.handler
 
+import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.security.oauth.domain.CustomOAuth2User
-import com.server.dpmcore.security.properties.SecurityProperties
+import com.server.dpmcore.security.oauth.dto.LoginResult
+import com.server.dpmcore.security.oauth.token.JwtTokenInjector
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.Authentication
@@ -10,20 +12,21 @@ import org.springframework.stereotype.Component
 
 @Component
 class CustomAuthenticationSuccessHandler(
-    private val securityProperties: SecurityProperties,
+    private val tokenInjector: JwtTokenInjector,
+    private val handleMemberLoginUseCase: HandleMemberLoginUseCase
 ) : AuthenticationSuccessHandler {
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        val result = resolveLoginResultFromAuthentication(authentication)
-        // TODO: 쿠키에 토큰을 주입 로직 추가
-        response.sendRedirect(securityProperties.redirectUrl)
+        val loginResult = resolveLoginResultFromAuthentication(authentication)
+        tokenInjector.injectRefreshToken(loginResult.refreshToken, response)
+        response.sendRedirect(loginResult.redirectUrl)
     }
 
-    private fun resolveLoginResultFromAuthentication(authentication: Authentication) {
+    private fun resolveLoginResultFromAuthentication(authentication: Authentication): LoginResult {
         val oAuth2User = authentication.principal as CustomOAuth2User
-        // TODO: 최초 로그인 여부에 따른 로직 유저 정보 저장 및 토큰 발급 로직 추가
+        return handleMemberLoginUseCase.handleLoginSuccess(oAuth2User.authAttributes)
     }
 }

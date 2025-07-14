@@ -17,12 +17,12 @@ import javax.crypto.SecretKey
 class JwtTokenProvider(
     private val tokenProperties: TokenProperties,
 ) {
-    fun generateAccessToken(externalId: String): String {
-        return generateToken(externalId, tokenProperties.expirationTime.accessToken)
+    fun generateAccessToken(memberId: String): String {
+        return generateToken(memberId, tokenProperties.expirationTime.accessToken)
     }
 
-    fun generateRefreshToken(externalId: String): String {
-        return generateToken(externalId, tokenProperties.expirationTime.refreshToken)
+    fun generateRefreshToken(memberId: String): String {
+        return generateToken(memberId, tokenProperties.expirationTime.refreshToken)
     }
 
     fun generateToken(
@@ -35,7 +35,7 @@ class JwtTokenProvider(
         val secretKey = getSigningKey()
 
         return Jwts.builder()
-            .subject(externalId)
+            .subject(memberId)
             .issuedAt(now)
             .expiration(expiration)
             .signWith(secretKey)
