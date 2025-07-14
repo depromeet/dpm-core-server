@@ -1,6 +1,9 @@
 package com.server.dpmcore.bill.billAccount.infrastructure.entity
 
 import com.server.dpmcore.bill.bill.infrastructure.entity.BillEntity
+import com.server.dpmcore.bill.billAccount.domain.model.AccountType
+import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
+import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -35,4 +38,32 @@ class BillAccountEntity(
     val deletedAt: Instant? = null,
     @OneToMany(mappedBy = "billAccount", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val bills: MutableList<BillEntity> = mutableListOf(),
-)
+) {
+    companion object {
+        fun from(billAccount: BillAccount): BillAccountEntity {
+            return BillAccountEntity(
+                id = billAccount.id?.value ?: 0L,
+                billAccountValue = billAccount.billAccountValue,
+                accountHolderName = billAccount.accountHolderName,
+                bankName = billAccount.bankName,
+                accountType = billAccount.accountType.value,
+                createdAt = billAccount.createdAt ?: Instant.now(),
+                updatedAt = billAccount.updatedAt ?: Instant.now(),
+                deletedAt = billAccount.deletedAt,
+            )
+        }
+    }
+
+    fun toDomain(): BillAccount {
+        return BillAccount(
+            id = BillAccountId(id),
+            billAccountValue = billAccountValue,
+            accountHolderName = accountHolderName,
+            bankName = bankName,
+            accountType = AccountType.valueOf(accountType),
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+        )
+    }
+}
