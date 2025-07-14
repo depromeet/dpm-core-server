@@ -2,14 +2,21 @@ package com.server.dpmcore.member.memberAuthority.domain
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.domain.model.MemberId
+import java.time.Instant
 
 class MemberAuthority(
     val id: MemberAuthorityId? = null,
     val memberId: MemberId,
     val authorityId: AuthorityId,
-    val grantedAt: Long? = null,
-    val deletedAt: Long? = null,
+    grantedAt: Instant? = null,
+    deletedAt: Instant? = null,
 ) {
+    var grantedAt: Instant? = grantedAt
+        private set
+
+    var deletedAt: Instant? = deletedAt
+        private set
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is MemberAuthority) return false
