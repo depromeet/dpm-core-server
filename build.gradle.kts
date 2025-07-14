@@ -1,3 +1,6 @@
+import org.jooq.meta.jaxb.Logging
+import org.jooq.meta.jaxb.Property
+
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
@@ -90,6 +93,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     jooqGenerator("org.jooq:jooq-meta:3.19.1")
     jooqGenerator("org.jooq:jooq-codegen:3.19.1")
+    jooqGenerator("org.jooq:jooq-meta-extensions:3.19.1")
     jooqGenerator("com.mysql:mysql-connector-j")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
@@ -109,21 +113,38 @@ val dbPassword: String = System.getProperty("DB_PASSWORD") ?: "1234"
 
 jooq {
     configurations {
-        create("dpmcoreDB") {
-            generateSchemaSourceOnCompilation.set(false)
+        create("main") {
+            // name of the jOOQ configuration
+            generateSchemaSourceOnCompilation.set(true)
 
             jooqConfiguration.apply {
-                jdbc.apply {
-                    driver = "com.mysql.cj.jdbc.Driver"
-                    url = "jdbc:mysql://$dbHost:$dbPort/$dbSchema"
-                    user = dbUsername
-                    password = dbPassword
-                }
+                logging = Logging.WARN
+                jdbc = null
+
                 generator.apply {
-                    name = "org.jooq.codegen.KotlinGenerator" // 코틀린 제너레이터 명시
+                    name = "org.jooq.codegen.KotlinGenerator"
                     database.apply {
-                        name = "org.jooq.meta.mysql.MySQLDatabase"
-                        inputSchema = "dpm_core"
+                        name = "org.jooq.meta.extensions.ddl.DDLDatabase"
+                        properties.addAll(
+                            listOf(
+                                Property().apply {
+                                    key = "scripts"
+                                    value = "src/main/resources/schema.sql"
+                                },
+                                Property().apply {
+                                    key = "sort"
+                                    value = "semantic"
+                                },
+                                Property().apply {
+                                    key = "unqualifiedSchema"
+                                    value = "none"
+                                },
+                                Property().apply {
+                                    key = "defaultNameCase"
+                                    value = "lower"
+                                },
+                            ),
+                        )
                     }
                     generate.apply {
                         isDaos = true
@@ -133,8 +154,9 @@ jooq {
                         isDeprecated = false
                     }
                     target.apply {
-                        directory = "build/generated/jooq"
+                        directory = "build/generated-src/jooq"
                     }
+                    strategy.name = "org.jooq.codegen.DefaultGeneratorStrategy"
                 }
             }
         }
@@ -144,7 +166,7 @@ jooq {
 sourceSets {
     main {
         kotlin {
-            srcDirs(listOf("src/main/kotlin", "src/generated", "build/generated/jooq"))
+            srcDirs(listOf("src/main/kotlin", "src/generated", "build/generated-src/jooq/main"))
         }
     }
 }
@@ -170,5 +192,5 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 }
 
 tasks.named("jib") {
-    dependsOn("generateDpmcoreDBJooq")
+    dependsOn("generateJooq")
 }
