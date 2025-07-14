@@ -6,6 +6,7 @@ import com.server.dpmcore.attendance.infrastructure.repository.AttendanceReposit
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper
+import com.server.dpmcore.common.util.paginate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,21 +20,14 @@ class AttendanceQueryService(
     fun getAttendancesBySession(query: GetAttendancesBySessionIdQuery): SessionAttendancesResponse {
         var results =
             attendanceRepository
-                .findSessionAttendencesByQuery(query)
+                .findSessionAttendancesByQuery(query)
                 .sortedBy { it.teamNumber }
-
-        var hasNext = false
-        var nextCursorId: Long? = null
-        if (results.isNotEmpty() && results.size > PAGE_SIZE) {
-            hasNext = true
-            nextCursorId = results.last().id
-            results = results.take(PAGE_SIZE)
-        }
+        val paginatedResult = results.paginate { it.id }
 
         return AttendanceMapper.toSessionAttendancesResponse(
-            members = results,
-            hasNext = hasNext,
-            nextCursorId = nextCursorId,
+            members = paginatedResult.content,
+            hasNext = paginatedResult.hasNext,
+            nextCursorId = paginatedResult.nextCursorId,
         )
     }
 
@@ -42,19 +36,12 @@ class AttendanceQueryService(
             attendanceRepository
                 .findMemberAttendancesByQuery(query)
                 .sortedBy { it.teamNumber }
-
-        var hasNext = false
-        var nextCursorId: Long? = null
-        if (results.isNotEmpty() && results.size > PAGE_SIZE) {
-            hasNext = true
-            nextCursorId = results.last().id
-            results = results.take(PAGE_SIZE)
-        }
+        val paginatedResult = results.paginate { it.id }
 
         return AttendanceMapper.toMemberAttendancesResponse(
-            members = results,
-            hasNext = hasNext,
-            nextCursorId = nextCursorId,
+            members = paginatedResult.content,
+            hasNext = paginatedResult.hasNext,
+            nextCursorId = paginatedResult.nextCursorId,
         )
     }
 }

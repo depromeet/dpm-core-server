@@ -49,7 +49,7 @@ class AttendanceRepository(
         attendanceJpaRepository.save(AttendanceEntity.from(attendance))
     }
 
-    override fun findSessionAttendencesByQuery(
+    override fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionIdQuery,
     ): List<SessionAttendanceQueryModel> =
         dsl
