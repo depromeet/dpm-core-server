@@ -94,14 +94,14 @@ jobs:
             chmod +x deploy.sh
             ./deploy.sh ${{ env.IMAGE_TAG }}
 
-      - name: "Discord로 배포 실패를 알린다"
+      - name: "Discord로 Development 배포 실패를 알린다"
         if: failure()
         uses: Ilshidur/action-discord@0.3.2
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           args: |
-            ❌ **배포 도중 문제가 발생했습니다.**
+            ❌ **`Development` 배포 도중 문제가 발생했습니다.**
             branch : `${{ github.head_ref }}`
             pull-request : `${{ github.event.pull_request.title }}`
             [🔗 작업 요약 보기](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
