@@ -15,13 +15,12 @@ class Receipt(
     val id: ReceiptId? = null,
     val splitAmount: Int,
     val amount: Int,
-    val createdAt: Instant,
-    val updatedAt: Instant,
+    val createdAt: Instant? = null,
+    val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
     val receiptPhotos: MutableList<ReceiptPhoto> = mutableListOf(),
     val gathering: Gathering,
 ) {
-
     fun isDeleted(): Boolean = deletedAt != null
 
     override fun equals(other: Any?): Boolean {
@@ -32,4 +31,3 @@ class Receipt(
 
     override fun hashCode(): Int = id?.hashCode() ?: 0
 }
-

@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model
 
-import com.server.dpmcore.gathering.gatheringReceipt.domain.model.ReceiptId
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.Receipt
 import java.time.Instant
 
 /**
@@ -13,10 +13,10 @@ import java.time.Instant
 class ReceiptPhoto(
     val id: ReceiptPhotoId? = null,
     val url: String,
-    val createdAt: Instant,
-    val updatedAt: Instant,
+    val createdAt: Instant? = null,
+    val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
-    val receiptId: ReceiptId,
+    val receipt: Receipt,
 ) {
     fun isDeleted(): Boolean = deletedAt != null
 

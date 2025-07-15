@@ -1,6 +1,8 @@
 package com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity
 
 import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.ReceiptEntity
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhoto
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhotoId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -15,25 +17,43 @@ import java.time.Instant
 @Entity
 @Table(name = "receipt_photos")
 class ReceiptPhotoEntity(
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "receipt_photo_id", nullable = false, updatable = false)
     val id: Long = 0,
-
     @Column(name = "url", nullable = false)
     val url: String,
-
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
-
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
-
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receipt_id", nullable = false)
-    val receipt: ReceiptEntity
-)
+    val receipt: ReceiptEntity,
+) {
+    companion object {
+        fun from(receiptPhoto: ReceiptPhoto): ReceiptPhotoEntity {
+            return ReceiptPhotoEntity(
+                id = receiptPhoto.id?.value ?: 0L,
+                url = receiptPhoto.url,
+                createdAt = receiptPhoto.createdAt ?: Instant.now(),
+                updatedAt = receiptPhoto.updatedAt ?: Instant.now(),
+                deletedAt = receiptPhoto.deletedAt,
+                receipt = ReceiptEntity.from(receiptPhoto.receipt),
+            )
+        }
+    }
+
+    fun toDomain(): ReceiptPhoto {
+        return ReceiptPhoto(
+            id = ReceiptPhotoId(id),
+            url = url,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+            receipt = receipt.toDomain(),
+        )
+    }
+}
