@@ -27,8 +27,8 @@ jobs:
         run: ./gradlew compileKotlin --configuration-cache --build-cache
 
       - name: "Discord로 빌드 실패를 알린다"
-        # if: failure()
-        uses: Ilshidur/action-discord@master
+        if: failure()
+        uses: Ilshidur/action-discord@0.3.2
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
