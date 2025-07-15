@@ -17,5 +17,5 @@ enum class BillStatus(val value: String) {
     PENDING("참여 대기 중"),
     OPEN("참여 중"),
     IN_PROGRESS("정산 중"),
-    COMPLETED("정산 완료")
+    COMPLETED("정산 완료"),
 }

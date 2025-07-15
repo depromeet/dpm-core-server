@@ -13,16 +13,15 @@ import java.time.Instant
  */
 class GatheringMember(
     val id: GatheringMemberId? = null,
-    val gathering: Gathering,
+    val gathering: Gathering? = null,
     val memberId: MemberId,
     val isChecked: Boolean = false,
-    val is_joined: Boolean = false,
+    val isJoined: Boolean = false,
     val completedAt: Instant? = null,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
 ) {
-
     fun isDeleted(): Boolean = deletedAt != null
 
     fun isConfirmed(): Boolean = completedAt != null
@@ -46,7 +45,7 @@ class GatheringMember(
             completedAt = now,
             createdAt = createdAt,
             updatedAt = now,
-            deletedAt = deletedAt
+            deletedAt = deletedAt,
         )
     }
 

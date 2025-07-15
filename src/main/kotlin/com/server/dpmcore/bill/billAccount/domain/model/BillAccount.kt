@@ -12,27 +12,26 @@ import java.time.Instant
  */
 class BillAccount(
     val id: BillAccountId? = null,
-    val billAccountInfo: String,
-    val name: String,
-    val isUrl: Boolean = false,
+    val billAccountValue: String,
+    val accountHolderName: String,
+    val bankName: String,
+    val accountType: AccountType = AccountType.ACCOUNT,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
     val bills: MutableList<Bill>? = mutableListOf(),
 ) {
-
     fun isDeleted(): Boolean = deletedAt != null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is BillAccount) return false
-        return id == other.id && billAccountInfo == other.billAccountInfo
+        return id == other.id && billAccountValue == other.billAccountValue
     }
 
     override fun hashCode(): Int {
         var result = id?.hashCode() ?: 0
-        result = 31 * result + billAccountInfo.hashCode()
+        result = 31 * result + billAccountValue.hashCode()
         return result
     }
 }
-

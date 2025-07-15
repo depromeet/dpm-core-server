@@ -26,7 +26,7 @@ import java.time.Instant
  **/
 class Bill(
     val id: BillId? = null,
-    val billAccount: BillAccount? = null,
+    val billAccount: BillAccount,
     val title: String,
     val description: String? = null,
     val gatherings: MutableList<Gathering> = mutableListOf(),
@@ -36,7 +36,6 @@ class Bill(
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
 ) {
-
     fun isCompleted(): Boolean = completedAt != null
 
     fun complete(now: Instant): Bill {
@@ -53,7 +52,7 @@ class Bill(
             completedAt = now,
             createdAt = createdAt,
             updatedAt = now,
-            deletedAt = deletedAt
+            deletedAt = deletedAt,
         )
     }
 
