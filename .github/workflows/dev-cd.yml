@@ -27,7 +27,7 @@ jobs:
       - name: "Kotlin 소스를 컴파일한다."
         run: ./gradlew compileKotlin --configuration-cache --build-cache
 
-      - name: "Discord로 빌드 실패를 알린다"
+      - name: "Discord로 빌드 실패를 알린다."
         if: failure()
         uses: Ilshidur/action-discord@0.3.2
         env:
@@ -94,7 +94,7 @@ jobs:
             chmod +x deploy.sh
             ./deploy.sh ${{ env.IMAGE_TAG }}
 
-      - name: "Discord로 Development 배포 실패를 알린다"
+      - name: "Discord로 Development 배포 실패를 알린다."
         if: failure()
         uses: Ilshidur/action-discord@0.3.2
         env:
