@@ -48,6 +48,7 @@ class ReceiptEntity(
                 createdAt = receipt.createdAt ?: Instant.now(),
                 updatedAt = receipt.updatedAt ?: Instant.now(),
                 deletedAt = receipt.deletedAt,
+                receiptPhotos = receipt.receiptPhotos.map { ReceiptPhotoEntity.from(it) }.toMutableList(),
                 gathering = GatheringEntity.from(receipt.gathering),
             )
         }

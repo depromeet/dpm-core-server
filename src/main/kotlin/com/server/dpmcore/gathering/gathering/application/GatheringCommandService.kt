@@ -24,7 +24,7 @@ class GatheringCommandService(
         gatheringMembers: MutableList<GatheringMember>,
     ): Gathering {
         if (gatheringMembers.isNotEmpty()) {
-//            TODO : 회식 참여 멤버 저장 로직 추가
+//            TODO 준원 : 회식 참여 멤버 저장 로직 추가
         }
         return gatheringRepositoryPort.save(
             Gathering(

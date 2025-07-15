@@ -36,7 +36,7 @@ class Gathering(
     fun getGatheringJoinMemberCount() =
         gatheringMembers.count { gatheringMember ->
             gatheringMember.isJoined == true &&
-                gatheringMember.deletedAt != null
+                gatheringMember.deletedAt == null
         }
 
     fun getBillViewCount() =

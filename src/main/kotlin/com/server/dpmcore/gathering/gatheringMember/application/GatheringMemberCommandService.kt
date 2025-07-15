@@ -21,6 +21,7 @@ class GatheringMemberCommandService(
         gatheringMemberPort.save(
             GatheringMember(
                 memberId = MemberId(memberId),
+//                TODO 준원 : gathering 받아오기
                 isChecked = isChecked,
                 isJoined = isJoined,
                 completedAt = completedAt,
