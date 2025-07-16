@@ -28,4 +28,14 @@ class GatheringMemberCommandService(
             ),
         )
     }
+
+    fun save(gatheringMember: GatheringMember): GatheringMember = gatheringMemberPort.save(gatheringMember)
+
+    fun save(gatheringMembers: MutableList<GatheringMember>): MutableList<GatheringMember> {
+        if (gatheringMembers.isEmpty()) throw IllegalArgumentException("회식 참여 멤버는 필수로 존재해야합니다.")
+        return gatheringMembers
+            .map { gatheringMember ->
+                gatheringMemberPort.save(gatheringMember)
+            }.toMutableList()
+    }
 }
