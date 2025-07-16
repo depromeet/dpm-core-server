@@ -12,9 +12,9 @@ import java.time.Instant
  */
 class BillAccount(
     val id: BillAccountId? = null,
-    val billAccountValue: String,
-    val accountHolderName: String,
-    val bankName: String,
+    val billAccountValue: String = "",
+    val accountHolderName: String = "",
+    val bankName: String = "",
     val accountType: AccountType = AccountType.ACCOUNT,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
@@ -26,7 +26,7 @@ class BillAccount(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is BillAccount) return false
-        return id == other.id && billAccountValue == other.billAccountValue
+        return id == other.id
     }
 
     override fun hashCode(): Int {
