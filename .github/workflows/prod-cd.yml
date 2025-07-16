@@ -22,7 +22,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-        cache: 'gradle'
+          cache: 'gradle'
 
       - name: "Kotlin 소스를 컴파일한다."
         run: ./gradlew compileKotlin --configuration-cache --build-cache
