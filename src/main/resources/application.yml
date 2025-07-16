@@ -66,3 +66,12 @@ management:
 logging:
   level:
     org.jooq.tools.LoggerListener: DEBUG
+
+session:
+  attendance:
+    start-hour: 14
+
+attendance:
+  graduation:
+    impossible-threshold: 4
+    at-risk-threshold: 3

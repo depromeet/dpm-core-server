@@ -1,5 +1,6 @@
 package com.server.dpmcore.attendance.application
 
+import com.server.dpmcore.attendance.application.config.AttendanceEvaluationProperties
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.infrastructure.repository.AttendanceRepository
@@ -16,6 +17,7 @@ private const val PAGE_SIZE = 20
 @Transactional(readOnly = true)
 class AttendanceQueryService(
     private val attendanceRepository: AttendanceRepository,
+    private val attendanceEvaluationProperties: AttendanceEvaluationProperties,
 ) {
     fun getAttendancesBySession(query: GetAttendancesBySessionIdQuery): SessionAttendancesResponse {
         var results =
@@ -42,6 +44,8 @@ class AttendanceQueryService(
             members = paginatedResult.content,
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
+            impossibleThreshold = attendanceEvaluationProperties.impossibleThreshold,
+            atRiskThreshold = attendanceEvaluationProperties.atRiskThreshold,
         )
     }
 }

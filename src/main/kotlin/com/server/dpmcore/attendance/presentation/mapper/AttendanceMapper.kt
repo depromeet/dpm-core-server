@@ -44,6 +44,8 @@ object AttendanceMapper {
         members: List<MemberAttendanceQueryModel>,
         hasNext: Boolean,
         nextCursorId: Long?,
+        impossibleThreshold: Int,
+        atRiskThreshold: Int,
     ): MemberAttendancesResponse =
         MemberAttendancesResponse(
             members =
@@ -53,7 +55,7 @@ object AttendanceMapper {
                         name = member.name,
                         teamNumber = member.teamNumber,
                         part = member.part,
-                        attendanceStatus = member.evaluateAttendanceStatus(),
+                        attendanceStatus = member.evaluateAttendanceStatus(impossibleThreshold, atRiskThreshold),
                     )
                 },
             hasNext = hasNext,

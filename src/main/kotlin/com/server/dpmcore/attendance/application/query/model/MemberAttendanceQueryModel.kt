@@ -9,12 +9,15 @@ data class MemberAttendanceQueryModel(
     val onlineAbsentCount: Int,
     val offlineAbsentCount: Int,
 ) {
-    fun evaluateAttendanceStatus(): String {
+    fun evaluateAttendanceStatus(
+        impossibleThreshold: Int,
+        atRiskThreshold: Int,
+    ): String {
         val totalAbsence = onlineAbsentCount + offlineAbsentCount + (lateCount / 2)
 
         return when {
-            totalAbsence >= 4 || offlineAbsentCount >= 2 -> AttendanceGraduationStatus.IMPOSSIBLE.name
-            totalAbsence >= 3 -> AttendanceGraduationStatus.AT_RISK.name
+            totalAbsence >= impossibleThreshold -> AttendanceGraduationStatus.IMPOSSIBLE.name
+            totalAbsence >= atRiskThreshold -> AttendanceGraduationStatus.AT_RISK.name
             else -> AttendanceGraduationStatus.NORMAL.name
         }
     }
