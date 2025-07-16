@@ -27,13 +27,13 @@ jobs:
         run: ./gradlew compileKotlin --configuration-cache --build-cache
 
       - name: "Discord로 빌드 실패를 알린다."
-        # if: failure()
+        if: failure()
         uses: Ilshidur/action-discord@0.3.2
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           args: |
-            ❌ **CI 도중 문제가 발생했습니다.(테스트)**
+            ❌ **CI 도중 문제가 발생했습니다.**
             actor : `@${{ github.actor }}`
             branch : `${{ github.head_ref }}`
             pull-request : `${{ github.event.pull_request.title }}`
