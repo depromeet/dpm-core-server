@@ -1,6 +1,6 @@
 package com.server.dpmcore.security.oauth.handler
 
-import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
+import com.server.dpmcore.refreshToken.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.security.oauth.domain.CustomOAuth2User
 import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.token.JwtTokenInjector
@@ -13,9 +13,8 @@ import org.springframework.stereotype.Component
 @Component
 class CustomAuthenticationSuccessHandler(
     private val tokenInjector: JwtTokenInjector,
-    private val handleMemberLoginUseCase: HandleMemberLoginUseCase
+    private val handleMemberLoginUseCase: HandleMemberLoginUseCase,
 ) : AuthenticationSuccessHandler {
-
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,
         response: HttpServletResponse,

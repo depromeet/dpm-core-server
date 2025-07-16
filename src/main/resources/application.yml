@@ -17,6 +17,7 @@ spring:
         refresh-token: ${REFRESH_TOKEN_EXPIRATION_TIME}
 
     login-url: ${LOGIN_URL:/login}
+    logout-url: ${LOGOUT_URL:/logout}
     redirect-url: ${REDIRECT_URL:/swagger-ui/index.html}
     restricted-redirect-url: ${RESTRICTED_REDIRECT_URL:/swagger-ui/index.html}
 

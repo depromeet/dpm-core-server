@@ -1,6 +1,5 @@
 package com.server.dpmcore.member.member.application
 
-import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLogoutUseCase
 import org.springframework.stereotype.Service
 
 @Service
