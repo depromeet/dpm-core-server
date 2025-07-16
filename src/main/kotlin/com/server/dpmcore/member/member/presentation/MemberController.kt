@@ -4,6 +4,7 @@ import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.application.MemberService
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -21,8 +22,11 @@ class MemberController(
     }
 
     @PatchMapping("/withdraw")
-    override fun withdraw(memberId: MemberId): CustomResponse<Void> {
-        memberService.withdraw(memberId)
+    override fun withdraw(
+        memberId: MemberId,
+        response: HttpServletResponse,
+    ): CustomResponse<Void> {
+        memberService.withdraw(memberId, response)
         return CustomResponse.ok()
     }
 }
