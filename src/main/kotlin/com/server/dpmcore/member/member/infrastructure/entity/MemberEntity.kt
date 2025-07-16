@@ -34,11 +34,11 @@ class MemberEntity(
     @Column(nullable = false)
     val status: String,
     @Column(nullable = false, updatable = false)
-    val createdAt: Instant ? = null,
+    val createdAt: Instant? = null,
     @Column(nullable = false)
-    val updatedAt: Instant ? = null,
+    val updatedAt: Instant? = null,
     @Column
-    val deletedAt: Instant ? = null,
+    val deletedAt: Instant? = null,
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -58,7 +58,7 @@ class MemberEntity(
             deletedAt = deletedAt,
             memberAuthorities = memberAuthorities.map { it.toDomain() }.toMutableList(),
             memberCohorts = memberCohorts.map { it.toDomain() }.toMutableList(),
-            memberTeams = memberTeams.map { it.toDomain() }.toMutableList()
+            memberTeams = memberTeams.map { it.toDomain() }.toMutableList(),
         )
 
     companion object {
@@ -71,7 +71,7 @@ class MemberEntity(
                 status = domain.status.name,
                 createdAt = domain.createdAt,
                 updatedAt = domain.updatedAt,
-                deletedAt = domain.deletedAt
+                deletedAt = domain.deletedAt,
             )
     }
 }

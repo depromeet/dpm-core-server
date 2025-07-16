@@ -18,9 +18,8 @@ class MemberLoginService(
     private val memberPersistencePort: MemberPersistencePort,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val securityProperties: SecurityProperties,
-    private val tokenProvider: JwtTokenProvider
+    private val tokenProvider: JwtTokenProvider,
 ) : HandleMemberLoginUseCase {
-
     @Transactional
     override fun handleLoginSuccess(authAttributes: OAuthAttributes): LoginResult {
         return memberPersistencePort
@@ -29,22 +28,27 @@ class MemberLoginService(
             ?: handleUnregisteredMember(authAttributes)
     }
 
-    private fun generateLoginResult(memberId: MemberId, redirectUrl: String): LoginResult {
+    private fun generateLoginResult(
+        memberId: MemberId,
+        redirectUrl: String,
+    ): LoginResult {
         val newToken = tokenProvider.generateRefreshToken(memberId.toString())
-        val refreshToken = refreshTokenPersistencePort
-            .findByMemberId(memberId)
-            ?.apply { rotate(newToken) }
-            ?: RefreshToken.create(memberId, newToken)
+        val refreshToken =
+            refreshTokenPersistencePort
+                .findByMemberId(memberId)
+                ?.apply { rotate(newToken) }
+                ?: RefreshToken.create(memberId, newToken)
         val savedToken = refreshTokenPersistencePort.save(refreshToken)
 
         return LoginResult(savedToken, redirectUrl)
     }
 
     private fun handleExistingMemberLogin(member: Member): LoginResult {
-        val redirectUrl = when (member.isAllowed()) {
-            true -> securityProperties.redirectUrl
-            false -> securityProperties.restrictedRedirectUrl
-        }
+        val redirectUrl =
+            when (member.isAllowed()) {
+                true -> securityProperties.redirectUrl
+                false -> securityProperties.restrictedRedirectUrl
+            }
         return generateLoginResult(member.id!!, redirectUrl)
     }
 

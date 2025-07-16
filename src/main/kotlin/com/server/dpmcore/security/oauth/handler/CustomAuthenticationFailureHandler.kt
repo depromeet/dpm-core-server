@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component
 class CustomAuthenticationFailureHandler(
     private val securityProperties: SecurityProperties,
 ) : AuthenticationFailureHandler {
-
     override fun onAuthenticationFailure(
         request: HttpServletRequest?,
         response: HttpServletResponse?,

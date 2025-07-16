@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping
 
 @Controller
 class MemberLoginController {
-
     companion object {
         const val KAKAO_REDIRECT_URL = "redirect:/oauth2/authorization/kakao"
     }

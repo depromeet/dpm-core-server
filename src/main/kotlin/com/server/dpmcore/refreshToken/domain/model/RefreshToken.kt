@@ -4,7 +4,7 @@ import com.server.dpmcore.member.member.domain.model.MemberId
 
 class RefreshToken(
     val memberId: MemberId,
-    var token: String
+    var token: String,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -17,7 +17,10 @@ class RefreshToken(
     }
 
     companion object {
-        fun create(memberId: MemberId, token: String): RefreshToken {
+        fun create(
+            memberId: MemberId,
+            token: String,
+        ): RefreshToken {
             return RefreshToken(memberId, token)
         }
     }

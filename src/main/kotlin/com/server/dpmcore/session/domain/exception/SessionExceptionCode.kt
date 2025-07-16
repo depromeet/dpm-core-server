@@ -14,6 +14,7 @@ enum class SessionExceptionCode(
     INVALID_ATTENDANCE_CODE(HttpStatus.BAD_REQUEST, "S400", "출석코드가 일치하지 않습니다"),
     TOO_EARLY_ATTENDANCE(HttpStatus.BAD_REQUEST, "S400", "출석하기에는 너무 이른 시간입니다"),
     ALREADY_CHECKED_ATTENDANCE(HttpStatus.BAD_REQUEST, "S400", "이미 출석을 체크했습니다"),
+    ATTENDANCE_START_TIME_DATE_MISMATCH(HttpStatus.BAD_REQUEST, "S400", "출석 시작 시간의 날짜가 세션의 날짜와 일치하지 않습니다"),
     ;
 
     override fun getStatus(): HttpStatus = status

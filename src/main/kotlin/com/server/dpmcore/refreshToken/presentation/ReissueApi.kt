@@ -41,5 +41,8 @@ interface ReissueApi {
         ],
     )
     @Operation(summary = "액세스 토큰 발급 API", description = "쿠키의 리프레시 토큰을 추출하여 액세스 토큰을 발급합니다.")
-    fun reissue(request: HttpServletRequest, response: HttpServletResponse): CustomResponse<TokenResponse>
+    fun reissue(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ): CustomResponse<TokenResponse>
 }

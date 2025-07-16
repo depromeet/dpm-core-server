@@ -51,9 +51,9 @@ class Member(
         if (other !is Member) return false
 
         return id == other.id &&
-                name == other.name &&
-                email == other.email &&
-                part == other.part
+            name == other.name &&
+            email == other.email &&
+            part == other.part
     }
 
     override fun hashCode(): Int {
@@ -66,8 +66,8 @@ class Member(
 
     override fun toString(): String {
         return "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
-                "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
-                "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
+            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
+            "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
     }
 
     companion object {
@@ -76,7 +76,7 @@ class Member(
                 email = email,
                 status = MemberStatus.PENDING,
                 createdAt = Instant.now(),
-                updatedAt = Instant.now()
+                updatedAt = Instant.now(),
             )
         }
     }

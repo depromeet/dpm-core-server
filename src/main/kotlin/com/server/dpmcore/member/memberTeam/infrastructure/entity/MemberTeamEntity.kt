@@ -32,9 +32,10 @@ class MemberTeamEntity(
     @JoinColumn(name = "team_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val team: TeamEntity,
 ) {
-    fun toDomain() = MemberTeam(
-        id = MemberTeamId(this.id),
-        memberId = MemberId(this.member.id),
-        teamId = TeamId(this.team.id),
-    )
+    fun toDomain() =
+        MemberTeam(
+            id = MemberTeamId(this.id),
+            memberId = MemberId(this.member.id),
+            teamId = TeamId(this.team.id),
+        )
 }

@@ -4,5 +4,5 @@ import com.server.dpmcore.refreshToken.domain.model.RefreshToken
 
 data class LoginResult(
     val refreshToken: RefreshToken,
-    val redirectUrl: String
+    val redirectUrl: String,
 )

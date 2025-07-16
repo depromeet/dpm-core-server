@@ -10,7 +10,10 @@ interface OAuthAttributes {
     fun getEmail(): String
 
     companion object {
-        fun of(providerId: String, attributes: Map<String, Any>): OAuthAttributes {
+        fun of(
+            providerId: String,
+            attributes: Map<String, Any>,
+        ): OAuthAttributes {
             return when {
                 OAuthProvider.KAKAO.isProviderOf(providerId) -> KakaoAuthAttributes.of(attributes)
                 else -> throw IllegalArgumentException("Unsupported provider: $providerId")

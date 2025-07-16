@@ -1,11 +1,13 @@
 package com.server.dpmcore.session.presentation.mapper
 
 import com.server.dpmcore.session.domain.model.Session
+import com.server.dpmcore.session.presentation.dto.response.AttendanceTimeResponse
 import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import java.time.Instant
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
@@ -49,4 +51,9 @@ object SessionMapper {
                 attendanceStartTime = session.attendancePolicy.attendanceStart.let { instantToLocalDateTime(it) },
             )
         }
+
+    fun toAttendanceTimeResponse(attendanceStartTime: Instant) =
+        AttendanceTimeResponse(
+            attendanceStartTime = instantToLocalDateTime(attendanceStartTime),
+        )
 }

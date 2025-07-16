@@ -17,13 +17,16 @@ class RefreshTokenService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val tokenResolver: JwtTokenResolver,
     private val tokenInjector: JwtTokenInjector,
-    private val tokenProvider: JwtTokenProvider
+    private val tokenProvider: JwtTokenProvider,
 ) {
-
     @Transactional
-    fun reissueBasedOnRefreshToken(request: HttpServletRequest, response: HttpServletResponse): String {
-        val token = tokenResolver.resolveRefreshTokenFromRequest(request)
-            ?: throw TokenInvalidException()
+    fun reissueBasedOnRefreshToken(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ): String {
+        val token =
+            tokenResolver.resolveRefreshTokenFromRequest(request)
+                ?: throw TokenInvalidException()
 
         val refreshToken: RefreshToken = getByTokenString(token)
         tokenInjector.injectRefreshToken(rotate(refreshToken), response)

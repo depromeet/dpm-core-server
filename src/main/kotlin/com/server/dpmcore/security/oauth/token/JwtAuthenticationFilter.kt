@@ -11,7 +11,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
 ) : OncePerRequestFilter() {
-
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val TOKEN_PREFIX = "Bearer "
