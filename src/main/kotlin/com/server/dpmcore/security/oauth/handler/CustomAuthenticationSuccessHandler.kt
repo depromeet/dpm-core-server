@@ -20,9 +20,12 @@ class CustomAuthenticationSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        val loginResult = resolveLoginResultFromAuthentication(authentication)
-        tokenInjector.injectRefreshToken(loginResult.refreshToken, response)
-        response.sendRedirect(loginResult.redirectUrl)
+        resolveLoginResultFromAuthentication(authentication).let { loginResult ->
+            loginResult.refreshToken?.let {
+                tokenInjector.injectRefreshToken(it, response)
+            }
+            response.sendRedirect(loginResult.redirectUrl)
+        }
     }
 
     private fun resolveLoginResultFromAuthentication(authentication: Authentication): LoginResult {

@@ -7,6 +7,7 @@ import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
 import org.springframework.stereotype.Repository
+import java.time.Instant
 
 @Repository
 class MemberRepository(
@@ -30,4 +31,32 @@ class MemberRepository(
                 from(entity(MemberEntity::class))
                 where(col(MemberEntity::id).equal(memberId))
             }?.toDomain()
+
+    override fun existsById(memberId: Long): Boolean =
+        queryFactory
+            .singleQueryOrNull {
+                select(col(MemberEntity::id))
+                from(entity(MemberEntity::class))
+                where(col(MemberEntity::id).equal(memberId))
+            } != null
+
+    override fun delete(memberId: Long) {
+        queryFactory
+            .updateQuery(MemberEntity::class) {
+                set(col(MemberEntity::deletedAt), Instant.now())
+                where(col(MemberEntity::id).equal(memberId))
+            }.executeUpdate()
+    }
+
+    override fun existsDeletedMemberById(memberId: Long): Boolean =
+        queryFactory
+            .singleQueryOrNull {
+                select(col(MemberEntity::id))
+                from(entity(MemberEntity::class))
+                where(
+                    col(MemberEntity::id)
+                        .equal(memberId)
+                        .and(col(MemberEntity::deletedAt).isNotNull()),
+                )
+            } != null
 }

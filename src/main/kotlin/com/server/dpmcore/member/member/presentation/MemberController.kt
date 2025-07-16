@@ -5,6 +5,7 @@ import com.server.dpmcore.member.member.application.MemberService
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -17,5 +18,11 @@ class MemberController(
     override fun me(memberId: MemberId): CustomResponse<MemberDetailsResponse> {
         val response: MemberDetailsResponse = memberService.memberMe(memberId)
         return CustomResponse.ok(response)
+    }
+
+    @PatchMapping("/withdraw")
+    override fun withdraw(memberId: MemberId): CustomResponse<Void> {
+        memberService.withdraw(memberId)
+        return CustomResponse.ok()
     }
 }
