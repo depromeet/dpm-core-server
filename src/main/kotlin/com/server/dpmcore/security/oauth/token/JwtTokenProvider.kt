@@ -17,21 +17,23 @@ import javax.crypto.SecretKey
 class JwtTokenProvider(
     private val tokenProperties: TokenProperties,
 ) {
-    fun generateAccessToken(memberId: String): String {
-        return generateToken(memberId, tokenProperties.expirationTime.accessToken)
-    }
+    fun generateAccessToken(memberId: String): String =
+        generateToken(memberId, tokenProperties.expirationTime.accessToken)
 
-    fun generateRefreshToken(memberId: String): String {
-        return generateToken(memberId, tokenProperties.expirationTime.refreshToken)
-    }
+    fun generateRefreshToken(memberId: String): String =
+        generateToken(memberId, tokenProperties.expirationTime.refreshToken)
 
-    fun generateToken(memberId: String, expirationTime: Long): String {
+    fun generateToken(
+        memberId: String,
+        expirationTime: Long,
+    ): String {
         val currentTimeMillis = System.currentTimeMillis()
         val now = Date(currentTimeMillis)
         val expiration = Date(currentTimeMillis + expirationTime * 1000)
         val secretKey = getSigningKey()
 
-        return Jwts.builder()
+        return Jwts
+            .builder()
             .subject(memberId)
             .issuedAt(now)
             .expiration(expiration)
@@ -50,22 +52,30 @@ class JwtTokenProvider(
         )
     }
 
-    fun validateToken(token: String?): Boolean {
-        return try {
-            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token)
+    fun validateToken(token: String?): Boolean =
+        try {
+            Jwts
+                .parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
             true
         } catch (e: Exception) {
             false
         }
+
+    fun getMemberId(token: String?): Long {
+        val claims = getClaims(token)
+        return claims.subject.toLong()
     }
 
-    private fun getClaims(token: String?): Claims {
-        return Jwts.parser()
+    private fun getClaims(token: String?): Claims =
+        Jwts
+            .parser()
             .verifyWith(getSigningKey())
             .build()
             .parseSignedClaims(token)
             .payload
-    }
 
     private fun getSigningKey(): SecretKey {
         val keyBytes = Decoders.BASE64.decode(tokenProperties.secretKey)

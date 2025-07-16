@@ -14,7 +14,6 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import org.springframework.security.web.authentication.logout.LogoutHandler
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
@@ -29,7 +28,6 @@ class SecurityConfig(
     private val authenticationSuccessHandler: AuthenticationSuccessHandler,
     private val authenticationFailureHandler: AuthenticationFailureHandler,
     private val logoutSuccessHandler: LogoutSuccessHandler,
-    private val logoutHandler: LogoutHandler,
 ) {
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
@@ -128,7 +126,7 @@ class SecurityConfig(
         private val PERMIT_ALL_PATTERNS =
             arrayOf(
                 "/v1/**",
-                "/login",
+                "/login/kakao",
                 "/error",
             )
     }
