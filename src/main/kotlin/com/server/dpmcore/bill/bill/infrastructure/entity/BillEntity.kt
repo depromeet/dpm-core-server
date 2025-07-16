@@ -1,5 +1,7 @@
 package com.server.dpmcore.bill.bill.infrastructure.entity
 
+import com.server.dpmcore.bill.bill.domain.model.Bill
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.billAccount.infrastructure.entity.BillAccountEntity
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import jakarta.persistence.CascadeType
@@ -39,4 +41,32 @@ class BillEntity(
     val updatedAt: Instant,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
-)
+) {
+    companion object {
+        fun from(bill: Bill): BillEntity =
+            BillEntity(
+                id = bill.id?.value ?: 0L,
+                billAccount = BillAccountEntity.from(bill.billAccount),
+                title = bill.title,
+                description = bill.description ?: "",
+                gatherings = bill.gatherings.map { GatheringEntity.from(it) }.toMutableList(),
+                completedAt = bill.completedAt,
+                createdAt = bill.createdAt ?: Instant.now(),
+                updatedAt = bill.updatedAt ?: Instant.now(),
+                deletedAt = bill.deletedAt,
+            )
+    }
+
+    fun toDomain(): Bill =
+        Bill(
+            id = BillId(id),
+            billAccount = billAccount.toDomain(),
+            title = title,
+            description = description,
+            gatherings = gatherings.map { it.toDomain() }.toMutableList(),
+            completedAt = completedAt,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+        )
+}

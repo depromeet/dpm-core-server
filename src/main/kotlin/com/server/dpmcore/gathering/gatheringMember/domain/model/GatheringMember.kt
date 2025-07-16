@@ -13,10 +13,10 @@ import java.time.Instant
  */
 class GatheringMember(
     val id: GatheringMemberId? = null,
-    val gathering: Gathering,
+    val gathering: Gathering? = null,
     val memberId: MemberId,
     val isChecked: Boolean = false,
-    val is_joined: Boolean = false,
+    val isJoined: Boolean = false,
     val completedAt: Instant? = null,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,

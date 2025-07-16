@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity
 
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.Receipt
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity.ReceiptPhotoEntity
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -37,4 +38,32 @@ class ReceiptEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id", nullable = false)
     val gathering: GatheringEntity,
-)
+) {
+    companion object {
+        fun from(receipt: Receipt): ReceiptEntity {
+            return ReceiptEntity(
+                id = receipt.id?.value ?: 0L,
+                splitAmount = receipt.splitAmount,
+                amount = receipt.amount,
+                createdAt = receipt.createdAt ?: Instant.now(),
+                updatedAt = receipt.updatedAt ?: Instant.now(),
+                deletedAt = receipt.deletedAt,
+                receiptPhotos = receipt.receiptPhotos.map { ReceiptPhotoEntity.from(it) }.toMutableList(),
+                gathering = GatheringEntity.from(receipt.gathering),
+            )
+        }
+    }
+
+    fun toDomain(): Receipt {
+        return Receipt(
+            id = com.server.dpmcore.gathering.gatheringReceipt.domain.model.ReceiptId(id),
+            splitAmount = splitAmount,
+            amount = amount,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+            receiptPhotos = receiptPhotos.map { it.toDomain() }.toMutableList(),
+            gathering = gathering.toDomain(),
+        )
+    }
+}
