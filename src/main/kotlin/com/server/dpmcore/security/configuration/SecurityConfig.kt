@@ -14,6 +14,7 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 
@@ -26,8 +27,8 @@ class SecurityConfig(
     private val defaultOAuth2UserService: DefaultOAuth2UserService,
     private val authenticationSuccessHandler: AuthenticationSuccessHandler,
     private val authenticationFailureHandler: AuthenticationFailureHandler,
+    private val logoutSuccessHandler: LogoutSuccessHandler,
 ) {
-
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         disabledConfigurations(httpSecurity)
@@ -35,6 +36,7 @@ class SecurityConfig(
         configurationCors(httpSecurity)
         configureAuthorizeHttpRequests(httpSecurity)
         configurationOAuth2Login(httpSecurity)
+        configurationLogout(httpSecurity)
         return httpSecurity.build()
     }
 
@@ -56,27 +58,32 @@ class SecurityConfig(
             .cors { it.configurationSource(corsConfigurationSource()) }
     }
 
-    private fun corsConfigurationSource(): CorsConfigurationSource {
-        return CorsConfigurationSource { _ ->
+    private fun corsConfigurationSource(): CorsConfigurationSource =
+        CorsConfigurationSource { _ ->
             CorsConfiguration().apply {
                 allowedHeaders = listOf("*")
                 allowedMethods = listOf("*")
-                allowedOriginPatterns = listOf(
-                    "https://localhost:3000",
-                    "https://local.dpmcore.o-r.kr/"
-                )
+                allowedOriginPatterns =
+                    listOf(
+                        "https://localhost:3000",
+                        "https://local.dpmcore.o-r.kr/",
+                    )
                 allowCredentials = true
             }
         }
-    }
 
     private fun configureAuthorizeHttpRequests(httpSecurity: HttpSecurity) {
         httpSecurity
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers(*SWAGGER_PATTERNS).permitAll()
-                    .requestMatchers(*STATIC_RESOURCES_PATTERNS).permitAll()
-                    .requestMatchers(*PERMIT_ALL_PATTERNS).permitAll()
-                    .anyRequest().authenticated()
+                auth
+                    .requestMatchers(*SWAGGER_PATTERNS)
+                    .permitAll()
+                    .requestMatchers(*STATIC_RESOURCES_PATTERNS)
+                    .permitAll()
+                    .requestMatchers(*PERMIT_ALL_PATTERNS)
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated()
             }
     }
 
@@ -84,34 +91,42 @@ class SecurityConfig(
         httpSecurity
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login { oauth2 ->
-                oauth2.loginPage(securityProperties.loginUrl)
+                oauth2
+                    .loginPage(securityProperties.loginUrl)
                     .authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
-                    }
-                    .userInfoEndpoint {
+                    }.userInfoEndpoint {
                         it.userService(defaultOAuth2UserService)
-                    }
-                    .successHandler(authenticationSuccessHandler)
+                    }.successHandler(authenticationSuccessHandler)
                     .failureHandler(authenticationFailureHandler)
             }
     }
 
+    private fun configurationLogout(httpSecurity: HttpSecurity) {
+        httpSecurity.logout { logout ->
+            logout.logoutSuccessHandler(logoutSuccessHandler)
+        }
+    }
+
     companion object {
-        private val SWAGGER_PATTERNS = arrayOf(
-            "/swagger-ui/**",
-            "/actuator/**",
-            "/v3/api-docs/**",
-        )
-        private val STATIC_RESOURCES_PATTERNS = arrayOf(
-            "/images/**",
-            "/css/**",
-            "/js/**",
-            "/static/**",
-        )
-        private val PERMIT_ALL_PATTERNS = arrayOf(
-            "/v1/**",
-            "/login",
-            "/error",
-        )
+        private val SWAGGER_PATTERNS =
+            arrayOf(
+                "/swagger-ui/**",
+                "/actuator/**",
+                "/v3/api-docs/**",
+            )
+        private val STATIC_RESOURCES_PATTERNS =
+            arrayOf(
+                "/images/**",
+                "/css/**",
+                "/js/**",
+                "/static/**",
+            )
+        private val PERMIT_ALL_PATTERNS =
+            arrayOf(
+                "/v1/**",
+                "/login",
+                "/error",
+            )
     }
 }
