@@ -33,7 +33,8 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           args: |
-            ❌ **CI 도중 문제가 발생했습니다.**
+            ❌ **CI 도중 문제가 발생했습니다.(테스트)**
+            actor : `@${{ github.actor }}`
             branch : `${{ github.head_ref }}`
             pull-request : `${{ github.event.pull_request.title }}`
             [🔗 작업 요약 보기](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
