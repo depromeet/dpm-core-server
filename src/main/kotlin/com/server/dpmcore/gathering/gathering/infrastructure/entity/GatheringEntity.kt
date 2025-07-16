@@ -5,6 +5,7 @@ import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
+import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.ReceiptEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -16,6 +17,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.Instant
 
@@ -49,10 +51,12 @@ class GatheringEntity(
     val bill: BillEntity,
     @OneToMany(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val gatheringMembers: MutableList<GatheringMemberEntity> = mutableListOf(),
+    @OneToOne(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val receipt: ReceiptEntity? = null,
 ) {
     companion object {
-        fun from(gathering: Gathering): GatheringEntity {
-            return GatheringEntity(
+        fun from(gathering: Gathering): GatheringEntity =
+            GatheringEntity(
                 id = gathering.id?.value ?: 0L,
                 title = gathering.title,
                 description = gathering.description,
@@ -64,13 +68,12 @@ class GatheringEntity(
                 updatedAt = gathering.updatedAt ?: Instant.now(),
                 deletedAt = gathering.deletedAt,
                 bill = BillEntity.from(gathering.bill!!),
-                gatheringMembers = gathering.gatheringMembers.map { GatheringMemberEntity.from(it) }.toMutableList(),
+                receipt = gathering.receipt?.let { ReceiptEntity.from(it) },
             )
-        }
     }
 
-    fun toDomain(): Gathering {
-        return Gathering(
+    fun toDomain(): Gathering =
+        Gathering(
             id = GatheringId(id),
             title = title,
             description = description,
@@ -83,6 +86,6 @@ class GatheringEntity(
             deletedAt = deletedAt,
             bill = bill.toDomain(),
             gatheringMembers = gatheringMembers.map { it.toDomain() }.toMutableList(),
+            receipt = receipt?.toDomain(),
         )
-    }
 }
