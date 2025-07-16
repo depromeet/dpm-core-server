@@ -127,7 +127,7 @@ jooq {
                             listOf(
                                 Property().apply {
                                     key = "scripts"
-                                    value = "src/main/resources/schema.sql"
+                                    value = "src/main/resources/db/schema.sql"
                                 },
                                 Property().apply {
                                     key = "sort"
