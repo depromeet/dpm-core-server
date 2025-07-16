@@ -13,16 +13,21 @@ class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
 ) : MemberPersistencePort {
+    override fun findByEmail(email: String): Member? =
+        queryFactory
+            .singleQueryOrNull {
+                select(entity(MemberEntity::class))
+                from(entity(MemberEntity::class))
+                where(col(MemberEntity::email).equal(email))
+            }?.toDomain()
 
-    override fun findByEmail(email: String): Member? {
-        return queryFactory.singleQueryOrNull {
-            select(entity(MemberEntity::class))
-            from(entity(MemberEntity::class))
-            where(col(MemberEntity::email).equal(email))
-        }?.toDomain()
-    }
+    override fun save(member: Member): Long = memberJpaRepository.save(MemberEntity.from(member)).id
 
-    override fun save(member: Member): Long {
-        return memberJpaRepository.save(MemberEntity.from(member)).id
-    }
+    override fun findById(memberId: Long): Member? =
+        queryFactory
+            .singleQueryOrNull {
+                select(entity(MemberEntity::class))
+                from(entity(MemberEntity::class))
+                where(col(MemberEntity::id).equal(memberId))
+            }?.toDomain()
 }

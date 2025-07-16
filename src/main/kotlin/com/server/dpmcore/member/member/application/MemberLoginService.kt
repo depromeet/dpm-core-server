@@ -2,9 +2,9 @@ package com.server.dpmcore.member.member.application
 
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.refreshToken.domain.model.RefreshToken
-import com.server.dpmcore.refreshToken.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.refreshToken.domain.port.outbound.RefreshTokenPersistencePort
 import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes

@@ -11,7 +11,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
 ) : OncePerRequestFilter() {
-
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val TOKEN_PREFIX = "Bearer "
@@ -31,11 +30,10 @@ class JwtAuthenticationFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun getAccessToken(authorizationHeader: String?): String? {
-        return if (!authorizationHeader.isNullOrEmpty() && authorizationHeader.startsWith(TOKEN_PREFIX)) {
+    private fun getAccessToken(authorizationHeader: String?): String? =
+        if (!authorizationHeader.isNullOrEmpty() && authorizationHeader.startsWith(TOKEN_PREFIX)) {
             authorizationHeader.substring(TOKEN_PREFIX.length)
         } else {
             null
         }
-    }
 }

@@ -1,6 +1,6 @@
 package com.server.dpmcore.security.oauth.handler
 
-import com.server.dpmcore.refreshToken.domain.port.inbound.HandleMemberLoginUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.security.oauth.domain.CustomOAuth2User
 import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.token.JwtTokenInjector
