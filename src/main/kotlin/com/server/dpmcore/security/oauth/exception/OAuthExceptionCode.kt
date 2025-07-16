@@ -12,6 +12,8 @@ enum class OAuthExceptionCode(
     ;
 
     override fun getStatus(): HttpStatus = status
+
     override fun getCode(): String = code
+
     override fun getMessage(): String = message
 }

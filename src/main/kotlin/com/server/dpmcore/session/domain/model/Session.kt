@@ -2,10 +2,12 @@ package com.server.dpmcore.session.domain.model
 
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.cohort.domain.model.CohortId
+import com.server.dpmcore.session.domain.exception.AttendanceStartTimeDateMismatchException
 import com.server.dpmcore.session.domain.exception.InvalidAttendanceCodeException
 import com.server.dpmcore.session.domain.exception.TooEarlyAttendanceException
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
 import java.time.Instant
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 
@@ -19,12 +21,14 @@ class Session internal constructor(
     val cohortId: CohortId,
     val date: Instant,
     val week: Int,
-    val attendancePolicy: AttendancePolicy,
     private val attachments: MutableList<SessionAttachment> = mutableListOf(),
     place: String,
     eventName: String,
     isOnline: Boolean = false,
+    attendancePolicy: AttendancePolicy,
 ) {
+    var attendancePolicy: AttendancePolicy = attendancePolicy
+        private set
     var place: String = place
         private set
     var eventName: String = eventName
@@ -64,6 +68,23 @@ class Session internal constructor(
         var result = id?.hashCode() ?: 0
         result = 31 * result + date.hashCode()
         return result
+    }
+
+    fun updateAttendanceStartTime(newStartTime: Instant) {
+        if (!isSameDateAsSession(newStartTime)) {
+            throw AttendanceStartTimeDateMismatchException()
+        }
+
+        this.attendancePolicy =
+            attendancePolicy.copy(
+                attendanceStart = newStartTime,
+            )
+    }
+
+    private fun isSameDateAsSession(target: Instant): Boolean {
+        val zone = ZoneId.of("Asia/Seoul")
+        return this.date.atZone(zone).toLocalDate() ==
+            target.atZone(zone).toLocalDate()
     }
 
     companion object {

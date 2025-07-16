@@ -13,23 +13,21 @@ import jakarta.persistence.Table
 class RefreshTokenEntity(
     @Id
     val memberId: Long,
-
     @Lob
     @Column(columnDefinition = "TEXT")
-    var token: String
+    var token: String,
 ) {
-
     fun toDomain(): RefreshToken =
         RefreshToken(
             memberId = MemberId(this.memberId),
-            token = this.token
+            token = this.token,
         )
 
     companion object {
         fun from(domain: RefreshToken) =
             RefreshTokenEntity(
                 memberId = domain.memberId.value,
-                token = domain.token
+                token = domain.token,
             )
     }
 }

@@ -11,7 +11,3 @@ spring:
 logging:
   level:
     org.springframework.orm.jpa: INFO
-
-session:
-  attendance:
-    start-hour: 14

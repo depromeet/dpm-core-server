@@ -12,16 +12,14 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class ReissueController(
     private val refreshTokenService: RefreshTokenService,
-    private val tokenProperties: TokenProperties
+    private val tokenProperties: TokenProperties,
 ) : ReissueApi {
-
     @PostMapping("/v1/reissue")
     override fun reissue(
         request: HttpServletRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): CustomResponse<TokenResponse> {
         val tokenResult = refreshTokenService.reissueBasedOnRefreshToken(request, response)
         return CustomResponse.ok(TokenResponse.of(tokenResult, tokenProperties))
     }
-
 }

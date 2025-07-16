@@ -14,7 +14,6 @@ class RefreshTokenRepository(
     private val refreshTokenJpaRepository: RefreshTokenJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
 ) : RefreshTokenPersistencePort {
-
     override fun save(refreshToken: RefreshToken): RefreshToken {
         return refreshTokenJpaRepository.save(RefreshTokenEntity.from(refreshToken)).toDomain()
     }

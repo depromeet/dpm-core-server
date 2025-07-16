@@ -14,7 +14,6 @@ data class KakaoAuthAttributes(
     @JvmField val email: String,
     @JvmField val provider: OAuthProvider,
 ) : OAuthAttributes {
-
     companion object {
         fun of(attributes: Map<String, Any>): KakaoAuthAttributes {
             val externalId = attributes["id"] as Long

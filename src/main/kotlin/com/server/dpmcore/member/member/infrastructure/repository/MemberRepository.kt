@@ -13,7 +13,6 @@ class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
 ) : MemberPersistencePort {
-
     override fun findByEmail(email: String): Member? {
         return queryFactory.singleQueryOrNull {
             select(entity(MemberEntity::class))
