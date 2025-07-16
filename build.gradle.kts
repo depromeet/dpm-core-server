@@ -164,7 +164,7 @@ jooq {
 sourceSets {
     main {
         kotlin {
-            srcDirs(listOf("src/main/kotlin", "src/generated", "build/generated-src/jooq/main"))
+            srcDirs(listOf("src/main/kotlin", "src/generated", "build/generated-src/jooq"))
         }
     }
 }
