@@ -22,29 +22,23 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-
-      - name: "Gradle 캐시로 CI 속도를 향상시킨다."
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-caches-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-caches-
+          cache: 'gradle'
 
       - name: "Kotlin 소스를 컴파일한다."
         run: ./gradlew compileKotlin --configuration-cache --build-cache
 
-      - name: "Slack으로 빌드 실패를 알린다."
+      - name: "Discord로 빌드 실패를 알린다."
         if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          author_name: 'GitHub Actions'
-          fields: repo,message,commit,author
+        uses: Ilshidur/action-discord@0.3.2
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # 추후 웹훅 추가
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            ❌ **컴파일 도중 문제가 발생했습니다.**
+            actor : `@${{ github.actor }}`
+            branch : `${{ github.head_ref }}`
+            pull-request : `${{ github.event.pull_request.title }}`
+            [🔗 작업 요약 보기](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
   deploy:
     needs:
@@ -111,3 +105,16 @@ jobs:
               --update-failure-action pause \
               --update-monitor 30s \
               core-service
+
+      - name: "Discord로 Production 배포 실패를 알린다."
+        if: failure()
+        uses: Ilshidur/action-discord@0.3.2
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            ❌ **`Production` 배포 도중 문제가 발생했습니다.**
+            actor : `@${{ github.actor }}`
+            branch : `${{ github.head_ref }}`
+            pull-request : `${{ github.event.pull_request.title }}`
+            [🔗 작업 요약 보기](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
