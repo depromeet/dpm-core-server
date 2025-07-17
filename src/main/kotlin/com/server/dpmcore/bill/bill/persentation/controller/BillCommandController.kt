@@ -3,7 +3,6 @@ package com.server.dpmcore.bill.bill.persentation.controller
 import com.server.dpmcore.bill.bill.application.BillCommandService
 import com.server.dpmcore.bill.bill.persentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.persentation.dto.response.CreateBillResponse
-import com.server.dpmcore.bill.bill.persentation.mapper.BillMapper.toBill
 import com.server.dpmcore.bill.bill.persentation.mapper.BillMapper.toCreateBillResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.common.exception.GlobalExceptionCode
@@ -23,7 +22,7 @@ class BillCommandController(
     override fun createBill(
         @RequestBody createBillRequest: CreateBillRequest,
     ): CustomResponse<CreateBillResponse> {
-        val bill = billCommandService.save(toBill(createBillRequest))
+        val bill = billCommandService.save(createBillRequest)
 
         return CustomResponse.ok(
             toCreateBillResponse(bill),
