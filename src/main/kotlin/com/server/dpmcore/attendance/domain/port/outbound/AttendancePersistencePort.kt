@@ -12,7 +12,7 @@ interface AttendancePersistencePort {
     fun findAttendanceBy(
         sessionId: SessionId,
         memberId: MemberId,
-    ): Attendance
+    ): Attendance?
 
     fun save(attendance: Attendance)
 

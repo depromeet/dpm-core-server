@@ -6,13 +6,17 @@ import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
+import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
+import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceStatusUpdateCommand
 import com.server.dpmcore.common.exception.CustomResponse
+import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -76,5 +80,18 @@ class AttendanceController(
             )
 
         return CustomResponse.ok(response)
+    }
+
+    @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
+    override fun updateAttendance(
+        @PathVariable sessionId: SessionId,
+        @PathVariable memberId: MemberId,
+        @RequestBody request: AttendanceStatusUpdateRequest,
+    ): CustomResponse<AttendanceResponse> {
+        attendanceCommandService.updateAttendanceStatus(
+            toAttendanceStatusUpdateCommand(sessionId, memberId, request),
+        )
+
+        return CustomResponse.ok()
     }
 }

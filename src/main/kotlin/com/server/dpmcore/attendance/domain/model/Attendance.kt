@@ -32,6 +32,10 @@ class Attendance internal constructor(
         this.attendedAt = attendedAt
     }
 
+    fun updateStatus(status: AttendanceStatus) {
+        this.status = status
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Attendance) return false

@@ -2,10 +2,12 @@ package com.server.dpmcore.attendance.presentation
 
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
+import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.common.exception.CustomResponse
+import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -170,4 +172,10 @@ interface AttendanceApi {
         name: String?,
         cursorId: Long?,
     ): CustomResponse<MemberAttendancesResponse>
+
+    fun updateAttendance(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AttendanceStatusUpdateRequest,
+    ): CustomResponse<AttendanceResponse>
 }

@@ -3,10 +3,14 @@ package com.server.dpmcore.attendance.presentation.mapper
 import com.server.dpmcore.attendance.application.query.model.MemberAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
+import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceStatusUpdateCommand
+import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
+import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import java.time.Instant
 
@@ -60,5 +64,16 @@ object AttendanceMapper {
                 },
             hasNext = hasNext,
             nextCursorId = nextCursorId,
+        )
+
+    fun toAttendanceStatusUpdateCommand(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AttendanceStatusUpdateRequest,
+    ): AttendanceStatusUpdateCommand =
+        AttendanceStatusUpdateCommand(
+            sessionId = sessionId,
+            memberId = memberId,
+            attendanceStatus = AttendanceStatus.valueOf(request.attendanceStatus),
         )
 }

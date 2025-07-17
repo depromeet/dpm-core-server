@@ -1,6 +1,8 @@
 package com.server.dpmcore.attendance.application
 
+import com.server.dpmcore.attendance.domain.exception.AttendanceNotFoundException
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
+import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceStatusUpdateCommand
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -27,11 +29,11 @@ class AttendanceCommandService(
         val attendance =
             attendancePersistencePort
                 .findAttendanceBy(sessionId, memberId)
-                .also {
+                ?.also {
                     if (it.isAttended()) {
                         throw CheckedAttendanceException()
                     }
-                }
+                } ?: throw AttendanceNotFoundException()
 
         val status =
             sessionQueryService
@@ -42,5 +44,15 @@ class AttendanceCommandService(
         attendancePersistencePort.save(attendance)
 
         return status
+    }
+
+    fun updateAttendanceStatus(command: AttendanceStatusUpdateCommand) {
+        val attendance =
+            attendancePersistencePort
+                .findAttendanceBy(command.sessionId, command.memberId)
+                ?: throw AttendanceNotFoundException()
+
+        attendance.updateStatus(command.attendanceStatus)
+        attendancePersistencePort.save(attendance)
     }
 }

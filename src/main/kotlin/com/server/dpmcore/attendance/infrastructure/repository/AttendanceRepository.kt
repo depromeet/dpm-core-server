@@ -2,7 +2,6 @@ package com.server.dpmcore.attendance.infrastructure.repository
 
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
-import com.linecorp.kotlinjdsl.spring.data.singleQuery
 import com.server.dpmcore.attendance.application.query.model.MemberAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
@@ -10,6 +9,7 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesByS
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.attendance.infrastructure.entity.AttendanceEntity
+import com.server.dpmcore.common.jdsl.singleQueryOrNull
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
 import org.jooq.DSLContext
@@ -34,16 +34,16 @@ class AttendanceRepository(
     override fun findAttendanceBy(
         sessionId: SessionId,
         memberId: MemberId,
-    ): Attendance =
+    ): Attendance? =
         queryFactory
-            .singleQuery<AttendanceEntity> {
+            .singleQueryOrNull<AttendanceEntity> {
                 select(entity(AttendanceEntity::class))
                 from(entity(AttendanceEntity::class))
                 whereAnd(
                     col(AttendanceEntity::sessionId).equal(sessionId.value),
                     col(AttendanceEntity::memberId).equal(memberId.value),
                 )
-            }.toDomain()
+            }?.toDomain()
 
     override fun save(attendance: Attendance) {
         attendanceJpaRepository.save(AttendanceEntity.from(attendance))
