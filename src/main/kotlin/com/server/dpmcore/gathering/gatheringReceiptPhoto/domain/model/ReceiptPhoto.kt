@@ -12,11 +12,11 @@ import java.time.Instant
  */
 class ReceiptPhoto(
     val id: ReceiptPhotoId? = null,
-    val url: String,
+    val url: String? = null,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
-    val receipt: Receipt,
+    val receipt: Receipt? = null,
 ) {
     fun isDeleted(): Boolean = deletedAt != null
 
