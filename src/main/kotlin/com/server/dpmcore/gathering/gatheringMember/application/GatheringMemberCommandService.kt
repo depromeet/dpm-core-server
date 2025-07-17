@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.application
 
+import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.GatheringMemberPort
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -32,7 +33,7 @@ class GatheringMemberCommandService(
     fun save(gatheringMember: GatheringMember): GatheringMember = gatheringMemberPort.save(gatheringMember)
 
     fun save(gatheringMembers: MutableList<GatheringMember>): MutableList<GatheringMember> {
-        if (gatheringMembers.isEmpty()) throw IllegalArgumentException("회식 참여 멤버는 필수로 존재해야합니다.")
+        if (gatheringMembers.isEmpty()) throw BillException.GatheringMembersRequiredException()
         return gatheringMembers
             .map { gatheringMember ->
                 gatheringMemberPort.save(gatheringMember)

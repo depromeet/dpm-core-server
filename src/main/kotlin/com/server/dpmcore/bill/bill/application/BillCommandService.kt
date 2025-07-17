@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.application
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.port.BillRepositoryPort
 import com.server.dpmcore.bill.billAccount.application.BillAccountReadService
+import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.application.GatheringCommandService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,10 +18,10 @@ class BillCommandService(
     fun save(bill: Bill): Bill {
 //            TODO : 외에 다른 것들도 실드할 게 있으면 추가
         billAccountReadService.findBy(bill.billAccount).also {
-            if (!it.equals(bill.billAccount)) throw IllegalArgumentException("존재하지 않는 회식 계좌입니다.")
+            if (!it.equals(bill.billAccount)) throw BillException.BillAccountNotFoundException()
         }
         if (bill.gatherings.isEmpty()) {
-            throw IllegalArgumentException("회식은 필수로 존재해야합니다.")
+            throw BillException.GatheringRequiredException()
         }
 
         val savedBill = billRepositoryPort.save(bill)
