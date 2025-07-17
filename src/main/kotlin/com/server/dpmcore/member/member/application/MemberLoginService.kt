@@ -21,12 +21,11 @@ class MemberLoginService(
     private val tokenProvider: JwtTokenProvider,
 ) : HandleMemberLoginUseCase {
     @Transactional
-    override fun handleLoginSuccess(authAttributes: OAuthAttributes): LoginResult {
-        return memberPersistencePort
+    override fun handleLoginSuccess(authAttributes: OAuthAttributes): LoginResult =
+        memberPersistencePort
             .findByEmail(authAttributes.getEmail())
             ?.let { member -> handleExistingMemberLogin(member) }
             ?: handleUnregisteredMember(authAttributes)
-    }
 
     private fun generateLoginResult(
         memberId: MemberId,
@@ -44,12 +43,13 @@ class MemberLoginService(
     }
 
     private fun handleExistingMemberLogin(member: Member): LoginResult {
-        val redirectUrl =
-            when (member.isAllowed()) {
-                true -> securityProperties.redirectUrl
-                false -> securityProperties.restrictedRedirectUrl
-            }
-        return generateLoginResult(member.id!!, redirectUrl)
+        val memberId = member.id?.value ?: return LoginResult(null, securityProperties.restrictedRedirectUrl)
+
+        return if (member.isAllowed() && !memberPersistencePort.existsDeletedMemberById(memberId)) {
+            generateLoginResult(member.id, securityProperties.redirectUrl)
+        } else {
+            LoginResult(null, securityProperties.restrictedRedirectUrl)
+        }
     }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {

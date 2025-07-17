@@ -9,4 +9,6 @@ interface RefreshTokenPersistencePort {
     fun findByMemberId(memberId: MemberId): RefreshToken?
 
     fun findByToken(token: String): RefreshToken?
+
+    fun deleteByMemberId(memberId: MemberId)
 }

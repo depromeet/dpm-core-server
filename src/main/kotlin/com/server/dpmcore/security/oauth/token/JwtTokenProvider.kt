@@ -64,6 +64,11 @@ class JwtTokenProvider(
             false
         }
 
+    fun getMemberId(token: String?): Long {
+        val claims = getClaims(token)
+        return claims.subject.toLong()
+    }
+
     private fun getClaims(token: String?): Claims =
         Jwts
             .parser()

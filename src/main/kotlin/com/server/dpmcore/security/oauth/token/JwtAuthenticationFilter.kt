@@ -30,11 +30,10 @@ class JwtAuthenticationFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun getAccessToken(authorizationHeader: String?): String? {
-        return if (!authorizationHeader.isNullOrEmpty() && authorizationHeader.startsWith(TOKEN_PREFIX)) {
+    private fun getAccessToken(authorizationHeader: String?): String? =
+        if (!authorizationHeader.isNullOrEmpty() && authorizationHeader.startsWith(TOKEN_PREFIX)) {
             authorizationHeader.substring(TOKEN_PREFIX.length)
         } else {
             null
         }
-    }
 }
