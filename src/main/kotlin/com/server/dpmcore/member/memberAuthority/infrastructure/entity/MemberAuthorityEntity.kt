@@ -37,11 +37,12 @@ class MemberAuthorityEntity(
     @Column
     val deletedAt: Instant? = null,
 ) {
-    fun toDomain() = MemberAuthority(
-        id = MemberAuthorityId(this.id),
-        memberId = MemberId(this.member.id),
-        authorityId = AuthorityId(this.authority.id),
-        grantedAt = this.grantedAt,
-        deletedAt = this.deletedAt
-    )
+    fun toDomain() =
+        MemberAuthority(
+            id = MemberAuthorityId(this.id),
+            memberId = MemberId(this.member.id),
+            authorityId = AuthorityId(this.authority.id),
+            grantedAt = this.grantedAt,
+            deletedAt = this.deletedAt,
+        )
 }

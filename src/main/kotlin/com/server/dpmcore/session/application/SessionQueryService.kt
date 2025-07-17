@@ -25,4 +25,11 @@ class SessionQueryService(
     fun getSessionById(sessionId: SessionId): Session =
         sessionPersistencePort.findSessionById(sessionId)
             ?: throw SessionNotFoundException()
+
+    fun getAttendanceTime(sessionId: SessionId): Instant =
+        sessionPersistencePort
+            .findSessionById(sessionId)
+            ?.attendancePolicy
+            ?.attendanceStart
+            ?: throw SessionNotFoundException()
 }

@@ -8,18 +8,17 @@ import org.springframework.security.oauth2.client.web.AuthorizationRequestReposi
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest
 import org.springframework.stereotype.Component
 
+private const val REQUEST_COOKIE_NAME = "OAUTH2_AUTH_REQUEST"
+private const val REQUEST_COOKIE_MAX_AGE = 180
+
 @Component
 class HttpCookieOAuth2AuthorizationRequestRepository(
     private val authorizationRequestCookieValueMapper: AuthorizationRequestCookieValueMapper,
 ) : AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
-    private val REQUEST_COOKIE_NAME = "OAUTH2_AUTH_REQUEST"
-    private val REQUEST_COOKIE_MAX_AGE = 180
-
-    override fun loadAuthorizationRequest(request: HttpServletRequest): OAuth2AuthorizationRequest? {
-        return getAuthorizationRequestCookie(request)
+    override fun loadAuthorizationRequest(request: HttpServletRequest): OAuth2AuthorizationRequest? =
+        getAuthorizationRequestCookie(request)
             ?.value
             ?.let { authorizationRequestCookieValueMapper.deserialize(it) }
-    }
 
     override fun saveAuthorizationRequest(
         authorizationRequest: OAuth2AuthorizationRequest?,
@@ -46,26 +45,35 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
         return authRequest
     }
 
-    private fun addCookie(response: HttpServletResponse, value: String) {
-        val cookie = Cookie(REQUEST_COOKIE_NAME, value).apply {
-            path = "/"
-            isHttpOnly = true
-            maxAge = REQUEST_COOKIE_MAX_AGE
-        }
+    private fun addCookie(
+        response: HttpServletResponse,
+        value: String,
+    ) {
+        val cookie =
+            Cookie(REQUEST_COOKIE_NAME, value).apply {
+                path = "/"
+                isHttpOnly = true
+                maxAge = REQUEST_COOKIE_MAX_AGE
+            }
         response.addCookie(cookie)
     }
 
-    private fun deleteCookie(request: HttpServletRequest, response: HttpServletResponse) {
+    private fun deleteCookie(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ) {
         request.cookies?.firstOrNull { it.name == REQUEST_COOKIE_NAME }?.let {
-            val cookie = Cookie(REQUEST_COOKIE_NAME, "").apply {
-                path = "/"
-                maxAge = 0
-            }
+            val cookie =
+                Cookie(REQUEST_COOKIE_NAME, "").apply {
+                    path = "/"
+                    maxAge = 0
+                }
             response.addCookie(cookie)
         }
     }
 
-    private fun getAuthorizationRequestCookie(request: HttpServletRequest): Cookie? {
-        return request.cookies?.firstOrNull { it.name == REQUEST_COOKIE_NAME }
-    }
+    private fun getAuthorizationRequestCookie(request: HttpServletRequest): Cookie? =
+        request.cookies?.firstOrNull {
+            it.name == REQUEST_COOKIE_NAME
+        }
 }
