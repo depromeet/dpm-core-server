@@ -47,7 +47,7 @@ interface MemberApi {
     ): CustomResponse<MemberDetailsResponse>
 
     @ApiResponse(
-        responseCode = "204",
+        responseCode = "200",
         description = "회원 탈퇴 성공",
         content = [
             Content(
