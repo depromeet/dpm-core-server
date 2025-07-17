@@ -2,6 +2,6 @@ package com.server.dpmcore.bill.bill.domain.port
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
 
-interface BillRepositoryPort {
+interface BillPersistencePort {
     fun save(bill: Bill): Bill
 }

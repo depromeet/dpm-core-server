@@ -2,7 +2,7 @@ package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
-import com.server.dpmcore.gathering.gatheringMember.domain.port.GatheringMemberPort
+import com.server.dpmcore.gathering.gatheringMember.domain.port.GatheringMemberPersistencePort
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -11,7 +11,7 @@ import java.time.Instant
 @Service
 @Transactional
 class GatheringMemberCommandService(
-    private val gatheringMemberPort: GatheringMemberPort,
+    private val gatheringMemberPersistencePort: GatheringMemberPersistencePort,
 ) {
     fun save(
         memberId: Long,
@@ -19,7 +19,7 @@ class GatheringMemberCommandService(
         isJoined: Boolean,
         completedAt: Instant,
     ) {
-        gatheringMemberPort.save(
+        gatheringMemberPersistencePort.save(
             GatheringMember(
                 memberId = MemberId(memberId),
 //                TODO 준원 : gathering 받아오기
@@ -30,13 +30,14 @@ class GatheringMemberCommandService(
         )
     }
 
-    fun save(gatheringMember: GatheringMember): GatheringMember = gatheringMemberPort.save(gatheringMember)
+    fun save(gatheringMember: GatheringMember): GatheringMember = gatheringMemberPersistencePort.save(gatheringMember)
 
+//        TODO : 벌크 insert 로직 추가
     fun save(gatheringMembers: MutableList<GatheringMember>): MutableList<GatheringMember> {
         if (gatheringMembers.isEmpty()) throw BillException.GatheringMembersRequiredException()
         return gatheringMembers
             .map { gatheringMember ->
-                gatheringMemberPort.save(gatheringMember)
+                gatheringMemberPersistencePort.save(gatheringMember)
             }.toMutableList()
     }
 }
