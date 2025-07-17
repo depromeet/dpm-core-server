@@ -12,17 +12,13 @@ class RefreshToken(
         return memberId == other.memberId
     }
 
-    override fun hashCode(): Int {
-        return memberId.hashCode()
-    }
+    override fun hashCode(): Int = memberId.hashCode()
 
     companion object {
         fun create(
             memberId: MemberId,
             token: String,
-        ): RefreshToken {
-            return RefreshToken(memberId, token)
-        }
+        ): RefreshToken = RefreshToken(memberId, token)
     }
 
     fun rotate(token: String) {
