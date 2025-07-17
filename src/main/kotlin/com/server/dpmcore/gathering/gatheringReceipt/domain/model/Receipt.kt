@@ -13,13 +13,13 @@ import java.time.Instant
  */
 class Receipt(
     val id: ReceiptId? = null,
-    val splitAmount: Int,
+    val splitAmount: Int? = null,
     val amount: Int,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
-    val receiptPhotos: MutableList<ReceiptPhoto> = mutableListOf(),
-    val gathering: Gathering,
+    val receiptPhotos: MutableList<ReceiptPhoto>? = mutableListOf(),
+    var gathering: Gathering? = null,
 ) {
     fun isDeleted(): Boolean = deletedAt != null
 
@@ -30,4 +30,7 @@ class Receipt(
     }
 
     override fun hashCode(): Int = id?.hashCode() ?: 0
+
+    override fun toString(): String =
+        "Receipt(id=$id, splitAmount=$splitAmount, amount=$amount, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt, receiptPhotos=$receiptPhotos, gathering=$gathering)"
 }

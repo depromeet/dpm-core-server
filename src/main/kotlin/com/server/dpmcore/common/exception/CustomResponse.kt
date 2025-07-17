@@ -15,11 +15,16 @@ data class CustomResponse<T>(
     companion object {
         fun <T> ok(): CustomResponse<T> = ok(null)
 
-        fun <T> ok(data: T?): CustomResponse<T> =
+        fun <T> ok(data: T?): CustomResponse<T> = ok(data, GlobalExceptionCode.SUCCESS)
+
+        fun <T> ok(
+            data: T?,
+            globalExceptionCode: GlobalExceptionCode,
+        ): CustomResponse<T> =
             CustomResponse(
-                GlobalExceptionCode.SUCCESS.status,
-                GlobalExceptionCode.SUCCESS.message,
-                GlobalExceptionCode.SUCCESS.code,
+                globalExceptionCode.status,
+                globalExceptionCode.message,
+                globalExceptionCode.code,
                 data,
             )
 

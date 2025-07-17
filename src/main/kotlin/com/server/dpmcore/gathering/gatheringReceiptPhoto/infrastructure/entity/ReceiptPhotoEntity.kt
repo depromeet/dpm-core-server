@@ -34,20 +34,21 @@ class ReceiptPhotoEntity(
     val receipt: ReceiptEntity,
 ) {
     companion object {
-        fun from(receiptPhoto: ReceiptPhoto): ReceiptPhotoEntity {
-            return ReceiptPhotoEntity(
+        fun from(receiptPhoto: ReceiptPhoto): ReceiptPhotoEntity =
+            ReceiptPhotoEntity(
                 id = receiptPhoto.id?.value ?: 0L,
-                url = receiptPhoto.url,
+//                TODO : url이 없는 경우 체크 필요
+                url = receiptPhoto.url!!,
                 createdAt = receiptPhoto.createdAt ?: Instant.now(),
                 updatedAt = receiptPhoto.updatedAt ?: Instant.now(),
                 deletedAt = receiptPhoto.deletedAt,
-                receipt = ReceiptEntity.from(receiptPhoto.receipt),
+//                TODO : receipt가 없는 경우 체크 필요
+                receipt = ReceiptEntity.from(receiptPhoto.receipt!!),
             )
-        }
     }
 
-    fun toDomain(): ReceiptPhoto {
-        return ReceiptPhoto(
+    fun toDomain(): ReceiptPhoto =
+        ReceiptPhoto(
             id = ReceiptPhotoId(id),
             url = url,
             createdAt = createdAt,
@@ -55,5 +56,4 @@ class ReceiptPhotoEntity(
             deletedAt = deletedAt,
             receipt = receipt.toDomain(),
         )
-    }
 }
