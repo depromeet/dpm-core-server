@@ -1,12 +1,15 @@
 package com.server.dpmcore.session.presentation.mapper
 
 import com.server.dpmcore.session.domain.model.Session
+import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
+import com.server.dpmcore.session.presentation.dto.request.SessionCreateRequest
 import com.server.dpmcore.session.presentation.dto.response.AttendanceTimeResponse
 import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import java.time.Instant
 
 object SessionMapper {
@@ -56,4 +59,17 @@ object SessionMapper {
         AttendanceTimeResponse(
             attendanceStartTime = instantToLocalDateTime(attendanceStartTime),
         )
+
+    fun toSessionCreateCommand(
+        request: SessionCreateRequest,
+        startHour: Long,
+    ) = SessionCreateCommand(
+        cohortId = request.cohortId,
+        date = localDateTimeToInstant(request.date),
+        week = request.week,
+        place = request.place,
+        eventName = request.eventName,
+        isOnline = request.isOnline,
+        startHour = startHour,
+    )
 }
