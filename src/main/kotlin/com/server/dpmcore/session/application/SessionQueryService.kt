@@ -1,5 +1,6 @@
 package com.server.dpmcore.session.application
 
+import com.server.dpmcore.cohort.application.CohortQueryService
 import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
@@ -12,6 +13,7 @@ import java.time.Instant
 @Service
 @Transactional(readOnly = true)
 class SessionQueryService(
+    private val cohortQueryService: CohortQueryService,
     private val sessionPersistencePort: SessionPersistencePort,
 ) {
     fun getNextSession(): Session? {
@@ -32,4 +34,12 @@ class SessionQueryService(
             ?.attendancePolicy
             ?.attendanceStart
             ?: throw SessionNotFoundException()
+
+    fun getSessionWeeks(): List<Int> {
+        val cohortId = cohortQueryService.getLatestCohortId()
+
+        return sessionPersistencePort
+            .findAllSessionWeeks(cohortId)
+            .distinct()
+    }
 }

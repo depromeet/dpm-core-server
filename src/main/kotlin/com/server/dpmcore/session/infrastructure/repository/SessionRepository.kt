@@ -46,4 +46,13 @@ class SessionRepository(
             }?.toDomain()
 
     override fun save(session: Session): Session = sessionJpaRepository.save(SessionEntity.from(session)).toDomain()
+
+    override fun findAllSessionWeeks(cohortId: CohortId): List<Int> =
+        queryFactory
+            .listQuery<Int> {
+                select(col(SessionEntity::week))
+                from(entity(SessionEntity::class))
+                where(col(SessionEntity::cohortId).equal(cohortId.value))
+                orderBy(col(SessionEntity::week).asc())
+            }
 }

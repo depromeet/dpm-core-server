@@ -13,4 +13,6 @@ interface SessionPersistencePort {
     fun findSessionById(sessionId: SessionId): Session?
 
     fun save(session: Session): Session
+
+    fun findAllSessionWeeks(cohortId: CohortId): List<Int>
 }

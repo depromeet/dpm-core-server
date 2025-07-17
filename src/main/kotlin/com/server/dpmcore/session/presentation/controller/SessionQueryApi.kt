@@ -7,6 +7,7 @@ import com.server.dpmcore.session.presentation.dto.response.AttendanceTimeRespon
 import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
+import com.server.dpmcore.session.presentation.dto.response.SessionWeeksResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
@@ -183,4 +184,39 @@ interface SessionQueryApi {
         ],
     )
     fun getAttendanceTime(sessionId: SessionId): CustomResponse<AttendanceTimeResponse>
+
+    @Operation(
+        summary = "세션 주차 조회",
+        description = "세션 주차를 조회합니다",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션 주차 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "세션 주차 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "weeks": [1, 2, 3, 4]
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getSessionWeeks(): CustomResponse<SessionWeeksResponse>
 }
