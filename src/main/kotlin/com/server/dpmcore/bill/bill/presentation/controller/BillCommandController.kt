@@ -5,7 +5,6 @@ import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.CreateBillResponse
 import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper.toCreateBillResponse
 import com.server.dpmcore.common.exception.CustomResponse
-import com.server.dpmcore.common.exception.GlobalExceptionCode
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -24,9 +23,6 @@ class BillCommandController(
     ): CustomResponse<CreateBillResponse> {
         val bill = billCommandService.save(createBillRequest)
 
-        return CustomResponse.ok(
-            toCreateBillResponse(bill),
-            GlobalExceptionCode.CREATE,
-        )
+        return CustomResponse.created(toCreateBillResponse(bill))
     }
 }
