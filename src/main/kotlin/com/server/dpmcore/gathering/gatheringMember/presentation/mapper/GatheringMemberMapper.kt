@@ -1,7 +1,7 @@
 package com.server.dpmcore.gathering.gatheringMember.presentation.mapper
 
-import com.server.dpmcore.bill.bill.persentation.dto.request.CreateGatheringMemberRequest
-import com.server.dpmcore.bill.bill.persentation.dto.response.CreateGatheringMemberResponse
+import com.server.dpmcore.bill.bill.presentation.dto.request.CreateGatheringMemberRequest
+import com.server.dpmcore.bill.bill.presentation.dto.response.CreateGatheringMemberResponse
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.member.member.domain.model.MemberId
 

@@ -1,4 +1,4 @@
-package com.server.dpmcore.bill.billAccount.persentation.mapper
+package com.server.dpmcore.bill.billAccount.presentation.mapper
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId

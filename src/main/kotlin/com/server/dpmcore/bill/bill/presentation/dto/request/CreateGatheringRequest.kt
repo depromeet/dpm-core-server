@@ -1,4 +1,4 @@
-package com.server.dpmcore.bill.bill.persentation.dto.request
+package com.server.dpmcore.bill.bill.presentation.dto.request
 
 import java.time.LocalDateTime
 

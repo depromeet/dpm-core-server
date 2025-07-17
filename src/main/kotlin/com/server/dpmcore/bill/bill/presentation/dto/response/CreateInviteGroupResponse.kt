@@ -1,4 +1,4 @@
-package com.server.dpmcore.bill.bill.persentation.dto.response
+package com.server.dpmcore.bill.bill.presentation.dto.response
 
 data class CreateInviteGroupResponse(
     val inviteGroupId: Long = 1L,

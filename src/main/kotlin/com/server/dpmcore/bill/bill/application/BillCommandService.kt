@@ -2,8 +2,8 @@ package com.server.dpmcore.bill.bill.application
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.port.BillPersistencePort
-import com.server.dpmcore.bill.bill.persentation.dto.request.CreateBillRequest
-import com.server.dpmcore.bill.bill.persentation.mapper.BillMapper.toBill
+import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper.toBill
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.application.GatheringCommandService

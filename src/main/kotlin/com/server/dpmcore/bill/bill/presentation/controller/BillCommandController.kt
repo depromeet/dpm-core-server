@@ -1,9 +1,9 @@
-package com.server.dpmcore.bill.bill.persentation.controller
+package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.application.BillCommandService
-import com.server.dpmcore.bill.bill.persentation.dto.request.CreateBillRequest
-import com.server.dpmcore.bill.bill.persentation.dto.response.CreateBillResponse
-import com.server.dpmcore.bill.bill.persentation.mapper.BillMapper.toCreateBillResponse
+import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.response.CreateBillResponse
+import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper.toCreateBillResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.common.exception.GlobalExceptionCode
 import org.springframework.web.bind.annotation.PostMapping

@@ -1,10 +1,10 @@
-package com.server.dpmcore.bill.bill.persentation.mapper
+package com.server.dpmcore.bill.bill.presentation.mapper
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
-import com.server.dpmcore.bill.bill.persentation.dto.request.CreateBillRequest
-import com.server.dpmcore.bill.bill.persentation.dto.response.CreateBillResponse
-import com.server.dpmcore.bill.bill.persentation.dto.response.CreateInviteGroupResponse
-import com.server.dpmcore.bill.billAccount.persentation.mapper.BillAccountMapper.toBillAccount
+import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.response.CreateBillResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.CreateInviteGroupResponse
+import com.server.dpmcore.bill.billAccount.presentation.mapper.BillAccountMapper.toBillAccount
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.presentation.mapper.GatheringMapper.toCreateGatheringResponse
 import com.server.dpmcore.gathering.gathering.presentation.mapper.GatheringMapper.toGathering
