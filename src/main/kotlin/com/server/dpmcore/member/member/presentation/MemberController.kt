@@ -27,6 +27,6 @@ class MemberController(
         response: HttpServletResponse,
     ): CustomResponse<Void> {
         memberService.withdraw(memberId, response)
-        return CustomResponse.ok()
+        return CustomResponse.noContent()
     }
 }
