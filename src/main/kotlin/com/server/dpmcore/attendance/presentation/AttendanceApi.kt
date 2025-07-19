@@ -79,7 +79,6 @@ interface AttendanceApi {
     )
     fun createAttendance(
         sessionId: SessionId,
-        memberId: MemberId,
         request: AttendanceCreateRequest,
     ): CustomResponse<AttendanceResponse>
 
