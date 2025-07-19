@@ -126,6 +126,6 @@ class AttendanceController(
             toAttendanceStatusUpdateCommand(sessionId, memberId, request),
         )
 
-        return CustomResponse.ok()
+        return CustomResponse.noContent()
     }
 }
