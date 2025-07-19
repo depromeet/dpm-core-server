@@ -253,6 +253,60 @@ interface AttendanceApi {
     ): CustomResponse<DetailAttendancesBySessionResponse>
 
     @Operation(
+        summary = "세션별 나의 출석 상세 조회",
+        description = "세션별 나의 출석을 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션별 나의 출석 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "세션별 나의 출석 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "member": {
+                                                "id": 1,
+                                                "name": "신민철",
+                                                "teamNumber": 2,
+                                                "part": "SERVER",
+                                                "attendanceStatus": "NORMAL"
+                                            },
+                                            "session": {
+                                                "id": 1,
+                                                "week": 2,
+                                                "eventName": "2주차 세션",
+                                                "date": "2025-08-09 14:00:00"
+                                            },
+                                            "attendance": {
+                                                "status": "LATE",
+                                                "attendedAt": "2025-08-09 14:05:12"
+                                            }
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getMyAttendanceBySessionId(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): CustomResponse<DetailAttendancesBySessionResponse>
+
+    @Operation(
         summary = "사람별 출석 상세 조회",
         description = "사람별 출석을 상세하게 조회합니다.",
     )

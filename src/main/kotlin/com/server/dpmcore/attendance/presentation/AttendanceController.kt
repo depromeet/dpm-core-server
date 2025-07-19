@@ -113,6 +113,22 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @GetMapping("/v1/sessions/{sessionId}/attendances/me")
+    override fun getMyAttendanceBySessionId(
+        @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<DetailAttendancesBySessionResponse> {
+        val response =
+            attendanceQueryService.getDetailAttendanceBySession(
+                GetDetailAttendanceBySessionQuery(
+                    sessionId = sessionId,
+                    memberId = memberId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
     @GetMapping("/v1/members/{memberId}/attendances")
     override fun getDetailMemberAttendances(
         @PathVariable memberId: MemberId,
