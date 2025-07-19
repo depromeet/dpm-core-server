@@ -24,8 +24,8 @@ class Member(
     val id: MemberId? = null,
     val name: String? = null,
     val email: String,
-    val part: MemberPart? = null,
-    val status: MemberStatus,
+    var part: MemberPart? = null,
+    var status: MemberStatus,
     createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
@@ -42,8 +42,15 @@ class Member(
     var deletedAt: Instant? = deletedAt
         private set
 
-    fun isAllowed(): Boolean {
-        return status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
+    fun isAllowed(): Boolean = status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
+
+    fun changeStatus(status: String) {
+        this.status = MemberStatus.valueOf(status.uppercase())
+        this.updatedAt = Instant.now()
+    }
+
+    fun removeDeletedAt() {
+        this.deletedAt = null
     }
 
     override fun equals(other: Any?): Boolean {
@@ -64,20 +71,18 @@ class Member(
         return result
     }
 
-    override fun toString(): String {
-        return "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
+    override fun toString(): String =
+        "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
             "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
             "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
-    }
 
     companion object {
-        fun create(email: String): Member {
-            return Member(
+        fun create(email: String): Member =
+            Member(
                 email = email,
                 status = MemberStatus.PENDING,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
             )
-        }
     }
 }
