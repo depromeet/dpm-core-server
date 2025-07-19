@@ -16,6 +16,26 @@ interface SessionCommandApi {
     @Operation(
         summary = "세션 출석시간 갱신",
         description = "세션 ID를 통해 해당 세션의 출석 시작 시간을 갱신합니다. 출석 시작 시간의 날짜는 세션의 날짜와 동일해야 합니다.",
+        requestBody =
+            io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "세션 출석시간 갱신 요청",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = UpdateAttendanceTimeRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "세션 출석시간 갱신 요청 예시",
+                                value = """
+                                {
+                                    "attendanceStartTime": "2025-08-02T14:05:00"
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
     )
     @ApiResponses(
         value = [

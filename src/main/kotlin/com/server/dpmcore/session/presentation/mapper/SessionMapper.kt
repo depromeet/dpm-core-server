@@ -9,11 +9,9 @@ import com.server.dpmcore.session.presentation.dto.response.SessionDetailRespons
 import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionWeeksResponse
-import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTimeString
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
@@ -55,10 +53,9 @@ object SessionMapper {
                 isOnline = isOnline,
                 date = instantToLocalDateTimeString(date),
                 attendanceStartTime =
-                    session.attendancePolicy.attendanceStart
-                        .let {
-                            instantToLocalDateTime(it)
-                        }.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                    instantToLocalDateTimeString(
+                        session.attendancePolicy.attendanceStart,
+                    ),
                 attendanceCode = session.attendancePolicy.attendanceCode,
             )
         }

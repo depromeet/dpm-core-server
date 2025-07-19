@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -24,6 +25,27 @@ interface AttendanceApi {
     @Operation(
         summary = "세션 출석",
         description = "세션에 대한 출석을 합니다. 요청 시 현재 시간을 기준으로 미리 생성된 출석 기록의 상태를 변경합니다",
+        requestBody =
+            RequestBody(
+                description = "출석 생성 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AttendanceCreateRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "출석 생성 요청 예시",
+                                value = """
+                                {
+                                    "attendanceCode": "3824"
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
     )
     @ApiResponses(
         value = [
@@ -44,7 +66,7 @@ interface AttendanceApi {
                                         "code": "G000",
                                         "data": {
                                             "attendanceStatus": "PRESENT",
-                                            "attendedAt": "2025-08-02T14:00:00"
+                                            "attendedAt": "2025-08-02 14:00:00"
                                         }
                                     }
                                 """,
@@ -57,6 +79,7 @@ interface AttendanceApi {
     )
     fun createAttendance(
         sessionId: SessionId,
+        memberId: MemberId,
         request: AttendanceCreateRequest,
     ): CustomResponse<AttendanceResponse>
 
@@ -91,12 +114,12 @@ interface AttendanceApi {
                                                     "attendanceStatus": "PRESENT"
                                                 },
                                                 {
-                                                    "id": 1,
+                                                    "id": 2,
                                                     "name": "이정호",
                                                     "teamNumber": 2,
                                                     "part": "WEB",
                                                     "attendanceStatus": "LATE"
-                                                },
+                                                }
                                             ],
                                             "hasNextPage": false,
                                             "nextCursorId": null
@@ -208,11 +231,11 @@ interface AttendanceApi {
                                                 "id": 1,
                                                 "week": 2,
                                                 "eventName": "2주차 세션",
-                                                "date": "2025-08-09 14:00:00",
+                                                "date": "2025-08-09 14:00:00"
                                             },
                                             "attendance": {
                                                 "status": "LATE",
-                                                "attendedAt": "2025-07-13 08:58:12"
+                                                "attendedAt": "2025-08-09 14:05:12"
                                             }
                                         }
                                     }
@@ -295,6 +318,27 @@ interface AttendanceApi {
     @Operation(
         summary = "출석 상태 갱신",
         description = "출석 상태를 갱신합니다.",
+        requestBody =
+            RequestBody(
+                description = "출석 상태 갱신 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AttendanceStatusUpdateRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "출석 상태 갱신 요청 예시",
+                                value = """
+                                    {
+                                        "attendanceStatus": "LATE"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
     )
     @ApiResponses(
         value = [

@@ -44,7 +44,7 @@ interface SessionQueryApi {
                                             "eventName": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
-                                            "date": "2025-08-02T14:00:00"
+                                            "date": "2025-08-02 14:00:00"
                                         }
                                     }
                                 """,
@@ -84,13 +84,13 @@ interface SessionQueryApi {
                                                     "id": 1,
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
-                                                    "date": "2025-08-02T14:00:00"
+                                                    "date": "2025-08-02 14:00:00"
                                                 },
                                                 {
                                                     "id": 2,
                                                     "week": 2,
                                                     "eventName": "미니 디프콘",
-                                                    "date": "2025-08-09T14:00:00"
+                                                    "date": "2025-08-09 14:00:00"
                                                 }
                                             ]
                                         }
@@ -132,8 +132,8 @@ interface SessionQueryApi {
                                             "eventName": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
-                                            "date": "2025-08-02T14:00:00",
-                                            "attendanceStartTime": "2025-08-02T14:00:00",
+                                            "date": "2025-08-02 14:00:00",
+                                            "attendanceStartTime": "2025-08-02 14:00:00",
                                             "attendanceCode": "3821"
                                         }
                                     }
@@ -169,7 +169,7 @@ interface SessionQueryApi {
                                         "message": "요청에 성공했습니다",
                                         "code": "G000",
                                         "data": {
-                                            "attendanceStartTime": "2025-08-02T14:00:00"
+                                            "attendanceStartTime": "2025-08-02 14:00:00"
                                         }
                                     }
                                 """,
