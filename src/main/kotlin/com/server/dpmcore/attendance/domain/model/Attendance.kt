@@ -55,8 +55,8 @@ class Attendance internal constructor(
     companion object {
         fun create(command: AttendanceCreateCommand): Attendance =
             Attendance(
-                sessionId = SessionId(command.sessionId),
-                memberId = MemberId(command.memberId),
+                sessionId = command.sessionId,
+                memberId = command.memberId,
                 status = AttendanceStatus.PENDING,
             )
     }
