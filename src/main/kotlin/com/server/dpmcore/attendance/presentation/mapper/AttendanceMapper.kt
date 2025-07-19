@@ -1,12 +1,18 @@
 package com.server.dpmcore.attendance.presentation.mapper
 
+import com.server.dpmcore.attendance.application.query.model.DetailMemberAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MemberSessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceStatusUpdateCommand
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendance
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailMember
+import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailSession
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
@@ -70,7 +76,7 @@ object AttendanceMapper {
 
     fun toDetailAttendanceBySessionResponse(
         model: SessionDetailAttendanceQueryModel,
-        attendanceStatus: String,
+        evaluation: String,
     ): DetailAttendancesBySessionResponse =
         DetailAttendancesBySessionResponse(
             member =
@@ -79,7 +85,7 @@ object AttendanceMapper {
                     name = model.memberName,
                     teamNumber = model.teamNumber,
                     part = model.part,
-                    attendanceStatus = attendanceStatus,
+                    attendanceStatus = evaluation,
                 ),
             session =
                 DetailAttendancesBySessionResponse.DetailSession(
@@ -93,5 +99,38 @@ object AttendanceMapper {
                     status = model.attendanceStatus,
                     attendedAt = model.attendedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 ),
+        )
+
+    fun toDetailMemberAttendancesResponse(
+        memberAttendanceModel: DetailMemberAttendanceQueryModel,
+        sessionAttendancesModel: List<MemberSessionAttendanceQueryModel>,
+        evaluation: String,
+    ): DetailMemberAttendancesResponse =
+        DetailMemberAttendancesResponse(
+            member =
+                DetailMember(
+                    id = memberAttendanceModel.memberId,
+                    name = memberAttendanceModel.memberName,
+                    teamNumber = memberAttendanceModel.teamNumber,
+                    part = memberAttendanceModel.part,
+                    attendanceStatus = evaluation,
+                ),
+            attendance =
+                DetailAttendance(
+                    presentCount = memberAttendanceModel.presentCount,
+                    lateCount = memberAttendanceModel.lateCount,
+                    excusedAbsentCount = memberAttendanceModel.excusedAbsentCount,
+                    absentCount = memberAttendanceModel.onlineAbsentCount + memberAttendanceModel.offlineAbsentCount,
+                ),
+            sessions =
+                sessionAttendancesModel.map { session ->
+                    DetailSession(
+                        id = session.sessionId,
+                        week = session.sessionWeek,
+                        eventName = session.sessionEventName,
+                        date = session.sessionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                        attendanceStatus = session.sessionAttendanceStatus,
+                    )
+                },
         )
 }

@@ -5,11 +5,13 @@ import com.server.dpmcore.attendance.application.AttendanceQueryService
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
-import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendanceBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
@@ -88,11 +90,25 @@ class AttendanceController(
     override fun getAttendanceBySessionIdAndMemberId(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
-    ): CustomResponse<DetailAttendanceBySessionResponse> {
+    ): CustomResponse<DetailAttendancesBySessionResponse> {
         val response =
             attendanceQueryService.getDetailAttendanceBySession(
                 GetDetailAttendanceBySessionQuery(
                     sessionId = sessionId,
+                    memberId = memberId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/members/{memberId}/attendances")
+    override fun getDetailMemberAttendances(
+        @PathVariable memberId: MemberId,
+    ): CustomResponse<DetailMemberAttendancesResponse> {
+        val response =
+            attendanceQueryService.getDetailMemberAttendances(
+                GetDetailMemberAttendancesQuery(
                     memberId = memberId,
                 ),
             )

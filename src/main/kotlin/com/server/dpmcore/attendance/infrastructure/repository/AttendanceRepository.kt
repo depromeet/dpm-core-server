@@ -2,12 +2,15 @@ package com.server.dpmcore.attendance.infrastructure.repository
 
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
+import com.server.dpmcore.attendance.application.query.model.DetailMemberAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MemberSessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.attendance.infrastructure.entity.AttendanceEntity
@@ -199,6 +202,91 @@ class AttendanceRepository(
                     sessionDate = it[SESSIONS.DATE]!!,
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
                     attendedAt = it[ATTENDANCES.ATTENDED_AT]!!,
+                )
+            }
+
+    override fun findDetailMemberAttendance(
+        query: GetDetailMemberAttendancesQuery,
+    ): DetailMemberAttendanceQueryModel? =
+        dsl
+            .select(
+                MEMBERS.MEMBER_ID,
+                MEMBERS.NAME,
+                TEAMS.NUMBER,
+                MEMBERS.PART,
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("PRESENT"), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("present_count"),
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("LATE"), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("late_count"),
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("EXCUSED_ABSENT"), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("excused_absent_count"),
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(true)), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("online_absent_count"),
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(false)), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("offline_absent_count"),
+            ).from(ATTENDANCES)
+            .join(MEMBERS)
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(SESSIONS)
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+            .join(MEMBER_TEAMS)
+            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(query.toCondition())
+            .groupBy(
+                MEMBERS.MEMBER_ID,
+                MEMBERS.NAME,
+                TEAMS.NUMBER,
+                MEMBERS.PART,
+            ).fetchOne {
+                DetailMemberAttendanceQueryModel(
+                    memberId = it[MEMBERS.MEMBER_ID]!!,
+                    memberName = it[MEMBERS.NAME]!!,
+                    teamNumber = it[TEAMS.NUMBER]!!,
+                    part = it[MEMBERS.PART]!!,
+                    presentCount = it.get("present_count", Int::class.java) ?: 0,
+                    lateCount = it.get("late_count", Int::class.java) ?: 0,
+                    excusedAbsentCount = it.get("excused_absent_count", Int::class.java) ?: 0,
+                    onlineAbsentCount = it.get("online_absent_count", Int::class.java) ?: 0,
+                    offlineAbsentCount = it.get("offline_absent_count", Int::class.java) ?: 0,
+                )
+            }
+
+    override fun findMemberSessionAttendances(
+        query: GetDetailMemberAttendancesQuery,
+    ): List<MemberSessionAttendanceQueryModel> =
+        dsl
+            .select(
+                SESSIONS.SESSION_ID,
+                SESSIONS.WEEK,
+                SESSIONS.EVENT_NAME,
+                SESSIONS.DATE,
+                ATTENDANCES.STATUS,
+            ).from(ATTENDANCES)
+            .join(SESSIONS)
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+            .join(MEMBERS)
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .where(query.toCondition())
+            .orderBy(SESSIONS.WEEK.asc(), SESSIONS.DATE.asc())
+            .fetch { record ->
+                MemberSessionAttendanceQueryModel(
+                    sessionId = record[SESSIONS.SESSION_ID]!!,
+                    sessionWeek = record[SESSIONS.WEEK]!!,
+                    sessionEventName = record[SESSIONS.EVENT_NAME]!!,
+                    sessionDate = record[SESSIONS.DATE]!!,
+                    sessionAttendanceStatus = record[ATTENDANCES.STATUS]!!,
                 )
             }
 }
