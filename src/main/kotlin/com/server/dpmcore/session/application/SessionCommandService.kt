@@ -1,6 +1,5 @@
 package com.server.dpmcore.session.application
 
-import com.server.dpmcore.session.application.config.SessionAttendanceProperties
 import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
@@ -14,7 +13,6 @@ import java.time.Instant
 @Transactional
 class SessionCommandService(
     private val sessionPersistencePort: SessionPersistencePort,
-    private val sessionAttendanceProperties: SessionAttendanceProperties,
 ) {
     fun updateSessionStartTime(
         sessionId: SessionId,

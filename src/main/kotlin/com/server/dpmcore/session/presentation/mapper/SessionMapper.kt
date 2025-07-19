@@ -10,6 +10,7 @@ import com.server.dpmcore.session.presentation.dto.response.SessionListDetailRes
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionWeeksResponse
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTimeString
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -23,7 +24,7 @@ object SessionMapper {
                 eventName = eventName,
                 place = place,
                 isOnline = isOnline,
-                date = instantToLocalDateTime(date).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                date = instantToLocalDateTimeString(date),
             )
         }
 
@@ -38,7 +39,7 @@ object SessionMapper {
                             id = it.id!!.value,
                             week = it.week,
                             eventName = it.eventName,
-                            date = instantToLocalDateTime(it.date),
+                            date = instantToLocalDateTimeString(it.date),
                         )
                     },
             )
@@ -52,7 +53,7 @@ object SessionMapper {
                 eventName = eventName,
                 place = place,
                 isOnline = isOnline,
-                date = instantToLocalDateTime(date).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                date = instantToLocalDateTimeString(date),
                 attendanceStartTime =
                     session.attendancePolicy.attendanceStart
                         .let {
@@ -65,9 +66,7 @@ object SessionMapper {
     fun toAttendanceTimeResponse(attendanceStartTime: Instant) =
         AttendanceTimeResponse(
             attendanceStartTime =
-                instantToLocalDateTime(
-                    attendanceStartTime,
-                ).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                instantToLocalDateTimeString(attendanceStartTime),
         )
 
     fun toSessionCreateCommand(

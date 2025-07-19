@@ -18,7 +18,7 @@ import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendances
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
-import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTimeString
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -29,7 +29,7 @@ object AttendanceMapper {
     ): AttendanceResponse =
         AttendanceResponse(
             attendanceStatus = attendanceStatus.name,
-            attendedAt = instantToLocalDateTime(attendedAt),
+            attendedAt = instantToLocalDateTimeString(attendedAt),
         )
 
     fun toSessionAttendancesResponse(
