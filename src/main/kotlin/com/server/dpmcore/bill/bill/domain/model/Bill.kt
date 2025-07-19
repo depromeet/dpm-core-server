@@ -2,6 +2,7 @@ package com.server.dpmcore.bill.bill.domain.model
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
 /**
@@ -29,7 +30,8 @@ class Bill(
     val billAccount: BillAccount,
     val title: String,
     val description: String? = null,
-    val gatherings: MutableList<Gathering> = mutableListOf(),
+    val hostUserId: MemberId,
+    var gatherings: MutableList<Gathering> = mutableListOf(),
     val completedAt: Instant? = null,
     val billStatus: BillStatus = BillStatus.PENDING,
     val createdAt: Instant? = null,
@@ -47,6 +49,7 @@ class Bill(
             id = id,
             billAccount = billAccount,
             title = title,
+            hostUserId = hostUserId,
             description = description,
             gatherings = gatherings,
             completedAt = now,
@@ -62,7 +65,5 @@ class Bill(
         return id == other.id
     }
 
-    override fun hashCode(): Int {
-        return id?.hashCode() ?: 0
-    }
+    override fun hashCode(): Int = id?.hashCode() ?: 0
 }
