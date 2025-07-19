@@ -326,5 +326,5 @@ interface AttendanceApi {
         sessionId: SessionId,
         memberId: MemberId,
         request: AttendanceStatusUpdateRequest,
-    ): CustomResponse<AttendanceResponse>
+    ): CustomResponse<Void>
 }

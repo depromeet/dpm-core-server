@@ -8,6 +8,7 @@ import com.server.dpmcore.attendance.application.query.model.MemberSessionAttend
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
+import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
@@ -97,16 +98,20 @@ class AttendanceRepository(
                 TEAMS.NUMBER,
                 MEMBERS.PART,
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("LATE"), DSL.inline(1))
+                    `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
                 ).`as`("late_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(true)), DSL.inline(1))
-                        .otherwise(DSL.inline(0)),
+                    `when`(
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
+                        DSL.inline(1),
+                    ).otherwise(DSL.inline(0)),
                 ).`as`("online_absent_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(false)), DSL.inline(1))
-                        .otherwise(DSL.inline(0)),
+                    `when`(
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
+                        DSL.inline(1),
+                    ).otherwise(DSL.inline(0)),
                 ).`as`("offline_absent_count"),
             ).from(ATTENDANCES)
             .join(MEMBERS)
@@ -149,16 +154,20 @@ class AttendanceRepository(
                 TEAMS.NUMBER,
                 MEMBERS.PART,
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("LATE"), DSL.inline(1))
+                    `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
                 ).`as`("late_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(true)), DSL.inline(1))
-                        .otherwise(DSL.inline(0)),
+                    `when`(
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
+                        DSL.inline(1),
+                    ).otherwise(DSL.inline(0)),
                 ).`as`("online_absent_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(false)), DSL.inline(1))
-                        .otherwise(DSL.inline(0)),
+                    `when`(
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
+                        DSL.inline(1),
+                    ).otherwise(DSL.inline(0)),
                 ).`as`("offline_absent_count"),
                 SESSIONS.SESSION_ID,
                 SESSIONS.WEEK,
@@ -215,24 +224,28 @@ class AttendanceRepository(
                 TEAMS.NUMBER,
                 MEMBERS.PART,
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("PRESENT"), DSL.inline(1))
+                    `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.PRESENT.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
                 ).`as`("present_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("LATE"), DSL.inline(1))
+                    `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
                 ).`as`("late_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("EXCUSED_ABSENT"), DSL.inline(1))
+                    `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.EXCUSED_ABSENT.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
                 ).`as`("excused_absent_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(true)), DSL.inline(1))
-                        .otherwise(DSL.inline(0)),
+                    `when`(
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
+                        DSL.inline(1),
+                    ).otherwise(DSL.inline(0)),
                 ).`as`("online_absent_count"),
                 sum(
-                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(false)), DSL.inline(1))
-                        .otherwise(DSL.inline(0)),
+                    `when`(
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
+                        DSL.inline(1),
+                    ).otherwise(DSL.inline(0)),
                 ).`as`("offline_absent_count"),
             ).from(ATTENDANCES)
             .join(MEMBERS)

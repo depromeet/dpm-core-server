@@ -121,7 +121,7 @@ class AttendanceController(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
         @RequestBody request: AttendanceStatusUpdateRequest,
-    ): CustomResponse<AttendanceResponse> {
+    ): CustomResponse<Void> {
         attendanceCommandService.updateAttendanceStatus(
             toAttendanceStatusUpdateCommand(sessionId, memberId, request),
         )

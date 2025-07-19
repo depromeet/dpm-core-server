@@ -134,7 +134,7 @@ interface SessionQueryApi {
                                             "isOnline": false,
                                             "date": "2025-08-02T14:00:00",
                                             "attendanceStartTime": "2025-08-02T14:00:00",
-                                            "attendanceCode: "3821"
+                                            "attendanceCode": "3821"
                                         }
                                     }
                                 """,
