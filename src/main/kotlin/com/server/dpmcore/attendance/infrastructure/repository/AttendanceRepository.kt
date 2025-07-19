@@ -4,8 +4,10 @@ import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.server.dpmcore.attendance.application.query.model.MemberAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.attendance.infrastructure.entity.AttendanceEntity
@@ -131,6 +133,72 @@ class AttendanceRepository(
                     lateCount = record.get("late_count", Int::class.java) ?: 0,
                     onlineAbsentCount = record.get("online_absent_count", Int::class.java) ?: 0,
                     offlineAbsentCount = record.get("offline_absent_count", Int::class.java) ?: 0,
+                )
+            }
+
+    override fun findDetailAttendanceBySession(
+        query: GetDetailAttendanceBySessionQuery,
+    ): SessionDetailAttendanceQueryModel? =
+        dsl
+            .select(
+                MEMBERS.MEMBER_ID,
+                MEMBERS.NAME,
+                TEAMS.NUMBER,
+                MEMBERS.PART,
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("LATE"), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("late_count"),
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(true)), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("online_absent_count"),
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq("ABSENT").and(SESSIONS.IS_ONLINE.eq(false)), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`("offline_absent_count"),
+                SESSIONS.SESSION_ID,
+                SESSIONS.WEEK,
+                SESSIONS.EVENT_NAME,
+                SESSIONS.DATE,
+                ATTENDANCES.STATUS,
+                ATTENDANCES.ATTENDED_AT,
+            ).from(ATTENDANCES)
+            .join(MEMBERS)
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(SESSIONS)
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+            .join(MEMBER_TEAMS)
+            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(query.toCondition())
+            .groupBy(
+                MEMBERS.MEMBER_ID,
+                MEMBERS.NAME,
+                TEAMS.NUMBER,
+                MEMBERS.PART,
+                SESSIONS.SESSION_ID,
+                SESSIONS.WEEK,
+                SESSIONS.EVENT_NAME,
+                SESSIONS.DATE,
+                ATTENDANCES.STATUS,
+                ATTENDANCES.ATTENDED_AT,
+            ).fetchOne {
+                SessionDetailAttendanceQueryModel(
+                    memberId = it[MEMBERS.MEMBER_ID]!!,
+                    memberName = it[MEMBERS.NAME]!!,
+                    teamNumber = it[TEAMS.NUMBER]!!,
+                    part = it[MEMBERS.PART]!!,
+                    lateCount = it.get("late_count", Int::class.java) ?: 0,
+                    onlineAbsentCount = it.get("online_absent_count", Int::class.java) ?: 0,
+                    offlineAbsentCount = it.get("offline_absent_count", Int::class.java) ?: 0,
+                    sessionId = it[SESSIONS.SESSION_ID]!!,
+                    sessionWeek = it[SESSIONS.WEEK]!!,
+                    sessionEventName = it[SESSIONS.EVENT_NAME]!!,
+                    sessionDate = it[SESSIONS.DATE]!!,
+                    attendanceStatus = it[ATTENDANCES.STATUS]!!,
+                    attendedAt = it[ATTENDANCES.ATTENDED_AT]!!,
                 )
             }
 }

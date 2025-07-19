@@ -4,10 +4,12 @@ import com.server.dpmcore.attendance.application.AttendanceCommandService
 import com.server.dpmcore.attendance.application.AttendanceQueryService
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendanceBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
@@ -76,6 +78,22 @@ class AttendanceController(
                     teams = teams,
                     name = name,
                     cursorId = cursorId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
+    override fun getAttendanceBySessionIdAndMemberId(
+        @PathVariable sessionId: SessionId,
+        @PathVariable memberId: MemberId,
+    ): CustomResponse<DetailAttendanceBySessionResponse> {
+        val response =
+            attendanceQueryService.getDetailAttendanceBySession(
+                GetDetailAttendanceBySessionQuery(
+                    sessionId = sessionId,
+                    memberId = memberId,
                 ),
             )
 
