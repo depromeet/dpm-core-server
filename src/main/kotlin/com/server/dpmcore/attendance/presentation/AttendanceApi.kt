@@ -370,21 +370,21 @@ interface AttendanceApi {
     fun getDetailMemberAttendances(memberId: MemberId): CustomResponse<DetailMemberAttendancesResponse>
 
     @Operation(
-        summary = "나의 출석 상세 조회",
-        description = "나의 출석을 상세하게 조회합니다.",
+        summary = "나의 출석 리스트 상세 조회",
+        description = "나의 출석 리스트를 상세하게 조회합니다.",
     )
     @ApiResponses(
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "나의 출석 상세 조회 성공",
+                description = "나의 출석 리스트 상세 조회 성공",
                 content = [
                     Content(
                         mediaType = "application/json",
                         schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
-                                name = "나의 출석 상세 조회 성공 응답",
+                                name = "나의 출석 리스트 상세 조회 성공 응답",
                                 value = """
                                     {
                                         "status": "OK",
