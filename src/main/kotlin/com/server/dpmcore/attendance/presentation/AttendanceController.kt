@@ -18,6 +18,7 @@ import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAtte
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceStatusUpdateCommand
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.security.annotation.CurrentMemberId
 import com.server.dpmcore.session.domain.model.SessionId
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -116,6 +117,21 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @GetMapping("/v1/members/me/attendances")
+    override fun getMyDetailAttendances(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<DetailMemberAttendancesResponse> {
+        val response =
+            attendanceQueryService.getDetailMemberAttendances(
+                GetDetailMemberAttendancesQuery(
+                    memberId = memberId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/")
     @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
     override fun updateAttendance(
         @PathVariable sessionId: SessionId,

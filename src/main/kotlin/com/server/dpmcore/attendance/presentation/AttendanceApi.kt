@@ -315,6 +315,69 @@ interface AttendanceApi {
     fun getDetailMemberAttendances(memberId: MemberId): CustomResponse<DetailMemberAttendancesResponse>
 
     @Operation(
+        summary = "나의 출석 상세 조회",
+        description = "나의 출석을 상세하게 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "나의 출석 상세 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "나의 출석 상세 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "member": {
+                                                "id": 1,
+                                                "name": "신민철",
+                                                "teamNumber": 2,
+                                                "part": "SERVER",
+                                                "attendanceStatus": "NORMAL"
+                                            },
+                                            "attendance": {
+                                                "presentCount": 1,
+                                                "lateCount": 1,
+                                                "excusedAbsentCount": 0,
+                                                "absentCount": 0
+                                            },
+                                            "sessions": [
+                                                {
+                                                    "id": 1,
+                                                    "week": 1,
+                                                    "eventName": "디프만 17기 OT",
+                                                    "date": "2025-08-02 14:03:42",
+                                                    "attendanceStatus": "PRESENT"
+                                                },
+                                                {
+                                                    "id": 6,
+                                                    "week": 2,
+                                                    "eventName": "2주차 세션",
+                                                    "date": "2025-08-09 14:09:12",
+                                                    "attendanceStatus": "LATE"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getMyDetailAttendances(memberId: MemberId): CustomResponse<DetailMemberAttendancesResponse>
+
+    @Operation(
         summary = "출석 상태 갱신",
         description = "출석 상태를 갱신합니다.",
         requestBody =
