@@ -2,16 +2,13 @@ package com.server.dpmcore.attendance.application
 
 import com.server.dpmcore.attendance.domain.exception.AttendanceNotFoundException
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
+import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceRecordCommand
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceStatusUpdateCommand
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
-import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
-import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.application.SessionQueryService
 import com.server.dpmcore.session.domain.exception.CheckedAttendanceException
-import com.server.dpmcore.session.domain.model.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 
 @Service
 @Transactional
@@ -19,16 +16,10 @@ class AttendanceCommandService(
     private val attendancePersistencePort: AttendancePersistencePort,
     private val sessionQueryService: SessionQueryService,
 ) {
-    fun attendSession(
-        sessionId: SessionId,
-        attendedAt: Instant,
-        request: AttendanceCreateRequest,
-    ): AttendanceStatus {
-        val memberId = MemberId(request.memberId)
-
+    fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
         val attendance =
             attendancePersistencePort
-                .findAttendanceBy(sessionId, memberId)
+                .findAttendanceBy(command.sessionId, command.memberId)
                 ?.also {
                     if (it.isAttended()) {
                         throw CheckedAttendanceException()
@@ -37,10 +28,10 @@ class AttendanceCommandService(
 
         val status =
             sessionQueryService
-                .getSessionById(sessionId)
-                .attend(attendedAt, request.attendanceCode)
+                .getSessionById(command.sessionId)
+                .attend(command.attendedAt, command.attendanceCode)
 
-        attendance.markAttendance(status, attendedAt)
+        attendance.markAttendance(status, command.attendedAt)
         attendancePersistencePort.save(attendance)
 
         return status

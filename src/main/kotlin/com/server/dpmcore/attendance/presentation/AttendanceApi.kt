@@ -1,7 +1,7 @@
 package com.server.dpmcore.attendance.presentation
 
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
-import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
+import com.server.dpmcore.attendance.presentation.dto.request.AttendanceRecordRequest
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
@@ -32,7 +32,7 @@ interface AttendanceApi {
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = AttendanceCreateRequest::class),
+                        schema = Schema(implementation = AttendanceRecordRequest::class),
                         examples = [
                             ExampleObject(
                                 name = "출석 생성 요청 예시",
@@ -79,7 +79,8 @@ interface AttendanceApi {
     )
     fun createAttendance(
         sessionId: SessionId,
-        request: AttendanceCreateRequest,
+        memberId: MemberId,
+        request: AttendanceRecordRequest,
     ): CustomResponse<AttendanceResponse>
 
     @Operation(

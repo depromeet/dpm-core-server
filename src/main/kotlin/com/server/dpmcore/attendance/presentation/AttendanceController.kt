@@ -3,11 +3,12 @@ package com.server.dpmcore.attendance.presentation
 import com.server.dpmcore.attendance.application.AttendanceCommandService
 import com.server.dpmcore.attendance.application.AttendanceQueryService
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
+import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceRecordCommand
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
-import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
+import com.server.dpmcore.attendance.presentation.dto.request.AttendanceRecordRequest
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
@@ -37,10 +38,19 @@ class AttendanceController(
     @PostMapping("/v1/sessions/{sessionId}/attendances")
     override fun createAttendance(
         @PathVariable sessionId: SessionId,
-        @RequestBody request: AttendanceCreateRequest,
+        @CurrentMemberId memberId: MemberId,
+        @RequestBody request: AttendanceRecordRequest,
     ): CustomResponse<AttendanceResponse> {
         val attendedAt = Instant.now()
-        val attendanceStatus = attendanceCommandService.attendSession(sessionId, attendedAt, request)
+        val attendanceStatus =
+            attendanceCommandService.attendSession(
+                AttendanceRecordCommand(
+                    sessionId = sessionId,
+                    memberId = memberId,
+                    attendedAt = attendedAt,
+                    attendanceCode = request.attendanceCode,
+                ),
+            )
 
         return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
     }
