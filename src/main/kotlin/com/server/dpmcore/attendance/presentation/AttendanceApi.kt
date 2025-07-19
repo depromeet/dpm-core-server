@@ -5,6 +5,7 @@ import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRe
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -153,7 +154,7 @@ interface AttendanceApi {
                                                     "teamNumber": 2,
                                                     "part": "WEB",
                                                     "attendanceStatus": "NORMAL"
-                                                },
+                                                }
                                             ],
                                             "hasNextPage": false,
                                             "nextCursorId": null
@@ -174,13 +175,153 @@ interface AttendanceApi {
         cursorId: Long?,
     ): CustomResponse<MemberAttendancesResponse>
 
+    @Operation(
+        summary = "세션별 개인 출석 상세 조회",
+        description = "세션별 개인 출석을 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션별 개인 출석 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "세션별 개인 출석 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "member": {
+                                                "id": 1,
+                                                "name": "신민철",
+                                                "teamNumber": 2,
+                                                "part": "SERVER",
+                                                "attendanceStatus": "NORMAL"
+                                            },
+                                            "session": {
+                                                "id": 1,
+                                                "week": 2,
+                                                "eventName": "2주차 세션",
+                                                "date": "2025-08-09 14:00:00",
+                                            },
+                                            "attendance": {
+                                                "status": "LATE",
+                                                "attendedAt": "2025-07-13 08:58:12"
+                                            }
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
     fun getAttendanceBySessionIdAndMemberId(
         sessionId: SessionId,
         memberId: MemberId,
     ): CustomResponse<DetailAttendancesBySessionResponse>
 
-    fun getAttendanceByMemberId(memberId: MemberId)
+    @Operation(
+        summary = "사람별 출석 상세 조회",
+        description = "사람별 출석을 상세하게 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "사람별 출석 상세 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "사람별 출석 상세 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "member": {
+                                                "id": 1,
+                                                "name": "신민철",
+                                                "teamNumber": 2,
+                                                "part": "SERVER",
+                                                "attendanceStatus": "NORMAL"
+                                            },
+                                            "attendance": {
+                                                "presentCount": 1,
+                                                "lateCount": 1,
+                                                "excusedAbsentCount": 0,
+                                                "absentCount": 0
+                                            },
+                                            "sessions": [
+                                                {
+                                                    "id": 1,
+                                                    "week": 1,
+                                                    "eventName": "디프만 17기 OT",
+                                                    "date": "2025-08-02 14:03:42",
+                                                    "attendanceStatus": "PRESENT"
+                                                },
+                                                {
+                                                    "id": 6,
+                                                    "week": 2,
+                                                    "eventName": "2주차 세션",
+                                                    "date": "2025-08-09 14:09:12",
+                                                    "attendanceStatus": "LATE"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getDetailMemberAttendances(memberId: MemberId): CustomResponse<DetailMemberAttendancesResponse>
 
+    @Operation(
+        summary = "출석 상태 갱신",
+        description = "출석 상태를 갱신합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "출석 상태 갱신 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "출석 상태 갱신 성공 응답",
+                                value = """
+                                    {
+                                        "status": "NO_CONTENT",
+                                        "message": "요청에 성공했지만 반환할 데이터가 없습니다.",
+                                        "code": "G004"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
     fun updateAttendance(
         sessionId: SessionId,
         memberId: MemberId,
