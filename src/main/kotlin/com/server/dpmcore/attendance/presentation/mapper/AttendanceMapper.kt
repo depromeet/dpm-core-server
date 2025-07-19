@@ -6,7 +6,7 @@ import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceStatusUpdateCommand
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
-import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendanceBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
@@ -71,10 +71,10 @@ object AttendanceMapper {
     fun toDetailAttendanceBySessionResponse(
         model: SessionDetailAttendanceQueryModel,
         attendanceStatus: String,
-    ): DetailAttendanceBySessionResponse =
-        DetailAttendanceBySessionResponse(
+    ): DetailAttendancesBySessionResponse =
+        DetailAttendancesBySessionResponse(
             member =
-                DetailAttendanceBySessionResponse.DetailMember(
+                DetailAttendancesBySessionResponse.DetailMember(
                     id = model.memberId,
                     name = model.memberName,
                     teamNumber = model.teamNumber,
@@ -82,14 +82,14 @@ object AttendanceMapper {
                     attendanceStatus = attendanceStatus,
                 ),
             session =
-                DetailAttendanceBySessionResponse.DetailSession(
+                DetailAttendancesBySessionResponse.DetailSession(
                     id = model.sessionId,
                     week = model.sessionWeek,
                     eventName = model.sessionEventName,
                     date = model.sessionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 ),
             attendance =
-                DetailAttendanceBySessionResponse.DetailAttendance(
+                DetailAttendancesBySessionResponse.DetailAttendance(
                     status = model.attendanceStatus,
                     attendedAt = model.attendedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 ),

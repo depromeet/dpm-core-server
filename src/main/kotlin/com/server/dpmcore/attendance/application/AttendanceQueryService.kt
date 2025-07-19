@@ -5,7 +5,7 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesByS
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.infrastructure.repository.AttendanceRepository
-import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendanceBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
@@ -65,7 +65,7 @@ class AttendanceQueryService(
         )
     }
 
-    fun getDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): DetailAttendanceBySessionResponse {
+    fun getDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): DetailAttendancesBySessionResponse {
         val result = (
             attendanceRepository
                 .findDetailAttendanceBySession(query)

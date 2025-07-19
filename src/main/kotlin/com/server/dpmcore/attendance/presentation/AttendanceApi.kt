@@ -4,7 +4,7 @@ import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
-import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendanceBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -177,7 +177,9 @@ interface AttendanceApi {
     fun getAttendanceBySessionIdAndMemberId(
         sessionId: SessionId,
         memberId: MemberId,
-    ): CustomResponse<DetailAttendanceBySessionResponse>
+    ): CustomResponse<DetailAttendancesBySessionResponse>
+
+    fun getAttendanceByMemberId(memberId: MemberId)
 
     fun updateAttendance(
         sessionId: SessionId,

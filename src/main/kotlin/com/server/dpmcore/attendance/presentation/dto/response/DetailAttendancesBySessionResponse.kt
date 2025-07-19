@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.presentation.dto.response
 
-data class DetailAttendanceBySessionResponse(
+data class DetailAttendancesBySessionResponse(
     val member: DetailMember,
     val session: DetailSession,
     val attendance: DetailAttendance,
