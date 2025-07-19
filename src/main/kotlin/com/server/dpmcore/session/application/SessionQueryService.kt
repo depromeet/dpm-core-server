@@ -1,7 +1,6 @@
 package com.server.dpmcore.session.application
 
 import com.server.dpmcore.cohort.application.CohortQueryService
-import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
@@ -22,7 +21,11 @@ class SessionQueryService(
         return sessionPersistencePort.findNextSessionBy(currentTime)
     }
 
-    fun getAllSessions(cohortId: CohortId): List<Session> = sessionPersistencePort.findAllSessions(cohortId)
+    fun getAllSessions(): List<Session> {
+        val cohortId = cohortQueryService.getLatestCohortId()
+
+        return sessionPersistencePort.findAllSessions(cohortId)
+    }
 
     fun getSessionById(sessionId: SessionId): Session =
         sessionPersistencePort.findSessionById(sessionId)

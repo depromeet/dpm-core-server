@@ -12,6 +12,7 @@ import com.server.dpmcore.session.presentation.dto.response.SessionWeeksResponse
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
@@ -22,7 +23,7 @@ object SessionMapper {
                 eventName = eventName,
                 place = place,
                 isOnline = isOnline,
-                date = instantToLocalDateTime(date),
+                date = instantToLocalDateTime(date).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
             )
         }
 
@@ -51,14 +52,22 @@ object SessionMapper {
                 eventName = eventName,
                 place = place,
                 isOnline = isOnline,
-                date = instantToLocalDateTime(date),
-                attendanceStartTime = session.attendancePolicy.attendanceStart.let { instantToLocalDateTime(it) },
+                date = instantToLocalDateTime(date).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                attendanceStartTime =
+                    session.attendancePolicy.attendanceStart
+                        .let {
+                            instantToLocalDateTime(it)
+                        }.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                attendanceCode = session.attendancePolicy.attendanceCode,
             )
         }
 
     fun toAttendanceTimeResponse(attendanceStartTime: Instant) =
         AttendanceTimeResponse(
-            attendanceStartTime = instantToLocalDateTime(attendanceStartTime),
+            attendanceStartTime =
+                instantToLocalDateTime(
+                    attendanceStartTime,
+                ).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
         )
 
     fun toSessionCreateCommand(

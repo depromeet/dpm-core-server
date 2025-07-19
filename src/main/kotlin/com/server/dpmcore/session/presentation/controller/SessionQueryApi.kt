@@ -1,6 +1,5 @@
 package com.server.dpmcore.session.presentation.controller
 
-import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.presentation.dto.response.AttendanceTimeResponse
@@ -15,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.RequestParam
 
 @Tag(name = "세션(Session)")
 interface SessionQueryApi {
@@ -105,9 +103,7 @@ interface SessionQueryApi {
             ),
         ],
     )
-    fun getAllSessions(
-        @RequestParam(name = "cohortId") cohortId: CohortId,
-    ): CustomResponse<SessionListResponse>
+    fun getAllSessions(): CustomResponse<SessionListResponse>
 
     @Operation(
         summary = "세션 상세 조회",
@@ -137,7 +133,8 @@ interface SessionQueryApi {
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
                                             "date": "2025-08-02T14:00:00",
-                                            "attendanceStartTime": "2025-08-02T14:00:00"
+                                            "attendanceStartTime": "2025-08-02T14:00:00",
+                                            "attendanceCode: "3821"
                                         }
                                     }
                                 """,

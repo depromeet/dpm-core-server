@@ -1,13 +1,12 @@
 package com.server.dpmcore.session.presentation.dto.response
 
-import java.time.LocalDateTime
-
 data class SessionDetailResponse(
     val sessionId: Long,
     val week: Int,
     val eventName: String,
     val place: String,
     val isOnline: Boolean,
-    val date: LocalDateTime,
-    val attendanceStartTime: LocalDateTime,
+    val date: String,
+    val attendanceStartTime: String,
+    val attendanceCode: String,
 )
