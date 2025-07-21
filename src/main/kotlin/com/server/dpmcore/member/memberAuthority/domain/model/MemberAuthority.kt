@@ -1,4 +1,4 @@
-package com.server.dpmcore.member.memberAuthority.domain
+package com.server.dpmcore.member.memberAuthority.domain.model
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.domain.model.MemberId

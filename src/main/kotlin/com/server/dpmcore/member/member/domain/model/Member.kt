@@ -1,6 +1,6 @@
 package com.server.dpmcore.member.member.domain.model
 
-import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
+import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
 import com.server.dpmcore.member.memberCohort.domain.MemberCohort
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
 import java.time.Instant
@@ -42,9 +42,7 @@ class Member(
     var deletedAt: Instant? = deletedAt
         private set
 
-    fun isAllowed(): Boolean {
-        return status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
-    }
+    fun isAllowed(): Boolean = status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -64,20 +62,18 @@ class Member(
         return result
     }
 
-    override fun toString(): String {
-        return "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
+    override fun toString(): String =
+        "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
             "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
             "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
-    }
 
     companion object {
-        fun create(email: String): Member {
-            return Member(
+        fun create(email: String): Member =
+            Member(
                 email = email,
                 status = MemberStatus.PENDING,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
             )
-        }
     }
 }
