@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gathering.application
 
+import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.GatheringPersistencePort
@@ -16,10 +17,14 @@ class GatheringCommandService(
     private val gatheringMemberCommandService: GatheringMemberCommandService,
     private val receiptCommandService: ReceiptCommandService,
 ) {
-    fun save(gathering: Gathering): Gathering {
+    fun save(
+        bill: Bill,
+        gathering: Gathering,
+    ): Gathering {
         val savedGathering =
             gatheringPersistencePort.save(
 //                TODO : 팩토리 도입하기
+                bill,
                 Gathering(
                     title = gathering.title,
                     description = gathering.description,
@@ -27,12 +32,12 @@ class GatheringCommandService(
                     category = gathering.category,
                     hostUserId = gathering.hostUserId,
                     roundNumber = gathering.roundNumber,
-                    bill = gathering.bill,
+                    billId = gathering.billId,
                 ),
             )
 
         gathering.gatheringMembers.map { gatheringMember ->
-            gatheringMember.gathering = savedGathering
+            gatheringMember.gatheringId = savedGathering
         }
         if (gathering.gatheringMembers.isNotEmpty()) {
 //            TODO 준원 : 회식 참여 멤버 저장 로직 추가
@@ -47,11 +52,14 @@ class GatheringCommandService(
         return savedGathering
     }
 
-    fun save(gatherings: MutableList<Gathering>): MutableList<Gathering> {
+    fun save(
+        bill: Bill,
+        gatherings: MutableList<Gathering>,
+    ): MutableList<Gathering> {
         if (gatherings.isEmpty()) {
             throw BillException.GatheringRequiredException()
         }
 //        TODO : 벌크 insert 로직 추가
-        return gatherings.map { save(it) }.toMutableList()
+        return gatherings.map { save(bill, it) }.toMutableList()
     }
 }

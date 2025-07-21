@@ -1,5 +1,7 @@
 package com.server.dpmcore.gathering.gathering.infrastructure.entity
 
+import com.server.dpmcore.bill.bill.domain.model.Bill
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.infrastructure.entity.BillEntity
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
@@ -55,7 +57,10 @@ class GatheringEntity(
     val receipt: ReceiptEntity? = null,
 ) {
     companion object {
-        fun from(gathering: Gathering): GatheringEntity =
+        fun from(
+            bill: Bill,
+            gathering: Gathering,
+        ): GatheringEntity =
             GatheringEntity(
                 id = gathering.id?.value ?: 0L,
                 title = gathering.title,
@@ -67,7 +72,7 @@ class GatheringEntity(
                 createdAt = gathering.createdAt ?: Instant.now(),
                 updatedAt = gathering.updatedAt ?: Instant.now(),
                 deletedAt = gathering.deletedAt,
-                bill = BillEntity.from(gathering.bill!!),
+                bill = BillEntity.from(bill),
                 receipt = gathering.receipt?.let { ReceiptEntity.from(it) },
             )
     }
@@ -84,7 +89,7 @@ class GatheringEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            bill = bill.toDomain(),
+            billId = BillId(bill.id),
             gatheringMembers = gatheringMembers.map { it.toDomain() }.toMutableList(),
             receipt = receipt?.toDomain(),
         )

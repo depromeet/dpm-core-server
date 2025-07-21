@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.infrastructure.entity
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.billAccount.infrastructure.entity.BillAccountEntity
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.CascadeType
@@ -67,7 +68,7 @@ class BillEntity(
             title = title,
             description = description,
             hostUserId = MemberId(hostUserId),
-            gatherings = gatherings.map { it.toDomain() }.toMutableList(),
+            gatheringIds = gatherings.map { GatheringId(it.id) }.toMutableList(),
             completedAt = completedAt,
             createdAt = createdAt,
             updatedAt = updatedAt,

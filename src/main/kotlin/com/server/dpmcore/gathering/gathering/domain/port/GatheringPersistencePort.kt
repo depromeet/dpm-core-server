@@ -1,9 +1,15 @@
 package com.server.dpmcore.gathering.gathering.domain.port
 
+import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 
 interface GatheringPersistencePort {
     fun findGatheringById(id: Long): Gathering
 
-    fun save(gathering: Gathering): Gathering
+    fun save(
+        bill: Bill,
+        gathering: Gathering,
+    ): Gathering
+
+    fun findById(id: Long): Gathering
 }

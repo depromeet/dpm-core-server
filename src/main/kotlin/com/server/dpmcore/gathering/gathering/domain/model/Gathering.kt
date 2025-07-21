@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gathering.domain.model
 
-import com.server.dpmcore.bill.bill.domain.model.Bill
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.Receipt
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -29,7 +29,7 @@ class Gathering(
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
-    var bill: Bill? = null,
+    var billId: BillId? = null,
     var gatheringMembers: MutableList<GatheringMember> = mutableListOf(),
     var receipt: Receipt? = null,
 ) {
@@ -54,5 +54,5 @@ class Gathering(
     override fun hashCode(): Int = id?.hashCode() ?: 0
 
     override fun toString(): String =
-        "Gathering(id=$id, title='$title', description=$description, heldAt=$heldAt, category=$category, hostUserId=$hostUserId, roundNumber=$roundNumber, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt, bill=$bill, gatheringMembers=$gatheringMembers)"
+        "Gathering(id=$id, title='$title', description=$description, heldAt=$heldAt, category=$category, hostUserId=$hostUserId, roundNumber=$roundNumber, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt, bill=$billId, gatheringMembers=$gatheringMembers)"
 }

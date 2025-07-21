@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gathering.presentation.mapper
 
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateGatheringRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.CreateGatheringResponse
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
@@ -13,7 +14,10 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 object GatheringMapper {
-    fun toGathering(createGatheringRequest: CreateGatheringRequest): Gathering =
+    fun toGathering(
+        createGatheringRequest: CreateGatheringRequest,
+        billId: BillId,
+    ): Gathering =
         Gathering(
             title = createGatheringRequest.title,
             description = createGatheringRequest.description,
@@ -21,6 +25,7 @@ object GatheringMapper {
             heldAt = createGatheringRequest.heldAt.atZone(ZoneId.of("Asia/Seoul")).toInstant(),
             category = GatheringCategory.valueOf(createGatheringRequest.category),
             roundNumber = createGatheringRequest.roundNumber,
+            billId = billId,
             gatheringMembers =
                 createGatheringRequest.gatheringMembers
                     ?.map { gatheringMember ->

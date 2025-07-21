@@ -1,7 +1,7 @@
 package com.server.dpmcore.bill.bill.domain.model
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
-import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
@@ -31,7 +31,7 @@ class Bill(
     val title: String,
     val description: String? = null,
     val hostUserId: MemberId,
-    var gatherings: MutableList<Gathering> = mutableListOf(),
+    var gatheringIds: MutableList<GatheringId> = mutableListOf(),
     val completedAt: Instant? = null,
     val billStatus: BillStatus = BillStatus.PENDING,
     val createdAt: Instant? = null,
@@ -51,7 +51,7 @@ class Bill(
             title = title,
             hostUserId = hostUserId,
             description = description,
-            gatherings = gatherings,
+            gatheringIds = gatheringIds,
             completedAt = now,
             createdAt = createdAt,
             updatedAt = now,

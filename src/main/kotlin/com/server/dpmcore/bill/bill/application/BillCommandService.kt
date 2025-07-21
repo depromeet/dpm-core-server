@@ -7,6 +7,7 @@ import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper.toBill
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.application.GatheringCommandService
+import com.server.dpmcore.gathering.gathering.presentation.mapper.GatheringMapper.toGathering
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -28,8 +29,17 @@ class BillCommandService(
         val bill = toBill(createBillRequest)
         val savedBill = billPersistencePort.save(bill)
 //        TODO : 값 주입 도메인 로직으로 변경
-        bill.gatherings.forEach { gathering -> gathering.bill = savedBill }
-        savedBill.gatherings = gatheringCommandService.save(bill.gatherings)
+
+        gatheringCommandService.save(
+            bill = savedBill,
+            createBillRequest.gatherings
+                .map { createGatheringRequest ->
+                    toGathering(
+                        createGatheringRequest,
+                        savedBill.id ?: throw BillException.BillIdRequiredException(),
+                    )
+                }.toMutableList(),
+        )
         return savedBill
     }
 }
