@@ -462,24 +462,7 @@ interface AttendanceApi {
             ApiResponse(
                 responseCode = "204",
                 description = "출석 상태 갱신 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "출석 상태 갱신 성공 응답",
-                                value = """
-                                    {
-                                        "status": "NO_CONTENT",
-                                        "message": "요청에 성공했지만 반환할 데이터가 없습니다.",
-                                        "code": "G004"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
-                ],
+                content = [],
             ),
         ],
     )

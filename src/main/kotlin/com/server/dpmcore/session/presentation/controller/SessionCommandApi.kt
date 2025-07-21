@@ -40,24 +40,13 @@ interface SessionCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "200",
+                responseCode = "204",
                 description = "세션 출석시간 갱신 성공",
                 content = [
                     Content(
                         mediaType = "application/json",
                         schema = Schema(implementation = CustomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "세션 출석시간 갱신 성공 응답",
-                                value = """
-                                    {
-                                        "status": "OK",
-                                        "message": "요청에 성공했습니다",
-                                        "code": "G000"
-                                    }
-                                """,
-                            ),
-                        ],
+                        examples = [],
                     ),
                 ],
             ),

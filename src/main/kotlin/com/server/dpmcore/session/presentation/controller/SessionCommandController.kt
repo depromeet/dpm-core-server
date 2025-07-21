@@ -42,6 +42,6 @@ class SessionCommandController(
             attendanceStartTime = TimeMapper.localDateTimeToInstant(request.attendanceStartTime),
         )
 
-        return CustomResponse.ok()
+        return CustomResponse.noContent()
     }
 }

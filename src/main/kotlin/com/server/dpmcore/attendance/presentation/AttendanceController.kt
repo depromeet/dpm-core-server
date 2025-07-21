@@ -157,7 +157,6 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
-    @GetMapping("/v1/")
     @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
     override fun updateAttendance(
         @PathVariable sessionId: SessionId,
