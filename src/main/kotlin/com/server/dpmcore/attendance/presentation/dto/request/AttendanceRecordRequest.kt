@@ -1,6 +1,5 @@
 package com.server.dpmcore.attendance.presentation.dto.request
 
-data class AttendanceCreateRequest(
-    val memberId: Long,
+data class AttendanceRecordRequest(
     val attendanceCode: String,
 )

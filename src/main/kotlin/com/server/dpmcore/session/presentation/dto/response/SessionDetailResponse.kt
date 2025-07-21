@@ -10,4 +10,5 @@ data class SessionDetailResponse(
     val isOnline: Boolean,
     val date: LocalDateTime,
     val attendanceStartTime: LocalDateTime,
+    val attendanceCode: String,
 )

@@ -19,12 +19,26 @@ data class MemberDetailsResponse(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
     )
     val name: String?,
+    @field:Schema(
+        description = "파트",
+        example = "WEB",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
+    val part: String?,
+    @field:Schema(
+        description = "기수",
+        example = "17",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
+    val cohort: String?,
 ) {
     companion object {
         fun from(member: Member): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = member.email,
                 name = member.name,
+                part = member.part?.name,
+                cohort = "17",
             )
     }
 }

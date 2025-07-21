@@ -3,16 +3,26 @@ package com.server.dpmcore.attendance.presentation
 import com.server.dpmcore.attendance.application.AttendanceCommandService
 import com.server.dpmcore.attendance.application.AttendanceQueryService
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
+import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceRecordCommand
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
-import com.server.dpmcore.attendance.presentation.dto.request.AttendanceCreateRequest
+import com.server.dpmcore.attendance.presentation.dto.request.AttendanceRecordRequest
+import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
+import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceStatusUpdateCommand
 import com.server.dpmcore.common.exception.CustomResponse
+import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.security.annotation.CurrentMemberId
 import com.server.dpmcore.session.domain.model.SessionId
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -28,10 +38,19 @@ class AttendanceController(
     @PostMapping("/v1/sessions/{sessionId}/attendances")
     override fun createAttendance(
         @PathVariable sessionId: SessionId,
-        @RequestBody request: AttendanceCreateRequest,
+        @CurrentMemberId memberId: MemberId,
+        @RequestBody request: AttendanceRecordRequest,
     ): CustomResponse<AttendanceResponse> {
         val attendedAt = Instant.now()
-        val attendanceStatus = attendanceCommandService.attendSession(sessionId, attendedAt, request)
+        val attendanceStatus =
+            attendanceCommandService.attendSession(
+                AttendanceRecordCommand(
+                    sessionId = sessionId,
+                    memberId = memberId,
+                    attendedAt = attendedAt,
+                    attendanceCode = request.attendanceCode,
+                ),
+            )
 
         return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
     }
@@ -76,5 +95,78 @@ class AttendanceController(
             )
 
         return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
+    override fun getAttendanceBySessionIdAndMemberId(
+        @PathVariable sessionId: SessionId,
+        @PathVariable memberId: MemberId,
+    ): CustomResponse<DetailAttendancesBySessionResponse> {
+        val response =
+            attendanceQueryService.getDetailAttendanceBySession(
+                GetDetailAttendanceBySessionQuery(
+                    sessionId = sessionId,
+                    memberId = memberId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/sessions/{sessionId}/attendances/me")
+    override fun getMyAttendanceBySessionId(
+        @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<DetailAttendancesBySessionResponse> {
+        val response =
+            attendanceQueryService.getDetailAttendanceBySession(
+                GetDetailAttendanceBySessionQuery(
+                    sessionId = sessionId,
+                    memberId = memberId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/members/{memberId}/attendances")
+    override fun getDetailMemberAttendances(
+        @PathVariable memberId: MemberId,
+    ): CustomResponse<DetailMemberAttendancesResponse> {
+        val response =
+            attendanceQueryService.getDetailMemberAttendances(
+                GetDetailMemberAttendancesQuery(
+                    memberId = memberId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @GetMapping("/v1/members/me/attendances")
+    override fun getMyDetailAttendances(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<DetailMemberAttendancesResponse> {
+        val response =
+            attendanceQueryService.getDetailMemberAttendances(
+                GetDetailMemberAttendancesQuery(
+                    memberId = memberId,
+                ),
+            )
+
+        return CustomResponse.ok(response)
+    }
+
+    @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
+    override fun updateAttendance(
+        @PathVariable sessionId: SessionId,
+        @PathVariable memberId: MemberId,
+        @RequestBody request: AttendanceStatusUpdateRequest,
+    ): CustomResponse<Void> {
+        attendanceCommandService.updateAttendanceStatus(
+            toAttendanceStatusUpdateCommand(sessionId, memberId, request),
+        )
+
+        return CustomResponse.noContent()
     }
 }
