@@ -26,6 +26,7 @@ class SessionRepository(
                     col(SessionEntity::date).greaterThan(currentTime),
                 )
                 orderBy(col(SessionEntity::date).asc())
+                limit(1)
             }?.toDomain()
 
     override fun findAllSessions(cohortId: CohortId): List<Session> =
