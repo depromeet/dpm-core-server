@@ -1,6 +1,7 @@
 package com.server.dpmcore.authority.domain.model
 
-import com.server.dpmcore.member.memberAuthority.domain.MemberAuthorityId
+import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthorityId
+import java.time.Instant
 
 /**
  * 권한(Authority)을 표현하는 도메인 모델입니다.
@@ -28,10 +29,16 @@ import com.server.dpmcore.member.memberAuthority.domain.MemberAuthorityId
 class Authority(
     val id: AuthorityId? = null,
     val name: String,
-    val createdAt: Long? = null,
-    val updatedAt: Long? = null,
+    createdAt: Instant? = null,
+    updatedAt: Instant? = null,
     val memberAuthorityIds: List<MemberAuthorityId> = emptyList(),
 ) {
+    var createdAt: Instant? = createdAt
+        private set
+
+    var updatedAt: Instant? = updatedAt
+        private set
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Authority) return false
@@ -45,8 +52,7 @@ class Authority(
         return result
     }
 
-    override fun toString(): String {
-        return "Authority(id=$id, name='$name', createdAt=$createdAt, updatedAt=$updatedAt, " +
+    override fun toString(): String =
+        "Authority(id=$id, name='$name', createdAt=$createdAt, updatedAt=$updatedAt, " +
             "memberAuthorityIds=$memberAuthorityIds)"
-    }
 }
