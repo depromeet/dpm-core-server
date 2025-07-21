@@ -1,3 +1,4 @@
+import org.jooq.meta.jaxb.ForcedType
 import org.jooq.meta.jaxb.Logging
 import org.jooq.meta.jaxb.Property
 
@@ -140,6 +141,25 @@ jooq {
                                 Property().apply {
                                     key = "defaultNameCase"
                                     value = "lower"
+                                },
+                            ),
+                        )
+                        forcedTypes.addAll(
+                            listOf(
+                                ForcedType().apply {
+                                    name = "INSTANT"
+                                    expression = ".*\\.date"
+                                    types = "timestamp.*"
+                                },
+                                ForcedType().apply {
+                                    name = "INSTANT"
+                                    expression = ".*\\.attendance_start"
+                                    types = "timestamp.*"
+                                },
+                                ForcedType().apply {
+                                    name = "INSTANT"
+                                    expression = ".*\\.attended_at"
+                                    types = "timestamp.*"
                                 },
                             ),
                         )

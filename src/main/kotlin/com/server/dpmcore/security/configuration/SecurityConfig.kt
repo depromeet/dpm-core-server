@@ -66,7 +66,9 @@ class SecurityConfig(
                 allowedOriginPatterns =
                     listOf(
                         "https://localhost:3000",
-                        "https://local.dpmcore.o-r.kr/",
+                        "https://local.depromeet-core.shop",
+                        "https://client.depromeet-core.shop/",
+                        "https://admin.depromeet-core.shop/",
                     )
                 allowCredentials = true
             }
@@ -92,7 +94,6 @@ class SecurityConfig(
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login { oauth2 ->
                 oauth2
-                    .loginPage(securityProperties.loginUrl)
                     .authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {

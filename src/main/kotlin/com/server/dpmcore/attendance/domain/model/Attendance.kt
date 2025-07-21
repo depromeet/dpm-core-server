@@ -32,6 +32,10 @@ class Attendance internal constructor(
         this.attendedAt = attendedAt
     }
 
+    fun updateStatus(status: AttendanceStatus) {
+        this.status = status
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Attendance) return false
@@ -51,8 +55,8 @@ class Attendance internal constructor(
     companion object {
         fun create(command: AttendanceCreateCommand): Attendance =
             Attendance(
-                sessionId = SessionId(command.sessionId),
-                memberId = MemberId(command.memberId),
+                sessionId = command.sessionId,
+                memberId = command.memberId,
                 status = AttendanceStatus.PENDING,
             )
     }

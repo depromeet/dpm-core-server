@@ -11,6 +11,7 @@ enum class SessionExceptionCode(
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "S404", "세션을 찾을 수 없습니다"),
     SESSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "S409", "이미 존재하는 세션입니다"),
     INVALID_SESSION_STATE(HttpStatus.BAD_REQUEST, "S400", "유효하지 않은 세션 상태입니다"),
+    INVALID_SESSION_ID(HttpStatus.BAD_REQUEST, "S400", "유효하지 않은 세션 ID입니다"),
     INVALID_ATTENDANCE_CODE(HttpStatus.BAD_REQUEST, "S400", "출석코드가 일치하지 않습니다"),
     TOO_EARLY_ATTENDANCE(HttpStatus.BAD_REQUEST, "S400", "출석하기에는 너무 이른 시간입니다"),
     ALREADY_CHECKED_ATTENDANCE(HttpStatus.BAD_REQUEST, "S400", "이미 출석을 체크했습니다"),

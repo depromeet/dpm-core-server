@@ -4,6 +4,7 @@ import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
+import com.server.dpmcore.member.memberAuthority.domain.port.outbound.MemberAuthorityPersistencePort
 import com.server.dpmcore.refreshToken.domain.model.RefreshToken
 import com.server.dpmcore.refreshToken.domain.port.outbound.RefreshTokenPersistencePort
 import com.server.dpmcore.security.oauth.dto.LoginResult
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class MemberLoginService(
     private val memberPersistencePort: MemberPersistencePort,
+    private val memberAuthorityPersistencePort: MemberAuthorityPersistencePort,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val securityProperties: SecurityProperties,
     private val tokenProvider: JwtTokenProvider,
@@ -43,17 +45,32 @@ class MemberLoginService(
     }
 
     private fun handleExistingMemberLogin(member: Member): LoginResult {
-        val memberId = member.id?.value ?: return LoginResult(null, securityProperties.restrictedRedirectUrl)
+        member.id?.value ?: return LoginResult(null, securityProperties.restrictedRedirectUrl)
 
-        return if (member.isAllowed() && !memberPersistencePort.existsDeletedMemberById(memberId)) {
-            generateLoginResult(member.id, securityProperties.redirectUrl)
-        } else {
-            LoginResult(null, securityProperties.restrictedRedirectUrl)
+        if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(member.id.value)) {
+            return LoginResult(null, securityProperties.restrictedRedirectUrl)
         }
+
+        val isAdmin =
+            memberAuthorityPersistencePort
+                .findAuthorityNamesByMemberId(member.id.value)
+                .any { it in ADMIN_AUTHORITIES }
+
+        val redirectUrl =
+            when {
+                isAdmin -> securityProperties.adminRedirectUrl
+                else -> securityProperties.redirectUrl
+            }
+
+        return generateLoginResult(member.id, redirectUrl)
     }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
         val memberId = memberPersistencePort.save(Member.create(authAttributes.getEmail()))
         return generateLoginResult(MemberId(memberId), securityProperties.restrictedRedirectUrl)
+    }
+
+    companion object {
+        private val ADMIN_AUTHORITIES = setOf("ORGANIZER")
     }
 }
