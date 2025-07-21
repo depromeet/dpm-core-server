@@ -1,5 +1,7 @@
 package com.server.dpmcore.attendance.presentation.dto.response
 
+import java.time.LocalDateTime
+
 data class DetailAttendancesBySessionResponse(
     val member: DetailMember,
     val session: DetailSession,
@@ -17,11 +19,11 @@ data class DetailAttendancesBySessionResponse(
         val id: Long,
         val week: Int,
         val eventName: String,
-        val date: String,
+        val date: LocalDateTime,
     )
 
     data class DetailAttendance(
         val status: String,
-        val attendedAt: String,
+        val attendedAt: LocalDateTime,
     )
 }

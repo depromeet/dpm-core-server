@@ -18,9 +18,8 @@ import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendances
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
-import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTimeString
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 object AttendanceMapper {
     fun toAttendanceResponse(
@@ -29,7 +28,7 @@ object AttendanceMapper {
     ): AttendanceResponse =
         AttendanceResponse(
             attendanceStatus = attendanceStatus.name,
-            attendedAt = instantToLocalDateTimeString(attendedAt),
+            attendedAt = instantToLocalDateTime(attendedAt),
         )
 
     fun toSessionAttendancesResponse(
@@ -92,12 +91,12 @@ object AttendanceMapper {
                     id = model.sessionId,
                     week = model.sessionWeek,
                     eventName = model.sessionEventName,
-                    date = model.sessionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    date = instantToLocalDateTime(model.sessionDate),
                 ),
             attendance =
                 DetailAttendancesBySessionResponse.DetailAttendance(
                     status = model.attendanceStatus,
-                    attendedAt = model.attendedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    attendedAt = instantToLocalDateTime(model.attendedAt),
                 ),
         )
 
@@ -128,7 +127,7 @@ object AttendanceMapper {
                         id = session.sessionId,
                         week = session.sessionWeek,
                         eventName = session.sessionEventName,
-                        date = session.sessionDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                        date = instantToLocalDateTime(session.sessionDate),
                         attendanceStatus = session.sessionAttendanceStatus,
                     )
                 },

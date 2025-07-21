@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.application.query.model
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 data class SessionDetailAttendanceQueryModel(
     val memberId: Long,
@@ -13,7 +13,7 @@ data class SessionDetailAttendanceQueryModel(
     val sessionId: Long,
     val sessionWeek: Int,
     val sessionEventName: String,
-    val sessionDate: LocalDateTime,
+    val sessionDate: Instant,
     val attendanceStatus: String,
-    val attendedAt: LocalDateTime,
+    val attendedAt: Instant,
 )

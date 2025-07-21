@@ -66,7 +66,7 @@ interface AttendanceApi {
                                         "code": "G000",
                                         "data": {
                                             "attendanceStatus": "PRESENT",
-                                            "attendedAt": "2025-08-02 14:00:00"
+                                            "attendedAt": "2025-08-02T14:00:00.000000"
                                         }
                                     }
                                 """,
@@ -231,11 +231,11 @@ interface AttendanceApi {
                                                 "id": 1,
                                                 "week": 2,
                                                 "eventName": "2주차 세션",
-                                                "date": "2025-08-09 14:00:00"
+                                                "date": "2025-08-09T14:00:00.000000"
                                             },
                                             "attendance": {
                                                 "status": "LATE",
-                                                "attendedAt": "2025-08-09 14:05:12"
+                                                "attendedAt": "2025-08-09T14:05:12.000000"
                                             }
                                         }
                                     }
@@ -285,11 +285,11 @@ interface AttendanceApi {
                                                 "id": 1,
                                                 "week": 2,
                                                 "eventName": "2주차 세션",
-                                                "date": "2025-08-09 14:00:00"
+                                                "date": "2025-08-09T14:00:00.000000"
                                             },
                                             "attendance": {
                                                 "status": "LATE",
-                                                "attendedAt": "2025-08-09 14:05:12"
+                                                "attendedAt": "2025-08-09T14:05:12.000000"
                                             }
                                         }
                                     }
@@ -346,14 +346,14 @@ interface AttendanceApi {
                                                     "id": 1,
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
-                                                    "date": "2025-08-02 14:03:42",
+                                                    "date": "2025-08-02T14:03:42.000000",
                                                     "attendanceStatus": "PRESENT"
                                                 },
                                                 {
                                                     "id": 6,
                                                     "week": 2,
                                                     "eventName": "2주차 세션",
-                                                    "date": "2025-08-09 14:09:12",
+                                                    "date": "2025-08-09T14:09:12.000000",
                                                     "attendanceStatus": "LATE"
                                                 }
                                             ]
@@ -409,14 +409,14 @@ interface AttendanceApi {
                                                     "id": 1,
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
-                                                    "date": "2025-08-02 14:03:42",
+                                                    "date": "2025-08-02T14:03:42.000000",
                                                     "attendanceStatus": "PRESENT"
                                                 },
                                                 {
                                                     "id": 6,
                                                     "week": 2,
                                                     "eventName": "2주차 세션",
-                                                    "date": "2025-08-09 14:09:12",
+                                                    "date": "2025-08-09T14:09:12.000000",
                                                     "attendanceStatus": "LATE"
                                                 }
                                             ]

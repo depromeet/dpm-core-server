@@ -9,7 +9,7 @@ import com.server.dpmcore.session.presentation.dto.response.SessionDetailRespons
 import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionWeeksResponse
-import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTimeString
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import java.time.Instant
 
@@ -22,7 +22,7 @@ object SessionMapper {
                 eventName = eventName,
                 place = place,
                 isOnline = isOnline,
-                date = instantToLocalDateTimeString(date),
+                date = instantToLocalDateTime(date),
             )
         }
 
@@ -37,7 +37,7 @@ object SessionMapper {
                             id = it.id!!.value,
                             week = it.week,
                             eventName = it.eventName,
-                            date = instantToLocalDateTimeString(it.date),
+                            date = instantToLocalDateTime(it.date),
                         )
                     },
             )
@@ -51,11 +51,9 @@ object SessionMapper {
                 eventName = eventName,
                 place = place,
                 isOnline = isOnline,
-                date = instantToLocalDateTimeString(date),
+                date = instantToLocalDateTime(date),
                 attendanceStartTime =
-                    instantToLocalDateTimeString(
-                        session.attendancePolicy.attendanceStart,
-                    ),
+                    instantToLocalDateTime(session.attendancePolicy.attendanceStart),
                 attendanceCode = session.attendancePolicy.attendanceCode,
             )
         }
@@ -63,7 +61,7 @@ object SessionMapper {
     fun toAttendanceTimeResponse(attendanceStartTime: Instant) =
         AttendanceTimeResponse(
             attendanceStartTime =
-                instantToLocalDateTimeString(attendanceStartTime),
+                instantToLocalDateTime(attendanceStartTime),
         )
 
     fun toSessionCreateCommand(

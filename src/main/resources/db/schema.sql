@@ -1,12 +1,12 @@
 -- dpm_core.attendances definition
 
 CREATE TABLE `attendances` (
-                               `id` bigint NOT NULL AUTO_INCREMENT,
-                               `attended_at` datetime(6) DEFAULT NULL,
+                               `attendance_id` bigint NOT NULL AUTO_INCREMENT,
+                               `attended_at` timestamp(6) DEFAULT NULL,
                                `member_id` bigint NOT NULL,
                                `session_id` bigint NOT NULL,
                                `status` varchar(255) NOT NULL,
-                               PRIMARY KEY (`id`)
+                               PRIMARY KEY (`attendance_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -133,9 +133,9 @@ CREATE TABLE `session_attachments` (
 CREATE TABLE `sessions` (
                             `session_id` bigint NOT NULL AUTO_INCREMENT,
                             `attendance_code` varchar(255) NOT NULL,
-                            `attendance_start` datetime(6) NOT NULL,
+                            `attendance_start` timestamp(6) NOT NULL,
                             `cohort_id` bigint NOT NULL,
-                            `date` datetime(6) NOT NULL,
+                            `date` timestamp(6) NOT NULL,
                             `event_name` varchar(255) DEFAULT NULL,
                             `is_online` bit(1) NOT NULL,
                             `place` varchar(255) DEFAULT NULL,

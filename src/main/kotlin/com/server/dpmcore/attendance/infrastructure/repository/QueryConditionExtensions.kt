@@ -27,7 +27,7 @@ fun GetAttendancesBySessionIdQuery.toCondition(): List<Condition> {
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.ID.gt(it)
+        conditions += ATTENDANCES.ATTENDANCE_ID.gt(it)
     }
 
     return conditions
@@ -49,7 +49,7 @@ fun GetMemberAttendancesQuery.toCondition(): List<Condition> {
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.ID.gt(it)
+        conditions += ATTENDANCES.ATTENDANCE_ID.gt(it)
     }
 
     return conditions

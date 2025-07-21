@@ -28,7 +28,7 @@ interface SessionCommandApi {
                                 name = "세션 출석시간 갱신 요청 예시",
                                 value = """
                                 {
-                                    "attendanceStartTime": "2025-08-02T14:05:00"
+                                    "attendanceStartTime": "2025-08-02T14:05:00.000000"
                                 }
                             """,
                             ),
