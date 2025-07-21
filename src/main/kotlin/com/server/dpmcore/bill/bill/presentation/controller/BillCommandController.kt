@@ -2,10 +2,10 @@ package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.application.BillCommandService
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
-import com.server.dpmcore.bill.bill.presentation.dto.response.CreateBillResponse
-import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper.toCreateBillResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -21,14 +21,15 @@ class BillCommandController(
 ) : BillCommandApi {
     @PostMapping
     override fun createBill(
-        @RequestBody createBillRequest: CreateBillRequest,
-    ): CustomResponse<CreateBillResponse> {
-        val bill = billCommandService.save(createBillRequest)
-        val gatherings =
-            bill.gatheringIds
-                .map { gatheringId ->
-                    gatheringQueryService.findById(gatheringId.value)
-                }.toMutableList()
-        return CustomResponse.created(toCreateBillResponse(bill, gatherings))
+        @Valid @RequestBody createBillRequest: CreateBillRequest,
+    ): CustomResponse<BillPersistenceResponse> {
+        val billId = billCommandService.saveBillWithGatherings(createBillRequest)
+//        val gatherings =
+//            bill.gatheringIds
+//                .map { gatheringId ->
+//                    gatheringQueryService.findById(gatheringId.value)
+//                }.toMutableList()
+//        return CustomResponse.created(toCreateBillResponse(bill, gatherings))
+        return CustomResponse.ok(BillPersistenceResponse(billId))
     }
 }

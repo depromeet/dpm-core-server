@@ -35,9 +35,15 @@ class Bill(
     val completedAt: Instant? = null,
     val billStatus: BillStatus = BillStatus.PENDING,
     val createdAt: Instant? = null,
-    val updatedAt: Instant? = null,
-    val deletedAt: Instant? = null,
+    updatedAt: Instant? = null,
+    deletedAt: Instant? = null,
 ) {
+    var updatedAt: Instant? = updatedAt
+        private set
+
+    var deletedAt: Instant? = deletedAt
+        private set
+
     fun isCompleted(): Boolean = completedAt != null
 
     fun complete(now: Instant): Bill {
@@ -66,4 +72,21 @@ class Bill(
     }
 
     override fun hashCode(): Int = id?.hashCode() ?: 0
+
+    companion object {
+        fun create(
+            billAccount: BillAccount,
+            title: String,
+            description: String? = null,
+            hostUserId: MemberId,
+        ): Bill =
+            Bill(
+                billAccount = billAccount,
+                title = title,
+                hostUserId = hostUserId,
+                description = description,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now(),
+            )
+    }
 }

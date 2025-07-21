@@ -12,8 +12,10 @@ import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.Recei
 import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.ForeignKey
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -30,7 +32,7 @@ class GatheringEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "gathering_id", nullable = false, updatable = false)
-    val id: Long = 0,
+    val id: Long,
     @Column(name = "title", nullable = false)
     val title: String,
     @Column(name = "description")
@@ -50,7 +52,7 @@ class GatheringEntity(
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bill_id", nullable = false)
+    @JoinColumn(name = "bill_id", foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val bill: BillEntity? = null,
     @OneToMany(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val gatheringMembers: MutableList<GatheringMemberEntity> = mutableListOf(),

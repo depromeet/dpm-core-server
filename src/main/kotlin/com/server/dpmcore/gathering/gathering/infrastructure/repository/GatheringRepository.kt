@@ -5,7 +5,7 @@ import com.linecorp.kotlinjdsl.spring.data.singleQuery
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
-import com.server.dpmcore.gathering.gathering.domain.port.GatheringPersistencePort
+import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import org.springframework.stereotype.Repository
 
@@ -32,4 +32,14 @@ class GatheringRepository(
             .findById(id)
             .orElseThrow { BillException.GatheringNotFoundException() }
             .toDomain()
+
+    override fun saveAll(
+        bill: Bill,
+        gatherings: List<Gathering>,
+    ) {
+        gatheringJpaRepository
+            .saveAll(
+                gatherings.map { GatheringEntity.from(bill, it) },
+            ).map { it.toDomain() }
+    }
 }

@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhoto
 import java.time.Instant
 
@@ -16,11 +17,17 @@ class Receipt(
     val splitAmount: Int? = null,
     val amount: Int,
     val createdAt: Instant? = null,
-    val updatedAt: Instant? = null,
-    val deletedAt: Instant? = null,
+    updatedAt: Instant? = null,
+    deletedAt: Instant? = null,
     val receiptPhotos: MutableList<ReceiptPhoto>? = mutableListOf(),
     var gathering: Gathering? = null,
 ) {
+    var updatedAt: Instant? = updatedAt
+        private set
+
+    var deletedAt: Instant? = deletedAt
+        private set
+
     fun isDeleted(): Boolean = deletedAt != null
 
     override fun equals(other: Any?): Boolean {
@@ -32,5 +39,17 @@ class Receipt(
     override fun hashCode(): Int = id?.hashCode() ?: 0
 
     override fun toString(): String =
-        "Receipt(id=$id, splitAmount=$splitAmount, amount=$amount, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt, receiptPhotos=$receiptPhotos, gathering=$gathering)"
+        "Receipt(id=$id, splitAmount=$splitAmount, amount=$amount, createdAt=$createdAt, updatedAt=$updatedAt, " +
+            "deletedAt=$deletedAt, receiptPhotos=$receiptPhotos, gathering=$gathering)"
+
+    companion object {
+        fun create(
+            receiptCommand: ReceiptCommand,
+            gathering: Gathering,
+        ): Receipt =
+            Receipt(
+                amount = receiptCommand.amount,
+                gathering = gathering,
+            )
+    }
 }
