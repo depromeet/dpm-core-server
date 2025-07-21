@@ -5,6 +5,4 @@ import com.server.dpmcore.common.exception.ExceptionCode
 
 class AttendanceNotFoundException(
     code: ExceptionCode = AttendanceExceptionCode.ATTENDANCE_NOT_FOUND,
-) : BusinessException(code) {
-    constructor() : this(AttendanceExceptionCode.ATTENDANCE_NOT_FOUND)
-}
+) : BusinessException(code)
