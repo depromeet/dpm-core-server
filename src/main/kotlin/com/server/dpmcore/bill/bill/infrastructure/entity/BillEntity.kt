@@ -33,6 +33,8 @@ class BillEntity(
     val title: String,
     @Column(name = "description")
     val description: String,
+    @Column(name = "bill_status", nullable = false)
+    val billStatus: String,
     @Column(name = "host_user_id")
     val hostUserId: Long,
     @OneToMany(mappedBy = "bill", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -53,6 +55,7 @@ class BillEntity(
                 billAccount = BillAccountEntity.from(bill.billAccount),
                 title = bill.title,
                 description = bill.description ?: "",
+                billStatus = bill.billStatus.name,
                 hostUserId = bill.hostUserId.value,
                 completedAt = bill.completedAt,
                 createdAt = bill.createdAt ?: Instant.now(),

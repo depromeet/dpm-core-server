@@ -37,7 +37,7 @@ class GatheringCommandService(
             )
 
         gathering.gatheringMembers.map { gatheringMember ->
-            gatheringMember.gatheringId = savedGathering
+            gatheringMember.gatheringId = savedGathering.id
         }
         if (gathering.gatheringMembers.isNotEmpty()) {
 //            TODO 준원 : 회식 참여 멤버 저장 로직 추가

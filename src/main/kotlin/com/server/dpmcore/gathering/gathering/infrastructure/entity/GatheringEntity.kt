@@ -3,6 +3,7 @@ package com.server.dpmcore.gathering.gathering.infrastructure.entity
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.infrastructure.entity.BillEntity
+import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
@@ -50,7 +51,7 @@ class GatheringEntity(
     val deletedAt: Instant? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_id", nullable = false)
-    val bill: BillEntity,
+    val bill: BillEntity? = null,
     @OneToMany(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val gatheringMembers: MutableList<GatheringMemberEntity> = mutableListOf(),
     @OneToOne(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -75,6 +76,21 @@ class GatheringEntity(
                 bill = BillEntity.from(bill),
                 receipt = gathering.receipt?.let { ReceiptEntity.from(it) },
             )
+
+        fun from(gathering: Gathering): GatheringEntity =
+            GatheringEntity(
+                id = gathering.id?.value ?: 0L,
+                title = gathering.title,
+                description = gathering.description,
+                heldAt = gathering.heldAt,
+                category = gathering.category.value,
+                hostUserId = gathering.hostUserId.value,
+                roundNumber = gathering.roundNumber,
+                createdAt = gathering.createdAt ?: Instant.now(),
+                updatedAt = gathering.updatedAt ?: Instant.now(),
+                deletedAt = gathering.deletedAt,
+                receipt = gathering.receipt?.let { ReceiptEntity.from(it) },
+            )
     }
 
     fun toDomain(): Gathering =
@@ -89,7 +105,7 @@ class GatheringEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            billId = BillId(bill.id),
+            billId = BillId(bill?.id ?: throw BillException.BillIdRequiredException()),
             gatheringMembers = gatheringMembers.map { it.toDomain() }.toMutableList(),
             receipt = receipt?.toDomain(),
         )
