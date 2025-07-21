@@ -38,15 +38,4 @@ class MemberService(
 
         memberPersistencePort.delete(memberId.value)
     }
-
-    @Transactional
-    fun changeMemberStatus(
-        memberId: MemberId,
-        status: String,
-    ) {
-        val member = getMemberById(memberId)
-        member.changeStatus(status)
-        member.removeDeletedAt()
-        memberPersistencePort.save(member)
-    }
 }

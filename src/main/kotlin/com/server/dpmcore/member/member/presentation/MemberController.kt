@@ -3,7 +3,6 @@ package com.server.dpmcore.member.member.presentation
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.application.MemberService
 import com.server.dpmcore.member.member.domain.model.MemberId
-import com.server.dpmcore.member.member.presentation.request.ChangeMemberStatusRequest
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.web.bind.annotation.GetMapping
@@ -28,15 +27,6 @@ class MemberController(
         response: HttpServletResponse,
     ): CustomResponse<Void> {
         memberService.withdraw(memberId, response)
-        return CustomResponse.noContent()
-    }
-
-    @PatchMapping("/status")
-    override fun changeMemberStatus(
-        memberId: MemberId,
-        request: ChangeMemberStatusRequest,
-    ): CustomResponse<Void> {
-        memberService.changeMemberStatus(memberId, request.status)
         return CustomResponse.noContent()
     }
 }
