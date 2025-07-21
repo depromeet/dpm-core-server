@@ -69,7 +69,7 @@ interface MemberApi {
         ],
     )
     @Operation(
-        summary = "회원 탈퇴 API",
+        summary = "멤버 탈퇴 API",
         description = "현재 로그인한 멤버를 탈퇴 처리합니다. 탈퇴 후에는 해당 멤버의 모든 정보가 삭제됩니다.",
     )
     fun withdraw(

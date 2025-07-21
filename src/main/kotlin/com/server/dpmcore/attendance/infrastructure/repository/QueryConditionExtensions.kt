@@ -1,6 +1,8 @@
 package com.server.dpmcore.attendance.infrastructure.repository
 
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import org.jooq.Condition
 import org.jooq.generated.tables.references.ATTENDANCES
@@ -25,7 +27,7 @@ fun GetAttendancesBySessionIdQuery.toCondition(): List<Condition> {
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.ID.gt(it)
+        conditions += ATTENDANCES.ATTENDANCE_ID.gt(it)
     }
 
     return conditions
@@ -47,8 +49,24 @@ fun GetMemberAttendancesQuery.toCondition(): List<Condition> {
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.ID.gt(it)
+        conditions += ATTENDANCES.ATTENDANCE_ID.gt(it)
     }
+
+    return conditions
+}
+
+fun GetDetailAttendanceBySessionQuery.toCondition(): List<Condition> {
+    val conditions = mutableListOf<Condition>()
+
+    conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
+    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
+    return conditions
+}
+
+fun GetDetailMemberAttendancesQuery.toCondition(): List<Condition> {
+    val conditions = mutableListOf<Condition>()
+
+    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
 
     return conditions
 }

@@ -12,6 +12,7 @@ enum class MemberExceptionCode(
     val message: String,
 ) : ExceptionCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M404", "멤버를 찾을 수 없습니다"),
+    INVALID_MEMBER_ID(HttpStatus.BAD_REQUEST, "M400", "유효하지 않은 멤버 ID입니다"),
     ;
 
     override fun getStatus(): HttpStatus = status
