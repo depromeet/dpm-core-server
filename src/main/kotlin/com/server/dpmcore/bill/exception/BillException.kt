@@ -14,4 +14,8 @@ open class BillException(
     class BillIdRequiredException : BillException(BillExceptionCode.BILL_ID_REQUIRED)
 
     class GatheringMembersRequiredException : BillException(BillExceptionCode.GATHERING_MEMBERS_REQUIRED)
+
+    class BillNotFoundException : BillException(BillExceptionCode.BILL_NOT_FOUND)
+
+    class GatheringNotFoundException : BillException(BillExceptionCode.GATHERING_NOT_FOUND)
 }
