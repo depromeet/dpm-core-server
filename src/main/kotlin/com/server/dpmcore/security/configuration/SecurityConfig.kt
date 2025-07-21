@@ -66,6 +66,7 @@ class SecurityConfig(
                 allowedOriginPatterns =
                     listOf(
                         "https://localhost:3000",
+                        "https://local.depromeet-core.shop",
                         "https://client.depromeet-core.shop/",
                         "https://admin.depromeet-core.shop/",
                     )
