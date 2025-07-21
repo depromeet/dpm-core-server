@@ -10,6 +10,7 @@ enum class AttendanceExceptionCode(
 ) : ExceptionCode {
     ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "A404", "출석을 찾을 수 없습니다"),
     ATTENDANCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "A409", "이미 존재하는 출석입니다"),
+    INVALID_ATTENDANCE_ID(HttpStatus.BAD_REQUEST, "A400", "유효하지 않은 출석 ID입니다"),
     INVALID_ATTENDANCE_STATE(HttpStatus.BAD_REQUEST, "A400", "유효하지 않은 출석 상태입니다"),
     INVALID_ATTENDANCE_CODE(HttpStatus.BAD_REQUEST, "A400", "출석코드가 일치하지 않습니다"),
     TOO_EARLY_ATTENDANCE(HttpStatus.BAD_REQUEST, "A400", "출석하기에는 너무 이른 시간입니다"),
