@@ -100,19 +100,19 @@ class AttendanceRepository(
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
-                ).`as`("late_count"),
+                ).`as`(LATE_COUNT),
                 sum(
                     `when`(
                         ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
-                ).`as`("online_absent_count"),
+                ).`as`(ONLINE_ABSENT_COUNT),
                 sum(
                     `when`(
                         ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
-                ).`as`("offline_absent_count"),
+                ).`as`(OFFLINE_ABSENT_COUNT),
             ).from(ATTENDANCES)
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
@@ -138,9 +138,9 @@ class AttendanceRepository(
                     name = record[MEMBERS.NAME]!!,
                     teamNumber = record[TEAMS.NUMBER]!!,
                     part = record[MEMBERS.PART]!!,
-                    lateCount = record.get("late_count", Int::class.java) ?: 0,
-                    onlineAbsentCount = record.get("online_absent_count", Int::class.java) ?: 0,
-                    offlineAbsentCount = record.get("offline_absent_count", Int::class.java) ?: 0,
+                    lateCount = record.get(LATE_COUNT, Int::class.java) ?: 0,
+                    onlineAbsentCount = record.get(ONLINE_ABSENT_COUNT, Int::class.java) ?: 0,
+                    offlineAbsentCount = record.get(OFFLINE_ABSENT_COUNT, Int::class.java) ?: 0,
                 )
             }
 
@@ -156,19 +156,19 @@ class AttendanceRepository(
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
-                ).`as`("late_count"),
+                ).`as`(LATE_COUNT),
                 sum(
                     `when`(
                         ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
-                ).`as`("online_absent_count"),
+                ).`as`(ONLINE_ABSENT_COUNT),
                 sum(
                     `when`(
                         ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
-                ).`as`("offline_absent_count"),
+                ).`as`(OFFLINE_ABSENT_COUNT),
                 SESSIONS.SESSION_ID,
                 SESSIONS.WEEK,
                 SESSIONS.EVENT_NAME,
@@ -202,9 +202,9 @@ class AttendanceRepository(
                     memberName = it[MEMBERS.NAME]!!,
                     teamNumber = it[TEAMS.NUMBER]!!,
                     part = it[MEMBERS.PART]!!,
-                    lateCount = it.get("late_count", Int::class.java) ?: 0,
-                    onlineAbsentCount = it.get("online_absent_count", Int::class.java) ?: 0,
-                    offlineAbsentCount = it.get("offline_absent_count", Int::class.java) ?: 0,
+                    lateCount = it.get(LATE_COUNT, Int::class.java) ?: 0,
+                    onlineAbsentCount = it.get(ONLINE_ABSENT_COUNT, Int::class.java) ?: 0,
+                    offlineAbsentCount = it.get(OFFLINE_ABSENT_COUNT, Int::class.java) ?: 0,
                     sessionId = it[SESSIONS.SESSION_ID]!!,
                     sessionWeek = it[SESSIONS.WEEK]!!,
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
@@ -226,27 +226,27 @@ class AttendanceRepository(
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.PRESENT.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
-                ).`as`("present_count"),
+                ).`as`(PRESENT_COUNT),
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
-                ).`as`("late_count"),
+                ).`as`(LATE_COUNT),
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.EXCUSED_ABSENT.name), DSL.inline(1))
                         .otherwise(DSL.inline(0)),
-                ).`as`("excused_absent_count"),
+                ).`as`(EXCUSED_ABSENT_COUNT),
                 sum(
                     `when`(
                         ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
-                ).`as`("online_absent_count"),
+                ).`as`(ONLINE_ABSENT_COUNT),
                 sum(
                     `when`(
                         ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
-                ).`as`("offline_absent_count"),
+                ).`as`(OFFLINE_ABSENT_COUNT),
             ).from(ATTENDANCES)
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
@@ -268,11 +268,11 @@ class AttendanceRepository(
                     memberName = it[MEMBERS.NAME]!!,
                     teamNumber = it[TEAMS.NUMBER]!!,
                     part = it[MEMBERS.PART]!!,
-                    presentCount = it.get("present_count", Int::class.java) ?: 0,
-                    lateCount = it.get("late_count", Int::class.java) ?: 0,
-                    excusedAbsentCount = it.get("excused_absent_count", Int::class.java) ?: 0,
-                    onlineAbsentCount = it.get("online_absent_count", Int::class.java) ?: 0,
-                    offlineAbsentCount = it.get("offline_absent_count", Int::class.java) ?: 0,
+                    presentCount = it.get(PRESENT_COUNT, Int::class.java) ?: 0,
+                    lateCount = it.get(LATE_COUNT, Int::class.java) ?: 0,
+                    excusedAbsentCount = it.get(EXCUSED_ABSENT_COUNT, Int::class.java) ?: 0,
+                    onlineAbsentCount = it.get(ONLINE_ABSENT_COUNT, Int::class.java) ?: 0,
+                    offlineAbsentCount = it.get(OFFLINE_ABSENT_COUNT, Int::class.java) ?: 0,
                 )
             }
 
@@ -302,4 +302,12 @@ class AttendanceRepository(
                     sessionAttendanceStatus = record[ATTENDANCES.STATUS]!!,
                 )
             }
+
+    companion object {
+        private const val LATE_COUNT = "late_count"
+        private const val ONLINE_ABSENT_COUNT = "online_absent_count"
+        private const val OFFLINE_ABSENT_COUNT = "offline_absent_count"
+        private const val PRESENT_COUNT = "present_count"
+        private const val EXCUSED_ABSENT_COUNT = "excused_absent_count"
+    }
 }
