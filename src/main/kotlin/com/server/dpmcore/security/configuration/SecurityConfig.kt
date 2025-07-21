@@ -94,7 +94,6 @@ class SecurityConfig(
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login { oauth2 ->
                 oauth2
-                    .loginPage(securityProperties.loginUrl)
                     .authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {

@@ -4,8 +4,8 @@ import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.authority.infrastructure.entity.AuthorityEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
-import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
-import com.server.dpmcore.member.memberAuthority.domain.MemberAuthorityId
+import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
+import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthorityId
 import jakarta.persistence.Column
 import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity

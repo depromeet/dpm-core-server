@@ -1,6 +1,6 @@
 package com.server.dpmcore.member.member.domain.model
 
-import com.server.dpmcore.member.memberAuthority.domain.MemberAuthority
+import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
 import com.server.dpmcore.member.memberCohort.domain.MemberCohort
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
 import java.time.Instant
@@ -24,8 +24,8 @@ class Member(
     val id: MemberId? = null,
     val name: String? = null,
     val email: String,
-    var part: MemberPart? = null,
-    var status: MemberStatus,
+    val part: MemberPart? = null,
+    val status: MemberStatus,
     createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
@@ -43,15 +43,6 @@ class Member(
         private set
 
     fun isAllowed(): Boolean = status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
-
-    fun changeStatus(status: String) {
-        this.status = MemberStatus.valueOf(status.uppercase())
-        this.updatedAt = Instant.now()
-    }
-
-    fun removeDeletedAt() {
-        this.deletedAt = null
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
