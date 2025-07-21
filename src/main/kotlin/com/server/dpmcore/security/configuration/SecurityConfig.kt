@@ -66,7 +66,8 @@ class SecurityConfig(
                 allowedOriginPatterns =
                     listOf(
                         "https://localhost:3000",
-                        "https://local.dpmcore.o-r.kr/",
+                        "https://client.depromeet-core.shop/",
+                        "https://admin.depromeet-core.shop/",
                     )
                 allowCredentials = true
             }
