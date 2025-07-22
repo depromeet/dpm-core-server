@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.model
 
-import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
@@ -13,7 +13,7 @@ import java.time.Instant
  */
 class GatheringMember(
     val id: GatheringMemberId? = null,
-    var gathering: Gathering? = null,
+    var gatheringId: GatheringId? = null,
     val memberId: MemberId,
     val isChecked: Boolean = false,
     val isJoined: Boolean = false,
@@ -39,7 +39,7 @@ class GatheringMember(
 
         return GatheringMember(
             id = id,
-            gathering = gathering,
+            gatheringId = gatheringId,
             memberId = memberId,
             isChecked = true,
             completedAt = now,

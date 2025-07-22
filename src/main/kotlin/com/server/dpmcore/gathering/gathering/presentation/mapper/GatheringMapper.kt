@@ -1,34 +1,36 @@
 package com.server.dpmcore.gathering.gathering.presentation.mapper
 
-import com.server.dpmcore.bill.bill.presentation.dto.request.CreateGatheringRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.CreateGatheringResponse
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
-import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gatheringMember.presentation.mapper.GatheringMemberMapper.toCreateGatheringMemberResponse
-import com.server.dpmcore.gathering.gatheringMember.presentation.mapper.GatheringMemberMapper.toGatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.presentation.mapper.ReceiptMapper.toCreateReceiptResponse
-import com.server.dpmcore.gathering.gatheringReceipt.presentation.mapper.ReceiptMapper.toReceipt
-import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 object GatheringMapper {
-    fun toGathering(createGatheringRequest: CreateGatheringRequest): Gathering =
+    /*
+    fun toGathering(
+        gatheringForBillCreateRequest: GatheringForBillCreateRequest,
+        billId: BillId,
+    ): Gathering =
         Gathering(
-            title = createGatheringRequest.title,
-            description = createGatheringRequest.description,
-            hostUserId = MemberId(createGatheringRequest.hostUserId),
-            heldAt = createGatheringRequest.heldAt.atZone(ZoneId.of("Asia/Seoul")).toInstant(),
-            category = GatheringCategory.valueOf(createGatheringRequest.category),
-            roundNumber = createGatheringRequest.roundNumber,
+            title = gatheringForBillCreateRequest.title,
+            description = gatheringForBillCreateRequest.description,
+            hostUserId = MemberId(gatheringForBillCreateRequest.hostUserId),
+            heldAt = gatheringForBillCreateRequest.heldAt.atZone(ZoneId.of("Asia/Seoul")).toInstant(),
+            category = GatheringCategory.valueOf(gatheringForBillCreateRequest.category),
+            roundNumber = gatheringForBillCreateRequest.roundNumber,
+            billId = billId,
             gatheringMembers =
-                createGatheringRequest.gatheringMembers
+                gatheringForBillCreateRequest.gatheringMembers
                     ?.map { gatheringMember ->
                         toGatheringMember(gatheringMember)
                     }?.toMutableList() ?: mutableListOf(),
-            receipt = toReceipt(createGatheringRequest.receipt),
+            receipt = toReceipt(gatheringForBillCreateRequest.receipt),
         )
 
+
+     */
     fun toCreateGatheringResponse(gathering: Gathering): CreateGatheringResponse =
         CreateGatheringResponse(
             title = gathering.title,
