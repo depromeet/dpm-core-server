@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model
 
-import com.server.dpmcore.gathering.gatheringReceipt.domain.model.Receipt
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import java.time.Instant
 
 /**
@@ -10,19 +10,19 @@ import java.time.Instant
  * - 정책에 따라 1차에는 제외될 수 있으나, 도메인 레벨에서는 확장성 있게 관리합니다.
  * - 삭제는 소프트 딜리트 처리됩니다.
  */
-class ReceiptPhoto(
-    val id: ReceiptPhotoId? = null,
+class GatheringReceiptPhoto(
+    val id: GatheringReceiptPhotoId? = null,
     val url: String? = null,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val deletedAt: Instant? = null,
-    val receipt: Receipt? = null,
+    val gatheringReceipt: GatheringReceipt? = null,
 ) {
     fun isDeleted(): Boolean = deletedAt != null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is ReceiptPhoto) return false
+        if (other !is GatheringReceiptPhoto) return false
         return id == other.id
     }
 
