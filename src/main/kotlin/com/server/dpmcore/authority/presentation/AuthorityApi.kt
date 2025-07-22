@@ -31,11 +31,11 @@ interface AuthorityApi {
                                     "authorities": [
                                         {
                                             "id": 1,
-                                            "name": "17_ORGANIZER"
+                                            "name": "ORGANIZER"
                                         },
                                         {
                                             "id": 2,
-                                            "name": "17_DEEPER"
+                                            "name": "DEEPER"
                                         }
                                     ]
                                 }
