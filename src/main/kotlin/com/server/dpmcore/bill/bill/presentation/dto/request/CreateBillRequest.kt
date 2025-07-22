@@ -1,5 +1,6 @@
 package com.server.dpmcore.bill.bill.presentation.dto.request
 
+import com.server.dpmcore.authority.domain.model.AuthorityId
 import jakarta.validation.constraints.NotEmpty
 
 data class CreateBillRequest(
@@ -7,6 +8,6 @@ data class CreateBillRequest(
     val description: String?,
     val hostUserId: Long,
     val billAccountId: Long,
-    val inviteGroupIds: MutableList<Long>?,
+    val invitedAuthorityIds: List<AuthorityId>,
     @NotEmpty val gatherings: MutableList<GatheringForBillCreateRequest>,
 )
