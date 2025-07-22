@@ -30,7 +30,7 @@ object BillMapper {
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
-            billTotalAmount = gatherings.sumOf { gathering -> gathering.receipt!!.amount }.toLong(),
+            billTotalAmount = gatherings.sumOf { gathering -> gathering.gatheringReceipt!!.amount }.toLong(),
             heldAt = LocalDateTime.ofInstant(gatherings.get(0).heldAt, ZoneId.of("Asia/Seoul")),
             billAccountId = bill.billAccount.id?.value ?: throw BillException.BillAccountIdRequiredException(),
 //            TODO : 회식 참여 가능 인원 태그 추가

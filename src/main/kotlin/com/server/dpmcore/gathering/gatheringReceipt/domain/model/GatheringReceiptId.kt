@@ -1,6 +1,8 @@
 package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
 @JvmInline
-value class ReceiptId(val value: Long) {
+value class GatheringReceiptId(
+    val value: Long,
+) {
     override fun toString(): String = value.toString()
 }

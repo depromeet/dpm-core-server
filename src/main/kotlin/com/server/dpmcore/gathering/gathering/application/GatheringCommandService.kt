@@ -6,7 +6,7 @@ import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCreateUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
-import com.server.dpmcore.gathering.gatheringReceipt.application.ReceiptCommandService
+import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class GatheringCommandService(
     private val gatheringPersistencePort: GatheringPersistencePort,
-    private val receiptCommandService: ReceiptCommandService,
+    private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val billQueryUseCase: BillQueryUseCase,
 ) : GatheringCreateUseCase {
     override fun saveAllGatherings(
@@ -25,7 +25,7 @@ class GatheringCommandService(
             val bill = billQueryUseCase.getById(billId)
             commands.forEach {
                 val gathering = gatheringPersistencePort.save(bill, Gathering.create(it))
-                receiptCommandService.saveReceiptDetails(it.receipt, gathering)
+                gatheringReceiptCommandService.saveReceiptDetails(it.receipt, gathering)
             }
         } catch (e: Exception) {
             e.printStackTrace()

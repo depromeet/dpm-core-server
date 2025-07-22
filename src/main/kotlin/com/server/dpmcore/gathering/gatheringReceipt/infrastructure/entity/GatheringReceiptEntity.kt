@@ -1,9 +1,9 @@
 package com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity
 
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
-import com.server.dpmcore.gathering.gatheringReceipt.domain.model.Receipt
-import com.server.dpmcore.gathering.gatheringReceipt.domain.model.ReceiptId
-import com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity.ReceiptPhotoEntity
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceiptId
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity.GatheringReceiptPhotoEntity
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -18,8 +18,8 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "receipts")
-class ReceiptEntity(
+@Table(name = "gathering_receipts")
+class GatheringReceiptEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "receipt_id", nullable = false, updatable = false)
@@ -35,34 +35,40 @@ class ReceiptEntity(
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
     @OneToMany(mappedBy = "receipt", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val receiptPhotos: MutableList<ReceiptPhotoEntity>? = mutableListOf(),
+    val receiptPhotos: MutableList<GatheringReceiptPhotoEntity>? = mutableListOf(),
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id", nullable = false)
     val gathering: GatheringEntity? = null,
 ) {
     companion object {
-        fun from(receipt: Receipt): ReceiptEntity =
-            ReceiptEntity(
-                id = receipt.id?.value ?: 0L,
-                splitAmount = receipt.splitAmount,
-                amount = receipt.amount,
-                createdAt = receipt.createdAt ?: Instant.now(),
-                updatedAt = receipt.updatedAt ?: Instant.now(),
-                deletedAt = receipt.deletedAt,
-                receiptPhotos = receipt.receiptPhotos?.map { ReceiptPhotoEntity.from(it) }?.toMutableList(),
-                gathering = receipt.gathering?.let { GatheringEntity.from(it) },
+        fun from(gatheringReceipt: GatheringReceipt): GatheringReceiptEntity =
+            GatheringReceiptEntity(
+                id = gatheringReceipt.id?.value ?: 0L,
+                splitAmount = gatheringReceipt.splitAmount,
+                amount = gatheringReceipt.amount,
+                createdAt = gatheringReceipt.createdAt ?: Instant.now(),
+                updatedAt = gatheringReceipt.updatedAt ?: Instant.now(),
+                deletedAt = gatheringReceipt.deletedAt,
+                receiptPhotos =
+                    gatheringReceipt.gatheringReceiptPhotos
+                        ?.map {
+                            GatheringReceiptPhotoEntity.from(
+                                it,
+                            )
+                        }?.toMutableList(),
+                gathering = gatheringReceipt.gathering?.let { GatheringEntity.from(it) },
             )
     }
 
-    fun toDomain(): Receipt =
-        Receipt(
-            id = ReceiptId(id),
+    fun toDomain(): GatheringReceipt =
+        GatheringReceipt(
+            id = GatheringReceiptId(id),
             splitAmount = splitAmount,
             amount = amount,
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            receiptPhotos = receiptPhotos?.map { it.toDomain() }?.toMutableList(),
+            gatheringReceiptPhotos = receiptPhotos?.map { it.toDomain() }?.toMutableList(),
             gathering = gathering?.toDomain(),
         )
 }

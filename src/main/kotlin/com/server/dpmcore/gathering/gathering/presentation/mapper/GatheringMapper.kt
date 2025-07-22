@@ -3,7 +3,7 @@ package com.server.dpmcore.gathering.gathering.presentation.mapper
 import com.server.dpmcore.bill.bill.presentation.dto.response.CreateGatheringResponse
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gatheringMember.presentation.mapper.GatheringMemberMapper.toCreateGatheringMemberResponse
-import com.server.dpmcore.gathering.gatheringReceipt.presentation.mapper.ReceiptMapper.toCreateReceiptResponse
+import com.server.dpmcore.gathering.gatheringReceipt.presentation.mapper.GatheringReceiptMapper.toCreateReceiptResponse
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -15,9 +15,9 @@ object GatheringMapper {
             roundNumber = gathering.roundNumber,
             heldAt = LocalDateTime.ofInstant(gathering.heldAt, ZoneId.of("Asia/Seoul")),
             category = gathering.category.value,
-            receipt = toCreateReceiptResponse(gathering.receipt!!),
+            receipt = toCreateReceiptResponse(gathering.gatheringReceipt!!),
             joinMemberCount = gathering.getGatheringJoinMemberCount(),
-            amount = gathering.receipt!!.amount,
+            amount = gathering.gatheringReceipt!!.amount,
             gatheringMembers =
                 gathering.gatheringMembers
                     .map { gatheringMember ->

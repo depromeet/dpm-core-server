@@ -1,8 +1,8 @@
 package com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity
 
-import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.ReceiptEntity
-import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhoto
-import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhotoId
+import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.GatheringReceiptEntity
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhotoId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -15,8 +15,8 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "receipt_photos")
-class ReceiptPhotoEntity(
+@Table(name = "gathering_receipt_photos")
+class GatheringReceiptPhotoEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "receipt_photo_id", nullable = false, updatable = false)
@@ -31,29 +31,29 @@ class ReceiptPhotoEntity(
     val deletedAt: Instant? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receipt_id", nullable = false)
-    val receipt: ReceiptEntity,
+    val receipt: GatheringReceiptEntity,
 ) {
     companion object {
-        fun from(receiptPhoto: ReceiptPhoto): ReceiptPhotoEntity =
-            ReceiptPhotoEntity(
-                id = receiptPhoto.id?.value ?: 0L,
+        fun from(gatheringReceiptPhoto: GatheringReceiptPhoto): GatheringReceiptPhotoEntity =
+            GatheringReceiptPhotoEntity(
+                id = gatheringReceiptPhoto.id?.value ?: 0L,
 //                TODO : url이 없는 경우 체크 필요
-                url = receiptPhoto.url!!,
-                createdAt = receiptPhoto.createdAt ?: Instant.now(),
-                updatedAt = receiptPhoto.updatedAt ?: Instant.now(),
-                deletedAt = receiptPhoto.deletedAt,
+                url = gatheringReceiptPhoto.url!!,
+                createdAt = gatheringReceiptPhoto.createdAt ?: Instant.now(),
+                updatedAt = gatheringReceiptPhoto.updatedAt ?: Instant.now(),
+                deletedAt = gatheringReceiptPhoto.deletedAt,
 //                TODO : receipt가 없는 경우 체크 필요
-                receipt = ReceiptEntity.from(receiptPhoto.receipt!!),
+                receipt = GatheringReceiptEntity.from(gatheringReceiptPhoto.gatheringReceipt!!),
             )
     }
 
-    fun toDomain(): ReceiptPhoto =
-        ReceiptPhoto(
-            id = ReceiptPhotoId(id),
+    fun toDomain(): GatheringReceiptPhoto =
+        GatheringReceiptPhoto(
+            id = GatheringReceiptPhotoId(id),
             url = url,
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            receipt = receipt.toDomain(),
+            gatheringReceipt = receipt.toDomain(),
         )
 }
