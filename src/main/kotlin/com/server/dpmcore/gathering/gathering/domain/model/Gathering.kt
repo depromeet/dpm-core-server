@@ -56,11 +56,6 @@ class Gathering(
             gatheringMember.isChecked
         }
 
-    fun addGatheringReceipt(receipt: Receipt) {
-        this.receipt = receipt
-        this.receipt?.gathering = this
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Gathering) return false

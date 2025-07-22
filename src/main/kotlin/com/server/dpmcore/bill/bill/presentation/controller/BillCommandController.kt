@@ -24,12 +24,6 @@ class BillCommandController(
         @Valid @RequestBody createBillRequest: CreateBillRequest,
     ): CustomResponse<BillPersistenceResponse> {
         val billId = billCommandService.saveBillWithGatherings(createBillRequest)
-//        val gatherings =
-//            bill.gatheringIds
-//                .map { gatheringId ->
-//                    gatheringQueryService.findById(gatheringId.value)
-//                }.toMutableList()
-//        return CustomResponse.created(toCreateBillResponse(bill, gatherings))
         return CustomResponse.ok(BillPersistenceResponse(billId))
     }
 }

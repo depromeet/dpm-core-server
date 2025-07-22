@@ -43,37 +43,4 @@ class BillCommandService(
             ),
         )
     }
-
-    /*
-    fun save(createBillRequest: CreateBillRequest): Bill {
-        try {
- //            TODO : 외에 다른 것들도 실드할 게 있으면 추가
-            billAccountQueryService.findBy(createBillRequest.billAccountId).also {
-                if (it.id?.value != createBillRequest.billAccountId) throw BillException.BillAccountNotFoundException()
-            }
-            if (createBillRequest.gatherings.isEmpty()) {
-                throw BillException.GatheringRequiredException()
-            }
-            val bill = toBill(createBillRequest)
-            val savedBill = billPersistencePort.save(bill)
- //        TODO : 값 주입 도메인 로직으로 변경
-
-            gatheringCommandService.save(
-                bill = savedBill,
-                createBillRequest.gatherings
-                    .map { createGatheringRequest ->
-                        toGathering(
-                            createGatheringRequest,
-                            savedBill.id ?: throw BillException.BillIdRequiredException(),
-                        )
-                    }.toMutableList(),
-            )
-            return savedBill
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        throw BillException.BillIdRequiredException()
-    }
-
-     */
 }
