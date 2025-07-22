@@ -1,7 +1,5 @@
 package com.server.dpmcore.gathering.gatheringMember.infrastructure.entity
 
-import com.server.dpmcore.bill.exception.BillException
-import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
@@ -53,13 +51,14 @@ class GatheringMemberEntity(
                 createdAt = gatheringMember.createdAt ?: Instant.now(),
                 updatedAt = gatheringMember.updatedAt ?: Instant.now(),
                 deletedAt = gatheringMember.deletedAt,
+                gathering = gatheringMember.gathering?.let { GatheringEntity.from(it) },
             )
     }
 
     fun toDomain(): GatheringMember =
         GatheringMember(
             id = GatheringMemberId(id),
-            gatheringId = GatheringId(gathering?.id ?: throw BillException.GatheringNotFoundException()),
+            gathering = gathering?.toDomain(),
             memberId = MemberId(memberId),
             isChecked = isChecked,
             isJoined = isJoined,

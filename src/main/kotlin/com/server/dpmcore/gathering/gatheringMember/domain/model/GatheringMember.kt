@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.model
 
-import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
@@ -13,15 +13,24 @@ import java.time.Instant
  */
 class GatheringMember(
     val id: GatheringMemberId? = null,
-    var gatheringId: GatheringId? = null,
     val memberId: MemberId,
     val isChecked: Boolean = false,
     val isJoined: Boolean = false,
-    val completedAt: Instant? = null,
     val createdAt: Instant? = null,
-    val updatedAt: Instant? = null,
-    val deletedAt: Instant? = null,
+    completedAt: Instant? = null,
+    updatedAt: Instant? = null,
+    deletedAt: Instant? = null,
+    val gathering: Gathering? = null,
 ) {
+    var completedAt: Instant? = completedAt
+        private set
+
+    var updatedAt: Instant? = updatedAt
+        private set
+
+    var deletedAt: Instant? = deletedAt
+        private set
+
     fun isDeleted(): Boolean = deletedAt != null
 
     fun isConfirmed(): Boolean = completedAt != null
@@ -39,7 +48,7 @@ class GatheringMember(
 
         return GatheringMember(
             id = id,
-            gatheringId = gatheringId,
+            gathering = gathering,
             memberId = memberId,
             isChecked = true,
             completedAt = now,
@@ -56,4 +65,17 @@ class GatheringMember(
     }
 
     override fun hashCode(): Int = id?.hashCode() ?: 0
+
+    companion object {
+        fun create(
+            gathering: Gathering,
+            memberId: MemberId,
+        ): GatheringMember =
+            GatheringMember(
+                gathering = gathering,
+                memberId = memberId,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now(),
+            )
+    }
 }

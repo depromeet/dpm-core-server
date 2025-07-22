@@ -29,7 +29,7 @@ class BillCommandService(
         billId: BillId,
     ) {
         val gatheringCommands = request.gatherings.map { it.toCommand() }
-        gatheringCreateUseCase.saveAllGatherings(gatheringCommands, billId)
+        gatheringCreateUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
     }
 
     private fun verifyAccountThenCreateBill(request: CreateBillRequest): BillId {

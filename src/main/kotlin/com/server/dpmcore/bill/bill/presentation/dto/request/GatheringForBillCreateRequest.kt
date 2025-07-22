@@ -9,5 +9,4 @@ data class GatheringForBillCreateRequest(
     val roundNumber: Int,
     val heldAt: LocalDateTime,
     val receipt: ReceiptForBillCreateRequest,
-    val gatheringMembers: MutableList<GatheringMemberForBillCreateRequest>?,
 )

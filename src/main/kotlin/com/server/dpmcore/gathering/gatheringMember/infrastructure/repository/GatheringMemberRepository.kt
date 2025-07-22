@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository
 class GatheringMemberRepository(
     private val gatheringJpaRepository: GatheringMemberJpaRepository,
 ) : GatheringMemberPersistencePort {
-    override fun save(gatheringMember: GatheringMember): GatheringMember =
-        gatheringJpaRepository.save(GatheringMemberEntity.from(gatheringMember)).toDomain()
+    override fun save(gatheringMember: GatheringMember) {
+        gatheringJpaRepository.save(GatheringMemberEntity.from(gatheringMember))
+    }
 }
