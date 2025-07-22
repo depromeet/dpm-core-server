@@ -1,20 +1,24 @@
 package com.server.dpmcore.attendance.presentation.mapper
 
-import com.server.dpmcore.attendance.application.query.model.DetailMemberAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MemberDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberSessionAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MyDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceStatusUpdateCommand
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
-import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendance
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
-import com.server.dpmcore.attendance.presentation.dto.response.DetailMember
 import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
-import com.server.dpmcore.attendance.presentation.dto.response.DetailSession
+import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberInfo
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
+import com.server.dpmcore.attendance.presentation.dto.response.MemberDetailAttendanceCountInfo
+import com.server.dpmcore.attendance.presentation.dto.response.MemberDetailSessionInfo
+import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanceBySessionResponse
+import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanceInfo
+import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanceSessionInfo
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
@@ -101,13 +105,13 @@ object AttendanceMapper {
         )
 
     fun toDetailMemberAttendancesResponse(
-        memberAttendanceModel: DetailMemberAttendanceQueryModel,
+        memberAttendanceModel: MemberDetailAttendanceQueryModel,
         sessionAttendancesModel: List<MemberSessionAttendanceQueryModel>,
         evaluation: String,
     ): DetailMemberAttendancesResponse =
         DetailMemberAttendancesResponse(
             member =
-                DetailMember(
+                DetailMemberInfo(
                     id = memberAttendanceModel.memberId,
                     name = memberAttendanceModel.memberName,
                     teamNumber = memberAttendanceModel.teamNumber,
@@ -115,7 +119,7 @@ object AttendanceMapper {
                     attendanceStatus = evaluation,
                 ),
             attendance =
-                DetailAttendance(
+                MemberDetailAttendanceCountInfo(
                     presentCount = memberAttendanceModel.presentCount,
                     lateCount = memberAttendanceModel.lateCount,
                     excusedAbsentCount = memberAttendanceModel.excusedAbsentCount,
@@ -123,7 +127,7 @@ object AttendanceMapper {
                 ),
             sessions =
                 sessionAttendancesModel.map { session ->
-                    DetailSession(
+                    MemberDetailSessionInfo(
                         id = session.sessionId,
                         week = session.sessionWeek,
                         eventName = session.sessionEventName,
@@ -131,5 +135,21 @@ object AttendanceMapper {
                         attendanceStatus = session.sessionAttendanceStatus,
                     )
                 },
+        )
+
+    fun toMyDetailAttendanceBySessionResponse(myAttendanceModel: MyDetailAttendanceQueryModel) =
+        MyDetailAttendanceBySessionResponse(
+            attendance =
+                MyDetailAttendanceInfo(
+                    status = myAttendanceModel.attendanceStatus,
+                    attendedAt = instantToLocalDateTime(myAttendanceModel.attendedAt),
+                ),
+            session =
+                MyDetailAttendanceSessionInfo(
+                    week = myAttendanceModel.sessionWeek,
+                    eventName = myAttendanceModel.sessionEventName,
+                    date = instantToLocalDateTime(myAttendanceModel.sessionDate),
+                    place = myAttendanceModel.sessionPlace,
+                ),
         )
 }

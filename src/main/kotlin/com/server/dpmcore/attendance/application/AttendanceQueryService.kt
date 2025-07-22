@@ -5,11 +5,13 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesByS
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
+import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanceBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper
 import com.server.dpmcore.common.util.paginate
@@ -105,5 +107,14 @@ class AttendanceQueryService(
                     lateCount = memberAttendanceQueryResult.lateCount,
                 ),
         )
+    }
+
+    fun getMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceBySessionResponse {
+        val myAttendanceQueryResult =
+            attendancePersistencePort
+                .findMyDetailAttendanceBySession(query)
+                ?: throw AttendanceNotFoundException()
+
+        return AttendanceMapper.toMyDetailAttendanceBySessionResponse(myAttendanceQueryResult)
     }
 }

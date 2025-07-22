@@ -7,6 +7,7 @@ import com.server.dpmcore.attendance.presentation.dto.response.AttendanceRespons
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
+import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanceBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -274,22 +275,15 @@ interface AttendanceApi {
                                         "message": "요청에 성공했습니다",
                                         "code": "G000",
                                         "data": {
-                                            "member": {
-                                                "id": 1,
-                                                "name": "신민철",
-                                                "teamNumber": 2,
-                                                "part": "SERVER",
-                                                "attendanceStatus": "NORMAL"
+                                            "attendance": {
+                                                "status": "PRESENT",
+                                                "attendedAt": "2025-08-09T14:05:12.000000"
                                             },
                                             "session": {
-                                                "id": 1,
-                                                "week": 2,
-                                                "eventName": "2주차 세션",
-                                                "date": "2025-08-09T14:00:00.000000"
-                                            },
-                                            "attendance": {
-                                                "status": "LATE",
-                                                "attendedAt": "2025-08-09T14:05:12.000000"
+                                                "week": 1,
+                                                "eventName": "디프만 17기 OT",
+                                                "date": "2025-08-09T14:00:00.000000",
+                                                "place": "공덕"
                                             }
                                         }
                                     }
@@ -304,7 +298,7 @@ interface AttendanceApi {
     fun getMyAttendanceBySessionId(
         sessionId: SessionId,
         memberId: MemberId,
-    ): CustomResponse<DetailAttendancesBySessionResponse>
+    ): CustomResponse<MyDetailAttendanceBySessionResponse>
 
     @Operation(
         summary = "사람별 출석 상세 조회",
