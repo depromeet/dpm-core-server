@@ -1,8 +1,9 @@
 package com.server.dpmcore.attendance.domain.port.outbound
 
-import com.server.dpmcore.attendance.application.query.model.DetailMemberAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MemberDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberSessionAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MyDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
@@ -10,6 +11,7 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesByS
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBySessionQuery
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.domain.model.SessionId
 
@@ -27,7 +29,9 @@ interface AttendancePersistencePort {
 
     fun findDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): SessionDetailAttendanceQueryModel?
 
-    fun findDetailMemberAttendance(query: GetDetailMemberAttendancesQuery): DetailMemberAttendanceQueryModel?
+    fun findDetailMemberAttendance(query: GetDetailMemberAttendancesQuery): MemberDetailAttendanceQueryModel?
 
     fun findMemberSessionAttendances(query: GetDetailMemberAttendancesQuery): List<MemberSessionAttendanceQueryModel>
+
+    fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel?
 }
