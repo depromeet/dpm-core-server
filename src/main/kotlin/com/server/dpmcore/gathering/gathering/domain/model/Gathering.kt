@@ -3,7 +3,7 @@ package com.server.dpmcore.gathering.gathering.domain.model
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
-import com.server.dpmcore.gathering.gatheringReceipt.domain.model.Receipt
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 import java.time.ZoneId
@@ -33,7 +33,7 @@ class Gathering(
     deletedAt: Instant? = null,
     billId: BillId? = null,
     var gatheringMembers: MutableList<GatheringMember> = mutableListOf(),
-    var receipt: Receipt? = null,
+    var gatheringReceipt: GatheringReceipt? = null,
 ) {
     var updatedAt: Instant? = updatedAt
         private set
@@ -55,11 +55,6 @@ class Gathering(
         gatheringMembers.count { gatheringMember ->
             gatheringMember.isChecked
         }
-
-    fun addGatheringReceipt(receipt: Receipt) {
-        this.receipt = receipt
-        this.receipt?.gathering = this
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
