@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.infrastructure.entity
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.billAccount.infrastructure.entity.BillAccountEntity
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.CascadeType
@@ -32,6 +33,8 @@ class BillEntity(
     val title: String,
     @Column(name = "description")
     val description: String,
+    @Column(name = "bill_status", nullable = false)
+    val billStatus: String,
     @Column(name = "host_user_id")
     val hostUserId: Long,
     @OneToMany(mappedBy = "bill", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -52,6 +55,7 @@ class BillEntity(
                 billAccount = BillAccountEntity.from(bill.billAccount),
                 title = bill.title,
                 description = bill.description ?: "",
+                billStatus = bill.billStatus.name,
                 hostUserId = bill.hostUserId.value,
                 completedAt = bill.completedAt,
                 createdAt = bill.createdAt ?: Instant.now(),
@@ -67,7 +71,7 @@ class BillEntity(
             title = title,
             description = description,
             hostUserId = MemberId(hostUserId),
-            gatherings = gatherings.map { it.toDomain() }.toMutableList(),
+            gatheringIds = gatherings.map { GatheringId(it.id) }.toMutableList(),
             completedAt = completedAt,
             createdAt = createdAt,
             updatedAt = updatedAt,

@@ -1,5 +1,10 @@
 package com.server.dpmcore.bill.bill.domain.model
 
+import com.server.dpmcore.bill.bill.domain.model.BillStatus.COMPLETED
+import com.server.dpmcore.bill.bill.domain.model.BillStatus.IN_PROGRESS
+import com.server.dpmcore.bill.bill.domain.model.BillStatus.OPEN
+import com.server.dpmcore.bill.bill.domain.model.BillStatus.PENDING
+
 /**
  * 정산의 상태를 나타냅니다.
  *
@@ -13,9 +18,18 @@ package com.server.dpmcore.bill.bill.domain.model
  *  - 정산이 완료되기 전까지의 상태입니다.
  * @property COMPLETED : 정산이 완료된 상태입니다.
  */
-enum class BillStatus(val value: String) {
+enum class BillStatus(
+    val value: String,
+) {
     PENDING("참여 대기 중"),
     OPEN("참여 중"),
     IN_PROGRESS("정산 중"),
     COMPLETED("정산 완료"),
+    ;
+
+    companion object {
+        fun from(value: String): BillStatus =
+            values().firstOrNull { it.value == value }
+                ?: throw IllegalArgumentException("존재하지 않는 정산 상태입니다: $value")
+    }
 }

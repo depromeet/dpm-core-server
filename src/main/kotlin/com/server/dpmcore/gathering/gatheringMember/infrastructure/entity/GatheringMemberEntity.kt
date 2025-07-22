@@ -1,5 +1,7 @@
 package com.server.dpmcore.gathering.gatheringMember.infrastructure.entity
 
+import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
@@ -24,7 +26,7 @@ class GatheringMemberEntity(
     val id: Long = 0,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id", nullable = false)
-    val gathering: GatheringEntity,
+    val gathering: GatheringEntity? = null,
     @Column(name = "member_id", nullable = false)
     val memberId: Long,
     @Column(name = "is_checked", nullable = false)
@@ -44,7 +46,6 @@ class GatheringMemberEntity(
         fun from(gatheringMember: GatheringMember): GatheringMemberEntity =
             GatheringMemberEntity(
                 id = gatheringMember.id?.value ?: 0L,
-                gathering = GatheringEntity.from(gatheringMember.gathering!!),
                 memberId = gatheringMember.memberId.value,
                 isChecked = gatheringMember.isChecked,
                 isJoined = gatheringMember.isJoined,
@@ -58,7 +59,7 @@ class GatheringMemberEntity(
     fun toDomain(): GatheringMember =
         GatheringMember(
             id = GatheringMemberId(id),
-            gathering = gathering.toDomain(),
+            gatheringId = GatheringId(gathering?.id ?: throw BillException.GatheringNotFoundException()),
             memberId = MemberId(memberId),
             isChecked = isChecked,
             isJoined = isJoined,

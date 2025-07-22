@@ -9,5 +9,7 @@ import org.springframework.stereotype.Repository
 class ReceiptRepository(
     private val receiptJpaRepository: ReceiptJpaRepository,
 ) : ReceiptPersistencePort {
-    override fun save(receipt: Receipt): Receipt = receiptJpaRepository.save(ReceiptEntity.from(receipt)).toDomain()
+    override fun save(receipt: Receipt) {
+        receiptJpaRepository.save(ReceiptEntity.from(receipt))
+    }
 }

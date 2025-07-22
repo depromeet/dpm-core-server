@@ -1,7 +1,7 @@
 package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
-import com.server.dpmcore.bill.bill.presentation.dto.response.CreateBillResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Tag(name = "정산(Bill)")
 interface BillCommandApi {
+    /*
     @Operation(
         summary = "정산 추가",
         description =
@@ -33,9 +34,9 @@ interface BillCommandApi {
                                 name = "정산 추가 성공 응답",
                                 value = """
                                     {
-                                        "status": "CREATE",
-                                        "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "status": "CREATED",
+                                        "message": "요청에 성공하여 리소스가 생성되었습니다.",
+                                        "code": "G001",
                                         "data": {
                                             "billId": 1,
                                             "title": "17기 OT세션 공식 회식",
@@ -121,5 +122,44 @@ interface BillCommandApi {
             ),
         ],
     )
-    fun createBill(createBillRequest: CreateBillRequest): CustomResponse<CreateBillResponse>
+    fun createBill(createBillRequest: CreateBillRequest): CustomResponse<Void>
+
+     */
+
+    @Operation(
+        summary = "정산 추가",
+        description =
+            "정산을 추가합니다. 각 차수의 회식과 정산서, 참여 멤버 등을 함께 추가해야 합니다. \n" +
+                "추후에는 영수증 사진이 추가될 수 있습니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "정산 추가 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "정산 추가 성공 응답",
+                                value = """
+                                    {
+                                        "status": "CREATED",
+                                        "message": "요청에 성공하여 리소스가 생성되었습니다.",
+                                        "code": "G001",
+                                        "data": {
+                                            "billId": 11
+                                            }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun createBill(createBillRequest: CreateBillRequest): CustomResponse<BillPersistenceResponse>
 }

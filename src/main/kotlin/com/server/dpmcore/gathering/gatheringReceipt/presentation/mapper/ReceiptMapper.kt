@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringReceipt.presentation.mapper
 
-import com.server.dpmcore.bill.bill.presentation.dto.request.CreateReceiptRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.ReceiptForBillCreateRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.CreateReceiptResponse
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.Receipt
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.presentation.mapper.ReceiptPhotoMapper.toReceiptPhoto
@@ -8,9 +8,9 @@ import com.server.dpmcore.gathering.gatheringReceiptPhoto.presentation.mapper.Re
 object ReceiptMapper {
     fun toCreateReceiptResponse(receipt: Receipt): CreateReceiptResponse = CreateReceiptResponse()
 
-    fun toReceipt(createReceiptRequest: CreateReceiptRequest): Receipt =
+    fun toReceipt(receiptForBillCreateRequest: ReceiptForBillCreateRequest): Receipt =
         Receipt(
-            amount = createReceiptRequest.amount,
-            receiptPhotos = createReceiptRequest.receiptPhotos?.map { toReceiptPhoto(it) }?.toMutableList(),
+            amount = receiptForBillCreateRequest.amount,
+            receiptPhotos = receiptForBillCreateRequest.receiptPhotos?.map { toReceiptPhoto(it) }?.toMutableList(),
         )
 }

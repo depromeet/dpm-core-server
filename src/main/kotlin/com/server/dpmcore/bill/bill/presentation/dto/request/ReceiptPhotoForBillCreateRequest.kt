@@ -1,6 +1,6 @@
 package com.server.dpmcore.bill.bill.presentation.dto.request
 
-data class CreateReceiptPhotoRequest(
+data class ReceiptPhotoForBillCreateRequest(
     val receiptId: Long,
     val photoUrl: String?,
 )

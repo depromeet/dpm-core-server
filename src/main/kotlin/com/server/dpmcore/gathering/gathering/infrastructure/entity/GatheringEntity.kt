@@ -1,6 +1,9 @@
 package com.server.dpmcore.gathering.gathering.infrastructure.entity
 
+import com.server.dpmcore.bill.bill.domain.model.Bill
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.infrastructure.entity.BillEntity
+import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
@@ -9,8 +12,10 @@ import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.Recei
 import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
+import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.ForeignKey
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -27,7 +32,7 @@ class GatheringEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "gathering_id", nullable = false, updatable = false)
-    val id: Long = 0,
+    val id: Long,
     @Column(name = "title", nullable = false)
     val title: String,
     @Column(name = "description")
@@ -47,14 +52,33 @@ class GatheringEntity(
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bill_id", nullable = false)
-    val bill: BillEntity,
+    @JoinColumn(name = "bill_id", foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    val bill: BillEntity? = null,
     @OneToMany(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val gatheringMembers: MutableList<GatheringMemberEntity> = mutableListOf(),
     @OneToOne(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val receipt: ReceiptEntity? = null,
 ) {
     companion object {
+        fun from(
+            bill: Bill,
+            gathering: Gathering,
+        ): GatheringEntity =
+            GatheringEntity(
+                id = gathering.id?.value ?: 0L,
+                title = gathering.title,
+                description = gathering.description,
+                heldAt = gathering.heldAt,
+                category = gathering.category.value,
+                hostUserId = gathering.hostUserId.value,
+                roundNumber = gathering.roundNumber,
+                createdAt = gathering.createdAt ?: Instant.now(),
+                updatedAt = gathering.updatedAt ?: Instant.now(),
+                deletedAt = gathering.deletedAt,
+                bill = BillEntity.from(bill),
+                receipt = gathering.receipt?.let { ReceiptEntity.from(it) },
+            )
+
         fun from(gathering: Gathering): GatheringEntity =
             GatheringEntity(
                 id = gathering.id?.value ?: 0L,
@@ -67,7 +91,6 @@ class GatheringEntity(
                 createdAt = gathering.createdAt ?: Instant.now(),
                 updatedAt = gathering.updatedAt ?: Instant.now(),
                 deletedAt = gathering.deletedAt,
-                bill = BillEntity.from(gathering.bill!!),
                 receipt = gathering.receipt?.let { ReceiptEntity.from(it) },
             )
     }
@@ -84,7 +107,7 @@ class GatheringEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            bill = bill.toDomain(),
+            billId = BillId(bill?.id ?: throw BillException.BillIdRequiredException()),
             gatheringMembers = gatheringMembers.map { it.toDomain() }.toMutableList(),
             receipt = receipt?.toDomain(),
         )

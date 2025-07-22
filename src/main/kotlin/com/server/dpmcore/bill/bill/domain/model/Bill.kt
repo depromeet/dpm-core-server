@@ -1,7 +1,7 @@
 package com.server.dpmcore.bill.bill.domain.model
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
-import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
@@ -31,13 +31,19 @@ class Bill(
     val title: String,
     val description: String? = null,
     val hostUserId: MemberId,
-    var gatherings: MutableList<Gathering> = mutableListOf(),
+    var gatheringIds: MutableList<GatheringId> = mutableListOf(),
     val completedAt: Instant? = null,
     val billStatus: BillStatus = BillStatus.PENDING,
     val createdAt: Instant? = null,
-    val updatedAt: Instant? = null,
-    val deletedAt: Instant? = null,
+    updatedAt: Instant? = null,
+    deletedAt: Instant? = null,
 ) {
+    var updatedAt: Instant? = updatedAt
+        private set
+
+    var deletedAt: Instant? = deletedAt
+        private set
+
     fun isCompleted(): Boolean = completedAt != null
 
     fun complete(now: Instant): Bill {
@@ -51,7 +57,7 @@ class Bill(
             title = title,
             hostUserId = hostUserId,
             description = description,
-            gatherings = gatherings,
+            gatheringIds = gatheringIds,
             completedAt = now,
             createdAt = createdAt,
             updatedAt = now,
@@ -66,4 +72,21 @@ class Bill(
     }
 
     override fun hashCode(): Int = id?.hashCode() ?: 0
+
+    companion object {
+        fun create(
+            billAccount: BillAccount,
+            title: String,
+            description: String? = null,
+            hostUserId: MemberId,
+        ): Bill =
+            Bill(
+                billAccount = billAccount,
+                title = title,
+                hostUserId = hostUserId,
+                description = description,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now(),
+            )
+    }
 }
