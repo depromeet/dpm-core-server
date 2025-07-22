@@ -18,28 +18,35 @@ class BillCommandService(
     private val billAccountQueryService: BillAccountQueryService,
     private val gatheringCreateUseCase: GatheringCreateUseCase,
 ) {
-    fun saveBillWithGatherings(request: CreateBillRequest): BillId {
-        val billId = verifyAccountThenCreateBill(request)
-        saveRelatedGatherings(request, billId)
+    fun saveBillWithGatherings(
+        hostUserId: MemberId,
+        request: CreateBillRequest,
+    ): BillId {
+        val billId = verifyAccountThenCreateBill(hostUserId, request)
+        saveRelatedGatherings(request, billId, hostUserId)
         return billId
     }
 
     private fun saveRelatedGatherings(
         request: CreateBillRequest,
         billId: BillId,
+        hostUserId: MemberId,
     ) {
-        val gatheringCommands = request.gatherings.map { it.toCommand() }
+        val gatheringCommands = request.gatherings.map { it.toCommand(hostUserId) }
         gatheringCreateUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
     }
 
-    private fun verifyAccountThenCreateBill(request: CreateBillRequest): BillId {
+    private fun verifyAccountThenCreateBill(
+        hostUserId: MemberId,
+        request: CreateBillRequest,
+    ): BillId {
         val account = billAccountQueryService.findBy(request.billAccountId)
         return billPersistencePort.save(
             Bill.create(
                 account,
                 request.title,
                 request.description,
-                MemberId(request.hostUserId),
+                hostUserId,
             ),
         )
     }

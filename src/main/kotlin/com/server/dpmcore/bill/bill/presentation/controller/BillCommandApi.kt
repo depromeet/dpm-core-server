@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
+import com.server.dpmcore.member.member.domain.model.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
@@ -35,7 +36,6 @@ interface BillCommandApi {
                                 {
                                   "title": "17기 OT세션 공식 회식",
                                   "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
-                                  "hostUserId": 1,
                                   "billAccountId": 1,
                                   "invitedAuthorityIds": [
                                     1, 2
@@ -44,7 +44,6 @@ interface BillCommandApi {
                                     {
                                       "title": "1차 회식 - 고깃집",
                                       "description": "가까운 삼겹살 집에서 진행",
-                                      "hostUserId": 1,
                                       "roundNumber": 1,
                                       "heldAt": "2025-07-22T05:55:34.606Z",
                                       "receipt": {
@@ -89,5 +88,8 @@ interface BillCommandApi {
             ),
         ],
     )
-    fun createBill(createBillRequest: CreateBillRequest): CustomResponse<BillPersistenceResponse>
+    fun createBill(
+        hostUserId: MemberId,
+        createBillRequest: CreateBillRequest,
+    ): CustomResponse<BillPersistenceResponse>
 }

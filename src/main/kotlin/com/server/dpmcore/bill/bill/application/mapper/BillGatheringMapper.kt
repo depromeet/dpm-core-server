@@ -6,11 +6,11 @@ import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.Receip
 import com.server.dpmcore.member.member.domain.model.MemberId
 
 object BillGatheringMapper {
-    fun GatheringForBillCreateRequest.toCommand(): GatheringCreateCommand =
+    fun GatheringForBillCreateRequest.toCommand(hostUserId: MemberId): GatheringCreateCommand =
         GatheringCreateCommand(
             title = this.title,
             description = this.description,
-            hostUserId = MemberId(this.hostUserId),
+            hostUserId = hostUserId,
             roundNumber = this.roundNumber,
             heldAt = this.heldAt,
             receipt =
