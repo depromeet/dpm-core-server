@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
-import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
 import java.time.Instant
@@ -20,7 +20,7 @@ class GatheringReceipt(
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
     val gatheringReceiptPhotos: MutableList<GatheringReceiptPhoto>? = mutableListOf(),
-    var gathering: Gathering? = null,
+    val gatheringId: GatheringId? = null,
 ) {
     var updatedAt: Instant? = updatedAt
         private set
@@ -40,16 +40,16 @@ class GatheringReceipt(
 
     override fun toString(): String =
         "Receipt(id=$id, splitAmount=$splitAmount, amount=$amount, createdAt=$createdAt, updatedAt=$updatedAt, " +
-            "deletedAt=$deletedAt, receiptPhotos=$gatheringReceiptPhotos, gathering=$gathering)"
+            "deletedAt=$deletedAt, receiptPhotos=$gatheringReceiptPhotos, gatheringId=$gatheringId)"
 
     companion object {
         fun create(
             receiptCommand: ReceiptCommand,
-            gathering: Gathering,
+            gatheringId: GatheringId,
         ): GatheringReceipt =
             GatheringReceipt(
                 amount = receiptCommand.amount,
-                gathering = gathering,
+                gatheringId = gatheringId,
             )
     }
 }

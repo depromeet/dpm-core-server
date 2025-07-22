@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity
 
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.GatheringReceiptEntity
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhotoId
@@ -34,7 +35,10 @@ class GatheringReceiptPhotoEntity(
     val receipt: GatheringReceiptEntity,
 ) {
     companion object {
-        fun from(gatheringReceiptPhoto: GatheringReceiptPhoto): GatheringReceiptPhotoEntity =
+        fun from(
+            gatheringReceiptPhoto: GatheringReceiptPhoto,
+            gathering: Gathering,
+        ): GatheringReceiptPhotoEntity =
             GatheringReceiptPhotoEntity(
                 id = gatheringReceiptPhoto.id?.value ?: 0L,
 //                TODO : url이 없는 경우 체크 필요
@@ -43,7 +47,7 @@ class GatheringReceiptPhotoEntity(
                 updatedAt = gatheringReceiptPhoto.updatedAt ?: Instant.now(),
                 deletedAt = gatheringReceiptPhoto.deletedAt,
 //                TODO : receipt가 없는 경우 체크 필요
-                receipt = GatheringReceiptEntity.from(gatheringReceiptPhoto.gatheringReceipt!!),
+                receipt = GatheringReceiptEntity.from(gatheringReceiptPhoto.gatheringReceipt!!, gathering),
             )
     }
 

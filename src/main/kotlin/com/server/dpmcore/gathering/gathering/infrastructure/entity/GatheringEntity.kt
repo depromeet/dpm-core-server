@@ -76,7 +76,7 @@ class GatheringEntity(
                 updatedAt = gathering.updatedAt ?: Instant.now(),
                 deletedAt = gathering.deletedAt,
                 bill = BillEntity.from(bill),
-                receipt = gathering.gatheringReceipt?.let { GatheringReceiptEntity.from(it) },
+                receipt = gathering.gatheringReceipt?.let { GatheringReceiptEntity.from(it, gathering) },
             )
 
         fun from(gathering: Gathering): GatheringEntity =
@@ -91,7 +91,7 @@ class GatheringEntity(
                 createdAt = gathering.createdAt ?: Instant.now(),
                 updatedAt = gathering.updatedAt ?: Instant.now(),
                 deletedAt = gathering.deletedAt,
-                receipt = gathering.gatheringReceipt?.let { GatheringReceiptEntity.from(it) },
+                receipt = gathering.gatheringReceipt?.let { GatheringReceiptEntity.from(it, gathering) },
             )
     }
 

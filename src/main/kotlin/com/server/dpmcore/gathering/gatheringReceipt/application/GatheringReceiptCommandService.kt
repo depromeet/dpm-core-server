@@ -16,5 +16,5 @@ class GatheringReceiptCommandService(
     fun saveReceiptDetails(
         receipt: ReceiptCommand,
         gathering: Gathering,
-    ) = gatheringReceiptPersistencePort.save(GatheringReceipt.create(receipt, gathering))
+    ) = gatheringReceiptPersistencePort.save(GatheringReceipt.create(receipt, gathering.id!!), gathering)
 }

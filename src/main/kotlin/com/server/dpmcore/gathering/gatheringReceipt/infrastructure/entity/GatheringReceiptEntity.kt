@@ -1,5 +1,7 @@
 package com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity
 
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceiptId
@@ -41,7 +43,10 @@ class GatheringReceiptEntity(
     val gathering: GatheringEntity? = null,
 ) {
     companion object {
-        fun from(gatheringReceipt: GatheringReceipt): GatheringReceiptEntity =
+        fun from(
+            gatheringReceipt: GatheringReceipt,
+            gathering: Gathering,
+        ): GatheringReceiptEntity =
             GatheringReceiptEntity(
                 id = gatheringReceipt.id?.value ?: 0L,
                 splitAmount = gatheringReceipt.splitAmount,
@@ -54,9 +59,10 @@ class GatheringReceiptEntity(
                         ?.map {
                             GatheringReceiptPhotoEntity.from(
                                 it,
+                                gathering,
                             )
                         }?.toMutableList(),
-                gathering = gatheringReceipt.gathering?.let { GatheringEntity.from(it) },
+                gathering = GatheringEntity.from(gathering),
             )
     }
 
@@ -69,6 +75,6 @@ class GatheringReceiptEntity(
             updatedAt = updatedAt,
             deletedAt = deletedAt,
             gatheringReceiptPhotos = receiptPhotos?.map { it.toDomain() }?.toMutableList(),
-            gathering = gathering?.toDomain(),
+            gatheringId = GatheringId(gathering?.id ?: 0L),
         )
 }

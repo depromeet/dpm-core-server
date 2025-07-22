@@ -16,6 +16,6 @@ class GatheringMemberCommandService(
         memberIds: List<MemberId>,
         gathering: Gathering,
     ) = memberIds.map { memberId ->
-        gatheringMemberPersistencePort.save(GatheringMember.create(gathering, memberId))
+        gatheringMemberPersistencePort.save(GatheringMember.create(gathering.id!!, memberId), gathering)
     }
 }
