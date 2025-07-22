@@ -11,11 +11,12 @@ object BillAccountMapper {
             id = BillAccountId(billAccountId),
         )
 
-    fun toBillAccountResponse(billAccount: BillAccount): BillAccountResponse = BillAccountResponse(
-        id = billAccount.id?.value?: throw BillException.BillAccountIdRequiredException(),
-        billAccountValue = billAccount.billAccountValue,
-        accountHolderName = billAccount.accountHolderName,
-        bankName = billAccount.bankName,
-        accountType = billAccount.accountType.value,
-    )
+    fun toBillAccountResponse(billAccount: BillAccount): BillAccountResponse =
+        BillAccountResponse(
+            id = billAccount.id?.value ?: throw BillException.BillAccountIdRequiredException(),
+            billAccountValue = billAccount.billAccountValue,
+            accountHolderName = billAccount.accountHolderName,
+            bankName = billAccount.bankName,
+            accountType = billAccount.accountType.value,
+        )
 }

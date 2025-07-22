@@ -13,15 +13,15 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/accounts")
 class BillAccountQueryController(
     private val billAccountQueryService: BillAccountQueryService,
-) : BillAccountQueryApi{
+) : BillAccountQueryApi {
     @GetMapping("/{billAccountId}")
     override fun getBillAccount(
         @PathVariable("billAccountId")
         billAccountId: Long,
-        ): CustomResponse<BillAccountResponse> {
+    ): CustomResponse<BillAccountResponse> {
         val billAccount = billAccountQueryService.findBy(billAccountId)
         return CustomResponse.ok(
-            toBillAccountResponse(billAccount)
+            toBillAccountResponse(billAccount),
         )
     }
 }
