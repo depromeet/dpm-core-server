@@ -3,7 +3,6 @@ package com.server.dpmcore.bill.bill.application.mapper
 import com.server.dpmcore.bill.bill.presentation.dto.request.GatheringForBillCreateRequest
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptPhotoCommand
 import com.server.dpmcore.member.member.domain.model.MemberId
 
 object BillGatheringMapper {
@@ -17,13 +16,6 @@ object BillGatheringMapper {
             receipt =
                 ReceiptCommand(
                     amount = this.receipt.amount,
-                    photos =
-                        this.receipt.receiptPhotos?.map {
-                            ReceiptPhotoCommand(
-                                receiptId = it.receiptId,
-                                photoUrl = it.photoUrl,
-                            )
-                        } ?: emptyList(),
                 ),
         )
 }

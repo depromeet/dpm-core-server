@@ -14,7 +14,7 @@ data class GatheringCreateCommand(
 
 data class ReceiptCommand(
     val amount: Int,
-    val photos: List<ReceiptPhotoCommand>,
+//    val photos: List<ReceiptPhotoCommand>,
 )
 
 data class ReceiptPhotoCommand(

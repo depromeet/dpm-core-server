@@ -48,13 +48,7 @@ interface BillCommandApi {
                                       "roundNumber": 1,
                                       "heldAt": "2025-07-22T05:55:34.606Z",
                                       "receipt": {
-                                        "amount": 820000,
-                                        "receiptPhotos": [
-                                          {
-                                            "receiptId": 1,
-                                            "photoUrl": ""
-                                          }
-                                        ]
+                                        "amount": 820000
                                       }
                                     }
                                   ]
