@@ -1,5 +1,7 @@
 package com.server.dpmcore.authority.infrastructure.entity
 
+import com.server.dpmcore.authority.domain.model.Authority
+import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.memberAuthority.infrastructure.entity.MemberAuthorityEntity
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -10,6 +12,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import java.time.Instant
 
 @Entity
 @Table(name = "authorities")
@@ -21,9 +24,17 @@ class AuthorityEntity(
     @Column(nullable = false)
     val name: String,
     @Column(nullable = false, updatable = false)
-    val createdAt: Long,
+    val createdAt: Instant,
     @Column(nullable = false)
-    val updatedAt: Long,
+    val updatedAt: Instant,
     @OneToMany(mappedBy = "authority", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
-)
+) {
+    fun toDomain(): Authority =
+        Authority(
+            id = AuthorityId(id),
+            name = name,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
+}

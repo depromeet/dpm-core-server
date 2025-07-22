@@ -1,3 +1,3 @@
 package com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.port
 
-interface ReceiptPhotoPersistencePort
+interface GatheringReceiptPhotoPersistencePort

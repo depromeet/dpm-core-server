@@ -1,7 +1,9 @@
 package com.server.dpmcore.member.member.application
 
+import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.application.exception.MemberNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberByAuthorityUseCase
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import com.server.dpmcore.refreshToken.domain.port.inbound.RefreshTokenInvalidator
@@ -16,7 +18,7 @@ class MemberService(
     private val memberPersistencePort: MemberPersistencePort,
     private val tokenInjector: JwtTokenInjector,
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
-) {
+) : QueryMemberByAuthorityUseCase {
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.from(
             getMemberById(memberId),
@@ -38,4 +40,8 @@ class MemberService(
 
         memberPersistencePort.delete(memberId.value)
     }
+
+    override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
+        memberPersistencePort
+            .findAllMemberIdByAuthorityIds(authorityIds)
 }
