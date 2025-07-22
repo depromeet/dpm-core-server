@@ -65,6 +65,9 @@ logging:
   level:
     org.jooq.tools.LoggerListener: DEBUG
 
+cohort:
+  value: 17
+
 session:
   attendance:
     start-hour: 14

@@ -34,4 +34,6 @@ interface AttendancePersistencePort {
     fun findMemberSessionAttendances(query: GetDetailMemberAttendancesQuery): List<MemberSessionAttendanceQueryModel>
 
     fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel?
+
+    fun saveInBatch(attendances: List<Attendance>)
 }

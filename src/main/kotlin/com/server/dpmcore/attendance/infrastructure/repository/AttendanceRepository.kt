@@ -331,6 +331,20 @@ class AttendanceRepository(
                 )
             }
 
+    override fun saveInBatch(attendances: List<Attendance>) {
+        val records =
+            attendances.map { attendance ->
+                dsl.newRecord(ATTENDANCES).apply {
+                    memberId = attendance.memberId.value
+                    sessionId = attendance.sessionId.value
+                    status = attendance.status.name
+                    attendedAt = attendance.attendedAt
+                }
+            }
+
+        dsl.batchInsert(records).execute()
+    }
+
     companion object {
         private const val LATE_COUNT = "late_count"
         private const val ONLINE_ABSENT_COUNT = "online_absent_count"
