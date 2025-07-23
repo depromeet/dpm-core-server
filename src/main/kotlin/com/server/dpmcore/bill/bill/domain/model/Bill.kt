@@ -33,7 +33,7 @@ class Bill(
     val hostUserId: MemberId,
     var gatheringIds: MutableList<GatheringId> = mutableListOf(),
     val completedAt: Instant? = null,
-    val billStatus: BillStatus = BillStatus.PENDING,
+    val billStatus: BillStatus = BillStatus.OPEN,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
@@ -46,7 +46,7 @@ class Bill(
 
     fun isCompleted(): Boolean = completedAt != null
 
-    fun complete(now: Instant): Bill {
+    fun complete(): Bill {
         if (isCompleted()) {
             throw IllegalStateException("이미 확정된 정산입니다. 수정이 불가능합니다.")
         }
@@ -58,9 +58,9 @@ class Bill(
             hostUserId = hostUserId,
             description = description,
             gatheringIds = gatheringIds,
-            completedAt = now,
+            completedAt = Instant.now(),
             createdAt = createdAt,
-            updatedAt = now,
+            updatedAt = Instant.now(),
             deletedAt = deletedAt,
         )
     }
@@ -89,4 +89,7 @@ class Bill(
                 updatedAt = Instant.now(),
             )
     }
+
+    override fun toString(): String =
+        "Bill(id=$id, title='$title', description=$description, hostUserId=$hostUserId, gatheringIds=$gatheringIds, completedAt=$completedAt, billStatus=$billStatus, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt)"
 }
