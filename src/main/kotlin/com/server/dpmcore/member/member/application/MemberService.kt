@@ -44,4 +44,8 @@ class MemberService(
     override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
         memberPersistencePort
             .findAllMemberIdByAuthorityIds(authorityIds)
+
+    fun getMembersByCohort(value: String): List<MemberId> =
+        memberPersistencePort
+            .findAllByCohort(value)
 }

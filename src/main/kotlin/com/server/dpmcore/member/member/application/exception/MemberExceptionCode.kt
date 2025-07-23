@@ -11,8 +11,9 @@ enum class MemberExceptionCode(
     @JvmField
     val message: String,
 ) : ExceptionCode {
-    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M404", "멤버를 찾을 수 없습니다"),
-    INVALID_MEMBER_ID(HttpStatus.BAD_REQUEST, "M400", "유효하지 않은 멤버 ID입니다"),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-404-1", "멤버를 찾을 수 없습니다"),
+    INVALID_MEMBER_ID(HttpStatus.BAD_REQUEST, "MEMBER-400-1", "유효하지 않은 멤버 ID입니다"),
+    COHORT_MEMBERS_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-404-2", "기수에 해당하는 멤버가 없습니다"),
     ;
 
     override fun getStatus(): HttpStatus = status

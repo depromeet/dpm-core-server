@@ -18,6 +18,7 @@ import java.time.Instant
 class AttendanceEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "attendance_id", nullable = false, updatable = false)
     val id: Long,
     @Column(nullable = false)
     val sessionId: Long,
