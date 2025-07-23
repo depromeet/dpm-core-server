@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 class CustomResponseStatusAspect(
     private val response: HttpServletResponse,
 ) {
-    @Around("execution(* com.server.dpmcore..*Controller.*(..))")
+    @Around("within(com.server.dpmcore..*Controller)")
     @Throws(Throwable::class)
     fun handleResponseStatus(joinPoint: ProceedingJoinPoint): Any? {
         val result = joinPoint.proceed()

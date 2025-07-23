@@ -10,7 +10,7 @@ import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQu
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
@@ -58,7 +58,7 @@ class AttendanceRepository(
     }
 
     override fun findSessionAttendancesByQuery(
-        query: GetAttendancesBySessionIdQuery,
+        query: GetAttendancesBySessionWeekQuery,
     ): List<SessionAttendanceQueryModel> =
         dsl
             .select(
@@ -330,6 +330,20 @@ class AttendanceRepository(
                     sessionPlace = it[SESSIONS.PLACE]!!,
                 )
             }
+
+    override fun saveInBatch(attendances: List<Attendance>) {
+        val records =
+            attendances.map { attendance ->
+                dsl.newRecord(ATTENDANCES).apply {
+                    memberId = attendance.memberId.value
+                    sessionId = attendance.sessionId.value
+                    status = attendance.status.name
+                    attendedAt = attendance.attendedAt
+                }
+            }
+
+        dsl.batchInsert(records).execute()
+    }
 
     companion object {
         private const val LATE_COUNT = "late_count"

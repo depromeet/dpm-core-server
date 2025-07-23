@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.infrastructure.repository
 
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
@@ -8,12 +8,13 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBy
 import org.jooq.Condition
 import org.jooq.generated.tables.references.ATTENDANCES
 import org.jooq.generated.tables.references.MEMBERS
+import org.jooq.generated.tables.references.SESSIONS
 import org.jooq.generated.tables.references.TEAMS
 
-fun GetAttendancesBySessionIdQuery.toCondition(): List<Condition> {
+fun GetAttendancesBySessionWeekQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
+    conditions += SESSIONS.WEEK.eq(this.week)
 
     this.statuses?.takeIf { it.isNotEmpty() }?.let {
         conditions += ATTENDANCES.STATUS.`in`(it)

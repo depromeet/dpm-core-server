@@ -7,7 +7,7 @@ import com.server.dpmcore.attendance.application.query.model.MyDetailAttendanceQ
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
@@ -23,7 +23,7 @@ interface AttendancePersistencePort {
 
     fun save(attendance: Attendance)
 
-    fun findSessionAttendancesByQuery(query: GetAttendancesBySessionIdQuery): List<SessionAttendanceQueryModel>
+    fun findSessionAttendancesByQuery(query: GetAttendancesBySessionWeekQuery): List<SessionAttendanceQueryModel>
 
     fun findMemberAttendancesByQuery(query: GetMemberAttendancesQuery): List<MemberAttendanceQueryModel>
 
@@ -34,4 +34,6 @@ interface AttendancePersistencePort {
     fun findMemberSessionAttendances(query: GetDetailMemberAttendancesQuery): List<MemberSessionAttendanceQueryModel>
 
     fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel?
+
+    fun saveInBatch(attendances: List<Attendance>)
 }
