@@ -6,6 +6,7 @@ import com.server.dpmcore.member.member.domain.model.MemberPart
 import com.server.dpmcore.member.member.domain.model.MemberStatus
 import com.server.dpmcore.member.memberAuthority.infrastructure.entity.MemberAuthorityEntity
 import com.server.dpmcore.member.memberCohort.infrastructure.entity.MemberCohortEntity
+import com.server.dpmcore.member.memberOAuth.infrastructure.entity.MemberOAuthEntity
 import com.server.dpmcore.member.memberTeam.infrastructure.entity.MemberTeamEntity
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -45,6 +46,8 @@ class MemberEntity(
     val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val memberOAuths: MutableList<MemberOAuthEntity> = mutableListOf(),
 ) {
     fun toDomain(): Member =
         Member(
