@@ -2,7 +2,9 @@ package com.server.dpmcore.member.member.domain.model
 
 import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
 import com.server.dpmcore.member.memberCohort.domain.MemberCohort
+import com.server.dpmcore.member.memberOAuth.domain.model.MemberOAuth
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
+import org.springframework.core.env.Environment
 import java.time.Instant
 
 /**
@@ -25,14 +27,18 @@ class Member(
     val name: String? = null,
     val email: String,
     val part: MemberPart? = null,
-    val status: MemberStatus,
+    status: MemberStatus,
     createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
     val memberAuthorities: List<MemberAuthority> = emptyList(),
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),
+    val memberOAuths: List<MemberOAuth> = emptyList(),
 ) {
+    var status: MemberStatus = status
+        private set
+
     var createdAt: Instant? = createdAt
         private set
 
@@ -65,15 +71,32 @@ class Member(
     override fun toString(): String =
         "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
             "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
-            "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
+            "memberCohorts=$memberCohorts, memberTeams=$memberTeams, memberOAuths=$memberOAuths)"
 
     companion object {
-        fun create(email: String): Member =
-            Member(
+        fun create(
+            email: String,
+            environment: Environment,
+        ): Member {
+            val profileStatusMap =
+                mapOf(
+                    "prod" to MemberStatus.PENDING,
+                    "dev" to MemberStatus.ACTIVE,
+                    "local" to MemberStatus.ACTIVE,
+                )
+
+            val matchedStatus =
+                environment.activeProfiles
+                    .firstNotNullOfOrNull { profileStatusMap[it] }
+                    ?: MemberStatus.WITHDRAWN
+
+            val now = Instant.now()
+            return Member(
                 email = email,
-                status = MemberStatus.PENDING,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
+                status = matchedStatus,
+                createdAt = now,
+                updatedAt = now,
             )
+        }
     }
 }

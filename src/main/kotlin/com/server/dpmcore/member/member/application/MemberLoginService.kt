@@ -1,26 +1,31 @@
 package com.server.dpmcore.member.member.application
 
+import com.server.dpmcore.member.member.application.exception.MemberIdCanNotBeNullException
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
-import com.server.dpmcore.member.memberAuthority.domain.port.outbound.MemberAuthorityPersistencePort
+import com.server.dpmcore.member.memberAuthority.application.MemberAuthorityService
+import com.server.dpmcore.member.memberOAuth.application.MemberOAuthService
 import com.server.dpmcore.refreshToken.domain.model.RefreshToken
 import com.server.dpmcore.refreshToken.domain.port.outbound.RefreshTokenPersistencePort
 import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes
 import com.server.dpmcore.security.oauth.token.JwtTokenProvider
 import com.server.dpmcore.security.properties.SecurityProperties
+import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class MemberLoginService(
     private val memberPersistencePort: MemberPersistencePort,
-    private val memberAuthorityPersistencePort: MemberAuthorityPersistencePort,
+    private val memberAuthorityService: MemberAuthorityService,
+    private val memberOAuthService: MemberOAuthService,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val securityProperties: SecurityProperties,
     private val tokenProvider: JwtTokenProvider,
+    private val environment: Environment,
 ) : HandleMemberLoginUseCase {
     @Transactional
     override fun handleLoginSuccess(authAttributes: OAuthAttributes): LoginResult =
@@ -52,8 +57,8 @@ class MemberLoginService(
         }
 
         val isAdmin =
-            memberAuthorityPersistencePort
-                .findAuthorityNamesByMemberId(member.id.value)
+            memberAuthorityService
+                .getAuthorityNamesByMemberId(member.id)
                 .any { it in ADMIN_AUTHORITIES }
 
         val redirectUrl =
@@ -66,8 +71,13 @@ class MemberLoginService(
     }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
-        val memberId = memberPersistencePort.save(Member.create(authAttributes.getEmail()))
-        return generateLoginResult(MemberId(memberId), securityProperties.restrictedRedirectUrl)
+        val member = memberPersistencePort.save(Member.create(authAttributes.getEmail(), environment))
+        memberOAuthService.addMemberOAuthProvider(member, authAttributes)
+
+        return generateLoginResult(
+            member.id ?: throw MemberIdCanNotBeNullException(),
+            securityProperties.restrictedRedirectUrl,
+        )
     }
 
     companion object {

@@ -5,7 +5,7 @@ import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
 
 interface MemberPersistencePort {
-    fun save(member: Member): Long
+    fun save(member: Member): Member
 
     fun findByEmail(email: String): Member?
 
