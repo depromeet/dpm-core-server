@@ -18,4 +18,6 @@ open class BillException(
     class BillNotFoundException : BillException(BillExceptionCode.BILL_NOT_FOUND)
 
     class GatheringNotFoundException : BillException(BillExceptionCode.GATHERING_NOT_FOUND)
+
+    class BillCannotCloseParticipationException : BillException(BillExceptionCode.BILL_CANNOT_CLOSE_PARTICIPATION)
 }

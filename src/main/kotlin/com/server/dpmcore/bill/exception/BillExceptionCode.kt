@@ -19,6 +19,11 @@ enum class BillExceptionCode(
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "BILL-500", "예상치 못한 서버 에러가 발생했습니다"),
     BILL_NOT_FOUND(HttpStatus.BAD_REQUEST, "BILL-404-01", "존재하지 않는 정산입니다."),
     GATHERING_NOT_FOUND(HttpStatus.BAD_REQUEST, "GATHERING-404-01", "존재하지 않는 회식입니다."),
+    BILL_CANNOT_CLOSE_PARTICIPATION(
+        HttpStatus.BAD_REQUEST,
+        "BILL-406",
+        "현재 정산이 참여 가능한 상태(OPEN)가 아니기에 정산 인원을 마감할 수 없습니다.",
+    ),
     ;
 
     override fun getStatus(): HttpStatus = status
