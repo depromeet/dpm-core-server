@@ -9,7 +9,7 @@ data class MyDetailAttendanceBySessionResponse(
 
 data class MyDetailAttendanceInfo(
     val status: String,
-    val attendedAt: LocalDateTime,
+    val attendedAt: LocalDateTime?,
 )
 
 data class MyDetailAttendanceSessionInfo(
