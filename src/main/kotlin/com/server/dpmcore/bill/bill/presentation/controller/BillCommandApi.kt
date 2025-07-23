@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "정산(Bill)")
 interface BillCommandApi {
@@ -135,7 +136,7 @@ interface BillCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "정산 추가 성공",
                 content = [
                     Content(
@@ -146,9 +147,9 @@ interface BillCommandApi {
                                 name = "정산 추가 성공 응답",
                                 value = """
                                     {
-                                        "status": "CREATED",
-                                        "message": "요청에 성공하여 리소스가 생성되었습니다.",
-                                        "code": "G001",
+                                        "status": "OK",
+                                        "message": "요청에 성공하였습니다.",
+                                        "code": "G000",
                                         "data": {
                                             "billId": 11
                                             }
@@ -162,4 +163,40 @@ interface BillCommandApi {
         ],
     )
     fun createBill(createBillRequest: CreateBillRequest): CustomResponse<BillPersistenceResponse>
+
+    @Operation(
+        summary = "정산 참여 마감",
+        description =
+            "정산 참여를 마감합니다. 마감 이후에는 1/n 분할된 금액이 산출되기에 멤버를 추가할 수 없습니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "정산 참여 마감 성공",
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "정산 참여 마감 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공하였습니다.",
+                                        "code": "G001",
+                                        "data": {
+                                            "billId": 11
+                                            }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun closeBillParticipation(billId: Long): CustomResponse<Void>
 }

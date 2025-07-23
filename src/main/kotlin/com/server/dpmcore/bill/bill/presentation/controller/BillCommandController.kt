@@ -6,6 +6,8 @@ import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceRes
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import jakarta.validation.Valid
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -31,5 +33,13 @@ class BillCommandController(
 //                }.toMutableList()
 //        return CustomResponse.created(toCreateBillResponse(bill, gatherings))
         return CustomResponse.ok(BillPersistenceResponse(billId))
+    }
+
+    @PatchMapping("/{billId}/closeJoin")
+    override fun closeBillParticipation(
+        @PathVariable("billId") billId: Long,
+    ): CustomResponse<Void> {
+        billCommandService.closeBillParticipation(billId)
+        return CustomResponse.noContent()
     }
 }

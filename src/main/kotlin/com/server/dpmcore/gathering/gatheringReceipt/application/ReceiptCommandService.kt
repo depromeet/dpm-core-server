@@ -17,4 +17,6 @@ class ReceiptCommandService(
         receipt: ReceiptCommand,
         gathering: Gathering,
     ) = receiptPersistencePort.save(Receipt.create(receipt, gathering))
+
+    fun save(receipt: Receipt) = receiptPersistencePort.save(receipt)
 }
