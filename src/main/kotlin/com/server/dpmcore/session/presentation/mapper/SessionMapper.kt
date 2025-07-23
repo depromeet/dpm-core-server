@@ -1,5 +1,6 @@
 package com.server.dpmcore.session.presentation.mapper
 
+import com.server.dpmcore.session.application.query.SessionWeekQueryModel
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
 import com.server.dpmcore.session.presentation.dto.request.SessionCreateRequest
@@ -8,6 +9,7 @@ import com.server.dpmcore.session.presentation.dto.response.NextSessionResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListDetailResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
+import com.server.dpmcore.session.presentation.dto.response.SessionWeekResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionWeeksResponse
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.localDateTimeToInstant
@@ -77,13 +79,15 @@ object SessionMapper {
         startHour = startHour,
     )
 
-    fun toSessionWeeksResponse(weeks: List<Int>): SessionWeeksResponse {
-        if (weeks.isEmpty()) {
-            return SessionWeeksResponse(weeks = emptyList())
+    fun toSessionWeeksResponse(model: List<SessionWeekQueryModel>): SessionWeeksResponse {
+        if (model.isEmpty()) {
+            return SessionWeeksResponse(
+                sessions = emptyList(),
+            )
         }
 
         return SessionWeeksResponse(
-            weeks = weeks.map { it },
+            sessions = model.map { SessionWeekResponse(id = it.sessionId, week = it.week) },
         )
     }
 }

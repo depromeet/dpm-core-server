@@ -57,9 +57,9 @@ class AttendanceController(
         return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
     }
 
-    @GetMapping("/v1/sessions/{week}/attendances")
-    override fun getAttendancesByWeek(
-        @PathVariable week: Int,
+    @GetMapping("/v1/sessions/{sessionId}/attendances")
+    override fun getAttendancesBySessionId(
+        @PathVariable sessionId: SessionId,
         @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
         @RequestParam(name = "name", required = false) name: String?,
@@ -68,7 +68,7 @@ class AttendanceController(
         val response =
             attendanceQueryService.getAttendancesBySession(
                 GetAttendancesBySessionWeekQuery(
-                    week = week,
+                    sessionId = sessionId,
                     statuses = statuses,
                     teams = teams,
                     name = name,

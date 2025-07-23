@@ -104,12 +104,6 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-val dbHost: String = System.getProperty("DB_HOST") ?: "localhost"
-val dbPort: String = System.getProperty("DB_PORT") ?: "3306"
-val dbSchema: String = System.getProperty("DB_SCHEMA") ?: "dpm_core"
-val dbUsername: String = System.getProperty("DB_USERNAME") ?: "root"
-val dbPassword: String = System.getProperty("DB_PASSWORD") ?: "1234"
-
 jooq {
     configurations {
         create("main") {
