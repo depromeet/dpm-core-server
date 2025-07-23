@@ -7,4 +7,6 @@ interface BillPersistencePort {
     fun save(bill: Bill): BillId
 
     fun findById(billId: Long): Bill?
+
+    fun findBillById(billId: Long): Bill?
 }

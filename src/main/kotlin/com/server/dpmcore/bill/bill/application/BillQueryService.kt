@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 class BillQueryService(
     private val billPersistencePort: BillPersistencePort,
 ) : BillQueryUseCase {
-    override fun getById(billId: BillId): Bill =
-        billPersistencePort.findById(billId.value)
+    override fun findBillById(billId: BillId): Bill =
+        billPersistencePort.findBillById(billId.value)
             ?: throw BillException.BillNotFoundException()
 }
