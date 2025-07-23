@@ -14,7 +14,7 @@ import org.jooq.generated.tables.references.TEAMS
 fun GetAttendancesBySessionWeekQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += SESSIONS.WEEK.eq(this.week)
+    conditions += SESSIONS.SESSION_ID.eq(this.sessionId.value)
 
     this.statuses?.takeIf { it.isNotEmpty() }?.let {
         conditions += ATTENDANCES.STATUS.`in`(it)
