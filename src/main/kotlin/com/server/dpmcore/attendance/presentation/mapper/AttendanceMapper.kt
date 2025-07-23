@@ -100,7 +100,7 @@ object AttendanceMapper {
             attendance =
                 DetailAttendancesBySessionResponse.DetailAttendance(
                     status = model.attendanceStatus,
-                    attendedAt = instantToLocalDateTime(model.attendedAt),
+                    attendedAt = model.attendedAt?.let { instantToLocalDateTime(it) },
                 ),
         )
 
@@ -142,7 +142,7 @@ object AttendanceMapper {
             attendance =
                 MyDetailAttendanceInfo(
                     status = myAttendanceModel.attendanceStatus,
-                    attendedAt = instantToLocalDateTime(myAttendanceModel.attendedAt),
+                    attendedAt = myAttendanceModel.attendedAt?.let { instantToLocalDateTime(it) },
                 ),
             session =
                 MyDetailAttendanceSessionInfo(
