@@ -63,7 +63,7 @@ class AttendanceCommandService(
                     Attendance.create(
                         AttendanceCreateCommand(sessionId, memberId),
                     )
-                }.toList()
+                }
 
         attendancePersistencePort.saveInBatch(attendances)
     }
