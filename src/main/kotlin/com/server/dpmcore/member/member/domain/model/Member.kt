@@ -25,7 +25,7 @@ class Member(
     val name: String? = null,
     val email: String,
     val part: MemberPart? = null,
-    val status: MemberStatus,
+    status: MemberStatus,
     createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
@@ -33,6 +33,9 @@ class Member(
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),
 ) {
+    var status: MemberStatus = status
+        private set
+
     var createdAt: Instant? = createdAt
         private set
 
