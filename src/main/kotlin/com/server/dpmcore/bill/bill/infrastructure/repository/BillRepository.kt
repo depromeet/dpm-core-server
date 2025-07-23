@@ -28,4 +28,6 @@ class BillRepository(
 
     override fun findBillById(billId: Long): Bill =
         billJpaRepository.findByIdOrNull(billId)?.toDomain() ?: throw BillException.BillNotFoundException()
+
+    override fun findAllBills(): List<Bill> = billJpaRepository.findAll().map { it.toDomain() }
 }

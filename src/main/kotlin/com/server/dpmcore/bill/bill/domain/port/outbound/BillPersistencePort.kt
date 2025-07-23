@@ -9,4 +9,6 @@ interface BillPersistencePort {
     fun findById(billId: Long): Bill?
 
     fun findBillById(billId: Long): Bill?
+
+    fun findAllBills(): List<Bill>
 }

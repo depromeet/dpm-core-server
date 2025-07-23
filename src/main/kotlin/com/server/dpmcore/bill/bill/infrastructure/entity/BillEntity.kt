@@ -2,6 +2,7 @@ package com.server.dpmcore.bill.bill.infrastructure.entity
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.bill.bill.domain.model.BillStatus
 import com.server.dpmcore.bill.billAccount.infrastructure.entity.BillAccountEntity
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
@@ -70,6 +71,7 @@ class BillEntity(
             billAccount = billAccount.toDomain(),
             title = title,
             description = description,
+            billStatus = BillStatus.valueOf(billStatus),
             hostUserId = MemberId(hostUserId),
             gatheringIds = gatherings.map { GatheringId(it.id) }.toMutableList(),
             completedAt = completedAt,
