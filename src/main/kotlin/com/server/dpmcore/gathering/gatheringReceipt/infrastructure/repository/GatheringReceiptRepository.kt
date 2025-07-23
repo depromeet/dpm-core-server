@@ -4,6 +4,7 @@ import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptPersistencePort
 import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.GatheringReceiptEntity
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -16,4 +17,9 @@ class GatheringReceiptRepository(
     ) {
         gatheringReceiptJpaRepository.save(GatheringReceiptEntity.from(gatheringReceipt, gathering))
     }
+
+    override fun findBy(gatheringReceiptId: Long): GatheringReceiptEntity =
+        gatheringReceiptJpaRepository.findByIdOrNull(
+            gatheringReceiptId,
+        ) ?: throw IllegalArgumentException("Receipt not found with id: $gatheringReceiptId")
 }

@@ -4,8 +4,6 @@ import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
-import com.server.dpmcore.gathering.gathering.domain.model.Gathering
-import com.server.dpmcore.gathering.gathering.infrastructure.repository.GatheringRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -22,6 +20,6 @@ class GatheringQueryService(
         gatheringPersistencePort.findAllByGatheringIds(gatheringIds)
 
     fun findByBillId(billId: Long): List<Gathering> =
-        gatheringRepository
+        gatheringPersistencePort
             .findByBillId(billId)
 }

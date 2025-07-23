@@ -14,7 +14,7 @@ class BillQueryService(
     private val billPersistencePort: BillPersistencePort,
     private val billMapper: BillMapper,
 ) : BillQueryUseCase {
-    override fun findBillById(billId: BillId): Bill =
+    override fun getById(billId: BillId): Bill =
         billPersistencePort.findBillById(billId.value)
             ?: throw BillException.BillNotFoundException()
 

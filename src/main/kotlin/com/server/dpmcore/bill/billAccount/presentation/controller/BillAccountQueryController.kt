@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v1/accounts")
+@RequestMapping("/v1/bill-accounts")
 class BillAccountQueryController(
     private val billAccountQueryService: BillAccountQueryService,
 ) : BillAccountQueryApi {

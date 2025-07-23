@@ -10,8 +10,8 @@ import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCreateUseCase
-import com.server.dpmcore.gathering.gatheringReceipt.application.ReceiptCommandService
-import com.server.dpmcore.gathering.gatheringReceipt.application.ReceiptQueryService
+import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
+import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptQueryService
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,8 +22,8 @@ class BillCommandService(
     private val billPersistencePort: BillPersistencePort,
     private val billAccountQueryService: BillAccountQueryService,
     private val gatheringCreateUseCase: GatheringCreateUseCase,
-    private val gatheringReceiptQueryService: ReceiptQueryService,
-    private val gatheringReceiptCommandService: ReceiptCommandService,
+    private val gatheringReceiptQueryService: GatheringReceiptQueryService,
+    private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val gatheringQueryService: GatheringQueryService,
 ) {
     fun saveBillWithGatherings(
@@ -77,10 +77,9 @@ class BillCommandService(
                     .findBy(
                         gathering.id.value,
                     ).closeParticipation(gathering.getGatheringJoinMemberCount())
-            gatheringReceiptCommandService.save(receipt)
+            gatheringReceiptCommandService.updateSplitAmount(receipt, gathering)
         }
         bill.complete()
         billPersistencePort.save(bill)
     }
-
 }

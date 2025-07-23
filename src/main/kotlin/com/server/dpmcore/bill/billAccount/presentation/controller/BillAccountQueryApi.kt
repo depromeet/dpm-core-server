@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 
-@Tag(name = "정산 계좌(Bill Account)")
+@Tag(name = "Bill Account", description = "정산 계좌 API")
 interface BillAccountQueryApi {
     @Operation(
         summary = "정산 계좌 조회",

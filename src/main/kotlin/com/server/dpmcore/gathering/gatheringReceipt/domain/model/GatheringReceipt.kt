@@ -30,22 +30,22 @@ class GatheringReceipt(
 
     fun isDeleted(): Boolean = deletedAt != null
 
-    fun closeParticipation(joinMemberCount: Int): Receipt {
+    fun closeParticipation(joinMemberCount: Int): GatheringReceipt {
         if (joinMemberCount <= 0) {
             throw IllegalArgumentException("참여 멤버 수는 1명 이상이어야 합니다.")
         }
         if (splitAmount != null) {
             throw IllegalStateException("이미 분할 금액이 설정된 영수증입니다.")
         }
-        return Receipt(
+        return GatheringReceipt(
             id = id,
             splitAmount = (amount / joinMemberCount),
             amount = amount,
             createdAt = createdAt,
             updatedAt = Instant.now(),
             deletedAt = deletedAt,
-            receiptPhotos = receiptPhotos,
-            gathering = gathering,
+            gatheringReceiptPhotos = gatheringReceiptPhotos,
+            gatheringId = gatheringId,
         )
     }
 
