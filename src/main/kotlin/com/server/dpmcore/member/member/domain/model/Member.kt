@@ -2,6 +2,7 @@ package com.server.dpmcore.member.member.domain.model
 
 import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
 import com.server.dpmcore.member.memberCohort.domain.MemberCohort
+import com.server.dpmcore.member.memberOAuth.domain.model.MemberOAuth
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
 import java.time.Instant
 
@@ -32,6 +33,7 @@ class Member(
     val memberAuthorities: List<MemberAuthority> = emptyList(),
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),
+    val memberOAuths: List<MemberOAuth> = emptyList(),
 ) {
     var status: MemberStatus = status
         private set
@@ -68,7 +70,7 @@ class Member(
     override fun toString(): String =
         "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
             "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
-            "memberCohorts=$memberCohorts, memberTeams=$memberTeams)"
+            "memberCohorts=$memberCohorts, memberTeams=$memberTeams, memberOAuths=$memberOAuths)"
 
     companion object {
         fun create(email: String): Member =

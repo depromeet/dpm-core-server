@@ -31,7 +31,7 @@ class MemberRepository(
                 where(col(MemberEntity::email).equal(email))
             }?.toDomain()
 
-    override fun save(member: Member): Long = memberJpaRepository.save(MemberEntity.from(member)).id
+    override fun save(member: Member): Member = memberJpaRepository.save(MemberEntity.from(member)).toDomain()
 
     override fun findById(memberId: Long): Member? =
         queryFactory
