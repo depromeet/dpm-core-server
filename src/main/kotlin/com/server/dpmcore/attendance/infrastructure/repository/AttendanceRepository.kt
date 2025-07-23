@@ -94,8 +94,7 @@ class AttendanceRepository(
     override fun findMemberAttendancesByQuery(query: GetMemberAttendancesQuery): List<MemberAttendanceQueryModel> =
         dsl
             .select(
-                ATTENDANCES.ATTENDANCE_ID,
-                MEMBERS.MEMBER_ID,
+                ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
                 MEMBERS.PART,
@@ -127,16 +126,15 @@ class AttendanceRepository(
             .where(
                 query.toCondition(),
             ).groupBy(
-                ATTENDANCES.ATTENDANCE_ID,
-                MEMBERS.MEMBER_ID,
+                ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
                 MEMBERS.PART,
-            ).orderBy(ATTENDANCES.ATTENDANCE_ID.asc(), TEAMS.NUMBER.asc())
+            ).orderBy(ATTENDANCES.MEMBER_ID.asc(), TEAMS.NUMBER.asc())
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 MemberAttendanceQueryModel(
-                    id = record[MEMBERS.MEMBER_ID]!!,
+                    id = record[ATTENDANCES.MEMBER_ID]!!,
                     name = record[MEMBERS.NAME]!!,
                     teamNumber = record[TEAMS.NUMBER]!!,
                     part = record[MEMBERS.PART]!!,

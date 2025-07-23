@@ -13,12 +13,12 @@ class CohortRepository(
     private val cohortJpaRepository: CohortJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
 ) : CohortPersistencePort {
-    override fun findLatestCohortId(): CohortId? {
+    override fun findCohortIdByValue(value: String): CohortId? {
         return queryFactory
             .singleQueryOrNull<Long> {
                 select(col(CohortEntity::id))
                 from(entity(CohortEntity::class))
-                orderBy(col(CohortEntity::id).desc())
+                where(col(CohortEntity::value).equal(value))
             }?.let { return CohortId(it) }
     }
 }

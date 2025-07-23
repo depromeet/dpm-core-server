@@ -134,8 +134,8 @@ interface AttendanceApi {
             ),
         ],
     )
-    fun getAttendancesByWeek(
-        week: Int,
+    fun getAttendancesBySessionId(
+        sessionId: SessionId,
         statuses: List<AttendanceStatus>?,
         teams: List<Int>?,
         name: String?,
