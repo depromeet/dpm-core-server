@@ -1,6 +1,9 @@
 package com.server.dpmcore.gathering.gatheringReceipt.application
 
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptPersistencePort
+import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptQueryUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -8,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class GatheringReceiptQueryService(
     private val gatheringReceiptPersistencePort: GatheringReceiptPersistencePort,
-) {
+) : GatheringReceiptQueryUseCase {
     fun findBy(gatheringId: Long) = gatheringReceiptPersistencePort.findBy(gatheringId).toDomain()
+
+    override fun findByGatheringId(gatheringId: GatheringId): GatheringReceipt =
+        gatheringReceiptPersistencePort.findByGathering(gatheringId).toDomain()
 }
