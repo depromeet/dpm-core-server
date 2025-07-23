@@ -36,7 +36,7 @@ class BillRepository(
     override fun closeBillParticipation(bill: Bill): Int =
         queryFactory
             .updateQuery(BillEntity::class) {
-                set(col(BillEntity::billStatus), bill.billStatus.value)
+                set(col(BillEntity::billStatus), bill.billStatus.name)
                 set(col(BillEntity::updatedAt), bill.updatedAt)
                 where(col(BillEntity::id).equal(bill.id?.value ?: throw BillException.BillIdRequiredException()))
             }.executeUpdate()
