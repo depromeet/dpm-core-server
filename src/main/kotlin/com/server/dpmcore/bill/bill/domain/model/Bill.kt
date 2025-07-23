@@ -92,5 +92,14 @@ class Bill(
     }
 
     override fun toString(): String =
-        "Bill(id=$id, title='$title', description=$description, hostUserId=$hostUserId, gatheringIds=$gatheringIds, completedAt=$completedAt, billStatus=$billStatus, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt)"
+        "Bill(id=$id," +
+            "title='$title'," +
+            "description=$description," +
+            "hostUserId=$hostUserId," +
+            "gatheringIds=$gatheringIds," +
+            "completedAt=$completedAt," +
+            "billStatus=$billStatus," +
+            "createdAt=$createdAt," +
+            "updatedAt=$updatedAt," +
+            "deletedAt=$deletedAt)"
 }
