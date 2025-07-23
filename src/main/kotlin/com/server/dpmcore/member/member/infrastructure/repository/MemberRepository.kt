@@ -10,8 +10,10 @@ import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePo
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.AUTHORITIES
+import org.jooq.generated.tables.references.COHORTS
 import org.jooq.generated.tables.references.MEMBERS
 import org.jooq.generated.tables.references.MEMBER_AUTHORITIES
+import org.jooq.generated.tables.references.MEMBER_COHORTS
 import org.springframework.stereotype.Repository
 import java.time.Instant
 
@@ -78,4 +80,19 @@ class MemberRepository(
             .where(AUTHORITIES.AUTHORITY_ID.`in`(authorityIds.map { it.value }))
             .fetch(MEMBERS.MEMBER_ID)
             .map { MemberId(it ?: 0L) }
+
+    override fun findAllByCohort(value: String): List<MemberId> =
+        dsl
+            .select(MEMBERS.MEMBER_ID)
+            .from(MEMBERS)
+            .join(MEMBER_COHORTS)
+            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+            .join(COHORTS)
+            .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
+            .where(COHORTS.VALUE.eq(value))
+            .fetch(MEMBERS.MEMBER_ID)
+            .filterNotNull()
+            .map {
+                MemberId(it)
+            }
 }

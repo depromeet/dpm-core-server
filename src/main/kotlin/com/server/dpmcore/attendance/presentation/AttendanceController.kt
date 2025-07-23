@@ -4,7 +4,7 @@ import com.server.dpmcore.attendance.application.AttendanceCommandService
 import com.server.dpmcore.attendance.application.AttendanceQueryService
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceRecordCommand
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
@@ -57,9 +57,9 @@ class AttendanceController(
         return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
     }
 
-    @GetMapping("/v1/sessions/{sessionId}/attendances")
-    override fun getAttendancesBySessionId(
-        @PathVariable sessionId: SessionId,
+    @GetMapping("/v1/sessions/{week}/attendances")
+    override fun getAttendancesByWeek(
+        @PathVariable week: Int,
         @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
         @RequestParam(name = "name", required = false) name: String?,
@@ -67,8 +67,8 @@ class AttendanceController(
     ): CustomResponse<SessionAttendancesResponse> {
         val response =
             attendanceQueryService.getAttendancesBySession(
-                GetAttendancesBySessionIdQuery(
-                    sessionId = sessionId,
+                GetAttendancesBySessionWeekQuery(
+                    week = week,
                     statuses = statuses,
                     teams = teams,
                     name = name,

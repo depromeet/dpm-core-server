@@ -1,7 +1,7 @@
 package com.server.dpmcore.attendance.application
 
 import com.server.dpmcore.attendance.domain.exception.AttendanceNotFoundException
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
@@ -26,7 +26,7 @@ class AttendanceQueryService(
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
 ) {
-    fun getAttendancesBySession(query: GetAttendancesBySessionIdQuery): SessionAttendancesResponse {
+    fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
         val queryResult =
             attendancePersistencePort
                 .findSessionAttendancesByQuery(query)

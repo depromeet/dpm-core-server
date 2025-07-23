@@ -18,4 +18,6 @@ interface MemberPersistencePort {
     fun existsDeletedMemberById(memberId: Long): Boolean
 
     fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId>
+
+    fun findAllByCohort(value: String): List<MemberId>
 }
