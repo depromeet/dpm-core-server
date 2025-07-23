@@ -42,4 +42,9 @@ class GatheringRepository(
                 gatherings.map { GatheringEntity.from(bill, it) },
             ).map { it.toDomain() }
     }
+
+    override fun findByBillId(billId: Long): List<Gathering> =
+        gatheringJpaRepository.findByBillId(billId).map {
+            it.toDomain()
+        }
 }

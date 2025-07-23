@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gathering.application
 
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.infrastructure.repository.GatheringRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -9,7 +10,11 @@ import org.springframework.transaction.annotation.Transactional
 class GatheringQueryService(
     private val gatheringRepository: GatheringRepository,
 ) {
-    fun findById(gatheringId: Long) =
+    fun findById(gatheringId: Long): Gathering =
         gatheringRepository
             .findById(gatheringId)
+
+    fun findByBillId(billId: Long): List<Gathering> =
+        gatheringRepository
+            .findByBillId(billId)
 }

@@ -74,7 +74,7 @@ class GatheringCommandService(
         billId: BillId,
     ) {
         try {
-            val bill = billQueryUseCase.getById(billId)
+            val bill = billQueryUseCase.findBillById(billId)
             commands.forEach {
                 val gathering = gatheringPersistencePort.save(bill, Gathering.create(it))
                 receiptCommandService.saveReceiptDetails(it.receipt, gathering)
