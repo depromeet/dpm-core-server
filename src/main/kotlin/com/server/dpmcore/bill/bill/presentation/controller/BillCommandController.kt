@@ -32,11 +32,11 @@ class BillCommandController(
         return CustomResponse.created(BillPersistenceResponse(billId))
     }
 
-    @PatchMapping("/{billId}/closeJoin")
+    @PatchMapping("/{billId}/close-participation")
     override fun closeBillParticipation(
         @PathVariable("billId") billId: Long,
-    ): CustomResponse<Void> {
-        billCommandService.closeBillParticipation(billId)
-        return CustomResponse.noContent()
+    ): CustomResponse<BillPersistenceResponse> {
+        val billId = billCommandService.closeBillParticipation(billId)
+        return CustomResponse.ok(BillPersistenceResponse(billId))
     }
 }

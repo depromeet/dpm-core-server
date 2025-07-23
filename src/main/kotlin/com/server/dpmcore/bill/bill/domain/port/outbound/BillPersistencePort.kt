@@ -11,4 +11,6 @@ interface BillPersistencePort {
     fun findBillById(billId: Long): Bill?
 
     fun findAllBills(): List<Bill>
+
+    fun closeBillParticipation(bill: Bill): Int
 }

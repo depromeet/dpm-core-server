@@ -14,4 +14,6 @@ interface GatheringReceiptPersistencePort {
     fun findBy(gatheringReceiptId: Long): GatheringReceiptEntity
 
     fun findByGathering(gatheringId: GatheringId): GatheringReceiptEntity
+
+    fun updateSplitAmount(gatheringReceipt: GatheringReceipt): Int
 }

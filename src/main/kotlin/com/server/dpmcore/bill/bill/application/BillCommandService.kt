@@ -10,6 +10,7 @@ import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCreateUseCase
+import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptQueryService
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -25,6 +26,7 @@ class BillCommandService(
     private val gatheringReceiptQueryService: GatheringReceiptQueryService,
     private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val gatheringQueryService: GatheringQueryService,
+    private val gatheringMemberQueryService: GatheringMemberQueryService,
 ) {
     fun saveBillWithGatherings(
         hostUserId: MemberId,
@@ -59,7 +61,7 @@ class BillCommandService(
         )
     }
 
-    fun closeBillParticipation(billId: Long) {
+    fun closeBillParticipation(billId: Long): BillId {
         val bill =
             billPersistencePort.findBillById(billId)
                 ?: throw BillException.BillNotFoundException()
@@ -72,15 +74,24 @@ class BillCommandService(
         // GatheringReceipt 정산 금액 마감
         gatherings.map { gathering ->
             gathering.id ?: throw BillException.GatheringNotFoundException()
+
+            val gatheringMember = gatheringMemberQueryService.getGatheringMemberByGatheringId(gathering.id)
+
             val receipt =
                 gatheringReceiptQueryService
                     .findBy(
                         gathering.id.value,
-                    ).closeParticipation(gathering.getGatheringJoinMemberCount())
-            gatheringReceiptCommandService.updateSplitAmount(receipt, gathering)
+                    ).closeParticipation(
+                        gatheringMember.count {
+                            it.isJoined
+                        },
+                    )
+            gatheringReceiptCommandService.updateSplitAmount(receipt)
+//            TODO : gathering updatedAt 업데이트
         }
 
         val closeParticipationBill = bill.closeParticipation()
-        billPersistencePort.save(closeParticipationBill)
+        billPersistencePort.closeBillParticipation(closeParticipationBill)
+        return bill.id ?: throw BillException.BillIdRequiredException()
     }
 }

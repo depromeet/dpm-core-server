@@ -127,5 +127,5 @@ interface BillCommandApi {
             ),
         ],
     )
-    fun closeBillParticipation(billId: Long): CustomResponse<Void>
+    fun closeBillParticipation(billId: Long): CustomResponse<BillPersistenceResponse>
 }
