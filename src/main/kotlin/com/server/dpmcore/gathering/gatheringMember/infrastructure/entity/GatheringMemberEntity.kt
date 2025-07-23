@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.infrastructure.entity
 
-import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -43,7 +43,10 @@ class GatheringMemberEntity(
     val deletedAt: Instant? = null,
 ) {
     companion object {
-        fun from(gatheringMember: GatheringMember): GatheringMemberEntity =
+        fun from(
+            gatheringMember: GatheringMember,
+            gathering: Gathering,
+        ): GatheringMemberEntity =
             GatheringMemberEntity(
                 id = gatheringMember.id?.value ?: 0L,
                 memberId = gatheringMember.memberId.value,
@@ -53,13 +56,14 @@ class GatheringMemberEntity(
                 createdAt = gatheringMember.createdAt ?: Instant.now(),
                 updatedAt = gatheringMember.updatedAt ?: Instant.now(),
                 deletedAt = gatheringMember.deletedAt,
+                gathering = GatheringEntity.from(gathering),
             )
     }
 
     fun toDomain(): GatheringMember =
         GatheringMember(
             id = GatheringMemberId(id),
-            gatheringId = GatheringId(gathering?.id ?: throw BillException.GatheringNotFoundException()),
+            gatheringId = GatheringId(gathering?.id ?: 0L),
             memberId = MemberId(memberId),
             isChecked = isChecked,
             isJoined = isJoined,

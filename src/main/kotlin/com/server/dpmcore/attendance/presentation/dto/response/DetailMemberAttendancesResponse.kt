@@ -3,12 +3,12 @@ package com.server.dpmcore.attendance.presentation.dto.response
 import java.time.LocalDateTime
 
 data class DetailMemberAttendancesResponse(
-    val member: DetailMember,
-    val attendance: DetailAttendance,
-    val sessions: List<DetailSession>,
+    val member: DetailMemberInfo,
+    val attendance: MemberDetailAttendanceCountInfo,
+    val sessions: List<MemberDetailSessionInfo>,
 )
 
-data class DetailMember(
+data class DetailMemberInfo(
     val id: Long,
     val name: String,
     val teamNumber: Int,
@@ -16,14 +16,14 @@ data class DetailMember(
     val attendanceStatus: String,
 )
 
-data class DetailAttendance(
+data class MemberDetailAttendanceCountInfo(
     val presentCount: Int,
     val lateCount: Int,
     val excusedAbsentCount: Int,
     val absentCount: Int,
 )
 
-data class DetailSession(
+data class MemberDetailSessionInfo(
     val id: Long,
     val week: Int,
     val eventName: String,

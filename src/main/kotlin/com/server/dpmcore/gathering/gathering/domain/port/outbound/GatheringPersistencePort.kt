@@ -2,6 +2,7 @@ package com.server.dpmcore.gathering.gathering.domain.port.outbound
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 
 interface GatheringPersistencePort {
     fun findGatheringById(id: Long): Gathering
@@ -19,4 +20,6 @@ interface GatheringPersistencePort {
         bill: Bill,
         gatherings: List<Gathering>,
     )
+
+    fun findAllByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering>
 }

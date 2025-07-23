@@ -1,8 +1,8 @@
 package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
-import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
-import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.ReceiptPhoto
+import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
 import java.time.Instant
 
 /**
@@ -12,15 +12,15 @@ import java.time.Instant
  * - 하나의 Gathering에 여러 개의 Receipt가 연결될 수 있습니다.
  * - 영수증 확정 여부(isCompleted)는 수정 가능 여부를 제어합니다.
  */
-class Receipt(
-    val id: ReceiptId? = null,
+class GatheringReceipt(
+    val id: GatheringReceiptId? = null,
     val splitAmount: Int? = null,
     val amount: Int,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
-    val receiptPhotos: MutableList<ReceiptPhoto>? = mutableListOf(),
-    var gathering: Gathering? = null,
+    val gatheringReceiptPhotos: MutableList<GatheringReceiptPhoto>? = mutableListOf(),
+    val gatheringId: GatheringId? = null,
 ) {
     var updatedAt: Instant? = updatedAt
         private set
@@ -51,7 +51,7 @@ class Receipt(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is Receipt) return false
+        if (other !is GatheringReceipt) return false
         return id == other.id
     }
 
@@ -59,16 +59,16 @@ class Receipt(
 
     override fun toString(): String =
         "Receipt(id=$id, splitAmount=$splitAmount, amount=$amount, createdAt=$createdAt, updatedAt=$updatedAt, " +
-            "deletedAt=$deletedAt, receiptPhotos=$receiptPhotos, gathering=$gathering)"
+            "deletedAt=$deletedAt, receiptPhotos=$gatheringReceiptPhotos, gatheringId=$gatheringId)"
 
     companion object {
         fun create(
             receiptCommand: ReceiptCommand,
-            gathering: Gathering,
-        ): Receipt =
-            Receipt(
+            gatheringId: GatheringId,
+        ): GatheringReceipt =
+            GatheringReceipt(
                 amount = receiptCommand.amount,
-                gathering = gathering,
+                gatheringId = gatheringId,
             )
     }
 }

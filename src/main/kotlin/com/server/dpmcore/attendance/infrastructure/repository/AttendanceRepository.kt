@@ -2,9 +2,10 @@ package com.server.dpmcore.attendance.infrastructure.repository
 
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
-import com.server.dpmcore.attendance.application.query.model.DetailMemberAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MemberDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberSessionAttendanceQueryModel
+import com.server.dpmcore.attendance.application.query.model.MyDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.SessionDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.domain.model.Attendance
@@ -13,6 +14,7 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesByS
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.attendance.infrastructure.entity.AttendanceEntity
 import com.server.dpmcore.common.jdsl.singleQueryOrNull
@@ -216,7 +218,7 @@ class AttendanceRepository(
 
     override fun findDetailMemberAttendance(
         query: GetDetailMemberAttendancesQuery,
-    ): DetailMemberAttendanceQueryModel? =
+    ): MemberDetailAttendanceQueryModel? =
         dsl
             .select(
                 MEMBERS.MEMBER_ID,
@@ -263,7 +265,7 @@ class AttendanceRepository(
                 TEAMS.NUMBER,
                 MEMBERS.PART,
             ).fetchOne {
-                DetailMemberAttendanceQueryModel(
+                MemberDetailAttendanceQueryModel(
                     memberId = it[MEMBERS.MEMBER_ID]!!,
                     memberName = it[MEMBERS.NAME]!!,
                     teamNumber = it[TEAMS.NUMBER]!!,
@@ -300,6 +302,32 @@ class AttendanceRepository(
                     sessionEventName = record[SESSIONS.EVENT_NAME]!!,
                     sessionDate = record[SESSIONS.DATE]!!,
                     sessionAttendanceStatus = record[ATTENDANCES.STATUS]!!,
+                )
+            }
+
+    override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
+        dsl
+            .select(
+                ATTENDANCES.STATUS,
+                ATTENDANCES.ATTENDED_AT,
+                SESSIONS.WEEK,
+                SESSIONS.EVENT_NAME,
+                SESSIONS.DATE,
+                SESSIONS.PLACE,
+            ).from(ATTENDANCES)
+            .join(SESSIONS)
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+            .join(MEMBERS)
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .where(query.toCondition())
+            .fetchOne {
+                MyDetailAttendanceQueryModel(
+                    attendanceStatus = it[ATTENDANCES.STATUS]!!,
+                    attendedAt = it[ATTENDANCES.ATTENDED_AT]!!,
+                    sessionWeek = it[SESSIONS.WEEK]!!,
+                    sessionEventName = it[SESSIONS.EVENT_NAME]!!,
+                    sessionDate = it[SESSIONS.DATE]!!,
+                    sessionPlace = it[SESSIONS.PLACE]!!,
                 )
             }
 

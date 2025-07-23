@@ -8,12 +8,14 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesByS
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBySessionQuery
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceRecordRequest
 import com.server.dpmcore.attendance.presentation.dto.request.AttendanceStatusUpdateRequest
 import com.server.dpmcore.attendance.presentation.dto.response.AttendanceResponse
 import com.server.dpmcore.attendance.presentation.dto.response.DetailAttendancesBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.DetailMemberAttendancesResponse
 import com.server.dpmcore.attendance.presentation.dto.response.MemberAttendancesResponse
+import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanceBySessionResponse
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper.toAttendanceStatusUpdateCommand
@@ -117,10 +119,10 @@ class AttendanceController(
     override fun getMyAttendanceBySessionId(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
-    ): CustomResponse<DetailAttendancesBySessionResponse> {
+    ): CustomResponse<MyDetailAttendanceBySessionResponse> {
         val response =
-            attendanceQueryService.getDetailAttendanceBySession(
-                GetDetailAttendanceBySessionQuery(
+            attendanceQueryService.getMyDetailAttendanceBySession(
+                GetMyAttendanceBySessionQuery(
                     sessionId = sessionId,
                     memberId = memberId,
                 ),

@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.application.query.model
 
-data class DetailMemberAttendanceQueryModel(
+data class MemberDetailAttendanceQueryModel(
     val memberId: Long,
     val memberName: String,
     val teamNumber: Int,

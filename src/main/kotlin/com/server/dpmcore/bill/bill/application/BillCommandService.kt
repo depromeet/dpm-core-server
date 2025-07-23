@@ -26,28 +26,35 @@ class BillCommandService(
     private val gatheringReceiptCommandService: ReceiptCommandService,
     private val gatheringQueryService: GatheringQueryService,
 ) {
-    fun saveBillWithGatherings(request: CreateBillRequest): BillId {
-        val billId = verifyAccountThenCreateBill(request)
-        saveRelatedGatherings(request, billId)
+    fun saveBillWithGatherings(
+        hostUserId: MemberId,
+        request: CreateBillRequest,
+    ): BillId {
+        val billId = verifyAccountThenCreateBill(hostUserId, request)
+        saveRelatedGatherings(request, billId, hostUserId)
         return billId
     }
 
     private fun saveRelatedGatherings(
         request: CreateBillRequest,
         billId: BillId,
+        hostUserId: MemberId,
     ) {
-        val gatheringCommands = request.gatherings.map { it.toCommand() }
-        gatheringCreateUseCase.saveAllGatherings(gatheringCommands, billId)
+        val gatheringCommands = request.gatherings.map { it.toCommand(hostUserId) }
+        gatheringCreateUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
     }
 
-    private fun verifyAccountThenCreateBill(request: CreateBillRequest): BillId {
+    private fun verifyAccountThenCreateBill(
+        hostUserId: MemberId,
+        request: CreateBillRequest,
+    ): BillId {
         val account = billAccountQueryService.findBy(request.billAccountId)
         return billPersistencePort.save(
             Bill.create(
                 account,
                 request.title,
                 request.description,
-                MemberId(request.hostUserId),
+                hostUserId,
             ),
         )
     }
@@ -76,36 +83,4 @@ class BillCommandService(
         billPersistencePort.save(bill)
     }
 
-    /*
-    fun save(createBillRequest: CreateBillRequest): Bill {
-        try {
- //            TODO : 외에 다른 것들도 실드할 게 있으면 추가
-            billAccountQueryService.findBy(createBillRequest.billAccountId).also {
-                if (it.id?.value != createBillRequest.billAccountId) throw BillException.BillAccountNotFoundException()
-            }
-            if (createBillRequest.gatherings.isEmpty()) {
-                throw BillException.GatheringRequiredException()
-            }
-            val bill = toBill(createBillRequest)
-            val savedBill = billPersistencePort.save(bill)
- //        TODO : 값 주입 도메인 로직으로 변경
-
-            gatheringCommandService.save(
-                bill = savedBill,
-                createBillRequest.gatherings
-                    .map { createGatheringRequest ->
-                        toGathering(
-                            createGatheringRequest,
-                            savedBill.id ?: throw BillException.BillIdRequiredException(),
-                        )
-                    }.toMutableList(),
-            )
-            return savedBill
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        throw BillException.BillIdRequiredException()
-    }
-
-     */
 }
