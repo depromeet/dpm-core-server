@@ -1,5 +1,6 @@
 package com.server.dpmcore.cohort.application
 
+import com.server.dpmcore.cohort.application.config.CohortProperties
 import com.server.dpmcore.cohort.domain.exception.CohortNotFoundException
 import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.cohort.domain.port.CohortPersistencePort
@@ -10,8 +11,9 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class CohortQueryService(
     private val cohortPersistencePort: CohortPersistencePort,
+    private val cohortProperties: CohortProperties,
 ) {
     fun getLatestCohortId(): CohortId =
-        cohortPersistencePort.findLatestCohortId()
+        cohortPersistencePort.findCohortIdByValue(cohortProperties.value)
             ?: throw CohortNotFoundException()
 }
