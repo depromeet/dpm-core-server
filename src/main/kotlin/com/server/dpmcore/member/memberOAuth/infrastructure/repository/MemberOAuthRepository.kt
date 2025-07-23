@@ -14,6 +14,6 @@ class MemberOAuthRepository(
         memberOAuth: MemberOAuth,
         member: Member,
     ) {
-        memberOAuthJpaRepository.save(MemberOAuthEntity.from(memberOAuth, member))
+        memberOAuthJpaRepository.save(MemberOAuthEntity.of(memberOAuth, member))
     }
 }

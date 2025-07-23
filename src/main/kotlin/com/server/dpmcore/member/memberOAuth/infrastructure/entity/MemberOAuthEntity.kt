@@ -31,7 +31,7 @@ class MemberOAuthEntity(
     val member: MemberEntity,
 ) {
     companion object {
-        fun from(
+        fun of(
             memberOAuth: MemberOAuth,
             member: Member,
         ): MemberOAuthEntity =

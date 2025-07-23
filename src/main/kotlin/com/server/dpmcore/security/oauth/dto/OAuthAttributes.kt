@@ -1,6 +1,7 @@
 package com.server.dpmcore.security.oauth.dto
 
 import com.server.dpmcore.member.memberOAuth.domain.model.OAuthProvider
+import com.server.dpmcore.security.oauth.exception.UnsupportedOAuthProviderException
 
 interface OAuthAttributes {
     fun getExternalId(): String
@@ -16,7 +17,7 @@ interface OAuthAttributes {
         ): OAuthAttributes =
             when {
                 OAuthProvider.KAKAO.isProviderOf(providerId) -> KakaoAuthAttributes.of(attributes)
-                else -> throw IllegalArgumentException("Unsupported provider: $providerId")
+                else -> throw UnsupportedOAuthProviderException()
             }
     }
 }
