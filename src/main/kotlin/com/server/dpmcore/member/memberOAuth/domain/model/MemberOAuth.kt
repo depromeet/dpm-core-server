@@ -1,4 +1,4 @@
-package com.server.dpmcore.member.memberOAuth.domain
+package com.server.dpmcore.member.memberOAuth.domain.model
 
 import com.server.dpmcore.member.member.domain.model.MemberId
 
@@ -26,7 +26,19 @@ class MemberOAuth(
         return result
     }
 
-    override fun toString(): String {
-        return "MemberOAuth(id=$id, externalId='$externalId', provider=$provider, memberId=$memberId)"
+    override fun toString(): String =
+        "MemberOAuth(id=$id, externalId='$externalId', provider=$provider, memberId=$memberId)"
+
+    companion object {
+        fun of(
+            externalId: String,
+            provider: OAuthProvider,
+            memberId: MemberId,
+        ): MemberOAuth =
+            MemberOAuth(
+                externalId = externalId,
+                provider = provider,
+                memberId = memberId,
+            )
     }
 }

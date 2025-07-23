@@ -1,4 +1,4 @@
-package com.server.dpmcore.member.memberOAuth.domain
+package com.server.dpmcore.member.memberOAuth.domain.model
 
 /**
  * 서비스에서 지원하는 OAuth 제공자를 나타냅니다.
@@ -12,7 +12,5 @@ enum class OAuthProvider {
     KAKAO,
     ;
 
-    fun isProviderOf(provider: String): Boolean {
-        return this.name == provider
-    }
+    fun isProviderOf(provider: String): Boolean = this.name == provider
 }

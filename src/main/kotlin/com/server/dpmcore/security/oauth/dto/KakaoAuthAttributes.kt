@@ -1,6 +1,6 @@
 package com.server.dpmcore.security.oauth.dto
 
-import com.server.dpmcore.member.memberOAuth.domain.OAuthProvider
+import com.server.dpmcore.member.memberOAuth.domain.model.OAuthProvider
 
 /**
  * 카카오 OAuth 인증 정보를 나타내는 데이터 클래스입니다.
