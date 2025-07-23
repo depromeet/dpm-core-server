@@ -82,7 +82,7 @@ class AttendanceRepository(
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 SessionAttendanceQueryModel(
-                    id = record[MEMBERS.MEMBER_ID]!!,
+                    id = record[ATTENDANCES.MEMBER_ID]!!,
                     name = record[MEMBERS.NAME]!!,
                     teamNumber = record[TEAMS.NUMBER]!!,
                     part = record[MEMBERS.PART]!!,
