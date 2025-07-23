@@ -20,4 +20,12 @@ open class BillException(
     class GatheringNotFoundException : BillException(BillExceptionCode.GATHERING_NOT_FOUND)
 
     class BillCannotCloseParticipationException : BillException(BillExceptionCode.BILL_CANNOT_CLOSE_PARTICIPATION)
+
+    class GatheringReceiptNotFoundException : BillException(BillExceptionCode.GATHERING_RECEIPT_NOT_FOUND)
+
+    class GatheringReceiptIdRequiredException : BillException(BillExceptionCode.GATHERING_RECEIPT_ID_REQUIRED)
+
+    class BillAlreadyParticipationClosedException : BillException(BillExceptionCode.BILL_ALREADY_PARTICIPATION_CLOSED)
+
+    class BillAlreadyCompletedException : BillException(BillExceptionCode.BILL_ALREADY_COMPLETED)
 }

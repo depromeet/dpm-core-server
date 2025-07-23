@@ -22,8 +22,12 @@ enum class BillExceptionCode(
     BILL_CANNOT_CLOSE_PARTICIPATION(
         HttpStatus.BAD_REQUEST,
         "BILL-406",
-        "현재 정산이 참여 가능한 상태(OPEN)가 아니기에 정산 인원을 마감할 수 없습니다.",
+        "현재 정산이 참여 가능한 상태(OPEN)가 아니기에 정산 참여를 마감할 수 없습니다.",
     ),
+    GATHERING_RECEIPT_NOT_FOUND(HttpStatus.BAD_REQUEST, "GATHERING-404-02", "존재하지 않는 회식 영수증입니다."),
+    GATHERING_RECEIPT_ID_REQUIRED(HttpStatus.BAD_REQUEST, "GATHERING-404-03", "회식 영수증 ID는 null일 수 없습니다."),
+    BILL_ALREADY_PARTICIPATION_CLOSED(HttpStatus.BAD_REQUEST, "BILL-400-01", "이미 참여 마감된 정산입니다."),
+    BILL_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "BILL-400-02", "이미 완료된 정산입니다."),
     ;
 
     override fun getStatus(): HttpStatus = status
