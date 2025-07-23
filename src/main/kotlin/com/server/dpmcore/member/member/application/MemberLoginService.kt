@@ -13,6 +13,7 @@ import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes
 import com.server.dpmcore.security.oauth.token.JwtTokenProvider
 import com.server.dpmcore.security.properties.SecurityProperties
+import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,6 +25,7 @@ class MemberLoginService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val securityProperties: SecurityProperties,
     private val tokenProvider: JwtTokenProvider,
+    private val environment: Environment,
 ) : HandleMemberLoginUseCase {
     @Transactional
     override fun handleLoginSuccess(authAttributes: OAuthAttributes): LoginResult =
@@ -69,7 +71,7 @@ class MemberLoginService(
     }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
-        val member = memberPersistencePort.save(Member.create(authAttributes.getEmail()))
+        val member = memberPersistencePort.save(Member.create(authAttributes.getEmail(), environment))
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
 
         return generateLoginResult(

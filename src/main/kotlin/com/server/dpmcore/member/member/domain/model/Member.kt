@@ -4,6 +4,7 @@ import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
 import com.server.dpmcore.member.memberCohort.domain.MemberCohort
 import com.server.dpmcore.member.memberOAuth.domain.model.MemberOAuth
 import com.server.dpmcore.member.memberTeam.domain.MemberTeam
+import org.springframework.core.env.Environment
 import java.time.Instant
 
 /**
@@ -73,13 +74,29 @@ class Member(
             "memberCohorts=$memberCohorts, memberTeams=$memberTeams, memberOAuths=$memberOAuths)"
 
     companion object {
-        fun create(email: String): Member =
-            Member(
+        fun create(
+            email: String,
+            environment: Environment,
+        ): Member {
+            val profileStatusMap =
+                mapOf(
+                    "prod" to MemberStatus.PENDING,
+                    "dev" to MemberStatus.ACTIVE,
+                    "local" to MemberStatus.ACTIVE,
+                )
+
+            val matchedStatus =
+                environment.activeProfiles
+                    .firstNotNullOfOrNull { profileStatusMap[it] }
+                    ?: MemberStatus.WITHDRAWN
+
+            val now = Instant.now()
+            return Member(
                 email = email,
-                // TODO : 운영 환경에서는 PENDING
-                status = MemberStatus.INACTIVE,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(),
+                status = matchedStatus,
+                createdAt = now,
+                updatedAt = now,
             )
+        }
     }
 }
