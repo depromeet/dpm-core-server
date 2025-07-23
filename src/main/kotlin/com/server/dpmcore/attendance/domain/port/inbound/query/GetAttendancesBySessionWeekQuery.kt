@@ -2,7 +2,7 @@ package com.server.dpmcore.attendance.domain.port.inbound.query
 
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 
-data class GetAttendancesBySessionIdQuery(
+data class GetAttendancesBySessionWeekQuery(
     val week: Int,
     val statuses: List<AttendanceStatus>?,
     val teams: List<Int>?,

@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.infrastructure.repository
 
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionIdQuery
+import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
@@ -11,7 +11,7 @@ import org.jooq.generated.tables.references.MEMBERS
 import org.jooq.generated.tables.references.SESSIONS
 import org.jooq.generated.tables.references.TEAMS
 
-fun GetAttendancesBySessionIdQuery.toCondition(): List<Condition> {
+fun GetAttendancesBySessionWeekQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
     conditions += SESSIONS.WEEK.eq(this.week)
