@@ -46,7 +46,7 @@ class Bill(
 
     fun isCompleted(): Boolean = completedAt != null
 
-    fun complete(): Bill {
+    fun closeParticipation(): Bill {
         if (isCompleted()) {
             throw IllegalStateException("이미 확정된 정산입니다. 수정이 불가능합니다.")
         }
@@ -57,7 +57,6 @@ class Bill(
             title = title,
             hostUserId = hostUserId,
             description = description,
-            gatheringIds = gatheringIds,
             completedAt = Instant.now(),
             createdAt = createdAt,
             updatedAt = Instant.now(),

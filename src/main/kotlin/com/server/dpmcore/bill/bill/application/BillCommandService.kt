@@ -69,6 +69,7 @@ class BillCommandService(
 
         val gatherings = gatheringQueryService.findByBillId(billId)
 
+        println("111111")
         // GatheringReceipt 정산 금액 마감
         gatherings.map { gathering ->
             gathering.id ?: throw BillException.GatheringNotFoundException()
@@ -79,7 +80,10 @@ class BillCommandService(
                     ).closeParticipation(gathering.getGatheringJoinMemberCount())
             gatheringReceiptCommandService.updateSplitAmount(receipt, gathering)
         }
-        bill.complete()
-        billPersistencePort.save(bill)
+
+        println("22222")
+        val closeParticipationBill = bill.closeParticipation()
+        println("closeParticipationBill: $closeParticipationBill")
+        billPersistencePort.save(closeParticipationBill)
     }
 }

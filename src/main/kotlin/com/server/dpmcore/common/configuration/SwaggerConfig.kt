@@ -18,7 +18,7 @@ class SwaggerConfig(
     companion object {
         private val PROFILE_SERVER_URL_MAP =
             mapOf(
-                "local" to "http://localhost:8080",
+                "local" to "http://localhost:8088",
                 "dev" to "https://api.depromeet-core.shop",
                 "prod" to "https://api.depromeet.com",
             )
