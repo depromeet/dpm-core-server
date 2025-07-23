@@ -62,8 +62,7 @@ class AttendanceRepository(
     ): List<SessionAttendanceQueryModel> =
         dsl
             .select(
-                ATTENDANCES.ATTENDANCE_ID,
-                MEMBERS.MEMBER_ID,
+                ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
                 MEMBERS.PART,
@@ -79,7 +78,7 @@ class AttendanceRepository(
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
                 query.toCondition(),
-            ).orderBy(ATTENDANCES.ATTENDANCE_ID.asc(), TEAMS.NUMBER.asc())
+            ).orderBy(ATTENDANCES.MEMBER_ID.asc(), TEAMS.NUMBER.asc())
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 SessionAttendanceQueryModel(
@@ -210,7 +209,7 @@ class AttendanceRepository(
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDED_AT]!!,
+                    attendedAt = it[ATTENDANCES.ATTENDED_AT],
                 )
             }
 
@@ -321,7 +320,7 @@ class AttendanceRepository(
             .fetchOne {
                 MyDetailAttendanceQueryModel(
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDED_AT]!!,
+                    attendedAt = it[ATTENDANCES.ATTENDED_AT],
                     sessionWeek = it[SESSIONS.WEEK]!!,
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
