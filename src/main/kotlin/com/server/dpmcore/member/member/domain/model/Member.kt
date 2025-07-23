@@ -76,7 +76,8 @@ class Member(
         fun create(email: String): Member =
             Member(
                 email = email,
-                status = MemberStatus.PENDING,
+                // TODO : 운영 환경에서는 PENDING
+                status = MemberStatus.INACTIVE,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
             )
