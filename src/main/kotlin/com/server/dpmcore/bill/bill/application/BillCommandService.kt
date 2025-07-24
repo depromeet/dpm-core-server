@@ -62,9 +62,9 @@ class BillCommandService(
         )
     }
 
-    fun closeBillParticipation(billId: Long): BillId {
+    fun closeBillParticipation(billId: BillId): BillId {
         val bill =
-            billPersistencePort.findBillById(billId)
+            billPersistencePort.findById(billId)
                 ?: throw BillException.BillNotFoundException()
         if (bill.billStatus != BillStatus.OPEN) {
             throw BillException.BillCannotCloseParticipationException()

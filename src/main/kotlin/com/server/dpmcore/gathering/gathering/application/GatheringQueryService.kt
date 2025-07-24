@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gathering.application
 
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
@@ -19,7 +20,7 @@ class GatheringQueryService(
     override fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering> =
         gatheringPersistencePort.findAllByGatheringIds(gatheringIds)
 
-    fun findByBillId(billId: Long): List<Gathering> =
+    fun findByBillId(billId: BillId): List<Gathering> =
         gatheringPersistencePort
             .findByBillId(billId)
 }

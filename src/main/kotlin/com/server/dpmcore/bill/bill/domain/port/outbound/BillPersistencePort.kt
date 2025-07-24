@@ -6,9 +6,7 @@ import com.server.dpmcore.bill.bill.domain.model.BillId
 interface BillPersistencePort {
     fun save(bill: Bill): BillId
 
-    fun findById(billId: Long): Bill?
-
-    fun findBillById(billId: Long): Bill?
+    fun findById(billId: BillId): Bill?
 
     fun findAllBills(): List<Bill>
 

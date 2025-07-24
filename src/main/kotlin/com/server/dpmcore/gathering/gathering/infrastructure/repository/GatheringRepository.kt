@@ -5,6 +5,7 @@ import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.linecorp.kotlinjdsl.spring.data.listQuery
 import com.linecorp.kotlinjdsl.spring.data.singleQuery
 import com.server.dpmcore.bill.bill.domain.model.Bill
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
@@ -58,8 +59,8 @@ class GatheringRepository(
                     }.map { it.toDomain() }
             }
 
-    override fun findByBillId(billId: Long): List<Gathering> =
-        gatheringJpaRepository.findByBillId(billId).map {
+    override fun findByBillId(billId: BillId): List<Gathering> =
+        gatheringJpaRepository.findByBillId(billId.value).map {
             it.toDomain()
         }
 }
