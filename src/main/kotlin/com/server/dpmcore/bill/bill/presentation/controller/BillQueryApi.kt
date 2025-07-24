@@ -98,27 +98,40 @@ interface BillQueryApi {
                                   "message": "요청에 성공했습니다",
                                   "code": "G000",
                                   "data": {
-                                    "title": "17기 OT세션 공식 회식",
-                                    "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
-                                    "hostUserId": 1,
-                                    "billTotalAmount": 100,
-                                    "billStatus": "OPEN",
-                                    "createdAt": "2025-07-22T22:07:30.968754",
-                                    "billAccountId": 1,
-                                    "gatherings": [
+                                    "bills": [
                                       {
-                                        "title": "1차 회식 - 고깃집",
-                                        "description": "가까운 삼겹살 집에서 진행",
-                                        "roundNumber": 1,
-                                        "heldAt": "2025-07-22T05:55:34.606",
-                                        "category": "GATHERING",
-                                        "joinMemberCount": 0,
-                                        "amount": 820000,
-                                        "gatheringMembers": [
+                                        "billId": 1,
+                                        "title": "17기 OT세션 공식 회식 111",
+                                        "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
+                                        "billTotalAmount": 0,
+                                        "billStatus": "IN_PROGRESS",
+                                        "createdAt": "2025-07-23T22:50:21.466944",
+                                        "billAccountId": 1,
+                                        "inviteGroups": null,
+                                        "answerMemberCount": 0,
+                                        "gatherings": []
+                                      },
+                                      {
+                                        "billId": 2,
+                                        "title": "17기 OT세션 공식 회식 222",
+                                        "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
+                                        "billTotalAmount": 820000,
+                                        "billStatus": "IN_PROGRESS",
+                                        "createdAt": "2025-07-23T22:50:28.643061",
+                                        "billAccountId": 1,
+                                        "inviteGroups": null,
+                                        "answerMemberCount": 0,
+                                        "gatherings": [
                                           {
-                                            "memberId": 1,
-                                            "isJoined": false,
-                                            "isCompleted": false
+                                            "title": "1차 회식 - 고깃집",
+                                            "description": "가까운 삼겹살 집에서 진행",
+                                            "roundNumber": 1,
+                                            "heldAt": "2025-07-22T05:55:34.606",
+                                            "category": "GATHERING",
+                                            "receipt": null,
+                                            "joinMemberCount": 1,
+                                            "amount": 820000,
+                                            "splitAmount": 820000
                                           }
                                         ]
                                       }
@@ -134,10 +147,10 @@ interface BillQueryApi {
         ],
     )
     @Operation(
-        summary = "정산서 조회 API",
+        summary = "정산 목록 조회 API",
         description =
-            "정산서의 상세 정보를 조회합니다. \n" +
-                "정산서에는 제목, 설명, 호스트 유저 ID, 총 금액, 생성일시, 정산 계좌 ID, 회식 차수 정보 등이 포함됩니다.",
+            "정산의 목록을 조회합니다. \n" +
+                "정산에는 제목, 설명, 호스트 유저 ID, 총 금액, 생성일시, 정산 계좌 ID, 회식 차수 정보 등이 포함됩니다.",
     )
     fun getBillListByMemberId(memberId: MemberId): CustomResponse<BillListResponse>
 }

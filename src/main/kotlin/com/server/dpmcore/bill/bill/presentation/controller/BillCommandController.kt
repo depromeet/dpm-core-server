@@ -36,7 +36,7 @@ class BillCommandController(
     override fun closeBillParticipation(
         @PathVariable("billId") billId: Long,
     ): CustomResponse<BillPersistenceResponse> {
-        val billId = billCommandService.closeBillParticipation(billId)
-        return CustomResponse.ok(BillPersistenceResponse(billId))
+        val updatedBillId = billCommandService.closeBillParticipation(billId)
+        return CustomResponse.ok(BillPersistenceResponse(updatedBillId))
     }
 }
