@@ -80,8 +80,8 @@ class BillCommandService(
 
             val receipt =
                 gatheringReceiptQueryService
-                    .findBy(
-                        gathering.id.value,
+                    .findByGatheringId(
+                        gathering.id,
                     ).closeParticipation(
                         gatheringMember.count {
                             it.isJoined

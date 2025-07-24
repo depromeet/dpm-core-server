@@ -6,6 +6,7 @@ import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceiptId
 import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptPersistencePort
 import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.GatheringReceiptEntity
 import org.jooq.DSLContext
@@ -25,13 +26,14 @@ class GatheringReceiptRepository(
         gatheringReceiptJpaRepository.save(GatheringReceiptEntity.from(gatheringReceipt, gathering))
     }
 
-    override fun findBy(gatheringReceiptId: Long): GatheringReceiptEntity =
+    override fun findById(gatheringReceiptId: GatheringReceiptId): GatheringReceiptEntity =
         gatheringReceiptJpaRepository.findByIdOrNull(
-            gatheringReceiptId,
+            gatheringReceiptId.value,
         ) ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
 
     override fun findByGathering(gatheringId: GatheringId): GatheringReceiptEntity =
-        gatheringReceiptJpaRepository.findByGatheringId(gatheringId.value)
+        gatheringReceiptJpaRepository.findByGatheringId(gatheringId)
+            ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
 
     override fun updateSplitAmount(gatheringReceipt: GatheringReceipt): Int =
         queryFactory
