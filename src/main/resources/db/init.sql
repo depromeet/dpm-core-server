@@ -45,7 +45,7 @@ INSERT INTO attendances (id, member_id, session_id, attended_at, status) VALUES
 
 -- Bill Accounts (정산 계좌)
 INSERT INTO bill_accounts (bill_account_id, created_at, updated_at, deleted_at, account_holder_name, account_type, bank_name, bill_account_value) VALUES
-    (1, '2024-01-01 10:00:00', '2024-01-01 10:00:00', NULL, '홍길동', '개인', 'KB 국민', '3333-12-1234567');
+    (1, '2024-01-01 10:00:00', '2024-01-01 10:00:00', NULL, '홍길동', 'ACCOUNT', 'KB 국민', '3333-12-1234567');
 
 -- Bills (정산)
 INSERT INTO bills (bill_id, bill_account_id, created_at, updated_at, deleted_at, host_user_id, bill_status, title, description, completed_at) VALUES
