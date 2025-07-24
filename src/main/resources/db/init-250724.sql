@@ -47,8 +47,8 @@ INSERT INTO member_cohorts (member_cohort_id, member_id, cohort_id) VALUES
 
 -- Authorities (권한)
 INSERT INTO authorities (authority_id, created_at, updated_at, name) VALUES
-  (1, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'ROLE_USER'),
-  (2, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'ROLE_ADMIN');
+  (1, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'DEEPER'),
+  (2, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'ORGANIZER');
 
 -- Member Authorities (운영진은 ROLE_ADMIN, 나머지는 ROLE_USER)
 INSERT INTO member_authorities (member_authority_id, member_id, authority_id, granted_at, deleted_at) VALUES
@@ -229,11 +229,11 @@ INSERT INTO gathering_receipt_photos (receipt_photo_id, receipt_id, url, created
 
 -- Member OAuth (소셜 로그인)
 INSERT INTO member_oauth (member_oauth_id, member_id, external_id, provider) VALUES
-  (1, 1, 'oauth-1', 'google'), (2, 2, 'oauth-2', 'kakao'), (3, 3, 'oauth-3', 'naver'), (4, 4, 'oauth-4', 'apple'),
-  (5, 5, 'oauth-5', 'google'), (6, 6, 'oauth-6', 'kakao'), (7, 7, 'oauth-7', 'naver'), (8, 8, 'oauth-8', 'apple'),
-  (9, 9, 'oauth-9', 'google'), (10, 10, 'oauth-10', 'kakao'), (11, 11, 'oauth-11', 'naver'), (12, 12, 'oauth-12', 'apple'),
-  (13, 13, 'oauth-13', 'google'), (14, 14, 'oauth-14', 'kakao'), (15, 15, 'oauth-15', 'naver'), (16, 16, 'oauth-16', 'apple'),
-  (17, 17, 'oauth-17', 'google'), (18, 18, 'oauth-18', 'kakao'), (19, 19, 'oauth-19', 'naver'), (20, 20, 'oauth-20', 'apple');
+  (1, 1, 'oauth-1', 'KAKAO'), (2, 2, 'oauth-2', 'KAKAO'), (3, 3, 'oauth-3', 'KAKAO'), (4, 4, 'oauth-4', 'KAKAO'),
+  (5, 5, 'oauth-5', 'KAKAO'), (6, 6, 'oauth-6', 'KAKAO'), (7, 7, 'oauth-7', 'KAKAO'), (8, 8, 'oauth-8', 'KAKAO'),
+  (9, 9, 'oauth-9', 'KAKAO'), (10, 10, 'oauth-10', 'KAKAO'), (11, 11, 'oauth-11', 'KAKAO'), (12, 12, 'oauth-12', 'KAKAO'),
+  (13, 13, 'oauth-13', 'KAKAO'), (14, 14, 'oauth-14', 'KAKAO'), (15, 15, 'oauth-15', 'KAKAO'), (16, 16, 'oauth-16', 'KAKAO'),
+  (17, 17, 'oauth-17', 'KAKAO'), (18, 18, 'oauth-18', 'KAKAO'), (19, 19, 'oauth-19', 'KAKAO'), (20, 20, 'oauth-20', 'KAKAO');
 
 -- Member Teams (팀-멤버 매핑, 각 팀 5명씩)
 INSERT INTO member_teams (member_team_id, member_id, team_id) VALUES

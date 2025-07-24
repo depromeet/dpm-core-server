@@ -22,8 +22,8 @@ INSERT INTO member_cohorts (member_cohort_id, member_id, cohort_id) VALUES
 
 -- Authorities (권한)
 INSERT INTO authorities (authority_id, created_at, updated_at, name) VALUES
-                                                                         (1, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'ROLE_USER'),
-                                                                         (2, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'ROLE_ADMIN');
+                                                                         (1, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'DEEPER'),
+                                                                         (2, '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'ORGANIZER');
 
 -- Member Authorities (회원-권한 매핑)
 INSERT INTO member_authorities (member_authority_id, member_id, authority_id, granted_at, deleted_at) VALUES
@@ -70,7 +70,7 @@ INSERT INTO gathering_receipt_photos (receipt_photo_id, receipt_id, url, created
 
 -- Member OAuth (소셜 로그인)
 INSERT INTO member_oauth (member_oauth_id, member_id, external_id, provider) VALUES
-    (1, 1, 'oauth-123', 'google');
+    (1, 1, 'oauth-123', 'KAKAO');
 
 -- Member Teams (회원-팀 매핑)
 INSERT INTO member_teams (member_team_id, member_id, team_id) VALUES
