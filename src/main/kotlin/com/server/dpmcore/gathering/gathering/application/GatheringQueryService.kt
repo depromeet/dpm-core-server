@@ -1,7 +1,6 @@
 package com.server.dpmcore.gathering.gathering.application
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
-import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase

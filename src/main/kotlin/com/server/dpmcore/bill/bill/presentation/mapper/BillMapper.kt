@@ -11,8 +11,6 @@ import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
-import com.server.dpmcore.gathering.gatheringMember.domain.port.GatheringMemberQueryUseCase
-import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptQueryUseCase
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime

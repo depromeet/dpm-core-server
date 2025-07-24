@@ -66,6 +66,15 @@ class Bill(
         )
     }
 
+    fun checkParticipationClosable() {
+        if (isCompleted()) {
+            throw BillException.BillAlreadyCompletedException()
+        }
+        if (billStatus != BillStatus.OPEN) {
+            throw BillException.BillCannotCloseParticipationException()
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Bill) return false
