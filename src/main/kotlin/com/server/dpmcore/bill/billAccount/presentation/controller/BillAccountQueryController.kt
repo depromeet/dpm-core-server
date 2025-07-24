@@ -1,6 +1,7 @@
 package com.server.dpmcore.bill.billAccount.presentation.controller
 
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
+import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.bill.billAccount.presentation.dto.response.BillAccountResponse
 import com.server.dpmcore.bill.billAccount.presentation.mapper.BillAccountMapper.toBillAccountResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -19,7 +20,7 @@ class BillAccountQueryController(
         @PathVariable("billAccountId")
         billAccountId: Long,
     ): CustomResponse<BillAccountResponse> {
-        val billAccount = billAccountQueryService.findBy(billAccountId)
+        val billAccount = billAccountQueryService.findBy(BillAccountId(billAccountId))
         return CustomResponse.ok(
             toBillAccountResponse(billAccount),
         )

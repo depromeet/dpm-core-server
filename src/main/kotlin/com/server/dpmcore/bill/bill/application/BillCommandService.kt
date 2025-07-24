@@ -7,6 +7,7 @@ import com.server.dpmcore.bill.bill.domain.model.BillStatus
 import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
+import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
@@ -51,7 +52,7 @@ class BillCommandService(
         hostUserId: MemberId,
         request: CreateBillRequest,
     ): BillId {
-        val account = billAccountQueryService.findBy(request.billAccountId)
+        val account = billAccountQueryService.findBy(BillAccountId(request.billAccountId))
         return billPersistencePort.save(
             Bill.create(
                 account,
