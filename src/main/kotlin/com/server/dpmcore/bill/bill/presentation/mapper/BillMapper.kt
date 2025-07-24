@@ -21,16 +21,14 @@ import java.time.ZoneId
 @Component
 class BillMapper(
     private val gatheringQueryUseCase: GatheringQueryUseCase,
-    private val gatheringReceiptQueryUseCase: GatheringReceiptQueryUseCase,
-    private val gatheringMemberQueryUseCase: GatheringMemberQueryUseCase,
 ) {
     fun toBillDetailResponse(bill: Bill): BillDetailResponse {
         val gatherings = gatheringQueryUseCase.findByBillId(bill.id ?: throw BillException.BillNotFoundException())
 
         val gatheringReceipt =
             gatherings.map { gathering ->
-                gatheringReceiptQueryUseCase
-                    .findByGatheringId(
+                gatheringQueryUseCase
+                    .findGatheringReceiptByGatheringId(
                         gathering.id ?: throw GatheringException.GatheringNotFoundException(),
                     )
             }
@@ -56,7 +54,7 @@ class BillMapper(
                 gatherings.map { gathering ->
 
                     val gatheringMembers =
-                        gatheringMemberQueryUseCase.getGatheringMemberByGatheringId(
+                        gatheringQueryUseCase.findGatheringMemberByGatheringId(
                             gathering.id
                                 ?: throw GatheringException.GatheringNotFoundException(),
                         )
@@ -102,10 +100,10 @@ class BillMapper(
 
     fun toBillListGatheringDetailResponse(gathering: Gathering): BillListGatheringDetailResponse {
         val gatheringReceipt =
-            gatheringReceiptQueryUseCase.findByGatheringId(
+            gatheringQueryUseCase.findGatheringReceiptByGatheringId(
                 gathering.id ?: throw GatheringException.GatheringNotFoundException(),
             )
-        val gatheringMembers = gatheringMemberQueryUseCase.getGatheringMemberByGatheringId(gathering.id)
+        val gatheringMembers = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
         val joinMemberCount = gatheringMembers.count { it.isJoined }
 
         return BillListGatheringDetailResponse(

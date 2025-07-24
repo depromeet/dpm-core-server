@@ -67,9 +67,8 @@ class BillCommandService(
         val bill =
             billPersistencePort.findById(billId)
                 ?: throw BillException.BillNotFoundException()
-        if (bill.billStatus != BillStatus.OPEN) {
-            throw BillException.BillCannotCloseParticipationException()
-        }
+
+        bill.canCloseParticipationException()
 
         val gatherings = gatheringQueryService.findByBillId(billId)
 
