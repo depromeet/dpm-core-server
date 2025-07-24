@@ -1,17 +1,13 @@
 package com.server.dpmcore.bill.billAccount.infrastructure.entity
 
-import com.server.dpmcore.bill.bill.infrastructure.entity.BillEntity
 import com.server.dpmcore.bill.billAccount.domain.model.AccountType
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.Instant
 
@@ -36,12 +32,10 @@ class BillAccountEntity(
     val updatedAt: Instant,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
-    @OneToMany(mappedBy = "billAccount", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val bills: MutableList<BillEntity> = mutableListOf(),
 ) {
     companion object {
-        fun from(billAccount: BillAccount): BillAccountEntity {
-            return BillAccountEntity(
+        fun from(billAccount: BillAccount): BillAccountEntity =
+            BillAccountEntity(
                 id = billAccount.id?.value ?: 0L,
                 billAccountValue = billAccount.billAccountValue,
                 accountHolderName = billAccount.accountHolderName,
@@ -51,11 +45,10 @@ class BillAccountEntity(
                 updatedAt = billAccount.updatedAt ?: Instant.now(),
                 deletedAt = billAccount.deletedAt,
             )
-        }
     }
 
-    fun toDomain(): BillAccount {
-        return BillAccount(
+    fun toDomain(): BillAccount =
+        BillAccount(
             id = BillAccountId(id),
             billAccountValue = billAccountValue,
             accountHolderName = accountHolderName,
@@ -65,5 +58,4 @@ class BillAccountEntity(
             updatedAt = updatedAt,
             deletedAt = deletedAt,
         )
-    }
 }
