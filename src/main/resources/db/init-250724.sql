@@ -34,7 +34,7 @@ INSERT INTO members (member_id, created_at, updated_at, deleted_at, email, name,
   (17, '2024-01-13 10:00:00', '2024-01-13 10:00:00', NULL, 'user13@depromeet.com', '디퍼13', 'WEB', 'ACTIVE'),
   (18, '2024-01-14 10:00:00', '2024-01-14 10:00:00', NULL, 'user14@depromeet.com', '디퍼14', 'ANDROID', 'ACTIVE'),
   (19, '2024-01-15 10:00:00', '2024-01-15 10:00:00', NULL, 'user15@depromeet.com', '디퍼15', 'SERVER', 'ACTIVE'),
-  (20, '2024-01-16 10:00:00', '2024-01-16 10:00:00', NULL, 'user16@depromeet.com', '디퍼16', 'WEB', 'ACTIVE'),;
+  (20, '2024-01-16 10:00:00', '2024-01-16 10:00:00', NULL, 'user16@depromeet.com', '디퍼16', 'WEB', 'ACTIVE');
 
 -- Member Cohorts (모든 멤버 17기)
 INSERT INTO member_cohorts (member_cohort_id, member_id, cohort_id) VALUES
