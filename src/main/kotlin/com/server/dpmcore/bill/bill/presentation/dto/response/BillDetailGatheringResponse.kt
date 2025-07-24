@@ -1,6 +1,7 @@
 package com.server.dpmcore.bill.bill.presentation.dto.response
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import java.time.LocalDateTime
 
 data class BillDetailGatheringResponse(
@@ -14,7 +15,10 @@ data class BillDetailGatheringResponse(
     val gatheringMembers: List<BillDetailGatheringMemberResponse>,
 ) {
     companion object {
-        fun from(gathering: Gathering): BillDetailGatheringResponse =
+        fun from(
+            gathering: Gathering,
+            gatheringMembers: List<GatheringMember>,
+        ): BillDetailGatheringResponse =
             BillDetailGatheringResponse(
                 title = gathering.title,
                 description = gathering.description,
@@ -27,7 +31,12 @@ data class BillDetailGatheringResponse(
                 category = gathering.category.name,
                 joinMemberCount = gathering.getGatheringJoinMemberCount(),
                 amount = gathering.gatheringReceipt?.amount ?: 0,
-                gatheringMembers = gathering.gatheringMembers.map { BillDetailGatheringMemberResponse.from(it) },
+                gatheringMembers =
+                    gatheringMembers.map {
+                        BillDetailGatheringMemberResponse.from(
+                            it,
+                        )
+                    },
             )
 
         private const val TIME_ZONE = "Asia/Seoul"

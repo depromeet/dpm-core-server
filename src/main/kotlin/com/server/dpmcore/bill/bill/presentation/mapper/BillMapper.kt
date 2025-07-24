@@ -13,6 +13,7 @@ import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.gathering.gatheringMember.domain.port.GatheringMemberQueryUseCase
 import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptQueryUseCase
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -24,7 +25,8 @@ class BillMapper(
     private val gatheringMemberQueryUseCase: GatheringMemberQueryUseCase,
 ) {
     fun toBillDetailResponse(bill: Bill): BillDetailResponse {
-        val gatherings = gatheringQueryUseCase.getAllGatheringsByGatheringIds(bill.gatheringIds)
+        val gatherings = gatheringQueryUseCase.findByBillId(bill.id ?: throw BillException.BillNotFoundException())
+
         val gatheringReceipt =
             gatherings.map { gathering ->
                 gatheringReceiptQueryUseCase
@@ -50,7 +52,16 @@ class BillMapper(
                     ZoneId.of(TIME_ZONE),
                 ),
             billAccountId = bill.billAccount.id?.value ?: 0L,
-            gatherings = gatherings.map { BillDetailGatheringResponse.from(it) },
+            gatherings =
+                gatherings.map { gathering ->
+
+                    val gatheringMembers =
+                        gatheringMemberQueryUseCase.getGatheringMemberByGatheringId(
+                            gathering.id
+                                ?: throw GatheringException.GatheringNotFoundException(),
+                        )
+                    BillDetailGatheringResponse.from(gathering, gatheringMembers)
+                },
         )
     }
 
@@ -68,7 +79,7 @@ class BillMapper(
 
     fun toBillListDetailResponse(bill: Bill): BillListDetailResponse {
         val gatheringDetails =
-            gatheringQueryUseCase.getAllGatheringsByGatheringIds(bill.gatheringIds).map {
+            gatheringQueryUseCase.findByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
                 toBillListGatheringDetailResponse(it)
             }
         val billTotalAmount =
@@ -81,9 +92,7 @@ class BillMapper(
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
             createdAt =
-                bill.createdAt
-                    ?.atZone(ZoneId.of(TIME_ZONE))
-                    ?.toLocalDateTime() ?: throw BillException.BillNotFoundException(),
+                instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            inviteGroups = TODO(),
 //            answerMemberCount = TODO(),

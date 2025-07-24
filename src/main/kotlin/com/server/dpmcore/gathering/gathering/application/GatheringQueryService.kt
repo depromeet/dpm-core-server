@@ -20,7 +20,7 @@ class GatheringQueryService(
     override fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering> =
         gatheringPersistencePort.findAllByGatheringIds(gatheringIds)
 
-    fun findByBillId(billId: BillId): List<Gathering> =
+    override fun findByBillId(billId: BillId): List<Gathering> =
         gatheringPersistencePort
             .findByBillId(billId)
 }
