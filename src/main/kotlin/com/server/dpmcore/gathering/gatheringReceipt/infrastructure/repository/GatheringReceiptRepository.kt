@@ -2,7 +2,7 @@ package com.server.dpmcore.gathering.gatheringReceipt.infrastructure.repository
 
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
-import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
@@ -28,7 +28,7 @@ class GatheringReceiptRepository(
     override fun findBy(gatheringReceiptId: Long): GatheringReceiptEntity =
         gatheringReceiptJpaRepository.findByIdOrNull(
             gatheringReceiptId,
-        ) ?: throw IllegalArgumentException("Receipt not found with id: $gatheringReceiptId")
+        ) ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
 
     override fun findByGathering(gatheringId: GatheringId): GatheringReceiptEntity =
         gatheringReceiptJpaRepository.findByGatheringId(gatheringId.value)
@@ -41,7 +41,10 @@ class GatheringReceiptRepository(
                 where(
                     col(
                         GatheringReceiptEntity::id,
-                    ).equal(gatheringReceipt.id?.value ?: throw BillException.GatheringReceiptIdRequiredException()),
+                    ).equal(
+                        gatheringReceipt.id?.value
+                            ?: throw GatheringReceiptException.GatheringReceiptIdRequiredException(),
+                    ),
                 )
             }.executeUpdate()
 }

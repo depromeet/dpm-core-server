@@ -6,7 +6,9 @@ import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListGatheringDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
+import com.server.dpmcore.bill.exception.BillAccountException
 import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.gathering.gatheringMember.domain.port.GatheringMemberQueryUseCase
@@ -27,7 +29,7 @@ class BillMapper(
             gatherings.map { gathering ->
                 gatheringReceiptQueryUseCase
                     .findByGatheringId(
-                        gathering.id ?: throw BillException.GatheringNotFoundException(),
+                        gathering.id ?: throw GatheringException.GatheringNotFoundException(),
                     )
             }
 
@@ -82,7 +84,7 @@ class BillMapper(
                 bill.createdAt
                     ?.atZone(ZoneId.of(TIME_ZONE))
                     ?.toLocalDateTime() ?: throw BillException.BillNotFoundException(),
-            billAccountId = bill.billAccount.id?.value ?: throw BillException.BillAccountNotFoundException(),
+            billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            inviteGroups = TODO(),
 //            answerMemberCount = TODO(),
             gatherings = gatheringDetails,
@@ -92,7 +94,7 @@ class BillMapper(
     fun toBillListGatheringDetailResponse(gathering: Gathering): BillListGatheringDetailResponse {
         val gatheringReceipt =
             gatheringReceiptQueryUseCase.findByGatheringId(
-                gathering.id ?: throw BillException.GatheringNotFoundException(),
+                gathering.id ?: throw GatheringException.GatheringNotFoundException(),
             )
         val gatheringMembers = gatheringMemberQueryUseCase.getGatheringMemberByGatheringId(gathering.id)
         val joinMemberCount = gatheringMembers.count { it.isJoined }

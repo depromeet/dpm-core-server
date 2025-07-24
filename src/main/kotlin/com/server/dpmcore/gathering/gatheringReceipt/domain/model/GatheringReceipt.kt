@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
+import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
@@ -32,10 +33,10 @@ class GatheringReceipt(
 
     fun closeParticipation(joinMemberCount: Int): GatheringReceipt {
         if (joinMemberCount <= 0) {
-            throw IllegalArgumentException("참여 멤버 수는 1명 이상이어야 합니다.")
+            throw GatheringReceiptException.MemberCountMustOverOneException()
         }
         if (splitAmount != null) {
-            throw IllegalStateException("이미 분할 금액이 설정된 영수증입니다.")
+            throw GatheringReceiptException.ReceiptAlreadySplitException()
         }
         return GatheringReceipt(
             id = id,

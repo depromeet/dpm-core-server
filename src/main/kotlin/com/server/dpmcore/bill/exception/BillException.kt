@@ -5,27 +5,15 @@ import com.server.dpmcore.common.exception.BusinessException
 open class BillException(
     code: BillExceptionCode,
 ) : BusinessException(code) {
-    class BillAccountNotFoundException : BillException(BillExceptionCode.BILL_ACCOUNT_NOT_FOUND)
-
-    class GatheringRequiredException : BillException(BillExceptionCode.GATHERING_REQUIRED)
-
-    class BillAccountIdRequiredException : BillException(BillExceptionCode.BILL_ACCOUNT_ID_REQUIRED)
-
-    class BillIdRequiredException : BillException(BillExceptionCode.BILL_ID_REQUIRED)
-
-    class GatheringMembersRequiredException : BillException(BillExceptionCode.GATHERING_MEMBERS_REQUIRED)
+    class BillServerException : BillException(BillExceptionCode.SERVER_ERROR)
 
     class BillNotFoundException : BillException(BillExceptionCode.BILL_NOT_FOUND)
 
-    class GatheringNotFoundException : BillException(BillExceptionCode.GATHERING_NOT_FOUND)
+    class BillIdRequiredException : BillException(BillExceptionCode.BILL_ID_REQUIRED)
 
     class BillCannotCloseParticipationException : BillException(BillExceptionCode.BILL_CANNOT_CLOSE_PARTICIPATION)
 
-    class GatheringReceiptNotFoundException : BillException(BillExceptionCode.GATHERING_RECEIPT_NOT_FOUND)
-
-    class GatheringReceiptIdRequiredException : BillException(BillExceptionCode.GATHERING_RECEIPT_ID_REQUIRED)
+    class BillAlreadyCompletedException : BillException(BillExceptionCode.BILL_ALREADY_COMPLETED)
 
     class BillAlreadyParticipationClosedException : BillException(BillExceptionCode.BILL_ALREADY_PARTICIPATION_CLOSED)
-
-    class BillAlreadyCompletedException : BillException(BillExceptionCode.BILL_ALREADY_COMPLETED)
 }

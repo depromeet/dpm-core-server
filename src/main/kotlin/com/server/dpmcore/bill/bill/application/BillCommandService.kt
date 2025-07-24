@@ -8,6 +8,7 @@ import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCreateUseCase
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
@@ -73,7 +74,7 @@ class BillCommandService(
 
         // GatheringReceipt 정산 금액 마감
         gatherings.map { gathering ->
-            gathering.id ?: throw BillException.GatheringNotFoundException()
+            gathering.id ?: throw GatheringException.GatheringNotFoundException()
 
             val gatheringMember = gatheringMemberQueryService.getGatheringMemberByGatheringId(gathering.id)
 
