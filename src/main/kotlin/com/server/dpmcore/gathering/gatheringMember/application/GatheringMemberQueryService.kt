@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.application
 
+import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.GatheringMemberQueryUseCase
@@ -19,5 +20,9 @@ class GatheringMemberQueryService(
     fun getGatheringMembersByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): List<GatheringMember> = gatheringMemberPersistencePort.findByGatheringIdAndMemberId(gatheringId, memberId)
+    ): List<GatheringMember> =
+        gatheringMemberPersistencePort
+            .findByGatheringIdAndMemberId(gatheringId, memberId)
+            .takeIf { it.isNotEmpty() }
+            ?: throw GatheringMemberException.GatheringMemberNotFoundException()
 }
