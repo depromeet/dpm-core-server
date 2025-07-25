@@ -3,6 +3,7 @@ package com.server.dpmcore.gathering.gatheringMember.infrastructure.repository
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.linecorp.kotlinjdsl.spring.data.updateQuery
+import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -33,11 +34,13 @@ class GatheringMemberRepository(
         gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId).map { it.toDomain() }
 
     override fun updateGatheringMemberById(gatheringMember: GatheringMember) {
+        val id =
+            gatheringMember.id?.value
+                ?: throw GatheringException.GatheringIdRequiredException()
+
         queryFactory
             .updateQuery<GatheringMemberEntity> {
-                where(
-                    gatheringMember.id?.let { col(GatheringMemberEntity::id).equal(it.value) },
-                )
+                where(col(GatheringMemberEntity::id).equal(id))
                 set(col(GatheringMemberEntity::isChecked), gatheringMember.isChecked)
                 set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
                 set(col(GatheringMemberEntity::completedAt), gatheringMember.completedAt)
