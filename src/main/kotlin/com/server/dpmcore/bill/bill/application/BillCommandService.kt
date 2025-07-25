@@ -10,7 +10,7 @@ import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCreateUseCase
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptQueryService
@@ -23,11 +23,8 @@ import org.springframework.transaction.annotation.Transactional
 class BillCommandService(
     private val billPersistencePort: BillPersistencePort,
     private val billAccountQueryService: BillAccountQueryService,
-    private val gatheringCreateUseCase: GatheringCreateUseCase,
-    private val gatheringReceiptQueryService: GatheringReceiptQueryService,
-    private val gatheringReceiptCommandService: GatheringReceiptCommandService,
+    private val gatheringCommandUseCase: GatheringCommandUseCase,
     private val gatheringQueryService: GatheringQueryService,
-    private val gatheringMemberQueryService: GatheringMemberQueryService,
 ) {
     fun saveBillWithGatherings(
         hostUserId: MemberId,
@@ -44,7 +41,7 @@ class BillCommandService(
         hostUserId: MemberId,
     ) {
         val gatheringCommands = request.gatherings.map { it.toCommand(hostUserId) }
-        gatheringCreateUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
+        gatheringCommandUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
     }
 
     private fun verifyAccountThenCreateBill(
@@ -75,18 +72,18 @@ class BillCommandService(
         gatherings.map { gathering ->
             gathering.id ?: throw GatheringException.GatheringNotFoundException()
 
-            val gatheringMember = gatheringMemberQueryService.getGatheringMemberByGatheringId(gathering.id)
+            val gatheringMember = gatheringQueryService.findGatheringMemberByGatheringId(gathering.id)
 
             val receipt =
-                gatheringReceiptQueryService
-                    .findByGatheringId(
+                gatheringQueryService
+                    .findGatheringReceiptByGatheringId(
                         gathering.id,
                     ).closeParticipation(
                         gatheringMember.count {
                             it.isJoined
                         },
                     )
-            gatheringReceiptCommandService.updateSplitAmount(receipt)
+            gatheringCommandUseCase.updateGatheringReceiptSplitAmount(receipt)
 //            TODO : gathering updatedAt 업데이트
         }
 
