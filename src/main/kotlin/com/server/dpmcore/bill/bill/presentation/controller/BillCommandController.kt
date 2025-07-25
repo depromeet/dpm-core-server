@@ -42,7 +42,7 @@ class BillCommandController(
         return CustomResponse.ok(BillPersistenceResponse(updatedBillId))
     }
 
-    @PostMapping("/{billId}/confirmed")
+    @PatchMapping("/{billId}/confirm")
     override fun markBillAsChecked(
         @Positive @PathVariable billId: BillId,
         @CurrentMemberId memberId: MemberId,

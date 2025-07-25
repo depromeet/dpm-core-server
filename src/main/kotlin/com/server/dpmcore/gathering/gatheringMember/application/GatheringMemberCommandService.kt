@@ -25,4 +25,11 @@ class GatheringMemberCommandService(
             gatheringMemberPersistencePort.updateGatheringMemberById(it)
         }
     }
+
+    fun markAsJoined(gatheringMembers: List<GatheringMember>) {
+        gatheringMembers.forEach {
+            it.markAsJoined()
+            gatheringMemberPersistencePort.updateGatheringMemberById(it)
+        }
+    }
 }

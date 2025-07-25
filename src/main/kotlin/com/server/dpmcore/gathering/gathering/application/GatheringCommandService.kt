@@ -77,4 +77,13 @@ class GatheringCommandService(
             gatheringMemberCommandService.markAsChecked(gatheringMembers)
         }
     }
+
+    fun markAsJoinedEachGatheringMember(
+        gatheringId: GatheringId,
+        memberId: MemberId,
+    ) {
+        val gatheringMembers =
+            gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(gatheringId, memberId)
+        gatheringMemberCommandService.markAsJoined(gatheringMembers)
+    }
 }
