@@ -1,6 +1,7 @@
 package com.server.dpmcore.bill.bill.domain.model
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
+import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
@@ -33,7 +34,7 @@ class Bill(
     val hostUserId: MemberId,
     var gatheringIds: MutableList<GatheringId> = mutableListOf(),
     val completedAt: Instant? = null,
-    val billStatus: BillStatus = BillStatus.PENDING,
+    val billStatus: BillStatus = BillStatus.OPEN,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
@@ -46,9 +47,9 @@ class Bill(
 
     fun isCompleted(): Boolean = completedAt != null
 
-    fun complete(now: Instant): Bill {
+    fun closeParticipation(): Bill {
         if (isCompleted()) {
-            throw IllegalStateException("이미 확정된 정산입니다. 수정이 불가능합니다.")
+            throw BillException.BillAlreadyCompletedException()
         }
 
         return Bill(
@@ -57,12 +58,21 @@ class Bill(
             title = title,
             hostUserId = hostUserId,
             description = description,
-            gatheringIds = gatheringIds,
-            completedAt = now,
+            completedAt = completedAt,
+            billStatus = BillStatus.IN_PROGRESS,
             createdAt = createdAt,
-            updatedAt = now,
+            updatedAt = Instant.now(),
             deletedAt = deletedAt,
         )
+    }
+
+    fun checkParticipationClosable() {
+        if (isCompleted()) {
+            throw BillException.BillAlreadyCompletedException()
+        }
+        if (billStatus != BillStatus.OPEN) {
+            throw BillException.BillCannotCloseParticipationException()
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -89,4 +99,16 @@ class Bill(
                 updatedAt = Instant.now(),
             )
     }
+
+    override fun toString(): String =
+        "Bill(id=$id," +
+            "title='$title'," +
+            "description=$description," +
+            "hostUserId=$hostUserId," +
+            "gatheringIds=$gatheringIds," +
+            "completedAt=$completedAt," +
+            "billStatus=$billStatus," +
+            "createdAt=$createdAt," +
+            "updatedAt=$updatedAt," +
+            "deletedAt=$deletedAt)"
 }

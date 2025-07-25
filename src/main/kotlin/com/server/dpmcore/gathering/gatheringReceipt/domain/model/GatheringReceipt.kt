@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
+import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
@@ -29,6 +30,25 @@ class GatheringReceipt(
         private set
 
     fun isDeleted(): Boolean = deletedAt != null
+
+    fun closeParticipation(joinMemberCount: Int): GatheringReceipt {
+        if (joinMemberCount <= 0) {
+            throw GatheringReceiptException.MemberCountMustOverOneException()
+        }
+        if (splitAmount != null) {
+            throw GatheringReceiptException.ReceiptAlreadySplitException()
+        }
+        return GatheringReceipt(
+            id = id,
+            splitAmount = (amount / joinMemberCount),
+            amount = amount,
+            createdAt = createdAt,
+            updatedAt = Instant.now(),
+            deletedAt = deletedAt,
+            gatheringReceiptPhotos = gatheringReceiptPhotos,
+            gatheringId = gatheringId,
+        )
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

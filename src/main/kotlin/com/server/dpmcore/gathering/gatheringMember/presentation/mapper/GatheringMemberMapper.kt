@@ -1,6 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.presentation.mapper
 
-import com.server.dpmcore.bill.bill.presentation.dto.response.CreateGatheringMemberResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailGatheringMemberResponse
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 
 object GatheringMemberMapper {
@@ -11,8 +11,8 @@ object GatheringMemberMapper {
 //            isJoined = gatheringMemberForBillCreateRequest.isJoined,
 //        )
 
-    fun toCreateGatheringMemberResponse(gatheringMember: GatheringMember): CreateGatheringMemberResponse =
-        CreateGatheringMemberResponse(
+    fun toCreateGatheringMemberResponse(gatheringMember: GatheringMember): BillDetailGatheringMemberResponse =
+        BillDetailGatheringMemberResponse(
             memberId = gatheringMember.memberId.value,
             isCompleted = gatheringMember.isChecked,
             isJoined = gatheringMember.isJoined,

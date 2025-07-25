@@ -2,11 +2,9 @@ package com.server.dpmcore.bill.bill.infrastructure.entity
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.bill.bill.domain.model.BillStatus
 import com.server.dpmcore.bill.billAccount.infrastructure.entity.BillAccountEntity
-import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
-import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -15,7 +13,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.Instant
 
@@ -37,8 +34,6 @@ class BillEntity(
     val billStatus: String,
     @Column(name = "host_user_id")
     val hostUserId: Long,
-    @OneToMany(mappedBy = "bill", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val gatherings: MutableList<GatheringEntity> = mutableListOf(),
     @Column(name = "completed_at")
     val completedAt: Instant? = null,
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -70,8 +65,8 @@ class BillEntity(
             billAccount = billAccount.toDomain(),
             title = title,
             description = description,
+            billStatus = BillStatus.valueOf(billStatus),
             hostUserId = MemberId(hostUserId),
-            gatheringIds = gatherings.map { GatheringId(it.id) }.toMutableList(),
             completedAt = completedAt,
             createdAt = createdAt,
             updatedAt = updatedAt,

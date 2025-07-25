@@ -17,4 +17,9 @@ class GatheringReceiptCommandService(
         receipt: ReceiptCommand,
         gathering: Gathering,
     ) = gatheringReceiptPersistencePort.save(GatheringReceipt.create(receipt, gathering.id!!), gathering)
+
+    fun updateSplitAmount(receipt: GatheringReceipt): Boolean =
+        gatheringReceiptPersistencePort.updateSplitAmount(
+            receipt,
+        ) != 0
 }

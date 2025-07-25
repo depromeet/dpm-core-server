@@ -1,9 +1,17 @@
 package com.server.dpmcore.bill.bill.presentation.mapper
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
-import com.server.dpmcore.bill.bill.presentation.dto.response.CreateBillResponse
-import com.server.dpmcore.bill.bill.presentation.dto.response.CreateGatheringResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailGatheringResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillListDetailResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillListGatheringDetailResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
+import com.server.dpmcore.bill.exception.BillAccountException
+import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -12,21 +20,103 @@ import java.time.ZoneId
 class BillMapper(
     private val gatheringQueryUseCase: GatheringQueryUseCase,
 ) {
-    fun toBillCreateResponse(bill: Bill): CreateBillResponse {
-        val gatherings = gatheringQueryUseCase.getAllGatheringsByGatheringIds(bill.gatheringIds)
+    fun toBillDetailResponse(bill: Bill): BillDetailResponse {
+        val gatherings = gatheringQueryUseCase.findByBillId(bill.id ?: throw BillException.BillNotFoundException())
 
-        return CreateBillResponse(
+        val gatheringReceipt =
+            gatherings.map { gathering ->
+                gatheringQueryUseCase
+                    .findGatheringReceiptByGatheringId(
+                        gathering.id ?: throw GatheringException.GatheringNotFoundException(),
+                    )
+            }
+
+//        TODO : 자기가 참여한 모임만 합산해야함.
+        val billTotalAmount = gatheringReceipt.sumOf { it.amount }
+        val billTotalSplitAmount = gatheringReceipt.sumOf { it.splitAmount ?: 0 }
+
+        return BillDetailResponse(
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
-            billTotalAmount = 100,
+            billTotalAmount = billTotalAmount,
+            billTotalSplitAmount = billTotalSplitAmount,
+            billStatus = bill.billStatus,
             createdAt =
                 LocalDateTime.ofInstant(
                     bill.createdAt,
                     ZoneId.of(TIME_ZONE),
                 ),
             billAccountId = bill.billAccount.id?.value ?: 0L,
-            gatherings = gatherings.map { CreateGatheringResponse.from(it) },
+            gatherings =
+                gatherings.map { gathering ->
+
+                    val gatheringMembers =
+                        gatheringQueryUseCase.findGatheringMemberByGatheringId(
+                            gathering.id
+                                ?: throw GatheringException.GatheringNotFoundException(),
+                        )
+                    BillDetailGatheringResponse.from(gathering, gatheringMembers)
+                },
+        )
+    }
+
+    fun toBillListResponse(bills: List<Bill>): BillListResponse {
+        val billDetailResponses =
+            bills
+                .map {
+                    toBillListDetailResponse(it)
+                }.toList()
+
+        return BillListResponse(
+            bills = billDetailResponses,
+        )
+    }
+
+    fun toBillListDetailResponse(bill: Bill): BillListDetailResponse {
+        val gatheringDetails =
+            gatheringQueryUseCase.findByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
+                toBillListGatheringDetailResponse(it)
+            }
+        val billTotalAmount =
+            gatheringDetails.sumOf { it.amount }
+
+        return BillListDetailResponse(
+            title = bill.title,
+            billId = bill.id?.value ?: throw BillException.BillNotFoundException(),
+            description = bill.description,
+            billTotalAmount = billTotalAmount,
+            billStatus = bill.billStatus,
+            createdAt =
+                instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
+            billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
+//            inviteGroups = TODO(),
+//            answerMemberCount = TODO(),
+            gatherings = gatheringDetails,
+        )
+    }
+
+    fun toBillListGatheringDetailResponse(gathering: Gathering): BillListGatheringDetailResponse {
+        val gatheringReceipt =
+            gatheringQueryUseCase.findGatheringReceiptByGatheringId(
+                gathering.id ?: throw GatheringException.GatheringNotFoundException(),
+            )
+        val gatheringMembers = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
+        val joinMemberCount = gatheringMembers.count { it.isJoined }
+
+        return BillListGatheringDetailResponse(
+            title = gathering.title,
+            description = gathering.description,
+            roundNumber = gathering.roundNumber,
+            heldAt =
+                gathering.heldAt
+                    .atZone(ZoneId.of(TIME_ZONE))
+                    .toLocalDateTime(),
+            category = gathering.category,
+//            receipt = gatheringReceipt, TODO : 영수증 추 후 구현
+            joinMemberCount = joinMemberCount,
+            amount = gatheringReceipt.amount,
+            splitAmount = gatheringReceipt.splitAmount ?: 0,
         )
     }
 

@@ -5,8 +5,6 @@ import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceiptId
-import com.server.dpmcore.gathering.gatheringReceiptPhoto.infrastructure.entity.GatheringReceiptPhotoEntity
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -14,7 +12,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.Instant
@@ -36,8 +33,6 @@ class GatheringReceiptEntity(
     val updatedAt: Instant,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
-    @OneToMany(mappedBy = "receipt", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val receiptPhotos: MutableList<GatheringReceiptPhotoEntity>? = mutableListOf(),
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id", nullable = false)
     val gathering: GatheringEntity? = null,
@@ -54,14 +49,6 @@ class GatheringReceiptEntity(
                 createdAt = gatheringReceipt.createdAt ?: Instant.now(),
                 updatedAt = gatheringReceipt.updatedAt ?: Instant.now(),
                 deletedAt = gatheringReceipt.deletedAt,
-                receiptPhotos =
-                    gatheringReceipt.gatheringReceiptPhotos
-                        ?.map {
-                            GatheringReceiptPhotoEntity.from(
-                                it,
-                                gathering,
-                            )
-                        }?.toMutableList(),
                 gathering = GatheringEntity.from(gathering),
             )
     }
@@ -74,7 +61,6 @@ class GatheringReceiptEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            gatheringReceiptPhotos = receiptPhotos?.map { it.toDomain() }?.toMutableList(),
             gatheringId = GatheringId(gathering?.id ?: 0L),
         )
 }
