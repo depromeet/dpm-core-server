@@ -1,6 +1,7 @@
 package com.server.dpmcore.bill.billAccount.infrastructure.repository
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
+import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.bill.billAccount.domain.port.BillAccountPersistencePort
 import org.springframework.stereotype.Repository
 import kotlin.jvm.optionals.getOrNull
@@ -9,5 +10,6 @@ import kotlin.jvm.optionals.getOrNull
 class BillAccountRepository(
     private val billAccountJpaRepository: BillAccountJpaRepository,
 ) : BillAccountPersistencePort {
-    override fun findById(id: Long): BillAccount? = billAccountJpaRepository.findById(id).getOrNull()?.toDomain()
+    override fun findById(billAccountId: BillAccountId): BillAccount? =
+        billAccountJpaRepository.findById(billAccountId.value).getOrNull()?.toDomain()
 }

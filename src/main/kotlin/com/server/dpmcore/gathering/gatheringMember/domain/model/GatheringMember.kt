@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.model
 
+import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
@@ -43,7 +44,7 @@ class GatheringMember(
      */
     fun checkAttendance(now: Instant): GatheringMember {
         if (isConfirmed()) {
-            throw IllegalStateException("이미 확정된 멤버는 출석 여부를 변경할 수 없습니다.")
+            throw GatheringMemberException.AlreadyConfirmedMemberException()
         }
 
         return GatheringMember(

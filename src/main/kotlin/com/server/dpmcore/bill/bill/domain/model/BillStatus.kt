@@ -25,11 +25,4 @@ enum class BillStatus(
     OPEN("참여 중"),
     IN_PROGRESS("정산 중"),
     COMPLETED("정산 완료"),
-    ;
-
-    companion object {
-        fun from(value: String): BillStatus =
-            values().firstOrNull { it.value == value }
-                ?: throw IllegalArgumentException("존재하지 않는 정산 상태입니다: $value")
-    }
 }

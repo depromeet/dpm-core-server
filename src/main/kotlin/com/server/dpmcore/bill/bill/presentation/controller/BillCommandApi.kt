@@ -62,7 +62,7 @@ interface BillCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "201",
+                responseCode = "200",
                 description = "정산 추가 성공",
                 content = [
                     Content(
@@ -92,4 +92,40 @@ interface BillCommandApi {
         hostUserId: MemberId,
         createBillRequest: CreateBillRequest,
     ): CustomResponse<BillPersistenceResponse>
+
+    @Operation(
+        summary = "정산 참여 마감",
+        description =
+            "정산 참여를 마감합니다. 마감 이후에는 1/n 분할된 금액이 산출되기에 멤버를 추가할 수 없습니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "정산 참여 마감 성공",
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "정산 참여 마감 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공하였습니다.",
+                                        "code": "G001",
+                                        "data": {
+                                            "billId": 11
+                                            }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun closeBillParticipation(billId: Long): CustomResponse<BillPersistenceResponse>
 }

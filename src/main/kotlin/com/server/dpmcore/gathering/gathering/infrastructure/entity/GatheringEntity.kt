@@ -7,7 +7,6 @@ import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
-import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
 import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.GatheringReceiptEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
 import jakarta.persistence.CascadeType
@@ -21,7 +20,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.Instant
@@ -54,8 +52,6 @@ class GatheringEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_id", foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val bill: BillEntity? = null,
-    @OneToMany(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-    val gatheringMembers: MutableList<GatheringMemberEntity> = mutableListOf(),
     @OneToOne(mappedBy = "gathering", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val receipt: GatheringReceiptEntity? = null,
 ) {
@@ -108,7 +104,6 @@ class GatheringEntity(
             updatedAt = updatedAt,
             deletedAt = deletedAt,
             billId = BillId(bill?.id ?: throw BillException.BillIdRequiredException()),
-            gatheringMembers = gatheringMembers.map { it.toDomain() }.toMutableList(),
             gatheringReceipt = receipt?.toDomain(),
         )
 }

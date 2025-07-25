@@ -1,6 +1,7 @@
 package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.application.BillCommandService
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -8,6 +9,8 @@ import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.security.annotation.CurrentMemberId
 import jakarta.validation.Valid
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -28,5 +31,13 @@ class BillCommandController(
     ): CustomResponse<BillPersistenceResponse> {
         val billId = billCommandService.saveBillWithGatherings(hostUserId, createBillRequest)
         return CustomResponse.created(BillPersistenceResponse(billId))
+    }
+
+    @PatchMapping("/{billId}/close-participation")
+    override fun closeBillParticipation(
+        @PathVariable("billId") billId: Long,
+    ): CustomResponse<BillPersistenceResponse> {
+        val updatedBillId = billCommandService.closeBillParticipation(BillId(billId))
+        return CustomResponse.ok(BillPersistenceResponse(updatedBillId))
     }
 }

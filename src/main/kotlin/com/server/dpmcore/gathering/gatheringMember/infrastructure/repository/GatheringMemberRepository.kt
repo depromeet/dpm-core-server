@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gatheringMember.infrastructure.repository
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.GatheringMemberPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
@@ -16,4 +17,7 @@ class GatheringMemberRepository(
     ) {
         gatheringJpaRepository.save(GatheringMemberEntity.from(gatheringMember, gathering))
     }
+
+    override fun findByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
+        gatheringJpaRepository.findByGatheringId(gatheringId).map { it.toDomain() }
 }

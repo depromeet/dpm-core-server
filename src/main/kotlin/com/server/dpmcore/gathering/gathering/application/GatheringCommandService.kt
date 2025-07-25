@@ -5,11 +5,12 @@ import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCreateUseCase
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberCommandService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberByAuthorityUseCase
 import org.springframework.stereotype.Service
@@ -23,7 +24,7 @@ class GatheringCommandService(
     private val gatheringMemberCommandService: GatheringMemberCommandService,
     private val queryMemberByAuthorityUseCase: QueryMemberByAuthorityUseCase,
     private val billQueryUseCase: BillQueryUseCase,
-) : GatheringCreateUseCase {
+) : GatheringCommandUseCase {
     override fun saveAllGatherings(
         commands: List<GatheringCreateCommand>,
         invitedAuthorityIds: List<AuthorityId>,
@@ -60,4 +61,7 @@ class GatheringCommandService(
         bill: Bill,
         it: GatheringCreateCommand,
     ) = gatheringPersistencePort.save(bill, Gathering.create(it))
+
+    override fun updateGatheringReceiptSplitAmount(receipt: GatheringReceipt): Boolean =
+        gatheringReceiptCommandService.updateSplitAmount(receipt)
 }
