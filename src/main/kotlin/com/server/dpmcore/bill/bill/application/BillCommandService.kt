@@ -11,9 +11,6 @@ import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
-import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
-import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
-import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptQueryService
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
