@@ -5,10 +5,12 @@ import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberCommandService
+import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -22,6 +24,7 @@ class GatheringCommandService(
     private val gatheringPersistencePort: GatheringPersistencePort,
     private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val gatheringMemberCommandService: GatheringMemberCommandService,
+    private val gatheringMemberQueryService: GatheringMemberQueryService,
     private val queryMemberByAuthorityUseCase: QueryMemberByAuthorityUseCase,
     private val billQueryUseCase: BillQueryUseCase,
 ) : GatheringCommandUseCase {
@@ -64,4 +67,14 @@ class GatheringCommandService(
 
     override fun updateGatheringReceiptSplitAmount(receipt: GatheringReceipt): Boolean =
         gatheringReceiptCommandService.updateSplitAmount(receipt)
+
+    override fun markAsCheckedEachGatheringMember(
+        gatheringIds: List<GatheringId>,
+        memberId: MemberId,
+    ) {
+        gatheringIds.forEach {
+            val gatheringMembers = gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it, memberId)
+            gatheringMemberCommandService.markAsChecked(gatheringMembers)
+        }
+    }
 }

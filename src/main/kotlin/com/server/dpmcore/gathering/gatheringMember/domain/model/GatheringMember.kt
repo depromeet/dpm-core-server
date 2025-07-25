@@ -16,13 +16,16 @@ class GatheringMember(
     val id: GatheringMemberId? = null,
     val memberId: MemberId,
     val gatheringId: GatheringId,
-    val isChecked: Boolean = false,
+    isChecked: Boolean = false,
     val isJoined: Boolean = false,
     val createdAt: Instant? = null,
     completedAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
 ) {
+    var isChecked: Boolean = isChecked
+        private set
+
     var completedAt: Instant? = completedAt
         private set
 
@@ -31,6 +34,11 @@ class GatheringMember(
 
     var deletedAt: Instant? = deletedAt
         private set
+
+    fun markAsChecked() {
+        this.isChecked = true
+        this.updatedAt = Instant.now()
+    }
 
     fun isDeleted(): Boolean = deletedAt != null
 

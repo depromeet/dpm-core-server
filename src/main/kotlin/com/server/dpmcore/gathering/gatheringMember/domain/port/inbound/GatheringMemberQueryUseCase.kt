@@ -1,4 +1,4 @@
-package com.server.dpmcore.gathering.gatheringMember.domain.port
+package com.server.dpmcore.gathering.gatheringMember.domain.port.inbound
 
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember

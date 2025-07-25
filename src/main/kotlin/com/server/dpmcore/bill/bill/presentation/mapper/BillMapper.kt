@@ -21,7 +21,8 @@ class BillMapper(
     private val gatheringQueryUseCase: GatheringQueryUseCase,
 ) {
     fun toBillDetailResponse(bill: Bill): BillDetailResponse {
-        val gatherings = gatheringQueryUseCase.findByBillId(bill.id ?: throw BillException.BillNotFoundException())
+        val gatherings =
+            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException())
 
         val gatheringReceipt =
             gatherings.map { gathering ->
@@ -75,7 +76,7 @@ class BillMapper(
 
     fun toBillListDetailResponse(bill: Bill): BillListDetailResponse {
         val gatheringDetails =
-            gatheringQueryUseCase.findByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
+            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
                 toBillListGatheringDetailResponse(it)
             }
         val billTotalAmount =

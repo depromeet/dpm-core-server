@@ -9,6 +9,7 @@ import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.security.annotation.CurrentMemberId
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Positive
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -39,5 +40,14 @@ class BillCommandController(
     ): CustomResponse<BillPersistenceResponse> {
         val updatedBillId = billCommandService.closeBillParticipation(BillId(billId))
         return CustomResponse.ok(BillPersistenceResponse(updatedBillId))
+    }
+
+    @PostMapping("/{billId}/confirmed")
+    override fun markBillAsChecked(
+        @Positive @PathVariable billId: BillId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<Void> {
+        billCommandService.markBillAsChecked(billId, memberId)
+        return CustomResponse.noContent()
     }
 }

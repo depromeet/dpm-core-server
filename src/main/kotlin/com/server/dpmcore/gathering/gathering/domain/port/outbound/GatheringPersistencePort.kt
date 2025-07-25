@@ -23,4 +23,6 @@ interface GatheringPersistencePort {
     )
 
     fun findAllByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering>
+
+    fun findAllGatheringIdsByBillId(billId: BillId): List<GatheringId>
 }
