@@ -10,9 +10,6 @@ import kotlin.jvm.optionals.getOrNull
 class BillAccountRepository(
     private val billAccountJpaRepository: BillAccountJpaRepository,
 ) : BillAccountPersistencePort {
-    override fun findById(billAccountId: BillAccountId): BillAccount? {
-        val billAccount = billAccountJpaRepository.findById(billAccountId.value).getOrNull()
-        println("Finding BillAccount with ID: $billAccountId, Result: $billAccount")
-        return billAccount?.toDomain()
-    }
+    override fun findById(billAccountId: BillAccountId): BillAccount? =
+        billAccountJpaRepository.findById(billAccountId.value).getOrNull()?.toDomain()
 }

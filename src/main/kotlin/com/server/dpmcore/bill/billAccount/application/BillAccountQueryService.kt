@@ -10,10 +10,8 @@ import org.springframework.stereotype.Service
 class BillAccountQueryService(
     private val billAccountPersistencePort: BillAccountPersistencePort,
 ) {
-    fun findBy(billAccountId: BillAccountId): BillAccount {
-        println("Finding BillAccount with ID: $billAccountId")
-        return billAccountPersistencePort.findById(
+    fun findBy(billAccountId: BillAccountId): BillAccount =
+        billAccountPersistencePort.findById(
             billAccountId,
         ) ?: throw BillAccountException.BillAccountNotFoundException()
-    }
 }
