@@ -7,8 +7,7 @@ data class BillListDetailResponse(
     val billId: Long,
     val title: String,
     val description: String? = null,
-//    TODO : 얘는 매핑을 어디서 시키는 게 좋은지 고민
-    var billTotalAmount: Int,
+    val billTotalAmount: Int,
     val billStatus: BillStatus,
     val createdAt: LocalDateTime,
     val billAccountId: Long,
