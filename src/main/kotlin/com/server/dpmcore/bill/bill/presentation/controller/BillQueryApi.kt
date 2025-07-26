@@ -30,38 +30,59 @@ interface BillQueryApi {
                             ExampleObject(
                                 name = "정산서 조회 성공 응답",
                                 value = """
-                                {
-                                  "status": "OK",
-                                  "message": "요청에 성공했습니다",
-                                  "code": "G000",
-                                  "data": {
-                                    "title": "17기 OT세션 공식 회식",
-                                    "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
-                                    "hostUserId": 1,
-                                    "billTotalAmount": 100,
-                                    "billStatus": "OPEN",
-                                    "createdAt": "2025-07-22T22:07:30.968754",
-                                    "billAccountId": 1,
-                                    "gatherings": [
-                                      {
-                                        "title": "1차 회식 - 고깃집",
-                                        "description": "가까운 삼겹살 집에서 진행",
-                                        "roundNumber": 1,
-                                        "heldAt": "2025-07-22T05:55:34.606",
-                                        "category": "GATHERING",
-                                        "joinMemberCount": 0,
-                                        "amount": 820000,
-                                        "gatheringMembers": [
+                                    {
+                                      "status": "OK",
+                                      "message": "요청에 성공했습니다",
+                                      "code": "GLOBAL-200-01",
+                                      "data": {
+                                        "billId": 1,
+                                        "title": "1차 회식 정산",
+                                        "description": "1차 회식에 대한 정산입니다.",
+                                        "hostUserId": 17,
+                                        "billTotalAmount": 220000,
+                                        "billTotalSplitAmount": 170000,
+                                        "billStatus": "IN_PROGRESS",
+                                        "createdAt": "2024-01-01T19:00:00",
+                                        "billAccountId": 1,
+                                        "invitedMemberCount": 2,
+                                        "invitationConfirmedCount": 0,
+                                        "invitationCheckedMemberCount": 1,
+                                        "inviteAuthorities": [
                                           {
-                                            "memberId": 1,
-                                            "isJoined": false,
-                                            "isCompleted": false
+                                            "inviteAuthorityId": 1,
+                                            "authorityName": "17기 운영진",
+                                            "authorityMemberCount": 10
+                                          },
+                                          {
+                                            "inviteAuthorityId": 2,
+                                            "authorityName": "17기 디퍼",
+                                            "authorityMemberCount": 60
+                                          }
+                                        ],
+                                        "gatherings": [
+                                          {
+                                            "gatheringId": 1,
+                                            "title": "1차 회식",
+                                            "description": "첫 번째 회식입니다.",
+                                            "roundNumber": 1,
+                                            "heldAt": "2024-01-06T04:00:00",
+                                            "category": "GATHERING",
+                                            "joinMemberCount": 0,
+                                            "amount": 100000
+                                          },
+                                          {
+                                            "gatheringId": 2,
+                                            "title": "2차 회식",
+                                            "description": "두 번째 회식입니다.",
+                                            "roundNumber": 2,
+                                            "heldAt": "2024-01-06T06:00:00",
+                                            "category": "GATHERING",
+                                            "joinMemberCount": 0,
+                                            "amount": 120000
                                           }
                                         ]
                                       }
-                                    ]
-                                  }
-                                }
+                                    }
                             """,
                             ),
                         ],
@@ -93,51 +114,66 @@ interface BillQueryApi {
                             ExampleObject(
                                 name = "정산서 목록 조회 성공 응답",
                                 value = """
-                                {
-                                  "status": "OK",
-                                  "message": "요청에 성공했습니다",
-                                  "code": "G000",
-                                  "data": {
-                                    "bills": [
-                                      {
-                                        "billId": 1,
-                                        "title": "17기 OT세션 공식 회식 111",
-                                        "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
-                                        "billTotalAmount": 0,
-                                        "billStatus": "IN_PROGRESS",
-                                        "createdAt": "2025-07-23T22:50:21.466944",
-                                        "billAccountId": 1,
-                                        "inviteGroups": null,
-                                        "answerMemberCount": 0,
-                                        "gatherings": []
-                                      },
-                                      {
-                                        "billId": 2,
-                                        "title": "17기 OT세션 공식 회식 222",
-                                        "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
-                                        "billTotalAmount": 820000,
-                                        "billStatus": "IN_PROGRESS",
-                                        "createdAt": "2025-07-23T22:50:28.643061",
-                                        "billAccountId": 1,
-                                        "inviteGroups": null,
-                                        "answerMemberCount": 0,
-                                        "gatherings": [
+                                    {
+                                      "status": "OK",
+                                      "message": "요청에 성공했습니다",
+                                      "code": "GLOBAL-200-01",
+                                      "data": {
+                                        "bills": [
                                           {
-                                            "title": "1차 회식 - 고깃집",
-                                            "description": "가까운 삼겹살 집에서 진행",
-                                            "roundNumber": 1,
-                                            "heldAt": "2025-07-22T05:55:34.606",
-                                            "category": "GATHERING",
-                                            "receipt": null,
-                                            "joinMemberCount": 1,
-                                            "amount": 820000,
-                                            "splitAmount": 820000
+                                            "billId": 1,
+                                            "title": "1차 회식 정산",
+                                            "description": "1차 회식에 대한 정산입니다.",
+                                            "billTotalAmount": 220000,
+                                            "billStatus": "IN_PROGRESS",
+                                            "createdAt": "2024-01-01T19:00:00",
+                                            "billAccountId": 1,
+                                            "invitedMemberCount": 2,
+                                            "invitationConfirmedCount": 0,
+                                            "invitationCheckedMemberCount": 1,
+                                            "inviteAuthorities": [
+                                              {
+                                                "invitedAuthorityId": 1,
+                                                "authorityName": "17기 운영진",
+                                                "authorityMemberCount": 10
+                                              },
+                                              {
+                                                "invitedAuthorityId": 2,
+                                                "authorityName": "17기 디퍼",
+                                                "authorityMemberCount": 60
+                                              }
+                                            ],
+                                            "gatherings": [
+                                              {
+                                                "gatheringId": 1,
+                                                "title": "1차 회식",
+                                                "description": "첫 번째 회식입니다.",
+                                                "roundNumber": 1,
+                                                "heldAt": "2024-01-06T04:00:00",
+                                                "category": "GATHERING",
+                                                "receipt": null,
+                                                "joinMemberCount": 2,
+                                                "amount": 100000,
+                                                "splitAmount": 50000
+                                              },
+                                              {
+                                                "gatheringId": 2,
+                                                "title": "2차 회식",
+                                                "description": "두 번째 회식입니다.",
+                                                "roundNumber": 2,
+                                                "heldAt": "2024-01-06T06:00:00",
+                                                "category": "GATHERING",
+                                                "receipt": null,
+                                                "joinMemberCount": 1,
+                                                "amount": 120000,
+                                                "splitAmount": 120000
+                                              }
+                                            ]
                                           }
                                         ]
                                       }
-                                    ]
-                                  }
-                                }
+                                    }
+
                             """,
                             ),
                         ],
