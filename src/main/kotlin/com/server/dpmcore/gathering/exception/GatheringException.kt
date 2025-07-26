@@ -10,4 +10,6 @@ open class GatheringException(
     class GatheringRequiredException : GatheringException(GatheringExceptionCode.GATHERING_REQUIRED)
 
     class GatheringNotFoundException : GatheringException(GatheringExceptionCode.GATHERING_NOT_FOUND)
+
+    class GatheringIdRequiredException : GatheringException(GatheringExceptionCode.GATHERING_ID_REQUIRED)
 }

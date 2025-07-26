@@ -9,7 +9,9 @@ import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringRecei
 interface GatheringQueryUseCase {
     fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering>
 
-    fun findByBillId(billId: BillId): List<Gathering>
+    fun getAllGatheringsByBillId(billId: BillId): List<Gathering>
+
+    fun getAllGatheringIdsByBillId(billId: BillId): List<GatheringId>
 
     fun findGatheringReceiptByGatheringId(gatheringId: GatheringId): GatheringReceipt
 
