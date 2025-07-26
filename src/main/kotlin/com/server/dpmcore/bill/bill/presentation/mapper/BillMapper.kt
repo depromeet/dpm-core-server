@@ -89,7 +89,7 @@ class BillMapper(
 
         return BillListDetailResponse(
             title = bill.title,
-            billId = bill.id?.value ?: throw BillException.BillNotFoundException(),
+            billId = bill.id ?: throw BillException.BillNotFoundException(),
             description = bill.description,
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
