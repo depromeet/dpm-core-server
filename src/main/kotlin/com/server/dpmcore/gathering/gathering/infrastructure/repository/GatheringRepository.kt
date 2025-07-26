@@ -11,12 +11,15 @@ import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
+import org.jooq.DSLContext
+import org.jooq.generated.tables.references.GATHERINGS
 import org.springframework.stereotype.Repository
 
 @Repository
 class GatheringRepository(
     private val gatheringJpaRepository: GatheringJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
+    private val dsl: DSLContext,
 ) : GatheringPersistencePort {
     override fun save(
         bill: Bill,
@@ -63,4 +66,12 @@ class GatheringRepository(
         gatheringJpaRepository.findByBillId(billId.value).map {
             it.toDomain()
         }
+
+    override fun findAllGatheringIdsByBillId(billId: BillId): List<GatheringId> =
+        dsl
+            .select(GATHERINGS.GATHERING_ID)
+            .from(GATHERINGS)
+            .where(GATHERINGS.BILL_ID.eq(billId.value))
+            .fetch(GATHERINGS.GATHERING_ID)
+            .map { GatheringId(it ?: throw GatheringException.GatheringIdRequiredException()) }
 }

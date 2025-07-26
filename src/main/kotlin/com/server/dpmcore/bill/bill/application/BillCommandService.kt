@@ -9,8 +9,8 @@ import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
-import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,7 +21,7 @@ class BillCommandService(
     private val billPersistencePort: BillPersistencePort,
     private val billAccountQueryService: BillAccountQueryService,
     private val gatheringCommandUseCase: GatheringCommandUseCase,
-    private val gatheringQueryService: GatheringQueryService,
+    private val gatheringQueryUseCase: GatheringQueryUseCase,
 ) {
     fun saveBillWithGatherings(
         hostUserId: MemberId,
@@ -63,16 +63,16 @@ class BillCommandService(
 
         bill.checkParticipationClosable()
 
-        val gatherings = gatheringQueryService.findByBillId(billId)
+        val gatherings = gatheringQueryUseCase.getAllGatheringsByBillId(billId)
 
         // GatheringReceipt 정산 금액 마감
         gatherings.map { gathering ->
             gathering.id ?: throw GatheringException.GatheringNotFoundException()
 
-            val gatheringMember = gatheringQueryService.findGatheringMemberByGatheringId(gathering.id)
+            val gatheringMember = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
 
             val receipt =
-                gatheringQueryService
+                gatheringQueryUseCase
                     .findGatheringReceiptByGatheringId(
                         gathering.id,
                     ).closeParticipation(
@@ -87,5 +87,13 @@ class BillCommandService(
         val closeParticipationBill = bill.closeParticipation()
         billPersistencePort.closeBillParticipation(closeParticipationBill)
         return bill.id ?: throw BillException.BillIdRequiredException()
+    }
+
+    fun markBillAsChecked(
+        billId: BillId,
+        memberId: MemberId,
+    ) {
+        val gatheringIds = gatheringQueryUseCase.getAllGatheringIdsByBillId(billId)
+        gatheringCommandUseCase.markAsCheckedEachGatheringMember(gatheringIds, memberId)
     }
 }

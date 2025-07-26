@@ -1,5 +1,6 @@
 package com.server.dpmcore.bill.bill.presentation.controller
 
+import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -12,6 +13,8 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Positive
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "Bill", description = "정산 API")
@@ -90,7 +93,7 @@ interface BillCommandApi {
     )
     fun createBill(
         hostUserId: MemberId,
-        createBillRequest: CreateBillRequest,
+        @Valid createBillRequest: CreateBillRequest,
     ): CustomResponse<BillPersistenceResponse>
 
     @Operation(
@@ -128,4 +131,23 @@ interface BillCommandApi {
         ],
     )
     fun closeBillParticipation(billId: Long): CustomResponse<BillPersistenceResponse>
+
+    @Operation(
+        summary = "정산서 조회 처리",
+        description = "정산서를 조회 처리합니다. 회식 참여 멤버의 조회 상태를 업데이트합니다.",
+    )
+    @ApiResponse(
+        responseCode = "204",
+        description = "정산서 조회 처리",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+            ),
+        ],
+    )
+    fun markBillAsChecked(
+        @Positive billId: BillId,
+        memberId: MemberId,
+    ): CustomResponse<Void>
 }
