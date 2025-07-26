@@ -25,4 +25,10 @@ class GatheringMemberQueryService(
             .findByGatheringIdAndMemberId(gatheringId, memberId)
             .takeIf { it.isNotEmpty() }
             ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+
+    fun getMemberIdsByGatheringId(gatheringId: GatheringId): List<MemberId> =
+        gatheringMemberPersistencePort
+            .findMemberIdsByGatheringId(gatheringId)
+            .takeIf { it.isNotEmpty() }
+            ?: throw GatheringMemberException.GatheringMemberNotFoundException()
 }

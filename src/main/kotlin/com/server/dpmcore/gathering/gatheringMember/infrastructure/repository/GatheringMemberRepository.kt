@@ -10,12 +10,15 @@ import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
+import org.jooq.DSLContext
+import org.jooq.generated.tables.references.GATHERING_MEMBERS
 import org.springframework.stereotype.Repository
 
 @Repository
 class GatheringMemberRepository(
     private val gatheringJpaRepository: GatheringMemberJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
+    private val dsl: DSLContext,
 ) : GatheringMemberPersistencePort {
     override fun save(
         gatheringMember: GatheringMember,
@@ -48,4 +51,12 @@ class GatheringMemberRepository(
                 set(col(GatheringMemberEntity::deletedAt), gatheringMember.deletedAt)
             }.executeUpdate()
     }
+
+    override fun findMemberIdsByGatheringId(gatheringId: GatheringId): List<MemberId> =
+        dsl
+            .select(GATHERING_MEMBERS.MEMBER_ID)
+            .from(GATHERING_MEMBERS)
+            .where(GATHERING_MEMBERS.GATHERING_ID.eq(gatheringId.value))
+            .fetch(GATHERING_MEMBERS.MEMBER_ID)
+            .map { MemberId(it ?: throw GatheringException.GatheringIdRequiredException()) }
 }

@@ -4,6 +4,8 @@ import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.application.exception.MemberNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberByAuthorityUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import com.server.dpmcore.refreshToken.domain.port.inbound.RefreshTokenInvalidator
@@ -18,7 +20,8 @@ class MemberService(
     private val memberPersistencePort: MemberPersistencePort,
     private val tokenInjector: JwtTokenInjector,
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
-) : QueryMemberByAuthorityUseCase {
+) : QueryMemberByAuthorityUseCase,
+    QueryMemberUseCase {
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.from(
             getMemberById(memberId),
@@ -48,4 +51,7 @@ class MemberService(
     fun getMembersByCohort(value: String): List<MemberId> =
         memberPersistencePort
             .findAllByCohort(value)
+
+    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel =
+        memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
 }

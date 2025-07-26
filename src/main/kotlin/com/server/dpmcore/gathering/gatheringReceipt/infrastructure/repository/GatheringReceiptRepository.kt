@@ -10,6 +10,7 @@ import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringRecei
 import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptPersistencePort
 import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.GatheringReceiptEntity
 import org.jooq.DSLContext
+import org.jooq.generated.tables.references.GATHERING_RECEIPTS
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 
@@ -49,4 +50,13 @@ class GatheringReceiptRepository(
                     ),
                 )
             }.executeUpdate()
+
+    override fun findSplitAmountByGatheringId(gatheringId: GatheringId): Int =
+        dsl
+            .select(GATHERING_RECEIPTS.SPLIT_AMOUNT)
+            .from(GATHERING_RECEIPTS)
+            .where(GATHERING_RECEIPTS.GATHERING_ID.eq(gatheringId.value))
+            .fetchOne()
+            ?.get(GATHERING_RECEIPTS.SPLIT_AMOUNT)
+            ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
 }
