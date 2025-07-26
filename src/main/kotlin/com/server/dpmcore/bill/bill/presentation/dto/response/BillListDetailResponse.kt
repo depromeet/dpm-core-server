@@ -11,7 +11,12 @@ data class BillListDetailResponse(
     val billStatus: BillStatus,
     val createdAt: LocalDateTime,
     val billAccountId: Long,
-    val inviteGroups: List<BillListInviteGroupDetailResponse>? = null,
-    val answerMemberCount: Int = 0,
+    val inviteAuthorities: List<BillListInviteAuthorityDetailResponse>? = null,
     val gatherings: List<BillListGatheringDetailResponse>,
+    /** 초대된 총 멤버수 */
+    val invitedMemberCount: Int,
+    /** 초대에 답변한 멤버의 수 */
+    val invitationConfirmedCount: Int,
+    /** 초대를 확인한 멤버 수 */
+    val invitationCheckedMemberCount: Int,
 )
