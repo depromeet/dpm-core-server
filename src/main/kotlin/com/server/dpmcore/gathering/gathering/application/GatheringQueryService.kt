@@ -6,8 +6,10 @@ import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.query.GatheringMemberReceiptQueryModel
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
+import com.server.dpmcore.gathering.gathering.presentation.response.GatheringMemberJoinListResponse
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
+import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.GatheringMemberIsJoinQueryModel
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptQueryService
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -23,10 +25,6 @@ class GatheringQueryService(
     private val gatheringMemberQueryService: GatheringMemberQueryService,
     private val queryMemberUseCase: QueryMemberUseCase,
 ) : GatheringQueryUseCase {
-    fun findById(gatheringId: Long) =
-        gatheringPersistencePort
-            .findById(gatheringId)
-
     override fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering> =
         gatheringPersistencePort.findAllByGatheringIds(gatheringIds)
 
@@ -59,6 +57,16 @@ class GatheringQueryService(
                 memberSplitAmount = totalSplitAmount,
             )
         }
+    }
+
+    fun findById(gatheringId: Long) =
+        gatheringPersistencePort
+            .findById(gatheringId)
+
+    fun getGatheringMemberJoinList(gatheringId: GatheringId): GatheringMemberJoinListResponse {
+        val query: List<GatheringMemberIsJoinQueryModel> =
+            gatheringMemberQueryService.getQueryGatheringMemberIsJoined(gatheringId)
+        return GatheringMemberJoinListResponse(query)
     }
 
     private fun mappingMemberIdsByGatheringIds(gatheringIds: List<GatheringId>): Map<MemberId, List<GatheringId>> =
