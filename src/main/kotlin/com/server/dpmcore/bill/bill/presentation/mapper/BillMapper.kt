@@ -107,12 +107,12 @@ class BillMapper(
             createdAt =
                 instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
-//            inviteAuthorities = TODO(),
-            gatherings = gatheringDetails,
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
             invitedMemberCount = gatheringMembers.count(),
             invitationConfirmedCount = gatheringMembers.count { it.isInvitationConfirmed },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
+//            inviteAuthorities = TODO(),
+            gatherings = gatheringDetails,
         )
     }
 
