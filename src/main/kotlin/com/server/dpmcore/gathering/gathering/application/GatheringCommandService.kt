@@ -9,6 +9,7 @@ import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
+import com.server.dpmcore.gathering.gathering.presentation.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberCommandService
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
@@ -79,11 +80,13 @@ class GatheringCommandService(
     }
 
     fun markAsJoinedEachGatheringMember(
-        gatheringId: GatheringId,
+        request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ) {
-        val gatheringMembers =
-            gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(gatheringId, memberId)
-        gatheringMemberCommandService.markAsJoined(gatheringMembers)
+        request.gatheringJoins.forEach {
+            val gatheringMembers =
+                gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it.gatheringId, memberId)
+            gatheringMemberCommandService.markAsJoined(gatheringMembers, it.isJoined)
+        }
     }
 }

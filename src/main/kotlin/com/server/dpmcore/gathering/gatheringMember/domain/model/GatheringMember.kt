@@ -43,8 +43,8 @@ class GatheringMember(
         this.updatedAt = Instant.now()
     }
 
-    fun markAsJoined() {
-        this.isJoined = true
+    fun markAsJoined(isJoined: Boolean) {
+        this.isJoined = isJoined
         this.updatedAt = Instant.now()
     }
 
