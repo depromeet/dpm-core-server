@@ -4,20 +4,20 @@ data class BillSummaryListByMemberResponse(
     val members: List<BillSummaryByMemberResponse>,
 ) {
     data class BillSummaryByMemberResponse(
-        val memberName: String,
-        val memberAuthority: String,
-        val memberSplitAmount: Int,
+        val name: String,
+        val authority: String,
+        val splitAmount: Int,
     ) {
         companion object {
             fun of(
-                memberName: String,
-                memberAuthority: String,
-                memberSplitAmount: Int,
+                name: String,
+                authority: String,
+                splitAmount: Int,
             ): BillSummaryByMemberResponse =
                 BillSummaryByMemberResponse(
-                    memberName = memberName,
-                    memberAuthority = memberAuthority,
-                    memberSplitAmount = memberSplitAmount,
+                    name = name,
+                    authority = authority,
+                    splitAmount = splitAmount,
                 )
         }
     }

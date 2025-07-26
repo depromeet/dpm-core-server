@@ -40,9 +40,9 @@ class BillQueryService(
         val responses =
             queryModels.map { model ->
                 BillSummaryListByMemberResponse.BillSummaryByMemberResponse.of(
-                    memberName = model.memberName,
-                    memberAuthority = model.memberAuthority,
-                    memberSplitAmount = model.memberSplitAmount,
+                    name = model.memberName,
+                    authority = model.memberAuthority,
+                    splitAmount = model.memberSplitAmount,
                 )
             }
 

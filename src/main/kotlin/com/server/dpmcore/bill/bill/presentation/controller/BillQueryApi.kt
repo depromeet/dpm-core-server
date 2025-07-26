@@ -173,19 +173,19 @@ interface BillQueryApi {
                           "data": {
                               "members": [
                               {
-                                "memberName": "이한음",
-                                "memberAuthority": "ORGANIZER",
-                                "memberSplitAmount": 25000
+                                "name": "이한음",
+                                "authority": "ORGANIZER",
+                                "splitAmount": 25000
                               },
                               {
-                                "memberName": "신민철",
-                                "memberAuthority": "ORGANIZER",
-                                "memberSplitAmount": 18000
+                                "name": "신민철",
+                                "authority": "ORGANIZER",
+                                "splitAmount": 18000
                               },
                               {
-                                "memberName": "정준원",
-                                "memberAuthority": "DEEPER",
-                                "memberSplitAmount": 12000
+                                "name": "정준원",
+                                "authority": "DEEPER",
+                                "splitAmount": 12000
                               }
                             ]
                           }
