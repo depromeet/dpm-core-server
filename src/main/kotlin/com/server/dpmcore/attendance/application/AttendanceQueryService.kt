@@ -15,7 +15,7 @@ import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanc
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper
 import com.server.dpmcore.common.util.paginate
-import com.server.dpmcore.member.member.application.MemberService
+import com.server.dpmcore.member.member.application.MemberQueryService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,14 +24,14 @@ private const val PAGE_SIZE = 20
 @Service
 @Transactional(readOnly = true)
 class AttendanceQueryService(
-    private val memberService: MemberService,
+    private val memberQueryService: MemberQueryService,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
 ) {
     fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
         val myTeamNumber =
             query.onlyMyTeam
-                ?.let { memberService.getMemberTeamNumber(query.memberId) }
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) }
 
         val queryResult =
             attendancePersistencePort
@@ -49,7 +49,7 @@ class AttendanceQueryService(
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
         val myTeamNumber =
             query.onlyMyTeam
-                ?.let { memberService.getMemberTeamNumber(query.memberId) }
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) }
 
         val queryResult =
             attendancePersistencePort
