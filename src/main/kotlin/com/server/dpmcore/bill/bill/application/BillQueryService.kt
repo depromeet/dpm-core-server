@@ -6,8 +6,10 @@ import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
 import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillSummaryListByMemberResponse
 import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper
 import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
 
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service
 class BillQueryService(
     private val billPersistencePort: BillPersistencePort,
     private val billMapper: BillMapper,
+    private val gatheringQueryUseCase: GatheringQueryUseCase,
 ) : BillQueryUseCase {
     override fun getById(billId: BillId): Bill =
         billPersistencePort.findById(billId)
@@ -28,5 +31,21 @@ class BillQueryService(
     fun getAllBills(): BillListResponse {
         val bills = billPersistencePort.findAllBills()
         return billMapper.toBillListResponse(bills)
+    }
+
+    fun getMemberBillSummaries(billId: BillId): BillSummaryListByMemberResponse {
+        val queryModels =
+            gatheringQueryUseCase.getGatheringMemberReceiptByBillId(billId)
+
+        val responses =
+            queryModels.map { model ->
+                BillSummaryListByMemberResponse.BillSummaryByMemberResponse.of(
+                    name = model.memberName,
+                    authority = model.memberAuthority,
+                    splitAmount = model.memberSplitAmount,
+                )
+            }
+
+        return BillSummaryListByMemberResponse(responses)
     }
 }

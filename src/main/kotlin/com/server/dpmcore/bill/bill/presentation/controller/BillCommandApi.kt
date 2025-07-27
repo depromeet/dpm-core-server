@@ -78,7 +78,7 @@ interface BillCommandApi {
                                     {
                                         "status": "CREATED",
                                         "message": "요청에 성공하여 리소스가 생성되었습니다.",
-                                        "code": "G001",
+                                        "code": "GLOBAL-201-01",
                                         "data": {
                                             "billId": 11
                                             }
@@ -117,7 +117,7 @@ interface BillCommandApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공하였습니다.",
-                                        "code": "G001",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "billId": 11
                                             }

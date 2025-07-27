@@ -4,8 +4,10 @@ import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.common.jdsl.singleQueryOrNull
+import com.server.dpmcore.member.member.application.exception.MemberNameAuthorityRequiredException
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
 import org.jooq.DSLContext
@@ -95,4 +97,29 @@ class MemberRepository(
             .map {
                 MemberId(it)
             }
+
+    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel {
+        val record =
+            dsl
+                .select(MEMBERS.NAME, AUTHORITIES.NAME)
+                .from(MEMBERS)
+                .join(MEMBER_AUTHORITIES)
+                .on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
+                .join(AUTHORITIES)
+                .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+                .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+                .fetchOne() ?: throw MemberNameAuthorityRequiredException()
+
+        val memberName = record.get(MEMBERS.NAME)
+        val authorityName = record.get(AUTHORITIES.NAME)
+
+        if (memberName == null || authorityName == null) {
+            throw MemberNameAuthorityRequiredException()
+        }
+
+        return MemberNameAuthorityQueryModel(
+            name = memberName,
+            authority = authorityName,
+        )
+    }
 }
