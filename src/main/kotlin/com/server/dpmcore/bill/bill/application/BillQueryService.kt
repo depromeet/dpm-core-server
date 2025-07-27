@@ -46,6 +46,6 @@ class BillQueryService(
                 )
             }
 
-        return BillSummaryListByMemberResponse.from(responses)
+        return BillSummaryListByMemberResponse(responses)
     }
 }

@@ -63,7 +63,7 @@ class GatheringMemberRepository(
             .from(GATHERING_MEMBERS)
             .where(GATHERING_MEMBERS.GATHERING_ID.eq(gatheringId.value))
             .fetch(GATHERING_MEMBERS.MEMBER_ID)
-            .map { MemberId(it ?: throw GatheringException.GatheringIdRequiredException()) }
+            .map { MemberId(it ?: throw GatheringMemberException.GatheringMemberNotFoundException()) }
 
     override fun findGatheringMemberWithIsJoinByGatheringIdAndMemberId(
         gatheringId: GatheringId,

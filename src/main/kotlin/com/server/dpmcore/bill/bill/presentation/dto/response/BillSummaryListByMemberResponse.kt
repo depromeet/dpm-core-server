@@ -21,9 +21,4 @@ data class BillSummaryListByMemberResponse(
                 )
         }
     }
-
-    companion object {
-        fun from(members: List<BillSummaryByMemberResponse>): BillSummaryListByMemberResponse =
-            BillSummaryListByMemberResponse(members)
-    }
 }
