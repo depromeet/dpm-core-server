@@ -67,8 +67,9 @@ class SecurityConfig(
                     listOf(
                         "https://localhost:3000",
                         "https://local.depromeet-core.shop",
-                        "https://client.depromeet-core.shop/",
-                        "https://admin.depromeet-core.shop/",
+                        "https://client.depromeet-core.shop",
+                        "https://admin.depromeet-core.shop",
+                        "https://api.depromeet-core.shop",
                     )
                 allowCredentials = true
             }

@@ -2,9 +2,10 @@ package com.server.dpmcore.member.member.application
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.application.exception.MemberNotFoundException
-import com.server.dpmcore.member.member.domain.exception.MemberTeamNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
-import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberByAuthorityUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryByAuthorityUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import com.server.dpmcore.refreshToken.domain.port.inbound.RefreshTokenInvalidator
@@ -15,11 +16,12 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class MemberService(
+class MemberServiceQuery(
     private val memberPersistencePort: MemberPersistencePort,
     private val tokenInjector: JwtTokenInjector,
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
-) : QueryMemberByAuthorityUseCase {
+) : MemberQueryByAuthorityUseCase,
+    MemberQueryUseCase {
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.from(
             getMemberById(memberId),
@@ -49,6 +51,9 @@ class MemberService(
     fun getMembersByCohort(value: String): List<MemberId> =
         memberPersistencePort
             .findAllByCohort(value)
+
+    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel =
+        memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
 
     fun getMemberTeamNumber(memberId: MemberId): Int =
         memberPersistencePort.findMemberTeamByMemberId(memberId)

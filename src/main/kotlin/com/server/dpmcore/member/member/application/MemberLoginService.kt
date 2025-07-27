@@ -1,6 +1,6 @@
 package com.server.dpmcore.member.member.application
 
-import com.server.dpmcore.member.member.application.exception.MemberIdCanNotBeNullException
+import com.server.dpmcore.member.member.application.exception.MemberIdRequiredException
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
@@ -75,7 +75,7 @@ class MemberLoginService(
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
 
         return generateLoginResult(
-            member.id ?: throw MemberIdCanNotBeNullException(),
+            member.id ?: throw MemberIdRequiredException(),
             securityProperties.restrictedRedirectUrl,
         )
     }
