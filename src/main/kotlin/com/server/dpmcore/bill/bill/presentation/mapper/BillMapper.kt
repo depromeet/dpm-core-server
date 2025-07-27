@@ -23,6 +23,7 @@ class BillMapper(
     fun toBillDetailResponse(bill: Bill): BillDetailResponse {
         val gatherings =
             gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException())
+        if (gatherings.isEmpty()) throw GatheringException.GatheringRequiredException()
 
         val gatheringReceipt =
             gatherings.map { gathering ->
@@ -36,7 +37,13 @@ class BillMapper(
         val billTotalAmount = gatheringReceipt.sumOf { it.amount }
         val billTotalSplitAmount = gatheringReceipt.sumOf { it.splitAmount ?: 0 }
 
+        val gatheringMembers =
+            gatheringQueryUseCase.findGatheringMemberByGatheringId(
+                gatherings.get(0).id ?: throw GatheringException.GatheringIdRequiredException(),
+            )
+
         return BillDetailResponse(
+            billId = bill.id ?: throw BillException.BillNotFoundException(),
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
@@ -49,6 +56,10 @@ class BillMapper(
                     ZoneId.of(TIME_ZONE),
                 ),
             billAccountId = bill.billAccount.id?.value ?: 0L,
+//            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
+            invitedMemberCount = gatheringMembers.count(),
+            invitationConfirmedCount = gatheringMembers.count { it.isInvitationConfirmed },
+            invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
             gatherings =
                 gatherings.map { gathering ->
 
@@ -79,20 +90,28 @@ class BillMapper(
             gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
                 toBillListGatheringDetailResponse(it)
             }
+        if (gatheringDetails.isEmpty()) throw GatheringException.GatheringRequiredException()
+
+        val gatheringMembers =
+            gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetails.get(0).gatheringId)
+
         val billTotalAmount =
             gatheringDetails.sumOf { it.amount }
 
         return BillListDetailResponse(
             title = bill.title,
-            billId = bill.id?.value ?: throw BillException.BillNotFoundException(),
+            billId = bill.id ?: throw BillException.BillNotFoundException(),
             description = bill.description,
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
             createdAt =
                 instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
-//            inviteGroups = TODO(),
-//            answerMemberCount = TODO(),
+//            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
+            invitedMemberCount = gatheringMembers.count(),
+            invitationConfirmedCount = gatheringMembers.count { it.isInvitationConfirmed },
+            invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
+//            inviteAuthorities = TODO(),
             gatherings = gatheringDetails,
         )
     }
@@ -106,6 +125,7 @@ class BillMapper(
         val joinMemberCount = gatheringMembers.count { it.isJoined }
 
         return BillListGatheringDetailResponse(
+            gatheringId = gathering.id,
             title = gathering.title,
             description = gathering.description,
             roundNumber = gathering.roundNumber,
