@@ -51,11 +51,11 @@ class GatheringReceiptRepository(
                 )
             }.executeUpdate()
 
-    override fun findSplitAmountByGatheringId(gatheringId: GatheringId): Int? =
+    override fun findSplitAmountByGatheringId(gatheringId: GatheringId): Int =
         dsl
             .select(GATHERING_RECEIPTS.SPLIT_AMOUNT)
             .from(GATHERING_RECEIPTS)
             .where(GATHERING_RECEIPTS.GATHERING_ID.eq(gatheringId.value))
             .fetchOne()
-            ?.get(GATHERING_RECEIPTS.SPLIT_AMOUNT)
+            ?.get(GATHERING_RECEIPTS.SPLIT_AMOUNT) ?: 0
 }

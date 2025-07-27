@@ -84,6 +84,6 @@ class GatheringQueryService(
 
     private fun getTotalSplitAmount(gatheringIds: List<GatheringId>): Int =
         gatheringIds.sumOf { gatheringId ->
-            gatheringReceiptQueryService.getSplitAmountByGatheringId(gatheringId) ?: 0
+            gatheringReceiptQueryService.getSplitAmountByGatheringId(gatheringId)
         }
 }
