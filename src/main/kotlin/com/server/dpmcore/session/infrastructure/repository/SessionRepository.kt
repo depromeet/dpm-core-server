@@ -17,13 +17,13 @@ class SessionRepository(
     private val sessionJpaRepository: SessionJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
 ) : SessionPersistencePort {
-    override fun findNextSessionBy(currentTime: Instant): Session? =
+    override fun findNextSessionBy(startOfToday: Instant): Session? =
         queryFactory
             .singleQueryOrNull<SessionEntity> {
                 select(entity(SessionEntity::class))
                 from(entity(SessionEntity::class))
                 where(
-                    col(SessionEntity::date).greaterThan(currentTime),
+                    col(SessionEntity::date).greaterThan(startOfToday),
                 )
                 orderBy(col(SessionEntity::date).asc())
                 limit(1)

@@ -6,7 +6,7 @@ import com.server.dpmcore.session.domain.model.SessionId
 import java.time.Instant
 
 interface SessionPersistencePort {
-    fun findNextSessionBy(currentTime: Instant): Session?
+    fun findNextSessionBy(startOfToday: Instant): Session?
 
     fun findAllSessions(cohortId: CohortId): List<Session>
 
