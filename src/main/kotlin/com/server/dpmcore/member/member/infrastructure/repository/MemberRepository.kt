@@ -16,6 +16,8 @@ import org.jooq.generated.tables.references.COHORTS
 import org.jooq.generated.tables.references.MEMBERS
 import org.jooq.generated.tables.references.MEMBER_AUTHORITIES
 import org.jooq.generated.tables.references.MEMBER_COHORTS
+import org.jooq.generated.tables.references.MEMBER_TEAMS
+import org.jooq.generated.tables.references.TEAMS
 import org.springframework.stereotype.Repository
 import java.time.Instant
 
@@ -122,4 +124,15 @@ class MemberRepository(
             authority = authorityName,
         )
     }
+
+    override fun findMemberTeamByMemberId(memberId: MemberId): Int? =
+        dsl
+            .select(TEAMS.NUMBER)
+            .from(MEMBER_TEAMS)
+            .join(MEMBERS)
+            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value))
+            .fetchOne(TEAMS.NUMBER)
 }
