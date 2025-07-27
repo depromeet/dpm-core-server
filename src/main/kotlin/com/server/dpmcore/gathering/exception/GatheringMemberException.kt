@@ -18,4 +18,8 @@ open class GatheringMemberException(
     class AlreadyConfirmedMemberException : GatheringMemberException(
         GatheringMemberExceptionCode.ALREADY_CONFIRMED_MEMBER,
     )
+
+    class GatheringMemberIdRequiredException : GatheringMemberException(
+        GatheringMemberExceptionCode.GATHERING_MEMBER_ID_REQUIRED,
+    )
 }
