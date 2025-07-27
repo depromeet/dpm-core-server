@@ -2,6 +2,7 @@ package com.server.dpmcore.member.member.application
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.application.exception.MemberNotFoundException
+import com.server.dpmcore.member.member.domain.exception.MemberTeamNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberByAuthorityUseCase
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
@@ -48,4 +49,8 @@ class MemberService(
     fun getMembersByCohort(value: String): List<MemberId> =
         memberPersistencePort
             .findAllByCohort(value)
+
+    fun getMemberTeamNumber(memberId: MemberId): Int =
+        memberPersistencePort.findMemberTeamByMemberId(memberId)
+            ?: throw MemberTeamNotFoundException()
 }

@@ -35,15 +35,19 @@ fun GetAttendancesBySessionWeekQuery.toCondition(): List<Condition> {
     return conditions
 }
 
-fun GetMemberAttendancesQuery.toCondition(): List<Condition> {
+fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
     this.statuses?.takeIf { it.isNotEmpty() }?.let {
         conditions += ATTENDANCES.STATUS.`in`(it)
     }
 
-    this.teams?.takeIf { it.isNotEmpty() }?.let {
-        conditions += TEAMS.NUMBER.`in`(it)
+    when {
+        onlyMyTeam == true ->
+            conditions += TEAMS.NUMBER.eq(myTeamNumber ?: 0)
+
+        teams?.isNotEmpty() == true ->
+            conditions += TEAMS.NUMBER.`in`(teams)
     }
 
     this.name?.takeIf { it.isNotBlank() }?.let {

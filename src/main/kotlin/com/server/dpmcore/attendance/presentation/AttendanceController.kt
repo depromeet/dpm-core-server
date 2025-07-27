@@ -81,17 +81,21 @@ class AttendanceController(
 
     @GetMapping("/v1/members/attendances")
     override fun getMemberAttendances(
+        @CurrentMemberId memberId: MemberId,
         @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
         @RequestParam(name = "name", required = false) name: String?,
+        @RequestParam(name = "onlyMyTeam", required = false) onlyMyTeam: Boolean?,
         @RequestParam(name = "cursorId", required = false) cursorId: Long?,
     ): CustomResponse<MemberAttendancesResponse> {
         val response =
             attendanceQueryService.getMemberAttendances(
                 GetMemberAttendancesQuery(
+                    memberId = memberId,
                     statuses = statuses,
                     teams = teams,
                     name = name,
+                    onlyMyTeam = onlyMyTeam,
                     cursorId = cursorId,
                 ),
             )

@@ -15,6 +15,7 @@ import com.server.dpmcore.attendance.presentation.dto.response.MyDetailAttendanc
 import com.server.dpmcore.attendance.presentation.dto.response.SessionAttendancesResponse
 import com.server.dpmcore.attendance.presentation.mapper.AttendanceMapper
 import com.server.dpmcore.common.util.paginate
+import com.server.dpmcore.member.member.application.MemberService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,6 +24,7 @@ private const val PAGE_SIZE = 20
 @Service
 @Transactional(readOnly = true)
 class AttendanceQueryService(
+    private val memberService: MemberService,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
 ) {
@@ -41,9 +43,16 @@ class AttendanceQueryService(
     }
 
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
+        println("멤버 아이디 : " + query.memberId.value)
+        val myTeamNumber =
+            query.onlyMyTeam
+                ?.let { memberService.getMemberTeamNumber(query.memberId) }
+
+        println("현재 팀 번호 : " + myTeamNumber)
+
         val queryResult =
             attendancePersistencePort
-                .findMemberAttendancesByQuery(query)
+                .findMemberAttendancesByQuery(query, myTeamNumber)
                 .sortedBy { it.teamNumber }
         val paginatedResult = queryResult.paginate { it.id }
 

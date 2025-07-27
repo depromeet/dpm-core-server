@@ -90,7 +90,10 @@ class AttendanceRepository(
                 )
             }
 
-    override fun findMemberAttendancesByQuery(query: GetMemberAttendancesQuery): List<MemberAttendanceQueryModel> =
+    override fun findMemberAttendancesByQuery(
+        query: GetMemberAttendancesQuery,
+        myTeamNumber: Int?,
+    ): List<MemberAttendanceQueryModel> =
         dsl
             .select(
                 ATTENDANCES.MEMBER_ID,
@@ -123,7 +126,7 @@ class AttendanceRepository(
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
-                query.toCondition(),
+                query.toCondition(myTeamNumber),
             ).groupBy(
                 ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
