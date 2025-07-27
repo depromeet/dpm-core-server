@@ -106,4 +106,18 @@ class GatheringMemberRepository(
             isJoined = isJoined,
         )
     }
+
+    override fun gatheringParticipationConfirm(gatheringMember: GatheringMember) {
+        val id =
+            gatheringMember.id?.value
+                ?: throw GatheringException.GatheringIdRequiredException()
+
+        queryFactory
+            .updateQuery<GatheringMemberEntity> {
+                where(col(GatheringMemberEntity::id).equal(id))
+                set(col(GatheringMemberEntity::isInvitationConfirmed), gatheringMember.isInvitationConfirmed)
+                set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
+                set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
+            }.executeUpdate()
+    }
 }

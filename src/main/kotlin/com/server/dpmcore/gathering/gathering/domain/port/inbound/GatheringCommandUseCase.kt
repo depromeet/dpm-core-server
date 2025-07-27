@@ -20,4 +20,10 @@ interface GatheringCommandUseCase {
         gatheringIds: List<GatheringId>,
         memberId: MemberId,
     )
+
+    fun submitBillParticipationEachGathering(
+        billId: BillId,
+        memberId: MemberId,
+        gatheringIds: List<GatheringId>,
+    )
 }

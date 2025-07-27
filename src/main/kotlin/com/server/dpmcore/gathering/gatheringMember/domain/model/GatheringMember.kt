@@ -52,6 +52,15 @@ class GatheringMember(
         this.updatedAt = Instant.now()
     }
 
+    fun gatheringParticipationConfirm() {
+        if (isConfirmed()) {
+            throw GatheringMemberException.AlreadyConfirmedMemberException()
+        }
+
+        this.isInvitationConfirmed = true
+        this.updatedAt = Instant.now()
+    }
+
     fun isDeleted(): Boolean = deletedAt != null
 
     fun isConfirmed(): Boolean = completedAt != null

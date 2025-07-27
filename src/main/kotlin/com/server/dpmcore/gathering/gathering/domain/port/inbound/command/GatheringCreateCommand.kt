@@ -21,3 +21,9 @@ data class ReceiptPhotoCommand(
     val receiptId: Long,
     val photoUrl: String?,
 )
+
+data class GatheringParticipantCommand(
+    val gatheringId: Long,
+    val isParticipated: Boolean,
+    val isConfirmed: Boolean,
+)
