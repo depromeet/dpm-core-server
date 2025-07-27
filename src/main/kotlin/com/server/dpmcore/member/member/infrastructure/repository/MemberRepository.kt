@@ -4,7 +4,7 @@ import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.common.jdsl.singleQueryOrNull
-import com.server.dpmcore.member.member.application.exception.MemberNameAuthorityCanNotBeNullException
+import com.server.dpmcore.member.member.application.exception.MemberNameAuthorityRequiredException
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
@@ -108,13 +108,13 @@ class MemberRepository(
                 .join(AUTHORITIES)
                 .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
                 .where(MEMBERS.MEMBER_ID.eq(memberId.value))
-                .fetchOne() ?: throw MemberNameAuthorityCanNotBeNullException()
+                .fetchOne() ?: throw MemberNameAuthorityRequiredException()
 
         val memberName = record.get(MEMBERS.NAME)
         val authorityName = record.get(AUTHORITIES.NAME)
 
         if (memberName == null || authorityName == null) {
-            throw MemberNameAuthorityCanNotBeNullException()
+            throw MemberNameAuthorityRequiredException()
         }
 
         return MemberNameAuthorityQueryModel(

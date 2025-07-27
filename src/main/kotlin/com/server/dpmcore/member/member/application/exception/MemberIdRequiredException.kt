@@ -2,7 +2,7 @@ package com.server.dpmcore.member.member.application.exception
 
 import com.server.dpmcore.common.exception.BusinessException
 
-class MemberNameAuthorityCanNotBeNullException :
+class MemberIdRequiredException :
     BusinessException(
-        MemberExceptionCode.MEMBER_NAME_AUTHORITY_CAN_NOT_BE_NULL,
+        MemberExceptionCode.MEMBER_ID_REQUIRED,
     )
