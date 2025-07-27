@@ -2,6 +2,7 @@ package com.server.dpmcore.member.member.application
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.application.exception.MemberNotFoundException
+import com.server.dpmcore.member.member.domain.exception.MemberTeamNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryByAuthorityUseCase
 import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryUseCase
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class MemberServiceQuery(
+class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val tokenInjector: JwtTokenInjector,
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
