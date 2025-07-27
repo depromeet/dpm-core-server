@@ -136,9 +136,11 @@ interface AttendanceApi {
     )
     fun getAttendancesBySessionId(
         sessionId: SessionId,
+        memberId: MemberId,
         statuses: List<AttendanceStatus>?,
         teams: List<Int>?,
         name: String?,
+        onlyMyTeam: Boolean?,
         cursorId: Long?,
     ): CustomResponse<SessionAttendancesResponse>
 

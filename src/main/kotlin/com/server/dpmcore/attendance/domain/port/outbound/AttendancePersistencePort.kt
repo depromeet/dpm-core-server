@@ -23,7 +23,10 @@ interface AttendancePersistencePort {
 
     fun save(attendance: Attendance)
 
-    fun findSessionAttendancesByQuery(query: GetAttendancesBySessionWeekQuery): List<SessionAttendanceQueryModel>
+    fun findSessionAttendancesByQuery(
+        query: GetAttendancesBySessionWeekQuery,
+        myTeamNumber: Int?,
+    ): List<SessionAttendanceQueryModel>
 
     fun findMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,

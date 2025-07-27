@@ -59,6 +59,7 @@ class AttendanceRepository(
 
     override fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
+        myTeamNumber: Int?,
     ): List<SessionAttendanceQueryModel> =
         dsl
             .select(
@@ -77,7 +78,7 @@ class AttendanceRepository(
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
-                query.toCondition(),
+                query.toCondition(myTeamNumber),
             ).orderBy(ATTENDANCES.MEMBER_ID.asc(), TEAMS.NUMBER.asc())
             .limit(PAGE_SIZE + 1)
             .fetch { record ->

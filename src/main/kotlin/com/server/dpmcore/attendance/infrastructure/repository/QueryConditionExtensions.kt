@@ -11,7 +11,7 @@ import org.jooq.generated.tables.references.MEMBERS
 import org.jooq.generated.tables.references.SESSIONS
 import org.jooq.generated.tables.references.TEAMS
 
-fun GetAttendancesBySessionWeekQuery.toCondition(): List<Condition> {
+fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
     conditions += SESSIONS.SESSION_ID.eq(this.sessionId.value)
@@ -20,8 +20,12 @@ fun GetAttendancesBySessionWeekQuery.toCondition(): List<Condition> {
         conditions += ATTENDANCES.STATUS.`in`(it)
     }
 
-    this.teams?.takeIf { it.isNotEmpty() }?.let {
-        conditions += TEAMS.NUMBER.`in`(it)
+    when {
+        this.onlyMyTeam == true ->
+            conditions += TEAMS.NUMBER.eq(myTeamNumber ?: 0)
+
+        this.teams?.isNotEmpty() == true ->
+            conditions += TEAMS.NUMBER.`in`(this.teams)
     }
 
     this.name?.takeIf { it.isNotBlank() }?.let {
@@ -43,10 +47,10 @@ fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     }
 
     when {
-        onlyMyTeam == true ->
+        this.onlyMyTeam == true ->
             conditions += TEAMS.NUMBER.eq(myTeamNumber ?: 0)
 
-        teams?.isNotEmpty() == true ->
+        this.teams?.isNotEmpty() == true ->
             conditions += TEAMS.NUMBER.`in`(teams)
     }
 

@@ -29,9 +29,13 @@ class AttendanceQueryService(
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
 ) {
     fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
+        val myTeamNumber =
+            query.onlyMyTeam
+                ?.let { memberService.getMemberTeamNumber(query.memberId) }
+
         val queryResult =
             attendancePersistencePort
-                .findSessionAttendancesByQuery(query)
+                .findSessionAttendancesByQuery(query, myTeamNumber)
                 .sortedBy { it.teamNumber }
         val paginatedResult = queryResult.paginate { it.id }
 
@@ -43,12 +47,9 @@ class AttendanceQueryService(
     }
 
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
-        println("멤버 아이디 : " + query.memberId.value)
         val myTeamNumber =
             query.onlyMyTeam
                 ?.let { memberService.getMemberTeamNumber(query.memberId) }
-
-        println("현재 팀 번호 : " + myTeamNumber)
 
         val queryResult =
             attendancePersistencePort
