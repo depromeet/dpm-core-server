@@ -3,6 +3,7 @@ package com.server.dpmcore.member.member.domain.port.outbound
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
 
 interface MemberPersistencePort {
     fun save(member: Member): Member
