@@ -74,8 +74,8 @@ class GatheringCommandService(
         memberId: MemberId,
     ) {
         gatheringIds.forEach {
-            val gatheringMembers = gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it, memberId)
-            gatheringMemberCommandService.markAsChecked(gatheringMembers)
+            val gatheringMember = gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it, memberId)
+            gatheringMemberCommandService.markAsChecked(gatheringMember)
         }
     }
 
@@ -84,9 +84,9 @@ class GatheringCommandService(
         memberId: MemberId,
     ) {
         request.gatheringJoins.forEach {
-            val gatheringMembers =
+            val gatheringMember =
                 gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it.gatheringId, memberId)
-            gatheringMemberCommandService.markAsJoined(gatheringMembers, it.isJoined)
+            gatheringMemberCommandService.markAsJoined(gatheringMember, it.isJoined)
         }
     }
 }

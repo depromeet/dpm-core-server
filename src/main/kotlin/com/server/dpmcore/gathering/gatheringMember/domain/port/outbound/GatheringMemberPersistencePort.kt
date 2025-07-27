@@ -17,7 +17,7 @@ interface GatheringMemberPersistencePort {
     fun findByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): List<GatheringMember>
+    ): GatheringMember
 
     fun updateGatheringMemberById(gatheringMember: GatheringMember)
 

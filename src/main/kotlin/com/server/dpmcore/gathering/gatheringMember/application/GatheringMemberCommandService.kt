@@ -19,20 +19,16 @@ class GatheringMemberCommandService(
         gatheringMemberPersistencePort.save(GatheringMember.create(gathering.id!!, memberId), gathering)
     }
 
-    fun markAsChecked(gatheringMembers: List<GatheringMember>) {
-        gatheringMembers.forEach {
-            it.markAsChecked()
-            gatheringMemberPersistencePort.updateGatheringMemberById(it)
-        }
+    fun markAsChecked(gatheringMember: GatheringMember) {
+        gatheringMember.markAsChecked()
+        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
     }
 
     fun markAsJoined(
-        gatheringMembers: List<GatheringMember>,
+        gatheringMember: GatheringMember,
         isJoined: Boolean,
     ) {
-        gatheringMembers.forEach {
-            it.markAsJoined(isJoined)
-            gatheringMemberPersistencePort.updateGatheringMemberById(it)
-        }
+        gatheringMember.markAsJoined(isJoined)
+        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
     }
 }

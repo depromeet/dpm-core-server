@@ -38,8 +38,9 @@ class GatheringMemberRepository(
     override fun findByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): List<GatheringMember> =
-        gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId).map { it.toDomain() }
+    ): GatheringMember =
+        gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId)?.toDomain()
+            ?: throw GatheringMemberException.GatheringMemberNotFoundException()
 
     override fun updateGatheringMemberById(gatheringMember: GatheringMember) {
         val id =
