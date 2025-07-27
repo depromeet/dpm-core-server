@@ -1,7 +1,7 @@
 package com.server.dpmcore.member.member.presentation
 
 import com.server.dpmcore.common.exception.CustomResponse
-import com.server.dpmcore.member.member.application.MemberServiceQuery
+import com.server.dpmcore.member.member.application.MemberQueryService
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import jakarta.servlet.http.HttpServletResponse
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/v1/members")
 class MemberController(
-    private val memberService: MemberServiceQuery,
+    private val memberService: MemberQueryService,
 ) : MemberApi {
     @GetMapping("/me")
     override fun me(memberId: MemberId): CustomResponse<MemberDetailsResponse> {

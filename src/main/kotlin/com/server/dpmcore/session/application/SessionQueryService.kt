@@ -9,6 +9,8 @@ import com.server.dpmcore.session.domain.port.outbound.SessionPersistencePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 @Service
 @Transactional(readOnly = true)
@@ -17,9 +19,11 @@ class SessionQueryService(
     private val sessionPersistencePort: SessionPersistencePort,
 ) {
     fun getNextSession(): Session? {
-        val currentTime = Instant.now()
+        val koreaZone = ZoneId.of("Asia/Seoul")
+        val today = LocalDate.ofInstant(Instant.now(), koreaZone)
+        val startOfToday = today.atStartOfDay(koreaZone).toInstant()
 
-        return sessionPersistencePort.findNextSessionBy(currentTime)
+        return sessionPersistencePort.findNextSessionBy(startOfToday)
     }
 
     fun getAllSessions(): List<Session> {
