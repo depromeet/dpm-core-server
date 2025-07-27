@@ -49,7 +49,7 @@ interface GatheringApi {
                         {
                           "status": "OK",
                           "message": "요청에 성공했습니다",
-                          "code": "G000",
+                          "code": "GLOBAL-200-01",
                           "data": {
                               "members": [
                               {

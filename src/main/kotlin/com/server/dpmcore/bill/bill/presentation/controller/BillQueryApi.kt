@@ -34,7 +34,7 @@ interface BillQueryApi {
                                 {
                                   "status": "OK",
                                   "message": "요청에 성공했습니다",
-                                  "code": "G000",
+                                  "code": "GLOBAL-200-01",
                                   "data": {
                                     "title": "17기 OT세션 공식 회식",
                                     "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
@@ -97,7 +97,7 @@ interface BillQueryApi {
                                 {
                                   "status": "OK",
                                   "message": "요청에 성공했습니다",
-                                  "code": "G000",
+                                  "code": "GLOBAL-200-01",
                                   "data": {
                                     "bills": [
                                       {
@@ -169,7 +169,7 @@ interface BillQueryApi {
                         {
                           "status": "OK",
                           "message": "요청에 성공했습니다",
-                          "code": "G000",
+                          "code": "GLOBAL-200-01",
                           "data": {
                               "members": [
                               {
