@@ -15,7 +15,7 @@ import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQ
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
-import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberByAuthorityUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryByAuthorityUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -26,7 +26,7 @@ class GatheringCommandService(
     private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val gatheringMemberCommandService: GatheringMemberCommandService,
     private val gatheringMemberQueryService: GatheringMemberQueryService,
-    private val queryMemberByAuthorityUseCase: QueryMemberByAuthorityUseCase,
+    private val memberQueryByAuthorityUseCase: MemberQueryByAuthorityUseCase,
     private val billQueryUseCase: BillQueryUseCase,
 ) : GatheringCommandUseCase {
     override fun saveAllGatherings(
@@ -36,7 +36,7 @@ class GatheringCommandService(
     ) {
         val bill = billQueryUseCase.getById(billId)
         val memberIds =
-            queryMemberByAuthorityUseCase.findAllMemberIdByAuthorityIds(invitedAuthorityIds)
+            memberQueryByAuthorityUseCase.findAllMemberIdByAuthorityIds(invitedAuthorityIds)
         commands.forEach {
             val gatheringObject = saveGatheringObject(bill, it)
             saveEachGatheringReceiptAndAttachPhoto(it, gatheringObject)

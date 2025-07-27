@@ -13,7 +13,7 @@ import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.Ga
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptQueryService
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
-import com.server.dpmcore.member.member.domain.port.inbound.QueryMemberUseCase
+import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryUseCase
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,7 +23,7 @@ class GatheringQueryService(
     private val gatheringPersistencePort: GatheringPersistencePort,
     private val gatheringReceiptQueryService: GatheringReceiptQueryService,
     private val gatheringMemberQueryService: GatheringMemberQueryService,
-    private val queryMemberUseCase: QueryMemberUseCase,
+    private val memberQueryUseCase: MemberQueryUseCase,
 ) : GatheringQueryUseCase {
     override fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering> =
         gatheringPersistencePort.findAllByGatheringIds(gatheringIds)
@@ -78,7 +78,7 @@ class GatheringQueryService(
             }.groupBy({ it.first }, { it.second })
 
     private fun getMemberNameAuthority(memberId: MemberId): Pair<String, String> =
-        queryMemberUseCase
+        memberQueryUseCase
             .getMemberNameAuthorityByMemberId(memberId)
             .let { it.name to it.authority }
 
