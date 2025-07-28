@@ -18,7 +18,7 @@ class CustomAuthenticationFailureHandler(
         exception: AuthenticationException?,
     ) {
         response?.sendRedirect(
-            securityProperties.loginUrl + "?error=true&exception=" +
+            securityProperties.restrictedRedirectUrl + "?error=true&exception=" +
                 OAuthExceptionCode.AUTHENTICATION_FAILED,
         )
     }
