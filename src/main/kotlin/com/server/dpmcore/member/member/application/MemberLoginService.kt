@@ -63,8 +63,8 @@ class MemberLoginService(
 
         val redirectUrl =
             when {
-                isAdmin -> securityProperties.adminRedirectUrl
-                else -> securityProperties.redirectUrl
+                isAdmin -> securityProperties.adminRedirectUrl + "?$IS_ADMIN_TRUE"
+                else -> securityProperties.redirectUrl + "?$IS_ADMIN_FALSE"
             }
 
         return generateLoginResult(member.id, redirectUrl)
@@ -82,5 +82,7 @@ class MemberLoginService(
 
     companion object {
         private val ADMIN_AUTHORITIES = setOf("ORGANIZER")
+        private const val IS_ADMIN_TRUE = "isAdmin=true"
+        private const val IS_ADMIN_FALSE = "isAdmin=false"
     }
 }
