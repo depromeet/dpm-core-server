@@ -74,7 +74,7 @@ class MemberLoginService(
     }
 
     private fun adminRedirectUrl(requestDomain: String): String =
-        if (environment.activeProfiles.equals("local")) {
+        if (environment.activeProfiles.contains("local")) {
             "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
         } else {
             when (requestDomain) {
