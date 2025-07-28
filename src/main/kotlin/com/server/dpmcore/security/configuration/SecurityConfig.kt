@@ -87,6 +87,8 @@ class SecurityConfig(
                     .permitAll()
                     .requestMatchers(*PERMIT_ALL_PATTERNS)
                     .permitAll()
+                    .requestMatchers("/logout", "/v1/members/withdraw")
+                    .hasAnyRole("GUEST", "DEEPER", "ORGANIZER")
                     .anyRequest()
                     .authenticated()
             }
@@ -129,7 +131,6 @@ class SecurityConfig(
             )
         private val PERMIT_ALL_PATTERNS =
             arrayOf(
-//                "/v1/**",
                 "/login/kakao",
                 "/error",
             )

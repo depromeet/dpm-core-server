@@ -36,7 +36,7 @@ class AuthorityRepository(
             .on(MEMBER_AUTHORITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_OAUTH)
             .on(MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .where(MEMBER_OAUTH.EXTERNAL_ID.eq(externalId))
+            .where(MEMBER_OAUTH.EXTERNAL_ID.eq(externalId).and(MEMBER_AUTHORITIES.DELETED_AT.isNull))
             .fetch(AUTHORITIES.NAME)
             .filterNotNull()
 
@@ -48,7 +48,7 @@ class AuthorityRepository(
             .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
             .join(MEMBERS)
             .on(MEMBER_AUTHORITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .where(MEMBERS.MEMBER_ID.eq(memberId.value).and(MEMBER_AUTHORITIES.DELETED_AT.isNull))
             .fetch(AUTHORITIES.NAME)
             .filterNotNull()
 }
