@@ -131,6 +131,7 @@ class SecurityConfig(
             )
         private val PERMIT_ALL_PATTERNS =
             arrayOf(
+                "/v1/reissue",
                 "/login/kakao",
                 "/error",
             )
