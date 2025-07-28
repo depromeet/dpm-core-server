@@ -23,7 +23,7 @@ spring:
 
     login-url: ${LOGIN_URL:/login}
     logout-url: ${LOGOUT_URL:/logout}
-    redirect-url: ${REDIRECT_URL:/swagger-ui/index.html}
+    client-redirect-url: ${REDIRECT_URL:/swagger-ui/index.html}
     admin-redirect-url: ${ADMIN_REDIRECT_URL:/swagger-ui/index.html}
     restricted-redirect-url: ${RESTRICTED_REDIRECT_URL:/swagger-ui/index.html}
 
