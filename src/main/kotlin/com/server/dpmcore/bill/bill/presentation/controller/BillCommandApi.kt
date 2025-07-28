@@ -2,6 +2,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -168,6 +169,25 @@ interface BillCommandApi {
     )
     fun submitBillParticipationConfirm(
         @Positive billId: BillId,
+        memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "204",
+        description = "정산(각 회식) 참여",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+            ),
+        ],
+    )
+    @Operation(
+        summary = "정산의 각 회식에 대해 참여 표시",
+        description = "정산 내의 각 회식에 대한 참여 여부를 표시합니다. '정산 참여 응답 제출 처리' API와 함께 호출됩니다.",
+    )
+    fun markAsGatheringJoined(
+        request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ): CustomResponse<Void>
 }

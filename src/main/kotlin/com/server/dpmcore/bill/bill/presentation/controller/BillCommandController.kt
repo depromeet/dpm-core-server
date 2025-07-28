@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 import com.server.dpmcore.bill.bill.application.BillCommandService
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
@@ -60,6 +61,15 @@ class BillCommandController(
             billId,
             memberId,
         )
+        return CustomResponse.noContent()
+    }
+
+    @PatchMapping("/{billId}/join")
+    override fun markAsGatheringJoined(
+        @RequestBody request: UpdateGatheringJoinsRequest,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<Void> {
+        billCommandService.markAsJoinedEachGathering(request, memberId)
         return CustomResponse.noContent()
     }
 }

@@ -2,6 +2,7 @@ package com.server.dpmcore.gathering.gathering.domain.port.inbound
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
@@ -18,6 +19,11 @@ interface GatheringCommandUseCase {
 
     fun markAsCheckedEachGatheringMember(
         gatheringIds: List<GatheringId>,
+        memberId: MemberId,
+    )
+
+    fun markAsJoinedEachGatheringMember(
+        request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     )
 
