@@ -28,10 +28,13 @@ class MemberLoginService(
     private val environment: Environment,
 ) : HandleMemberLoginUseCase {
     @Transactional
-    override fun handleLoginSuccess(authAttributes: OAuthAttributes): LoginResult =
+    override fun handleLoginSuccess(
+        requestDomain: String,
+        authAttributes: OAuthAttributes,
+    ): LoginResult =
         memberPersistencePort
             .findByEmail(authAttributes.getEmail())
-            ?.let { member -> handleExistingMemberLogin(member) }
+            ?.let { member -> handleExistingMemberLogin(requestDomain, member) }
             ?: handleUnregisteredMember(authAttributes)
 
     private fun generateLoginResult(
@@ -49,26 +52,44 @@ class MemberLoginService(
         return LoginResult(savedToken, redirectUrl)
     }
 
-    private fun handleExistingMemberLogin(member: Member): LoginResult {
+    private fun handleExistingMemberLogin(
+        requestDomain: String,
+        member: Member,
+    ): LoginResult {
         member.id?.value ?: return LoginResult(null, securityProperties.restrictedRedirectUrl)
 
         if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(member.id.value)) {
             return LoginResult(null, securityProperties.restrictedRedirectUrl)
         }
 
-        val isAdmin =
-            memberAuthorityService
-                .getAuthorityNamesByMemberId(member.id)
-                .any { it in ADMIN_AUTHORITIES }
-
-        val redirectUrl =
-            when {
-                isAdmin -> securityProperties.adminRedirectUrl + "?$IS_ADMIN_TRUE"
-                else -> securityProperties.redirectUrl + "?$IS_ADMIN_FALSE"
-            }
-
-        return generateLoginResult(member.id, redirectUrl)
+        return generateLoginResult(member.id, buildRedirectUrlByRoleAndDomain(requestDomain, member.id))
     }
+
+    private fun buildRedirectUrlByRoleAndDomain(
+        requestDomain: String,
+        memberId: MemberId,
+    ) = when {
+        hasAdminRole(memberId) -> adminRedirectUrl(requestDomain)
+        else -> securityProperties.redirectUrl + "?$IS_ADMIN_FALSE"
+    }
+
+    private fun adminRedirectUrl(requestDomain: String): String =
+        if (environment.activeProfiles.equals("local")) {
+            "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+        } else {
+            when (requestDomain) {
+                "$CLIENT_SUFFIX.${securityProperties.cookie.domain}" ->
+                    "${securityProperties.redirectUrl}?$IS_ADMIN_TRUE"
+                "$ADMIN_SUFFIX.${securityProperties.cookie.domain}" ->
+                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+                else -> "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+            }
+        }
+
+    private fun hasAdminRole(memberId: MemberId): Boolean =
+        memberAuthorityService
+            .getAuthorityNamesByMemberId(memberId)
+            .any { it in ADMIN_AUTHORITIES }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
         val member = memberPersistencePort.save(Member.create(authAttributes.getEmail(), environment))
@@ -84,5 +105,7 @@ class MemberLoginService(
         private val ADMIN_AUTHORITIES = setOf("ORGANIZER")
         private const val IS_ADMIN_TRUE = "isAdmin=true"
         private const val IS_ADMIN_FALSE = "isAdmin=false"
+        private const val ADMIN_SUFFIX = "admin"
+        private const val CLIENT_SUFFIX = "client"
     }
 }
