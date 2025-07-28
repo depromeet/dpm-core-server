@@ -17,7 +17,7 @@ class CustomOAuth2UserService(
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
         val oAuth2User = super.loadUser(userRequest)
         val clientRegistration = userRequest.clientRegistration
-        val roleNames = authorityQueryUseCase.getAuthoritiesByMember(clientRegistration.registrationId)
+        val roleNames = authorityQueryUseCase.getAuthoritiesByExternalId(clientRegistration.registrationId)
 
         val grantedAuthorities = mutableSetOf<GrantedAuthority>()
 

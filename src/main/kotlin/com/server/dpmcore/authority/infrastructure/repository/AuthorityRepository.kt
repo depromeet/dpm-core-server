@@ -5,6 +5,7 @@ import com.linecorp.kotlinjdsl.spring.data.listQuery
 import com.server.dpmcore.authority.domain.model.Authority
 import com.server.dpmcore.authority.domain.port.outbound.AuthorityPersistencePort
 import com.server.dpmcore.authority.infrastructure.entity.AuthorityEntity
+import com.server.dpmcore.member.member.domain.model.MemberId
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.AUTHORITIES
 import org.jooq.generated.tables.references.MEMBERS
@@ -36,6 +37,18 @@ class AuthorityRepository(
             .join(MEMBER_OAUTH)
             .on(MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .where(MEMBER_OAUTH.EXTERNAL_ID.eq(externalId))
+            .fetch(AUTHORITIES.NAME)
+            .filterNotNull()
+
+    override fun findAllByMemberId(memberId: MemberId): List<String> =
+        dsl
+            .select(AUTHORITIES.NAME)
+            .from(AUTHORITIES)
+            .join(MEMBER_AUTHORITIES)
+            .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+            .join(MEMBERS)
+            .on(MEMBER_AUTHORITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .where(MEMBERS.MEMBER_ID.eq(memberId.value))
             .fetch(AUTHORITIES.NAME)
             .filterNotNull()
 }
