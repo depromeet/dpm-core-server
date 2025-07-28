@@ -21,9 +21,8 @@ interface GatheringCommandUseCase {
         memberId: MemberId,
     )
 
-    fun submitBillParticipationEachGathering(
+    fun submitBillParticipationConfirmEachGathering(
         billId: BillId,
         memberId: MemberId,
-        gatheringIds: List<GatheringId>,
     )
 }

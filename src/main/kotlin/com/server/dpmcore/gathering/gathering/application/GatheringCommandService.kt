@@ -90,18 +90,18 @@ class GatheringCommandService(
         }
     }
 
-    override fun submitBillParticipationEachGathering(
+    override fun submitBillParticipationConfirmEachGathering(
         billId: BillId,
         memberId: MemberId,
-        gatheringIds: List<GatheringId>,
     ) {
+        val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(billId)
         gatheringIds.map { gatheringId ->
             val gatheringMembers =
                 gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(
                     gatheringId,
                     memberId,
                 )
-            gatheringMemberCommandService.gatheringParticipationConfirm(gatheringMembers)
+            gatheringMemberCommandService.markAsGatheringParticipationSubmmitConfirm(gatheringMembers)
         }
     }
 }

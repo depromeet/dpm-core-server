@@ -2,7 +2,6 @@ package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
-import com.server.dpmcore.bill.bill.presentation.dto.request.SubmitBillParticipationConfirmRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -153,51 +152,13 @@ interface BillCommandApi {
     ): CustomResponse<Void>
 
     @Operation(
-        summary = "정산서 생성 또는 추가",
+        summary = "정산 참여 응답 제출 처리",
         description =
-            "정산을 추가합니다. 각 차수의 회식과 정산서, 참여 멤버 등을 함께 추가해야 합니다. \n" +
-                "추후에는 영수증 사진이 추가될 수 있습니다.",
-        requestBody =
-            RequestBody(
-                description = "정산 생성 요청",
-                required = true,
-                content = [
-                    Content(
-                        mediaType = APPLICATION_JSON_VALUE,
-                        schema = Schema(implementation = CreateBillRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "정산 생성 요청 예시",
-                                value = """
-                                {
-                                  "title": "17기 OT세션 공식 회식",
-                                  "description": "OT 이후 첫 공식 회식 자리입니다. 운영진 및 디퍼 전체가 초대됩니다.",
-                                  "billAccountId": 1,
-                                  "invitedAuthorityIds": [
-                                    1, 2
-                                  ],
-                                  "gatherings": [
-                                    {
-                                      "title": "1차 회식 - 고깃집",
-                                      "description": "가까운 삼겹살 집에서 진행",
-                                      "roundNumber": 1,
-                                      "heldAt": "2025-07-22T05:55:34.606Z",
-                                      "receipt": {
-                                        "amount": 820000
-                                      }
-                                    }
-                                  ]
-                                }
-                            """,
-                            ),
-                        ],
-                    ),
-                ],
-            ),
+            "정산 초대에 대해 응답했음을 처리합니다. 초대에 대한 응답 제출 시 '참여'로 체크한 회식의 일련번호 리스트를 제출합니다.",
     )
     @ApiResponse(
         responseCode = "204",
-        description = "정산 참여 응답 처리",
+        description = "정산 참여 응답 제출 응답 처리",
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -206,8 +167,7 @@ interface BillCommandApi {
         ],
     )
     fun submitBillParticipationConfirm(
-        billId: BillId,
+        @Positive billId: BillId,
         memberId: MemberId,
-        submitBillParticipationConfirmRequest: SubmitBillParticipationConfirmRequest,
     ): CustomResponse<Void>
 }

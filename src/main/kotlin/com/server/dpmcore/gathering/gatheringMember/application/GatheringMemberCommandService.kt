@@ -32,8 +32,8 @@ class GatheringMemberCommandService(
         gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
     }
 
-    fun gatheringParticipationConfirm(gatheringMember: GatheringMember) {
-        gatheringMember.gatheringParticipationConfirm()
-        gatheringMemberPersistencePort.gatheringParticipationConfirm(gatheringMember)
+    fun markAsGatheringParticipationSubmmitConfirm(gatheringMember: GatheringMember) {
+        gatheringMember.gatheringParticipationSubmittedConfirm()
+        gatheringMemberPersistencePort.markAsGatheringParticipationSubmmitConfirm(gatheringMember)
     }
 }

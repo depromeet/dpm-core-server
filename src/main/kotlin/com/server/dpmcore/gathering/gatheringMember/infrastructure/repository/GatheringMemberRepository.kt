@@ -107,7 +107,7 @@ class GatheringMemberRepository(
         )
     }
 
-    override fun gatheringParticipationConfirm(gatheringMember: GatheringMember) {
+    override fun markAsGatheringParticipationSubmmitConfirm(gatheringMember: GatheringMember) {
         val id =
             gatheringMember.id?.value
                 ?: throw GatheringException.GatheringIdRequiredException()
@@ -115,7 +115,7 @@ class GatheringMemberRepository(
         queryFactory
             .updateQuery<GatheringMemberEntity> {
                 where(col(GatheringMemberEntity::id).equal(id))
-                set(col(GatheringMemberEntity::isInvitationConfirmed), gatheringMember.isInvitationConfirmed)
+                set(col(GatheringMemberEntity::isInvitationSubmitted), gatheringMember.isInvitationSubmitted)
                 set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
                 set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
             }.executeUpdate()
