@@ -28,5 +28,5 @@ interface GatheringMemberPersistencePort {
         memberId: MemberId,
     ): GatheringMemberIsJoinQueryModel
 
-    fun markAsGatheringParticipationSubmmitConfirm(gatheringMember: GatheringMember)
+    fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember)
 }

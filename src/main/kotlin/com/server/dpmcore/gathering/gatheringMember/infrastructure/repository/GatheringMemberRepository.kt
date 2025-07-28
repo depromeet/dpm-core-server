@@ -107,7 +107,7 @@ class GatheringMemberRepository(
         )
     }
 
-    override fun markAsGatheringParticipationSubmmitConfirm(gatheringMember: GatheringMember) {
+    override fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
         val id =
             gatheringMember.id?.value
                 ?: throw GatheringException.GatheringIdRequiredException()

@@ -101,7 +101,7 @@ class GatheringCommandService(
                     gatheringId,
                     memberId,
                 )
-            gatheringMemberCommandService.markAsGatheringParticipationSubmmitConfirm(gatheringMembers)
+            gatheringMemberCommandService.markAsGatheringParticipationSubmitConfirm(gatheringMembers)
         }
     }
 }
