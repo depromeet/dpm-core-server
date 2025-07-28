@@ -3,14 +3,20 @@ package com.server.dpmcore.authority.infrastructure.repository
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.linecorp.kotlinjdsl.spring.data.listQuery
 import com.server.dpmcore.authority.domain.model.Authority
-import com.server.dpmcore.authority.domain.port.AuthorityPersistencePort
+import com.server.dpmcore.authority.domain.port.outbound.AuthorityPersistencePort
 import com.server.dpmcore.authority.infrastructure.entity.AuthorityEntity
+import org.jooq.DSLContext
+import org.jooq.generated.tables.references.AUTHORITIES
+import org.jooq.generated.tables.references.MEMBERS
+import org.jooq.generated.tables.references.MEMBER_AUTHORITIES
+import org.jooq.generated.tables.references.MEMBER_OAUTH
 import org.springframework.stereotype.Repository
 
 @Repository
 class AuthorityRepository(
     private val authorityJpaRepository: AuthorityJpaRepository,
     private val queryFactory: SpringDataQueryFactory,
+    private val dsl: DSLContext,
 ) : AuthorityPersistencePort {
     override fun findAll(): List<Authority> =
         queryFactory
@@ -18,4 +24,18 @@ class AuthorityRepository(
                 select(entity(AuthorityEntity::class))
                 from(entity(AuthorityEntity::class))
             }.mapNotNull { it?.toDomain() }
+
+    override fun findAllByMemberExternalId(externalId: String): List<String> =
+        dsl
+            .select(AUTHORITIES.NAME)
+            .from(AUTHORITIES)
+            .join(MEMBER_AUTHORITIES)
+            .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+            .join(MEMBERS)
+            .on(MEMBER_AUTHORITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(MEMBER_OAUTH)
+            .on(MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .where(MEMBER_OAUTH.EXTERNAL_ID.eq(externalId))
+            .fetch(AUTHORITIES.NAME)
+            .filterNotNull()
 }
