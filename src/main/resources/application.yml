@@ -43,6 +43,7 @@ spring:
             client-authentication-method: client_secret_post
             scope:
               - account_email
+              - profile_nickname
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize

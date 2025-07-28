@@ -80,8 +80,10 @@ class MemberLoginService(
             when (requestDomain) {
                 "$CLIENT_SUFFIX.${securityProperties.cookie.domain}" ->
                     "${securityProperties.clientRedirectUrl}?$IS_ADMIN_TRUE"
+
                 "$ADMIN_SUFFIX.${securityProperties.cookie.domain}" ->
                     "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+
                 else -> "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
             }
         }
@@ -92,7 +94,8 @@ class MemberLoginService(
             .any { it in ADMIN_AUTHORITIES }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
-        val member = memberPersistencePort.save(Member.create(authAttributes.getEmail(), environment))
+        val member =
+            memberPersistencePort.save(Member.create(authAttributes.getEmail(), authAttributes.getName(), environment))
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
 
         return generateLoginResult(
