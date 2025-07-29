@@ -20,7 +20,7 @@ class CustomAuthenticationSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        resolveLoginResultFromAuthentication(authentication).let { loginResult ->
+        resolveLoginResultFromAuthentication(request.serverName, authentication).let { loginResult ->
             loginResult.refreshToken?.let {
                 tokenInjector.injectRefreshToken(it, response)
             }
@@ -28,8 +28,11 @@ class CustomAuthenticationSuccessHandler(
         }
     }
 
-    private fun resolveLoginResultFromAuthentication(authentication: Authentication): LoginResult {
+    private fun resolveLoginResultFromAuthentication(
+        requestDomain: String,
+        authentication: Authentication,
+    ): LoginResult {
         val oAuth2User = authentication.principal as CustomOAuth2User
-        return handleMemberLoginUseCase.handleLoginSuccess(oAuth2User.authAttributes)
+        return handleMemberLoginUseCase.handleLoginSuccess(requestDomain, oAuth2User.authAttributes)
     }
 }

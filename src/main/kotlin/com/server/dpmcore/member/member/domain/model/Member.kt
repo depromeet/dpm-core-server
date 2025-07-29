@@ -24,7 +24,7 @@ import java.time.Instant
  */
 class Member(
     val id: MemberId? = null,
-    val name: String? = null,
+    val name: String,
     val email: String,
     val part: MemberPart? = null,
     status: MemberStatus,
@@ -76,6 +76,7 @@ class Member(
     companion object {
         fun create(
             email: String,
+            name: String,
             environment: Environment,
         ): Member {
             val profileStatusMap =
@@ -93,6 +94,7 @@ class Member(
             val now = Instant.now()
             return Member(
                 email = email,
+                name = name,
                 status = matchedStatus,
                 createdAt = now,
                 updatedAt = now,

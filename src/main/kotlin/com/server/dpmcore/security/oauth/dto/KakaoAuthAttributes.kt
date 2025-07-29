@@ -12,6 +12,7 @@ import com.server.dpmcore.member.memberOAuth.domain.model.OAuthProvider
 data class KakaoAuthAttributes(
     @JvmField val externalId: String,
     @JvmField val email: String,
+    @JvmField val name: String,
     @JvmField val provider: OAuthProvider,
 ) : OAuthAttributes {
     companion object {
@@ -25,6 +26,7 @@ data class KakaoAuthAttributes(
             return KakaoAuthAttributes(
                 externalId = externalId.toString(),
                 email = email,
+                name = kakaoAccount["profile"]?.let { (it as Map<*, *>)["nickname"] as String } ?: "",
                 provider = OAuthProvider.KAKAO,
             )
         }
@@ -35,4 +37,6 @@ data class KakaoAuthAttributes(
     override fun getProvider(): OAuthProvider = this.provider
 
     override fun getEmail(): String = this.email
+
+    override fun getName(): String = this.name
 }

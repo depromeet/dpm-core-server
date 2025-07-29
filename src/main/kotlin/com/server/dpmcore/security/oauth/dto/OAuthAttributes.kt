@@ -10,6 +10,8 @@ interface OAuthAttributes {
 
     fun getEmail(): String
 
+    fun getName(): String
+
     companion object {
         fun of(
             providerId: String,
