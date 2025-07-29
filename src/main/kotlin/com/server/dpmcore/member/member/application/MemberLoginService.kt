@@ -70,7 +70,7 @@ class MemberLoginService(
         memberId: MemberId,
     ) = when {
         hasAdminRole(memberId) -> adminRedirectUrl(requestDomain)
-        else -> securityProperties.clientRedirectUrl + "?$IS_ADMIN_FALSE"
+        else -> securityProperties.coreRedirectUrl + "?$IS_ADMIN_FALSE"
     }
 
     private fun adminRedirectUrl(requestDomain: String): String =
@@ -78,8 +78,8 @@ class MemberLoginService(
             "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
         } else {
             when (requestDomain) {
-                "$CLIENT_SUFFIX.${securityProperties.cookie.domain}" ->
-                    "${securityProperties.clientRedirectUrl}?$IS_ADMIN_TRUE"
+                "$CORE_SUFFIX.${securityProperties.cookie.domain}" ->
+                    "${securityProperties.coreRedirectUrl}?$IS_ADMIN_TRUE"
 
                 "$ADMIN_SUFFIX.${securityProperties.cookie.domain}" ->
                     "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
@@ -109,6 +109,6 @@ class MemberLoginService(
         private const val IS_ADMIN_TRUE = "isAdmin=true"
         private const val IS_ADMIN_FALSE = "isAdmin=false"
         private const val ADMIN_SUFFIX = "admin"
-        private const val CLIENT_SUFFIX = "client"
+        private const val CORE_SUFFIX = "core"
     }
 }
