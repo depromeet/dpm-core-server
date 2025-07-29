@@ -76,7 +76,7 @@ jobs:
             -Djib.to.auth.username=${{ env.DOCKER_USERNAME }} \
             -Djib.to.auth.password=${{ env.DOCKER_PASSWORD }} \
             -Djib.to.image=${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            -Djib.to.tags=latest,${{ env.IMAGE_TAG }} \
+            -Djib.to.tags=${{ env.IMAGE_TAG }} \
         env:
           DOCKER_USERNAME: ${{ env.DOCKER_USERNAME }}
           DOCKER_REPOSITORY: ${{ env.DOCKER_REPOSITORY }}
@@ -90,21 +90,34 @@ jobs:
           username: ${{ secrets.PROD_SERVER_USERNAME }}
           key: ${{ secrets.PROD_SERVER_SSH_KEY }}
           script: |
-            docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD }}
+            cd ~
+
+            export IMAGE_TAG=${{ env.IMAGE_TAG }}
+            rm -rf .env
+
+            cat <<EOF > .env
+            SPRING_PROFILES_ACTIVE=prod
+            PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}
+            PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}
+            PROD_DB_SCHEMA=${{ secrets.PROD_DB_SCHEMA }}
+            PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}
+            PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+            KAKAO_CLIENT_ID=${{ secrets.PROD_KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.PROD_KAKAO_CLIENT_SECRET }}
+            KAKAO_REDIRECT_URI=${{ secrets.PROD_KAKAO_REDIRECT_URI }}
+            JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
+            ACCESS_TOKEN_EXPIRATION_TIME=${{ secrets.PROD_ACCESS_TOKEN_EXPIRATION_TIME }}
+            REFRESH_TOKEN_EXPIRATION_TIME=${{ secrets.PROD_REFRESH_TOKEN_EXPIRATION_TIME }}
+            COOKIE_DOMAIN=${{ secrets.PROD_COOKIE_DOMAIN }}
+            COOKIE_HTTP_ONLY=${{ secrets.PROD_COOKIE_HTTP_ONLY }}
+            REDIRECT_URL=${{ secrets.PROD_REDIRECT_URL }}
+            ADMIN_REDIRECT_URL=${{ secrets.PROD_ADMIN_REDIRECT_URL }}
+            RESTRICTED_REDIRECT_URL=${{ secrets.PROD_RESTRICTED_REDIRECT_URL }}
+            EOF
+
+            echo "${{ env.DOCKER_PASSWORD }}" | docker login --username "${{ env.DOCKER_USERNAME }}" --password-stdin
             docker pull ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
-            docker service update \
-              --image ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-              --env PROD_DB_HOST=${{ secrets.PROD_DB_HOST }} \
-              --env PROD_DB_PORT=${{ secrets.PROD_DB_PORT }} \
-              --env PROD_DB_SCHEMA=${{ secrets.PROD_DB_SCHEMA }} \
-              --env PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }} \
-              --env PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }} \
-              --detach=true \
-              --update-parallelism 1 \
-              --update-delay 10s \
-              --update-failure-action pause \
-              --update-monitor 30s \
-              core-service
+            docker stack deploy -c server-stack.yml server
 
       - name: "Discord로 Production 배포 실패를 알린다."
         if: failure()
