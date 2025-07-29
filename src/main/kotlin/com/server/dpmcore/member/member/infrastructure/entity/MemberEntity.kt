@@ -26,8 +26,8 @@ class MemberEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id", nullable = false, updatable = false)
     val id: Long,
-    @Column
-    val name: String? = null,
+    @Column(nullable = false)
+    val name: String,
     @Column(nullable = false, unique = true)
     val email: String,
     @Column
