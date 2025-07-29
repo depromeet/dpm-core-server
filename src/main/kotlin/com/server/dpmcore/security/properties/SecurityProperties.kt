@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty
 @ConfigurationProperties(prefix = "spring.security")
 data class SecurityProperties(
     val logoutUrl: String,
-    val clientRedirectUrl: String,
+    val coreRedirectUrl: String,
     val adminRedirectUrl: String,
     val restrictedRedirectUrl: String,
     @NestedConfigurationProperty val cookie: Cookie,
