@@ -18,16 +18,35 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 interface GatheringApi {
     @ApiResponse(
         responseCode = "204",
-        description = "각 회식 참여 추가",
+        description = "각 회식 참여 여부 저장",
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
                 schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "각 회식 참여 여부 저장",
+                        value = """
+                                {
+                                  "gatheringJoins": [
+                                    {
+                                      "gatheringId": 1,
+                                      "isJoined": true
+                                    },
+                                    {
+                                      "gatheringId": 2,
+                                      "isJoined": false
+                                    }
+                                  ]
+                                }
+                            """,
+                    ),
+                ],
             ),
         ],
     )
     @Operation(
-        summary = "각 회식 참여 추가",
+        summary = "각 회식 참여 여부 저장",
         description = "여러 회식의 참여 여부를 표시합니다.",
     )
     fun markAsJoined(

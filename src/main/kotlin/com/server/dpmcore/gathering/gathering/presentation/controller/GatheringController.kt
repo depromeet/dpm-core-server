@@ -9,6 +9,7 @@ import com.server.dpmcore.gathering.gathering.presentation.response.GatheringMem
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.security.annotation.CurrentMemberId
 import jakarta.validation.constraints.Positive
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -22,7 +23,8 @@ class GatheringController(
     private val gatheringCommandService: GatheringCommandService,
     private val gatheringQueryService: GatheringQueryService,
 ) : GatheringApi {
-    @PatchMapping("/{gatheringId}/join")
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PatchMapping("/join")
     override fun markAsJoined(
         @RequestBody request: UpdateGatheringJoinsRequest,
         @CurrentMemberId memberId: MemberId,
@@ -31,7 +33,8 @@ class GatheringController(
         return CustomResponse.noContent()
     }
 
-    @GetMapping("/{gatheringId}")
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @GetMapping("/{gatheringId}/members")
     override fun getGatheringMemberJoinList(
         @Positive @PathVariable gatheringId: GatheringId,
     ): CustomResponse<GatheringMemberJoinListResponse> {
