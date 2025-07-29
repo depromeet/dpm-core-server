@@ -10,6 +10,7 @@ import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.security.annotation.CurrentMemberId
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -25,6 +26,7 @@ class BillCommandController(
 //    TODO : 도메인끼리 의존성을 어떻게 하면 좋을지 논의해보고 싶음.
 //    매퍼에서 port를 사용하게 되면 매퍼도 bean이되고, 물흐르듯 정방향으로 가던게 갑자기 역방향이 돼서 맘에 안듦.
 ) : BillCommandApi {
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PostMapping
     override fun createBill(
         @CurrentMemberId hostUserId: MemberId,
@@ -34,6 +36,7 @@ class BillCommandController(
         return CustomResponse.created(BillPersistenceResponse(billId))
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PatchMapping("/{billId}/close-participation")
     override fun closeBillParticipation(
         @PathVariable("billId") billId: Long,
@@ -42,6 +45,7 @@ class BillCommandController(
         return CustomResponse.ok(BillPersistenceResponse(updatedBillId))
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @PatchMapping("/{billId}/check")
     override fun markBillAsChecked(
         @Positive @PathVariable billId: BillId,

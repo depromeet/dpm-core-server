@@ -6,6 +6,7 @@ import com.server.dpmcore.refreshToken.presentation.response.TokenResponse
 import com.server.dpmcore.security.properties.TokenProperties
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -14,6 +15,7 @@ class ReissueController(
     private val refreshTokenService: RefreshTokenService,
     private val tokenProperties: TokenProperties,
 ) : ReissueApi {
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @PostMapping("/v1/reissue")
     override fun reissue(
         request: HttpServletRequest,

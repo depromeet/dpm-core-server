@@ -9,6 +9,7 @@ import com.server.dpmcore.session.presentation.dto.response.SessionDetailRespons
 import com.server.dpmcore.session.presentation.dto.response.SessionListResponse
 import com.server.dpmcore.session.presentation.dto.response.SessionWeeksResponse
 import com.server.dpmcore.session.presentation.mapper.SessionMapper
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 class SessionQueryController(
     private val sessionQueryService: SessionQueryService,
 ) : SessionQueryApi {
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/next")
     override fun getNextSession(): CustomResponse<NextSessionResponse> {
         val response =
@@ -29,6 +31,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
         val response =
@@ -39,6 +42,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @GetMapping("/{sessionId}")
     override fun getSessionById(
         @PathVariable(name = "sessionId") sessionId: SessionId,
@@ -51,6 +55,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/{sessionId}/attendance-time")
     override fun getAttendanceTime(
         @PathVariable(name = "sessionId") sessionId: SessionId,
@@ -63,6 +68,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/weeks")
     override fun getSessionWeeks(): CustomResponse<SessionWeeksResponse> {
         val response =

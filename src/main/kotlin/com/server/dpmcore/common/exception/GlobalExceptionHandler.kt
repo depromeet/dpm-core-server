@@ -3,6 +3,7 @@ package com.server.dpmcore.common.exception
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
+import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -48,4 +49,9 @@ class GlobalExceptionHandler {
         logger.error { "Exception: ${exception.javaClass.simpleName} - ${exception.message}" }
         return CustomResponse.error(GlobalExceptionCode.SERVER_ERROR)
     }
+
+    @ExceptionHandler(AuthorizationDeniedException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    protected fun handleAuthorizationDeniedException(exception: AuthorizationDeniedException): CustomResponse<Void> =
+        CustomResponse.error(GlobalExceptionCode.ACCESS_DENIED)
 }

@@ -9,6 +9,7 @@ import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.security.annotation.CurrentMemberId
 import jakarta.validation.constraints.Positive
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 class BillQueryController(
     private val billQueryService: BillQueryService,
 ) : BillQueryApi {
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/{billId}")
     override fun getBillDetails(
         @Positive @PathVariable billId: BillId,
@@ -27,6 +29,7 @@ class BillQueryController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping
     override fun getBillListByMemberId(
         @CurrentMemberId memberId: MemberId,
@@ -37,6 +40,7 @@ class BillQueryController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/{billId}/members")
     override fun getMemberBillSummaries(
         @Positive @PathVariable billId: BillId,
