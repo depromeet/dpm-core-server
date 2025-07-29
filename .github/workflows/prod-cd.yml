@@ -115,7 +115,7 @@ jobs:
             RESTRICTED_REDIRECT_URL=${{ secrets.PROD_RESTRICTED_REDIRECT_URL }}
             EOF
 
-            docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD }}
+            echo "${{ env.DOCKER_PASSWORD }}" | docker login --username "${{ env.DOCKER_USERNAME }}" --password-stdin
             docker pull ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
             docker stack deploy -c server-stack.yml server
 
