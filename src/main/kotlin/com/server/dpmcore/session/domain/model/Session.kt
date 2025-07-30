@@ -52,8 +52,8 @@ class Session internal constructor(
     private fun determineAttendanceStatus(now: Instant): AttendanceStatus =
         when {
             now.isBefore(attendancePolicy.attendanceStart) -> throw TooEarlyAttendanceException()
-            now.isBefore(attendancePolicy.attendanceStart.plus(5, ChronoUnit.MINUTES)) -> AttendanceStatus.PRESENT
-            now.isBefore(attendancePolicy.attendanceStart.plus(30, ChronoUnit.MINUTES)) -> AttendanceStatus.LATE
+            now.isBefore(attendancePolicy.attendanceStart.plus(30, ChronoUnit.MINUTES)) -> AttendanceStatus.PRESENT
+            now.isBefore(attendancePolicy.attendanceStart.plus(60, ChronoUnit.MINUTES)) -> AttendanceStatus.LATE
             else -> AttendanceStatus.ABSENT
         }
 
