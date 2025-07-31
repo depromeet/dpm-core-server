@@ -56,6 +56,7 @@ class BillCommandController(
         return CustomResponse.noContent()
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PatchMapping("/{billId}/participation-confirm")
     override fun submitBillParticipationConfirm(
         @Positive @PathVariable billId: BillId,
@@ -68,6 +69,7 @@ class BillCommandController(
         return CustomResponse.noContent()
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @PatchMapping("/{billId}/join")
     override fun markAsGatheringJoined(
         @Positive @PathVariable billId: BillId,

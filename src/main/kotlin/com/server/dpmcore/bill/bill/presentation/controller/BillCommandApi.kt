@@ -179,11 +179,30 @@ interface BillCommandApi {
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
                 schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "정산(각 회식) 참여 여부 저장",
+                        value = """
+                                {
+                                  "gatheringJoins": [
+                                    {
+                                      "gatheringId": 1,
+                                      "isJoined": true
+                                    },
+                                    {
+                                      "gatheringId": 2,
+                                      "isJoined": false
+                                    }
+                                  ]
+                                }
+                            """,
+                    ),
+                ],
             ),
         ],
     )
     @Operation(
-        summary = "정산의 각 회식에 대해 참여 표시",
+        summary = "정산의 각 회식에 대해 참여 저장",
         description = "정산 내의 각 회식에 대한 참여 여부를 표시합니다. '정산 참여 응답 제출 처리' API와 함께 호출됩니다.",
     )
     fun markAsGatheringJoined(
