@@ -2,8 +2,10 @@ HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 !**/src/main/**/build/
 !**/src/test/**/build/
+!.github/workflows/**.yml
 
 ### STS ###
 .apt_generated
@@ -43,4 +45,5 @@ out/
 **/*.yaml
 **/*.yml
 **/*.properties
+**/*.env
 
