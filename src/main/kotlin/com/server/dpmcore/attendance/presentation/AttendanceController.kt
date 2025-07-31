@@ -23,6 +23,7 @@ import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.security.annotation.CurrentMemberId
 import com.server.dpmcore.session.domain.model.SessionId
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -37,6 +38,7 @@ class AttendanceController(
     private val attendanceQueryService: AttendanceQueryService,
     private val attendanceCommandService: AttendanceCommandService,
 ) : AttendanceApi {
+    @PreAuthorize("hasRole('ROLE_DEEPER')")
     @PostMapping("/v1/sessions/{sessionId}/attendances")
     override fun createAttendance(
         @PathVariable sessionId: SessionId,
@@ -57,21 +59,26 @@ class AttendanceController(
         return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @GetMapping("/v1/sessions/{sessionId}/attendances")
     override fun getAttendancesBySessionId(
         @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
         @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
         @RequestParam(name = "name", required = false) name: String?,
+        @RequestParam(name = "onlyMyTeam", required = false) onlyMyTeam: Boolean?,
         @RequestParam(name = "cursorId", required = false) cursorId: Long?,
     ): CustomResponse<SessionAttendancesResponse> {
         val response =
             attendanceQueryService.getAttendancesBySession(
                 GetAttendancesBySessionWeekQuery(
                     sessionId = sessionId,
+                    memberId = memberId,
                     statuses = statuses,
                     teams = teams,
                     name = name,
+                    onlyMyTeam = onlyMyTeam,
                     cursorId = cursorId,
                 ),
             )
@@ -79,19 +86,24 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @GetMapping("/v1/members/attendances")
     override fun getMemberAttendances(
+        @CurrentMemberId memberId: MemberId,
         @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
         @RequestParam(name = "name", required = false) name: String?,
+        @RequestParam(name = "onlyMyTeam", required = false) onlyMyTeam: Boolean?,
         @RequestParam(name = "cursorId", required = false) cursorId: Long?,
     ): CustomResponse<MemberAttendancesResponse> {
         val response =
             attendanceQueryService.getMemberAttendances(
                 GetMemberAttendancesQuery(
+                    memberId = memberId,
                     statuses = statuses,
                     teams = teams,
                     name = name,
+                    onlyMyTeam = onlyMyTeam,
                     cursorId = cursorId,
                 ),
             )
@@ -99,6 +111,7 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @GetMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
     override fun getAttendanceBySessionIdAndMemberId(
         @PathVariable sessionId: SessionId,
@@ -115,6 +128,7 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/v1/sessions/{sessionId}/attendances/me")
     override fun getMyAttendanceBySessionId(
         @PathVariable sessionId: SessionId,
@@ -131,6 +145,7 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @GetMapping("/v1/members/{memberId}/attendances")
     override fun getDetailMemberAttendances(
         @PathVariable memberId: MemberId,
@@ -145,6 +160,7 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/v1/members/me/attendances")
     override fun getMyDetailAttendances(
         @CurrentMemberId memberId: MemberId,
@@ -159,6 +175,7 @@ class AttendanceController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
     override fun updateAttendance(
         @PathVariable sessionId: SessionId,

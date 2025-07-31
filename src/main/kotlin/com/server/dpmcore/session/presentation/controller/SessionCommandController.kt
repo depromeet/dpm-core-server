@@ -8,6 +8,7 @@ import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.presentation.dto.request.SessionCreateRequest
 import com.server.dpmcore.session.presentation.mapper.SessionMapper
 import com.server.dpmcore.session.presentation.mapper.TimeMapper
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -21,6 +22,7 @@ class SessionCommandController(
     private val sessionCommandService: SessionCommandService,
     private val sessionAttendanceProperties: SessionAttendanceProperties,
 ) : SessionCommandApi {
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PostMapping
     fun createSession(
         @RequestBody request: SessionCreateRequest,
@@ -32,6 +34,7 @@ class SessionCommandController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PatchMapping("/{sessionId}/attendance-time")
     override fun updateAttendanceTime(
         @PathVariable(name = "sessionId") sessionId: SessionId,

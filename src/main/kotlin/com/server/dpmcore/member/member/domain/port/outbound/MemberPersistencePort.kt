@@ -23,4 +23,6 @@ interface MemberPersistencePort {
     fun findAllByCohort(value: String): List<MemberId>
 
     fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel
+
+    fun findMemberTeamByMemberId(memberId: MemberId): Int?
 }

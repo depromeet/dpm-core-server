@@ -46,6 +46,11 @@ interface AuthorityApi {
             ),
         ],
     )
-    @Operation(summary = "권한 목록 조회 API", description = "모든 권한 목록을 조회 합니다")
+    @Operation(
+        summary = "권한 목록 조회 API",
+        description =
+            "모든 권한 목록을 조회 합니다. " +
+                "정산서 생성 시 권한 별로 회식 인원을 초대하기 위해 사용 됩니다.",
+    )
     fun getAllAuthorities(): CustomResponse<AuthorityListResponse>
 }
