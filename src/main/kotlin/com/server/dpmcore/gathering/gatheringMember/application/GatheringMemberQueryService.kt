@@ -18,7 +18,7 @@ class GatheringMemberQueryService(
     override fun getGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
         gatheringMemberPersistencePort.findByGatheringId(gatheringId)
 
-    fun getGatheringMembersByGatheringIdAndMemberId(
+    fun getGatheringMemberByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
     ): GatheringMember =

@@ -75,7 +75,7 @@ class GatheringCommandService(
         memberId: MemberId,
     ) {
         gatheringIds.forEach {
-            val gatheringMember = gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it, memberId)
+            val gatheringMember = gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(it, memberId)
             gatheringMemberCommandService.markAsChecked(gatheringMember)
         }
     }
@@ -91,7 +91,7 @@ class GatheringCommandService(
 
         request.gatheringJoins.forEach {
             val gatheringMember =
-                gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it.gatheringId, memberId)
+                gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(it.gatheringId, memberId)
             gatheringMemberCommandService.markAsJoined(gatheringMember, it.isJoined)
         }
     }
@@ -102,12 +102,12 @@ class GatheringCommandService(
     ) {
         val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(billId)
         gatheringIds.map { gatheringId ->
-            val gatheringMembers =
-                gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(
+            val gatheringMember =
+                gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(
                     gatheringId,
                     memberId,
                 )
-            gatheringMemberCommandService.markAsGatheringParticipationSubmitConfirm(gatheringMembers)
+            gatheringMemberCommandService.markAsGatheringParticipationSubmitConfirm(gatheringMember)
         }
     }
 }
