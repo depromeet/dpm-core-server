@@ -93,7 +93,7 @@ class Session internal constructor(
 
             return Session(
                 cohortId = CohortId(command.cohortId),
-                date = command.date,
+                date = command.date.plus(command.startHour, ChronoUnit.HOURS),
                 week = command.week,
                 place = command.place ?: "온라인",
                 eventName = command.eventName ?: "${command.week}주차 세션",
