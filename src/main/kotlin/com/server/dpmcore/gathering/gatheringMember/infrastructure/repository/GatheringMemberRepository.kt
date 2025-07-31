@@ -109,8 +109,7 @@ class GatheringMemberRepository(
 
     override fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
         val id =
-            gatheringMember.id?.value
-                ?: throw GatheringException.GatheringIdRequiredException()
+            gatheringMember.id?.value ?: 0L
 
         queryFactory
             .updateQuery<GatheringMemberEntity> {

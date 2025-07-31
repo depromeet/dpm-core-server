@@ -57,6 +57,7 @@ class GatheringMember(
         if (isInvitationSubmitted) {
             throw GatheringMemberException.AlreadySubmittedInvitationException()
         }
+        id ?: throw GatheringMemberException.GatheringMemberIdRequiredException()
 
         this.isInvitationSubmitted = true
         this.updatedAt = Instant.now()
