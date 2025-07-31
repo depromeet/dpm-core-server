@@ -38,8 +38,9 @@ class GatheringMemberRepository(
     override fun findByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): List<GatheringMember> =
-        gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId).map { it.toDomain() }
+    ): GatheringMember =
+        gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId)?.toDomain()
+            ?: throw GatheringMemberException.GatheringMemberNotFoundException()
 
     override fun updateGatheringMemberById(gatheringMember: GatheringMember) {
         val id =
@@ -104,5 +105,18 @@ class GatheringMemberRepository(
             authority = authorityName,
             isJoined = isJoined,
         )
+    }
+
+    override fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
+        val id =
+            gatheringMember.id?.value ?: 0L
+
+        queryFactory
+            .updateQuery<GatheringMemberEntity> {
+                where(col(GatheringMemberEntity::id).equal(id))
+                set(col(GatheringMemberEntity::isInvitationSubmitted), gatheringMember.isInvitationSubmitted)
+                set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
+                set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
+            }.executeUpdate()
     }
 }

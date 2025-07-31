@@ -2,6 +2,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -148,6 +149,65 @@ interface BillCommandApi {
     )
     fun markBillAsChecked(
         @Positive billId: BillId,
+        memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "정산 참여 응답 제출 처리",
+        description =
+            "정산 초대에 대해 응답했음을 처리합니다.",
+    )
+    @ApiResponse(
+        responseCode = "204",
+        description = "정산 참여 응답 제출 응답 처리",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+            ),
+        ],
+    )
+    fun submitBillParticipationConfirm(
+        @Positive billId: BillId,
+        memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "204",
+        description = "정산(각 회식) 참여",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "정산(각 회식) 참여 여부 저장",
+                        value = """
+                                {
+                                  "gatheringJoins": [
+                                    {
+                                      "gatheringId": 1,
+                                      "isJoined": true
+                                    },
+                                    {
+                                      "gatheringId": 2,
+                                      "isJoined": false
+                                    }
+                                  ]
+                                }
+                            """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "정산의 각 회식에 대해 참여 저장",
+        description = "정산 내의 각 회식에 대한 참여 여부를 표시합니다. '정산 참여 응답 제출 처리' API와 함께 호출됩니다.",
+    )
+    fun markAsGatheringJoined(
+        @Positive billId: BillId,
+        request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ): CustomResponse<Void>
 }

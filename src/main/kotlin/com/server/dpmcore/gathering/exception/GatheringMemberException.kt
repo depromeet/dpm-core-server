@@ -22,4 +22,8 @@ open class GatheringMemberException(
     class GatheringMemberIdRequiredException : GatheringMemberException(
         GatheringMemberExceptionCode.GATHERING_MEMBER_ID_REQUIRED,
     )
+
+    class AlreadySubmittedInvitationException : GatheringMemberException(
+        GatheringMemberExceptionCode.ALREADY_SUBMITTED_INVITATION,
+    )
 }

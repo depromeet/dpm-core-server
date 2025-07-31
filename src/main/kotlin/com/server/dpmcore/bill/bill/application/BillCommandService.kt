@@ -5,6 +5,7 @@ import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.bill.exception.BillException
@@ -96,4 +97,15 @@ class BillCommandService(
         val gatheringIds = gatheringQueryUseCase.getAllGatheringIdsByBillId(billId)
         gatheringCommandUseCase.markAsCheckedEachGatheringMember(gatheringIds, memberId)
     }
+
+    fun submitBillParticipationConfirm(
+        billId: BillId,
+        memberId: MemberId,
+    ) = gatheringCommandUseCase.submitBillParticipationConfirmEachGathering(billId, memberId)
+
+    fun markAsJoinedEachGathering(
+        billId: BillId,
+        request: UpdateGatheringJoinsRequest,
+        memberId: MemberId,
+    ) = gatheringCommandUseCase.markAsJoinedEachGatheringMember(billId, request, memberId)
 }

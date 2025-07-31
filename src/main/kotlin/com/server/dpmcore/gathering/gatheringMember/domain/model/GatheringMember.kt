@@ -18,7 +18,7 @@ class GatheringMember(
     val gatheringId: GatheringId,
     isChecked: Boolean = false,
     isJoined: Boolean = false,
-    isInvitationConfirmed: Boolean = false,
+    isInvitationSubmitted: Boolean = false,
     val createdAt: Instant? = null,
     completedAt: Instant? = null,
     updatedAt: Instant? = null,
@@ -30,7 +30,7 @@ class GatheringMember(
     var isJoined: Boolean = isJoined
         private set
 
-    var isInvitationConfirmed: Boolean = isInvitationConfirmed
+    var isInvitationSubmitted: Boolean = isInvitationSubmitted
         private set
 
     var completedAt: Instant? = completedAt
@@ -49,6 +49,17 @@ class GatheringMember(
 
     fun markAsJoined(isJoined: Boolean) {
         this.isJoined = isJoined
+        this.updatedAt = Instant.now()
+    }
+
+    fun gatheringParticipationSubmittedConfirm() {
+//        TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
+        if (isInvitationSubmitted) {
+            throw GatheringMemberException.AlreadySubmittedInvitationException()
+        }
+        id ?: throw GatheringMemberException.GatheringMemberIdRequiredException()
+
+        this.isInvitationSubmitted = true
         this.updatedAt = Instant.now()
     }
 
