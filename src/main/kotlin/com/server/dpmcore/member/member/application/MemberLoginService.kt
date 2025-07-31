@@ -1,0 +1,131 @@
+package com.server.dpmcore.member.member.application
+
+import com.server.dpmcore.member.member.application.exception.MemberIdRequiredException
+import com.server.dpmcore.member.member.domain.model.Member
+import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
+import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
+import com.server.dpmcore.member.memberAuthority.application.MemberAuthorityService
+import com.server.dpmcore.member.memberOAuth.application.MemberOAuthService
+import com.server.dpmcore.refreshToken.domain.model.RefreshToken
+import com.server.dpmcore.refreshToken.domain.port.outbound.RefreshTokenPersistencePort
+import com.server.dpmcore.security.oauth.dto.LoginResult
+import com.server.dpmcore.security.oauth.dto.OAuthAttributes
+import com.server.dpmcore.security.oauth.token.JwtTokenProvider
+import com.server.dpmcore.security.properties.SecurityProperties
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.core.env.Environment
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+class MemberLoginService(
+    private val memberPersistencePort: MemberPersistencePort,
+    private val memberAuthorityService: MemberAuthorityService,
+    private val memberOAuthService: MemberOAuthService,
+    private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
+    private val securityProperties: SecurityProperties,
+    private val tokenProvider: JwtTokenProvider,
+    private val environment: Environment,
+) : HandleMemberLoginUseCase {
+    private val logger = KotlinLogging.logger { MemberLoginService::class.java }
+
+    @Transactional
+    override fun handleLoginSuccess(
+        requestDomain: String,
+        authAttributes: OAuthAttributes,
+    ): LoginResult =
+        memberPersistencePort
+            .findByEmail(authAttributes.getEmail())
+            ?.let { member -> handleExistingMemberLogin(requestDomain, member) }
+            ?: handleUnregisteredMember(authAttributes)
+
+    private fun generateLoginResult(
+        memberId: MemberId,
+        redirectUrl: String,
+    ): LoginResult {
+        val newToken = tokenProvider.generateRefreshToken(memberId.toString())
+        val refreshToken =
+            refreshTokenPersistencePort
+                .findByMemberId(memberId)
+                ?.apply { rotate(newToken) }
+                ?: RefreshToken.create(memberId, newToken)
+        val savedToken = refreshTokenPersistencePort.save(refreshToken)
+
+        return LoginResult(savedToken, redirectUrl)
+    }
+
+    private fun handleExistingMemberLogin(
+        requestDomain: String,
+        member: Member,
+    ): LoginResult {
+        member.id?.value ?: return LoginResult(null, securityProperties.restrictedRedirectUrl)
+
+        if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(member.id.value)) {
+            return LoginResult(null, securityProperties.restrictedRedirectUrl)
+        }
+
+        return generateLoginResult(member.id, buildRedirectUrlByRoleAndDomain(requestDomain, member.id))
+    }
+
+    private fun buildRedirectUrlByRoleAndDomain(
+        requestDomain: String,
+        memberId: MemberId,
+    ) = when {
+        hasAdminRole(memberId) -> adminRedirectUrl(requestDomain)
+        else -> securityProperties.coreRedirectUrl + "?$IS_ADMIN_FALSE"
+    }
+
+    private fun adminRedirectUrl(requestDomain: String): String {
+        logger.info { "adminRedirectUrl 호출됨 - requestDomain: $requestDomain" }
+
+        if (environment.activeProfiles.contains("local")) {
+            logger.info { "로컬 환경입니다. adminRedirectUrl 사용: ${securityProperties.adminRedirectUrl}" }
+            return "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+        }
+
+        val redirectUrl =
+            when (requestDomain) {
+                "$CORE_SUFFIX.${securityProperties.cookie.domain}" -> {
+                    logger.info { "CORE 도메인 접근 - ${securityProperties.coreRedirectUrl}" }
+                    "${securityProperties.coreRedirectUrl}?$IS_ADMIN_TRUE"
+                }
+
+                "$ADMIN_SUFFIX.${securityProperties.cookie.domain}" -> {
+                    logger.info { "ADMIN 도메인 접근 - ${securityProperties.adminRedirectUrl}" }
+                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+                }
+
+                else -> {
+                    logger.warn { "알 수 없는 도메인 접근 - 기본 adminRedirectUrl 사용" }
+                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+                }
+            }
+
+        return redirectUrl
+    }
+
+    private fun hasAdminRole(memberId: MemberId): Boolean =
+        memberAuthorityService
+            .getAuthorityNamesByMemberId(memberId)
+            .any { it in ADMIN_AUTHORITIES }
+
+    private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
+        val member =
+            memberPersistencePort.save(Member.create(authAttributes.getEmail(), authAttributes.getName(), environment))
+        memberOAuthService.addMemberOAuthProvider(member, authAttributes)
+
+        return generateLoginResult(
+            member.id ?: throw MemberIdRequiredException(),
+            securityProperties.restrictedRedirectUrl,
+        )
+    }
+
+    companion object {
+        private val ADMIN_AUTHORITIES = setOf("ORGANIZER")
+        private const val IS_ADMIN_TRUE = "isAdmin=true"
+        private const val IS_ADMIN_FALSE = "isAdmin=false"
+        private const val ADMIN_SUFFIX = "admin"
+        private const val CORE_SUFFIX = "core"
+    }
+}

@@ -1,0 +1,40 @@
+name: CI on Pull Request
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  compile:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: "레포지토리를 체크아웃한다."
+        uses: actions/checkout@v4
+
+      - name: "Gradle Wrapper 무결성을 검증한다."
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: "JDK 21을 설정한다."
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: "Kotlin 소스를 컴파일한다."
+        run: ./gradlew compileKotlin --configuration-cache --build-cache
+
+      - name: "Discord로 빌드 실패를 알린다."
+        if: failure()
+        uses: Ilshidur/action-discord@0.3.2
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            ❌ **CI 도중 문제가 발생했습니다.**
+            actor : `@${{ github.actor }}`
+            branch : `${{ github.head_ref }}`
+            pull-request : `${{ github.event.pull_request.title }}`
+            [🔗 작업 요약 보기](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
