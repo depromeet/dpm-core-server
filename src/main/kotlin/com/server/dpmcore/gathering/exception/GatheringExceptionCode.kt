@@ -16,6 +16,7 @@ enum class GatheringExceptionCode(
     GATHERING_NOT_FOUND(HttpStatus.BAD_REQUEST, "GATHERING-404-01", "존재하지 않는 회식입니다."),
     GATHERING_REQUIRED(HttpStatus.BAD_REQUEST, "GATHERING-404-02", "회식은 필수로 존재해야합니다."),
     GATHERING_ID_REQUIRED(HttpStatus.BAD_REQUEST, "GATHERING-404-03", "회식 ID는 필수로 존재해야합니다."),
+    GATHERING_NOT_INCLUDED_IN_BILL(HttpStatus.BAD_REQUEST, "GATHERING-400-02", "해당 정산에 포함되지 않은 회식입니다."),
     ;
 
     override fun getStatus(): HttpStatus = status
