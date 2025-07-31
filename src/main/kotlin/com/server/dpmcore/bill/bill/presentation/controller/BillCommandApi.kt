@@ -155,7 +155,7 @@ interface BillCommandApi {
     @Operation(
         summary = "정산 참여 응답 제출 처리",
         description =
-            "정산 초대에 대해 응답했음을 처리합니다. 초대에 대한 응답 제출 시 '참여'로 체크한 회식의 일련번호 리스트를 제출합니다.",
+            "정산 초대에 대해 응답했음을 처리합니다.",
     )
     @ApiResponse(
         responseCode = "204",
