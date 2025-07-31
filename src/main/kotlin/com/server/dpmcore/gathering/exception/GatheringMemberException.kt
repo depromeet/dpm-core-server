@@ -23,7 +23,7 @@ open class GatheringMemberException(
         GatheringMemberExceptionCode.GATHERING_MEMBER_ID_REQUIRED,
     )
 
-    class AleadySubmittedInvitationException : GatheringMemberException(
+    class AlreadySubmittedInvitationException : GatheringMemberException(
         GatheringMemberExceptionCode.ALREADY_SUBMITTED_INVITATION,
     )
 }
