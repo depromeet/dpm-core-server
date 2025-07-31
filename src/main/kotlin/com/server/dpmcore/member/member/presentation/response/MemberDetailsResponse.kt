@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class MemberDetailsResponse(
-    // TODO: 디자인 파트와 논의 후 수정 필요
     @field:Schema(
         description = "이메일",
         example = "depromeetcore@gmail.com",
@@ -16,7 +15,7 @@ data class MemberDetailsResponse(
     @field:Schema(
         description = "이름",
         example = "디프만",
-        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val name: String?,
     @field:Schema(
@@ -31,14 +30,26 @@ data class MemberDetailsResponse(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
     )
     val cohort: String?,
+    @field:Schema(
+        description = "어드민 여부",
+        example = "false",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
+    val isAdmin: Boolean,
 ) {
     companion object {
-        fun from(member: Member): MemberDetailsResponse =
+        fun of(
+            member: Member,
+            roles: List<String>,
+        ): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = member.email,
                 name = member.name,
                 part = member.part?.name,
                 cohort = "17",
+                isAdmin = roles.contains(ADMIN_ROLE),
             )
+
+        private const val ADMIN_ROLE = "ORGANIZER"
     }
 }
