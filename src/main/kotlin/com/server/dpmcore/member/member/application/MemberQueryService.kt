@@ -9,6 +9,7 @@ import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryUseCase
 import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
+import com.server.dpmcore.member.memberAuthority.application.MemberAuthorityService
 import com.server.dpmcore.refreshToken.domain.port.inbound.RefreshTokenInvalidator
 import com.server.dpmcore.security.oauth.token.JwtTokenInjector
 import jakarta.servlet.http.HttpServletResponse
@@ -19,13 +20,15 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
+    private val memberAuthorityService: MemberAuthorityService,
     private val tokenInjector: JwtTokenInjector,
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
 ) : MemberQueryByAuthorityUseCase,
     MemberQueryUseCase {
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
-        MemberDetailsResponse.from(
+        MemberDetailsResponse.of(
             getMemberById(memberId),
+            memberAuthorityService.getAuthorityNamesByMemberId(memberId),
         )
 
     fun getMemberById(memberId: MemberId) =

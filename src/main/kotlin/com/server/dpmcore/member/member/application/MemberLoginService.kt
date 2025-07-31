@@ -13,6 +13,7 @@ import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes
 import com.server.dpmcore.security.oauth.token.JwtTokenProvider
 import com.server.dpmcore.security.properties.SecurityProperties
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,6 +28,8 @@ class MemberLoginService(
     private val tokenProvider: JwtTokenProvider,
     private val environment: Environment,
 ) : HandleMemberLoginUseCase {
+    private val logger = KotlinLogging.logger { MemberLoginService::class.java }
+
     @Transactional
     override fun handleLoginSuccess(
         requestDomain: String,
@@ -73,20 +76,34 @@ class MemberLoginService(
         else -> securityProperties.coreRedirectUrl + "?$IS_ADMIN_FALSE"
     }
 
-    private fun adminRedirectUrl(requestDomain: String): String =
+    private fun adminRedirectUrl(requestDomain: String): String {
+        logger.info { "adminRedirectUrl 호출됨 - requestDomain: $requestDomain" }
+
         if (environment.activeProfiles.contains("local")) {
-            "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
-        } else {
-            when (requestDomain) {
-                "$CORE_SUFFIX.${securityProperties.cookie.domain}" ->
-                    "${securityProperties.coreRedirectUrl}?$IS_ADMIN_TRUE"
-
-                "$ADMIN_SUFFIX.${securityProperties.cookie.domain}" ->
-                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
-
-                else -> "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
-            }
+            logger.info { "로컬 환경입니다. adminRedirectUrl 사용: ${securityProperties.adminRedirectUrl}" }
+            return "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
         }
+
+        val redirectUrl =
+            when (requestDomain) {
+                "$CORE_SUFFIX.${securityProperties.cookie.domain}" -> {
+                    logger.info { "CORE 도메인 접근 - ${securityProperties.coreRedirectUrl}" }
+                    "${securityProperties.coreRedirectUrl}?$IS_ADMIN_TRUE"
+                }
+
+                "$ADMIN_SUFFIX.${securityProperties.cookie.domain}" -> {
+                    logger.info { "ADMIN 도메인 접근 - ${securityProperties.adminRedirectUrl}" }
+                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+                }
+
+                else -> {
+                    logger.warn { "알 수 없는 도메인 접근 - 기본 adminRedirectUrl 사용" }
+                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
+                }
+            }
+
+        return redirectUrl
+    }
 
     private fun hasAdminRole(memberId: MemberId): Boolean =
         memberAuthorityService
