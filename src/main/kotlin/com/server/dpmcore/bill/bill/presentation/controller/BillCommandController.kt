@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 import com.server.dpmcore.bill.bill.application.BillCommandService
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.gathering.gathering.application.GatheringQueryService
@@ -52,6 +53,30 @@ class BillCommandController(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
         billCommandService.markBillAsChecked(billId, memberId)
+        return CustomResponse.noContent()
+    }
+
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PatchMapping("/{billId}/participation-confirm")
+    override fun submitBillParticipationConfirm(
+        @Positive @PathVariable billId: BillId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<Void> {
+        billCommandService.submitBillParticipationConfirm(
+            billId,
+            memberId,
+        )
+        return CustomResponse.noContent()
+    }
+
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PatchMapping("/{billId}/join")
+    override fun markAsGatheringJoined(
+        @Positive @PathVariable billId: BillId,
+        @RequestBody request: UpdateGatheringJoinsRequest,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<Void> {
+        billCommandService.markAsJoinedEachGathering(billId, request, memberId)
         return CustomResponse.noContent()
     }
 }

@@ -18,14 +18,12 @@ class GatheringMemberQueryService(
     override fun getGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
         gatheringMemberPersistencePort.findByGatheringId(gatheringId)
 
-    fun getGatheringMembersByGatheringIdAndMemberId(
+    fun getGatheringMemberByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): List<GatheringMember> =
+    ): GatheringMember =
         gatheringMemberPersistencePort
             .findByGatheringIdAndMemberId(gatheringId, memberId)
-            .takeIf { it.isNotEmpty() }
-            ?: throw GatheringMemberException.GatheringMemberNotFoundException()
 
     fun getMemberIdsByGatheringId(gatheringId: GatheringId): List<MemberId> =
         gatheringMemberPersistencePort

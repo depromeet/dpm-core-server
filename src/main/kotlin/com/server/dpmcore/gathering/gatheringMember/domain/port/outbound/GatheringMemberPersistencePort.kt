@@ -17,7 +17,7 @@ interface GatheringMemberPersistencePort {
     fun findByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): List<GatheringMember>
+    ): GatheringMember
 
     fun updateGatheringMemberById(gatheringMember: GatheringMember)
 
@@ -27,4 +27,6 @@ interface GatheringMemberPersistencePort {
         gatheringId: GatheringId,
         memberId: MemberId,
     ): GatheringMemberIsJoinQueryModel
+
+    fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember)
 }
