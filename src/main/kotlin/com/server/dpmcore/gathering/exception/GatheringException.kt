@@ -12,4 +12,8 @@ open class GatheringException(
     class GatheringNotFoundException : GatheringException(GatheringExceptionCode.GATHERING_NOT_FOUND)
 
     class GatheringIdRequiredException : GatheringException(GatheringExceptionCode.GATHERING_ID_REQUIRED)
+
+    class GatheringNotIncludedInBillException : GatheringException(
+        GatheringExceptionCode.GATHERING_NOT_INCLUDED_IN_BILL,
+    )
 }

@@ -58,7 +58,7 @@ class BillMapper(
             billAccountId = bill.billAccount.id?.value ?: 0L,
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
             invitedMemberCount = gatheringMembers.count(),
-            invitationConfirmedCount = gatheringMembers.count { it.isInvitationConfirmed },
+            invitationConfirmedCount = gatheringMembers.count { it.isInvitationSubmitted },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
             gatherings =
                 gatherings.map { gathering ->
@@ -109,7 +109,7 @@ class BillMapper(
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
             invitedMemberCount = gatheringMembers.count(),
-            invitationConfirmedCount = gatheringMembers.count { it.isInvitationConfirmed },
+            invitationConfirmedCount = gatheringMembers.count { it.isInvitationSubmitted },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
 //            inviteAuthorities = TODO(),
             gatherings = gatheringDetails,

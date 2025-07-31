@@ -11,5 +11,5 @@ interface GatheringMemberJpaRepository : JpaRepository<GatheringMemberEntity, Lo
     fun findByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): List<GatheringMemberEntity>
+    ): GatheringMemberEntity?
 }

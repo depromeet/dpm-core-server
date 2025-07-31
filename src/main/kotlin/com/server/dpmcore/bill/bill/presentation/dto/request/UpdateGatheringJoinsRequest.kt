@@ -1,4 +1,4 @@
-package com.server.dpmcore.gathering.gathering.presentation.request
+package com.server.dpmcore.bill.bill.presentation.dto.request
 
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 

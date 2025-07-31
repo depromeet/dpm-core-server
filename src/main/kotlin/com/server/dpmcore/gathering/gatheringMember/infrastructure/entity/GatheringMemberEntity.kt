@@ -33,8 +33,8 @@ class GatheringMemberEntity(
     val isChecked: Boolean = false,
     @Column(name = "is_joined", nullable = false)
     val isJoined: Boolean = false,
-    @Column(name = "is_invitation_confirmed", nullable = false)
-    val isInvitationConfirmed: Boolean = false,
+    @Column(name = "is_invitation_submitted", nullable = false)
+    val isInvitationSubmitted: Boolean = false,
     @Column(name = "completed_at")
     val completedAt: Instant? = null,
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -69,7 +69,7 @@ class GatheringMemberEntity(
             memberId = MemberId(memberId),
             isChecked = isChecked,
             isJoined = isJoined,
-            isInvitationConfirmed = isInvitationConfirmed,
+            isInvitationSubmitted = isInvitationSubmitted,
             completedAt = completedAt,
             createdAt = createdAt,
             updatedAt = updatedAt,

@@ -4,12 +4,13 @@ import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
+import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
-import com.server.dpmcore.gathering.gathering.presentation.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberCommandService
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
@@ -74,19 +75,39 @@ class GatheringCommandService(
         memberId: MemberId,
     ) {
         gatheringIds.forEach {
-            val gatheringMembers = gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it, memberId)
-            gatheringMemberCommandService.markAsChecked(gatheringMembers)
+            val gatheringMember = gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(it, memberId)
+            gatheringMemberCommandService.markAsChecked(gatheringMember)
         }
     }
 
-    fun markAsJoinedEachGatheringMember(
+    override fun markAsJoinedEachGatheringMember(
+        billId: BillId,
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ) {
+        val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(billId)
+        val filteredGatheringIds = request.gatheringJoins.filter { it.gatheringId !in gatheringIds }
+        if (filteredGatheringIds.isNotEmpty()) throw GatheringException.GatheringNotIncludedInBillException()
+
         request.gatheringJoins.forEach {
-            val gatheringMembers =
-                gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it.gatheringId, memberId)
-            gatheringMemberCommandService.markAsJoined(gatheringMembers, it.isJoined)
+            val gatheringMember =
+                gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(it.gatheringId, memberId)
+            gatheringMemberCommandService.markAsJoined(gatheringMember, it.isJoined)
+        }
+    }
+
+    override fun submitBillParticipationConfirmEachGathering(
+        billId: BillId,
+        memberId: MemberId,
+    ) {
+        val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(billId)
+        gatheringIds.map { gatheringId ->
+            val gatheringMember =
+                gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(
+                    gatheringId,
+                    memberId,
+                )
+            gatheringMemberCommandService.markAsGatheringParticipationSubmitConfirm(gatheringMember)
         }
     }
 }
