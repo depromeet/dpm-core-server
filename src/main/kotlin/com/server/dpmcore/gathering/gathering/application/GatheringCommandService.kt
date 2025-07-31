@@ -5,6 +5,7 @@ import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
+import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
@@ -80,9 +81,14 @@ class GatheringCommandService(
     }
 
     override fun markAsJoinedEachGatheringMember(
+        billId: BillId,
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ) {
+        val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(billId)
+        val filteredGatheringIds = request.gatheringJoins.filter { it.gatheringId !in gatheringIds }
+        if (filteredGatheringIds.isNotEmpty()) throw GatheringException.GatheringNotIncludedInBillException()
+
         request.gatheringJoins.forEach {
             val gatheringMember =
                 gatheringMemberQueryService.getGatheringMembersByGatheringIdAndMemberId(it.gatheringId, memberId)

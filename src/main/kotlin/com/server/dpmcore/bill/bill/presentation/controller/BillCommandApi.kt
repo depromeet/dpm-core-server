@@ -187,6 +187,7 @@ interface BillCommandApi {
         description = "정산 내의 각 회식에 대한 참여 여부를 표시합니다. '정산 참여 응답 제출 처리' API와 함께 호출됩니다.",
     )
     fun markAsGatheringJoined(
+        @Positive billId: BillId,
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ): CustomResponse<Void>

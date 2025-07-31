@@ -66,10 +66,11 @@ class BillCommandController(
 
     @PatchMapping("/{billId}/join")
     override fun markAsGatheringJoined(
+        @Positive @PathVariable billId: BillId,
         @RequestBody request: UpdateGatheringJoinsRequest,
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
-        billCommandService.markAsJoinedEachGathering(request, memberId)
+        billCommandService.markAsJoinedEachGathering(billId, request, memberId)
         return CustomResponse.noContent()
     }
 }

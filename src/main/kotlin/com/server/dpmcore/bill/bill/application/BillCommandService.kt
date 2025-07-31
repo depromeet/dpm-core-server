@@ -104,7 +104,8 @@ class BillCommandService(
     ) = gatheringCommandUseCase.submitBillParticipationConfirmEachGathering(billId, memberId)
 
     fun markAsJoinedEachGathering(
+        billId: BillId,
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
-    ) = gatheringCommandUseCase.markAsJoinedEachGatheringMember(request, memberId)
+    ) = gatheringCommandUseCase.markAsJoinedEachGatheringMember(billId, request, memberId)
 }

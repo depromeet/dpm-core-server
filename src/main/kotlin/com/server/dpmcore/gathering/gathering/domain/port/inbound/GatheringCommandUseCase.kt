@@ -23,6 +23,7 @@ interface GatheringCommandUseCase {
     )
 
     fun markAsJoinedEachGatheringMember(
+        billId: BillId,
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     )
