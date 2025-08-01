@@ -20,6 +20,7 @@ data class MemberDetailsResponse(
         description = "파트",
         example = "WEB",
         requiredMode = Schema.RequiredMode.REQUIRED,
+        nullable = true,
     )
     val part: String?,
     @field:Schema(
