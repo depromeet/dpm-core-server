@@ -37,9 +37,13 @@ class MemberAuthorityRepository(
             .set(
                 MEMBER_AUTHORITIES.GRANTED_AT,
                 memberAuthority.grantedAt
-                    ?.atZone(ZoneId.systemDefault())
+                    ?.atZone(ZoneId.of(TIME_ZONE))
                     ?.toLocalDateTime()
                     ?: LocalDateTime.now(),
             ).execute()
+    }
+
+    companion object {
+        private const val TIME_ZONE = "Asia/Seoul"
     }
 }
