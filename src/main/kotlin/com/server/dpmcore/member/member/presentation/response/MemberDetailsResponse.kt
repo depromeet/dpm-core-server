@@ -1,10 +1,8 @@
 package com.server.dpmcore.member.member.presentation.response
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.server.dpmcore.member.member.domain.model.Member
 import io.swagger.v3.oas.annotations.media.Schema
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 data class MemberDetailsResponse(
     @field:Schema(
         description = "이메일",
@@ -22,6 +20,7 @@ data class MemberDetailsResponse(
         description = "파트",
         example = "WEB",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
     )
     val part: String?,
     @field:Schema(
