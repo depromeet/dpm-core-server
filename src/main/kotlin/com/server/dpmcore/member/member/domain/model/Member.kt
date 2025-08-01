@@ -1,9 +1,9 @@
 package com.server.dpmcore.member.member.domain.model
 
 import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
-import com.server.dpmcore.member.memberCohort.domain.MemberCohort
+import com.server.dpmcore.member.memberCohort.domain.model.MemberCohort
 import com.server.dpmcore.member.memberOAuth.domain.model.MemberOAuth
-import com.server.dpmcore.member.memberTeam.domain.MemberTeam
+import com.server.dpmcore.member.memberTeam.domain.model.MemberTeam
 import org.springframework.core.env.Environment
 import java.time.Instant
 
@@ -26,7 +26,7 @@ class Member(
     val id: MemberId? = null,
     val name: String,
     val email: String,
-    val part: MemberPart? = null,
+    part: MemberPart? = null,
     status: MemberStatus,
     createdAt: Instant? = null,
     updatedAt: Instant? = null,
@@ -36,6 +36,9 @@ class Member(
     val memberTeams: List<MemberTeam> = emptyList(),
     val memberOAuths: List<MemberOAuth> = emptyList(),
 ) {
+    var part: MemberPart? = part
+        private set
+
     var status: MemberStatus = status
         private set
 
@@ -49,6 +52,16 @@ class Member(
         private set
 
     fun isAllowed(): Boolean = status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
+
+    fun activate() {
+        status = MemberStatus.ACTIVE
+        updatedAt = Instant.now()
+    }
+
+    fun updatePart(memberPart: MemberPart) {
+        part = memberPart
+        updatedAt = Instant.now()
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -2,8 +2,8 @@ package com.server.dpmcore.member.memberTeam.infrastructure.entity
 
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
-import com.server.dpmcore.member.memberTeam.domain.MemberTeam
-import com.server.dpmcore.member.memberTeam.domain.MemberTeamId
+import com.server.dpmcore.member.memberTeam.domain.model.MemberTeam
+import com.server.dpmcore.member.memberTeam.domain.model.MemberTeamId
 import com.server.dpmcore.team.domain.model.TeamId
 import com.server.dpmcore.team.infrastructure.entity.TeamEntity
 import jakarta.persistence.Column

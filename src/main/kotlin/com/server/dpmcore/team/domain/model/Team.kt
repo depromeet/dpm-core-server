@@ -1,7 +1,7 @@
 package com.server.dpmcore.team.domain.model
 
 import com.server.dpmcore.cohort.domain.model.CohortId
-import com.server.dpmcore.member.memberTeam.domain.MemberTeamId
+import com.server.dpmcore.member.memberTeam.domain.model.MemberTeamId
 
 /**
  * 팀(Team)을 표현하는 도메인 모델입니다.
@@ -42,8 +42,7 @@ class Team(
         return result
     }
 
-    override fun toString(): String {
-        return "Team(id=$id, number=$number, createdAt=$createdAt, updatedAt=$updatedAt, cohortId=$cohortId, " +
+    override fun toString(): String =
+        "Team(id=$id, number=$number, createdAt=$createdAt, updatedAt=$updatedAt, cohortId=$cohortId, " +
             "memberTeamIds=$memberTeamIds)"
-    }
 }

@@ -1,4 +1,4 @@
-package com.server.dpmcore.member.memberTeam.domain
+package com.server.dpmcore.member.memberTeam.domain.model
 
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.team.domain.model.TeamId
@@ -24,7 +24,16 @@ class MemberTeam(
         return result
     }
 
-    override fun toString(): String {
-        return "MemberTeam(id=$id, memberId=$memberId, teamId=$teamId)"
+    override fun toString(): String = "MemberTeam(id=$id, memberId=$memberId, teamId=$teamId)"
+
+    companion object {
+        fun of(
+            memberId: MemberId,
+            teamId: TeamId,
+        ): MemberTeam =
+            MemberTeam(
+                memberId = memberId,
+                teamId = teamId,
+            )
     }
 }

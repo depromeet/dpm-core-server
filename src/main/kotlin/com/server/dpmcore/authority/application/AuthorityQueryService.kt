@@ -1,5 +1,8 @@
 package com.server.dpmcore.authority.application
 
+import com.server.dpmcore.authority.application.exception.AuthorityNotFoundException
+import com.server.dpmcore.authority.domain.model.AuthorityId
+import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.authority.domain.port.inbound.AuthorityQueryUseCase
 import com.server.dpmcore.authority.domain.port.outbound.AuthorityPersistencePort
 import com.server.dpmcore.authority.presentation.response.AuthorityListResponse
@@ -21,4 +24,8 @@ class AuthorityQueryService(
         authorityPersistencePort
             .findAllByMemberId(memberId)
             .ifEmpty { listOf("GUEST") }
+
+    override fun getAuthorityIdByName(authorityName: AuthorityType): AuthorityId =
+        authorityPersistencePort.findAuthorityIdByName(authorityName.toString())
+            ?: throw AuthorityNotFoundException()
 }
