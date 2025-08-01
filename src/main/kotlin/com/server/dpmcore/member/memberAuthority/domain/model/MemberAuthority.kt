@@ -36,4 +36,16 @@ class MemberAuthority(
     override fun toString(): String =
         "MemberAuthority(id=$id, memberId=$memberId, authorityId=$authorityId, grantedAt=$grantedAt, " +
             "deletedAt=$deletedAt)"
+
+    companion object {
+        fun of(
+            memberId: MemberId,
+            authorityId: AuthorityId,
+        ): MemberAuthority =
+            MemberAuthority(
+                memberId = memberId,
+                authorityId = authorityId,
+                grantedAt = Instant.now(),
+            )
+    }
 }

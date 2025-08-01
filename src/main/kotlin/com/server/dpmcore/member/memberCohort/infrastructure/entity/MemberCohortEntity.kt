@@ -4,8 +4,8 @@ import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.cohort.infrastructure.entity.CohortEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
-import com.server.dpmcore.member.memberCohort.domain.MemberCohort
-import com.server.dpmcore.member.memberCohort.domain.MemberCohortId
+import com.server.dpmcore.member.memberCohort.domain.model.MemberCohort
+import com.server.dpmcore.member.memberCohort.domain.model.MemberCohortId
 import jakarta.persistence.Column
 import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity
