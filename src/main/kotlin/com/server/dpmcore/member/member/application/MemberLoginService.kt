@@ -74,11 +74,11 @@ class MemberLoginService(
     }
 
     private fun adminRedirectUrl(requestDomain: String): String {
-        if (environment.activeProfiles.contains("local")) {
+        if (environment.activeProfiles.contains(PROFILE_LOCAL)) {
             return "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
         }
 
-        val coreSuffix = if (environment.activeProfiles.contains("dev")) CLIENT_SUFFIX else CORE_SUFFIX
+        val coreSuffix = if (environment.activeProfiles.contains(PROFILE_DEV)) CLIENT_SUFFIX else CORE_SUFFIX
 
         val redirectUrl =
             when (requestDomain) {
@@ -121,5 +121,7 @@ class MemberLoginService(
         private const val ADMIN_SUFFIX = "admin"
         private const val CORE_SUFFIX = "core"
         private const val CLIENT_SUFFIX = "client"
+        private const val PROFILE_DEV = "dev"
+        private const val PROFILE_LOCAL = "local"
     }
 }
