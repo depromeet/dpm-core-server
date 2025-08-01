@@ -27,7 +27,6 @@ class CustomAuthenticationSuccessHandler(
             request.cookies?.firstOrNull { it.name == REQUEST_DOMAIN }?.value ?: request.serverName,
             authentication,
         ).let { loginResult ->
-            println("요청 도메인: ${request.cookies?.firstOrNull { it.name == REQUEST_DOMAIN }?.value}")
             loginResult.refreshToken?.let {
                 tokenInjector.injectRefreshToken(it, response)
             }
