@@ -4,11 +4,14 @@ import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUse
 import com.server.dpmcore.security.oauth.domain.CustomOAuth2User
 import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.token.JwtTokenInjector
+import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.stereotype.Component
+
+private const val REQUEST_DOMAIN = "REQUEST_DOMAIN"
 
 @Component
 class CustomAuthenticationSuccessHandler(
@@ -20,10 +23,18 @@ class CustomAuthenticationSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        resolveLoginResultFromAuthentication(request.serverName, authentication).let { loginResult ->
+        resolveLoginResultFromAuthentication(
+            request.cookies?.firstOrNull { it.name == REQUEST_DOMAIN }?.value ?: request.serverName,
+            authentication,
+        ).let { loginResult ->
             loginResult.refreshToken?.let {
                 tokenInjector.injectRefreshToken(it, response)
             }
+            Cookie(REQUEST_DOMAIN, request.serverName)
+                .apply {
+                    path = "/"
+                    maxAge = 0
+                }.also { response.addCookie(it) }
             response.sendRedirect(loginResult.redirectUrl)
         }
     }
