@@ -3,6 +3,7 @@ package com.server.dpmcore.authority.infrastructure.repository
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.linecorp.kotlinjdsl.spring.data.listQuery
 import com.server.dpmcore.authority.domain.model.Authority
+import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.authority.domain.port.outbound.AuthorityPersistencePort
 import com.server.dpmcore.authority.infrastructure.entity.AuthorityEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -51,4 +52,13 @@ class AuthorityRepository(
             .where(MEMBERS.MEMBER_ID.eq(memberId.value).and(MEMBER_AUTHORITIES.DELETED_AT.isNull))
             .fetch(AUTHORITIES.NAME)
             .filterNotNull()
+
+    override fun findAuthorityIdByName(authorityName: String): AuthorityId? =
+        dsl
+            .select(AUTHORITIES.AUTHORITY_ID)
+            .from(AUTHORITIES)
+            .where(AUTHORITIES.NAME.eq(authorityName))
+            .fetchOne()
+            ?.get(AUTHORITIES.AUTHORITY_ID)
+            ?.let(::AuthorityId)
 }

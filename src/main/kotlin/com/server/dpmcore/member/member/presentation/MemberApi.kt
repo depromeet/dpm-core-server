@@ -2,12 +2,14 @@ package com.server.dpmcore.member.member.presentation
 
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.member.member.presentation.request.InitMemberDataRequest
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import com.server.dpmcore.security.annotation.CurrentMemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
@@ -76,4 +78,49 @@ interface MemberApi {
         @CurrentMemberId memberId: MemberId,
         response: HttpServletResponse,
     ): CustomResponse<Void>
+
+    @Operation(
+        summary = "멤버 데이터 주입 및 승인 API (dev)",
+        description = "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다.",
+        requestBody =
+            RequestBody(
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = InitMemberDataRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "멤버 데이터 주입 요청 예시",
+                                value = """
+                                {
+                                    "teamId": "1",
+                                    "members": [
+                                        {
+                                            "memberId": "1",
+                                            "memberPart": "SERVER"
+                                        },
+                                        {
+                                            "memberId": "2",
+                                            "memberPart": "DESIGN"
+                                        }
+                                    ]
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponse(
+        responseCode = "204",
+        description = "멤버 데이터 주입 및 승인 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+            ),
+        ],
+    )
+    fun initMemberDataAndApprove(request: InitMemberDataRequest): CustomResponse<Void>
 }

@@ -1,6 +1,6 @@
 package com.server.dpmcore.cohort.domain.model
 
-import com.server.dpmcore.member.memberCohort.domain.MemberCohortId
+import com.server.dpmcore.member.memberCohort.domain.model.MemberCohortId
 import com.server.dpmcore.team.domain.model.TeamId
 
 /**
@@ -39,8 +39,7 @@ class Cohort(
         return result
     }
 
-    override fun toString(): String {
-        return "Cohort(id=$id, value='$value', createdAt=$createdAt, updatedAt=$updatedAt, teamIds=$teamIds, " +
+    override fun toString(): String =
+        "Cohort(id=$id, value='$value', createdAt=$createdAt, updatedAt=$updatedAt, teamIds=$teamIds, " +
             "memberCohortIds=$memberCohortIds)"
-    }
 }
