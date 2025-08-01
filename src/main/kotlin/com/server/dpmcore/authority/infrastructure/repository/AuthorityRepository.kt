@@ -53,16 +53,13 @@ class AuthorityRepository(
             .fetch(AUTHORITIES.NAME)
             .filterNotNull()
 
-    override fun findAuthorityIdByName(authorityName: String): AuthorityId? {
-        dsl
-            .select(AUTHORITIES.AUTHORITY_ID)
-            .from(AUTHORITIES)
-            .where(AUTHORITIES.NAME.eq(authorityName))
-            .fetchOne()
-            ?.get(AUTHORITIES.AUTHORITY_ID)
-            ?.let {
-                return AuthorityId(it)
-            }
-        return null
-    }
+override fun findAuthorityIdByName(authorityName: String): AuthorityId? {
+    return dsl
+        .select(AUTHORITIES.AUTHORITY_ID)
+        .from(AUTHORITIES)
+        .where(AUTHORITIES.NAME.eq(authorityName))
+        .fetchOne()
+        ?.get(AUTHORITIES.AUTHORITY_ID)
+        ?.let(::AuthorityId)
+}
 }
