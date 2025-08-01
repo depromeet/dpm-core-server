@@ -25,7 +25,7 @@ class AuthorityQueryService(
             .findAllByMemberId(memberId)
             .ifEmpty { listOf("GUEST") }
 
-    override fun getAuthorityIdByName(authorityName: AuthorityType): AuthorityId =
-        authorityPersistencePort.findAuthorityIdByName(authorityName.toString())
+    override fun getAuthorityIdByType(authorityType: AuthorityType): AuthorityId =
+        authorityPersistencePort.findAuthorityIdByName(authorityType.toString())
             ?: throw AuthorityNotFoundException()
 }

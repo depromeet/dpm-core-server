@@ -18,9 +18,9 @@ class MemberAuthorityService(
 
     fun setMemberAuthorityByMemberId(
         memberId: MemberId,
-        authorityName: AuthorityType,
+        authorityType: AuthorityType,
     ) {
-        val authorityId = authorityQueryUseCase.getAuthorityIdByName(authorityName)
+        val authorityId = authorityQueryUseCase.getAuthorityIdByType(authorityType)
         memberAuthorityPersistencePort.save(MemberAuthority.of(memberId, authorityId))
     }
 }

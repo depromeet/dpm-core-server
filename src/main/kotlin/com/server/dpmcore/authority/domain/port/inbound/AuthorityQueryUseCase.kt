@@ -9,5 +9,5 @@ interface AuthorityQueryUseCase {
 
     fun getAuthoritiesByMemberId(memberId: MemberId): List<String>
 
-    fun getAuthorityIdByName(authorityName: AuthorityType): AuthorityId
+    fun getAuthorityIdByType(authorityType: AuthorityType): AuthorityId
 }
