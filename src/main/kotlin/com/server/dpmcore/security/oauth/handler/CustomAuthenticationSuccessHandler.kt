@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.stereotype.Component
+import java.net.URI
 
 @Component
 class CustomAuthenticationSuccessHandler(
@@ -20,12 +21,29 @@ class CustomAuthenticationSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        resolveLoginResultFromAuthentication(request.serverName, authentication).let { loginResult ->
+        resolveLoginResultFromAuthentication(
+            getRequestDomain(request),
+            authentication,
+        ).let { loginResult ->
+            println(getRequestDomain(request))
             loginResult.refreshToken?.let {
                 tokenInjector.injectRefreshToken(it, response)
             }
             response.sendRedirect(loginResult.redirectUrl)
         }
+    }
+
+    private fun getRequestDomain(request: HttpServletRequest): String {
+        val raw =
+            request.getHeader("Origin")
+                ?: request.getHeader("Referer")
+                ?: request.requestURL.toString()
+
+        return try {
+            URI(raw).host
+        } catch (e: Exception) {
+            null
+        } ?: throw IllegalArgumentException("Cannot extract host from request source: $raw")
     }
 
     private fun resolveLoginResultFromAuthentication(
