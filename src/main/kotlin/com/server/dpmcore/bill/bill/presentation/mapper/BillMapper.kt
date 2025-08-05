@@ -101,7 +101,7 @@ class BillMapper(
             gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetail.gatheringId)
                 .filter { it.isJoined }
                 .forEach { gatheringMember ->
-                    participants.computeIfAbsent(gatheringMember.id!!.value) { mutableListOf() }
+                    participants.computeIfAbsent(gatheringMember.memberId!!.value) { mutableListOf() }
                         .add(gatheringDetail.gatheringId.value)
                 }
         }
