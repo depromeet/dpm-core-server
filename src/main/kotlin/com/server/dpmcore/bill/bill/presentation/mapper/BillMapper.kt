@@ -95,6 +95,19 @@ class BillMapper(
         val gatheringMembers =
             gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetails.get(0).gatheringId)
 
+        val participants : MutableMap<Long, MutableList<Long>> = mutableMapOf<Long, MutableList<Long>>()
+
+        gatheringDetails.forEach { gatheringDetail ->
+            gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetail.gatheringId)
+                .filter { it.isJoined }
+                .forEach { gatheringMember ->
+                    participants.computeIfAbsent(gatheringMember.id!!.value) { mutableListOf() }
+                        .add(gatheringDetail.gatheringId.value)
+                }
+            }
+        val participantCount = participants.filter { it.value.isNotEmpty() }.count()
+
+
         val billTotalAmount =
             gatheringDetails.sumOf { it.amount }
 
@@ -112,6 +125,7 @@ class BillMapper(
             invitationConfirmedCount = gatheringMembers.count { it.isInvitationSubmitted },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
 //            inviteAuthorities = TODO(),
+            participantCount = participantCount,
             gatherings = gatheringDetails,
         )
     }
