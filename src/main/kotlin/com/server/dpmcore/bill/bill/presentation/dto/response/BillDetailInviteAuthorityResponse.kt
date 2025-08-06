@@ -9,13 +9,12 @@ data class BillDetailInviteAuthorityResponse(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val inviteAuthorityId: Long = 1L,
-    val authorityName: String = "17기 운영진",
-    val authorityName: String = "17기 디퍼",
     @field:Schema(
         description = "정산 초대 대상 그룹 이름",
         example = "DEEPER",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
+    val authorityName: String = "DEEPER",
     @field:Schema(
         description = "정산 초대 대상 그룹의 멤버 수",
         example = "64",

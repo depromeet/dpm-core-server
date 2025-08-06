@@ -51,13 +51,13 @@ interface BillQueryApi {
                                         "inviteAuthorities": [
                                           {
                                             "inviteAuthorityId": 1,
-                                            "authorityName": "17기 운영진",
-                                            "authorityMemberCount": 10
+                                            "authorityName": "DEEPER",
+                                            "authorityMemberCount": 64
                                           },
                                           {
                                             "inviteAuthorityId": 2,
-                                            "authorityName": "17기 디퍼",
-                                            "authorityMemberCount": 60
+                                            "authorityName": "ORGANIZER",
+                                            "authorityMemberCount": 12
                                           }
                                         ],
                                         "gatherings": [
@@ -135,13 +135,13 @@ interface BillQueryApi {
                                             "inviteAuthorities": [
                                               {
                                                 "invitedAuthorityId": 1,
-                                                "authorityName": "17기 운영진",
-                                                "authorityMemberCount": 10
+                                                "authorityName": "DEEPER",
+                                                "authorityMemberCount": 64
                                               },
                                               {
                                                 "invitedAuthorityId": 2,
-                                                "authorityName": "17기 디퍼",
-                                                "authorityMemberCount": 60
+                                                "authorityName": "ORGANIZER",
+                                                "authorityMemberCount": 12
                                               }
                                             ],
                                             "gatherings": [
