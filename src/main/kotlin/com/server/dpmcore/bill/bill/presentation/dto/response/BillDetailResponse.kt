@@ -20,6 +20,7 @@ data class BillDetailResponse(
     val invitationSubmittedCount: Int,
     /** 초대를 확인한 멤버 수 */
     val invitationCheckedMemberCount: Int,
-    val inviteAuthorities: List<BillDetailInviteAuthorityResponse> = BillDetailInviteAuthorityResponse.defaultInviteAuthorityResponse(),
+    val inviteAuthorities: List<BillDetailInviteAuthorityResponse> =
+        BillDetailInviteAuthorityResponse.defaultInviteAuthorityResponse(),
     val gatherings: List<BillDetailGatheringResponse>,
 )

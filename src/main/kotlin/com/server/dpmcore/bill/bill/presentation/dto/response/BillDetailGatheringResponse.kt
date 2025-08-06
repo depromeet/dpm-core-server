@@ -16,11 +16,13 @@ data class BillDetailGatheringResponse(
     val category: GatheringCategory,
     val joinMemberCount: Int,
     val amount: Int,
+    val splitAmount: Int,
 ) {
     companion object {
         fun from(
             gathering: Gathering,
             gatheringMembers: List<GatheringMember>,
+            splitAmount: Int,
         ): BillDetailGatheringResponse =
             BillDetailGatheringResponse(
                 gatheringId = gathering.id ?: throw GatheringException.GatheringIdRequiredException(),
@@ -35,6 +37,7 @@ data class BillDetailGatheringResponse(
                 category = gathering.category,
                 joinMemberCount = gathering.getGatheringJoinMemberCount(),
                 amount = gathering.gatheringReceipt?.amount ?: 0,
+                splitAmount = splitAmount,
             )
 
         private const val TIME_ZONE = "Asia/Seoul"

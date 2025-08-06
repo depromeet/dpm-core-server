@@ -68,7 +68,12 @@ class BillMapper(
                             gathering.id
                                 ?: throw GatheringException.GatheringNotFoundException(),
                         )
-                    BillDetailGatheringResponse.from(gathering, gatheringMembers)
+                    val splitAmount =
+                        gatheringReceipt.find {
+                            it.gatheringId == gathering.id
+                        }?.splitAmount ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
+
+                    BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
                 },
         )
     }
