@@ -9,6 +9,7 @@ import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
 import com.server.dpmcore.bill.exception.BillAccountException
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime

@@ -1,9 +1,26 @@
 package com.server.dpmcore.bill.bill.presentation.dto.response
 
+import io.swagger.v3.oas.annotations.media.Schema
+
 data class BillDetailInviteAuthorityResponse(
+    @field:Schema(
+        description = "정산 초대 대상 그룹 일련번호",
+        example = "1",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
     val inviteAuthorityId: Long = 1L,
     val authorityName: String = "17기 운영진",
     val authorityName: String = "17기 디퍼",
+    @field:Schema(
+        description = "정산 초대 대상 그룹 이름",
+        example = "DEEPER",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
+    @field:Schema(
+        description = "정산 초대 대상 그룹의 멤버 수",
+        example = "64",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
     val authorityMemberCount: Int = 1,
 ) {
     companion object {
@@ -11,12 +28,12 @@ data class BillDetailInviteAuthorityResponse(
             listOf(
                 BillDetailInviteAuthorityResponse(
                     inviteAuthorityId = 1L,
-                    authorityName = "17기 디퍼",
+                    authorityName = "DEEPER",
                     authorityMemberCount = 64,
                 ),
                 BillDetailInviteAuthorityResponse(
                     inviteAuthorityId = 2L,
-                    authorityName = "17기 운영진",
+                    authorityName = "ORGANIZER",
                     authorityMemberCount = 12,
                 ),
             )
