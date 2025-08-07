@@ -1,13 +1,16 @@
 package com.server.dpmcore.common.exception
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import java.util.stream.Collectors
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -54,4 +57,27 @@ class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     protected fun handleAuthorizationDeniedException(exception: AuthorizationDeniedException): CustomResponse<Void> =
         CustomResponse.error(GlobalExceptionCode.ACCESS_DENIED)
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleHttpMessageNotReadableException(exception: HttpMessageNotReadableException): CustomResponse<Void> {
+        logger.error("HttpMessageNotReadableException: {}", exception)
+
+        val exceptionCode: ExceptionCode =
+            when (val cause = exception.cause) {
+                is MismatchedInputException -> {
+                    val fieldName: String =
+                        cause.path
+                            .stream()
+                            .map { it.fieldName }
+                            .collect(Collectors.joining("."))
+
+                    MismatchedInputExceptionCode(fieldName = fieldName)
+                }
+
+                else -> JsonParseException()
+            }
+
+        return CustomResponse.error(exceptionCode)
+    }
 }
