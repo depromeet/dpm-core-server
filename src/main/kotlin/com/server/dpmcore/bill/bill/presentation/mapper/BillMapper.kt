@@ -58,7 +58,7 @@ class BillMapper(
             billAccountId = bill.billAccount.id?.value ?: 0L,
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
             invitedMemberCount = gatheringMembers.count(),
-            invitationConfirmedCount = gatheringMembers.count { it.isInvitationSubmitted },
+            invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
             gatherings =
                 gatherings.map { gathering ->
@@ -95,6 +95,18 @@ class BillMapper(
         val gatheringMembers =
             gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetails.get(0).gatheringId)
 
+        val participants: MutableMap<Long, MutableList<Long>> = mutableMapOf<Long, MutableList<Long>>()
+
+        gatheringDetails.forEach { gatheringDetail ->
+            gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetail.gatheringId)
+                .filter { it.isJoined }
+                .forEach { gatheringMember ->
+                    participants.computeIfAbsent(gatheringMember.memberId!!.value) { mutableListOf() }
+                        .add(gatheringDetail.gatheringId.value)
+                }
+        }
+        val participantCount = participants.filter { it.value.isNotEmpty() }.count()
+
         val billTotalAmount =
             gatheringDetails.sumOf { it.amount }
 
@@ -109,9 +121,10 @@ class BillMapper(
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
             invitedMemberCount = gatheringMembers.count(),
-            invitationConfirmedCount = gatheringMembers.count { it.isInvitationSubmitted },
+            invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
 //            inviteAuthorities = TODO(),
+            participantCount = participantCount,
             gatherings = gatheringDetails,
         )
     }
