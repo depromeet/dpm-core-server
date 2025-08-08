@@ -46,7 +46,8 @@ data class BillListGatheringDetailResponse(
     @field:Schema(
         description = "회식 영수증(지금은 사용하지 않습니다.)",
         example = "null",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
     )
     val receipt: BillListGatheringReceiptDetailResponse? = null,
     @field:Schema(

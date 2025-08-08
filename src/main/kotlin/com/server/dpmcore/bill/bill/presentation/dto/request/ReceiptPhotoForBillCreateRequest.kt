@@ -12,7 +12,8 @@ data class ReceiptPhotoForBillCreateRequest(
     @field:Schema(
         description = "영수증 사진 URL",
         example = "https://example.com/photo.jpg",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
     )
     val photoUrl: String?,
 )
