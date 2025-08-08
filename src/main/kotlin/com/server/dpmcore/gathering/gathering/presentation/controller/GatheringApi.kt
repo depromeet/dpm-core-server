@@ -33,17 +33,17 @@ interface GatheringApi {
                               "members": [
                               {
                                 "name": "이한음",
-                                "authority": "ORGANIZER",
+                                "authority": "17_ORGANIZER",
                                 "isJoined": true
                               },
                               {
                                 "name": "신민철",
-                                "authority": "ORGANIZER",
+                                "authority": "17_ORGANIZER",
                                 "isJoined": false
                               },
                               {
                                 "name": "정준원",
-                                "authority": "DEEPER",
+                                "authority": "17_DEEPER",
                                 "part": "SERVER",
                                 "isJoined": true
                               }
