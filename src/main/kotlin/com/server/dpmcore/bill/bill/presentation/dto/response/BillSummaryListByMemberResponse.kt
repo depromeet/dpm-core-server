@@ -14,7 +14,7 @@ data class BillSummaryListByMemberResponse(
         val name: String,
         @field:Schema(
             description = "권한 이름",
-            example = "ORGANIZER",
+            example = "17_ORGANIZER",
             requiredMode = Schema.RequiredMode.REQUIRED,
         )
         val authority: String,
