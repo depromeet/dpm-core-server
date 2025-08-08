@@ -51,13 +51,13 @@ interface BillQueryApi {
                                         "inviteAuthorities": [
                                           {
                                             "inviteAuthorityId": 1,
-                                            "authorityName": "17기 운영진",
-                                            "authorityMemberCount": 10
+                                            "authorityName": "17_DEEPER",
+                                            "authorityMemberCount": 64
                                           },
                                           {
                                             "inviteAuthorityId": 2,
-                                            "authorityName": "17기 디퍼",
-                                            "authorityMemberCount": 60
+                                            "authorityName": "17_ORGANIZER",
+                                            "authorityMemberCount": 12
                                           }
                                         ],
                                         "gatherings": [
@@ -135,13 +135,13 @@ interface BillQueryApi {
                                             "inviteAuthorities": [
                                               {
                                                 "invitedAuthorityId": 1,
-                                                "authorityName": "17기 운영진",
-                                                "authorityMemberCount": 10
+                                                "authorityName": "17_DEEPER",
+                                                "authorityMemberCount": 64
                                               },
                                               {
                                                 "invitedAuthorityId": 2,
-                                                "authorityName": "17기 디퍼",
-                                                "authorityMemberCount": 60
+                                                "authorityName": "17_ORGANIZER",
+                                                "authorityMemberCount": 12
                                               }
                                             ],
                                             "gatherings": [
@@ -210,17 +210,17 @@ interface BillQueryApi {
                               "members": [
                               {
                                 "name": "이한음",
-                                "authority": "ORGANIZER",
+                                "authority": "17_ORGANIZER",
                                 "splitAmount": 25000
                               },
                               {
                                 "name": "신민철",
-                                "authority": "ORGANIZER",
+                                "authority": "17_ORGANIZER",
                                 "splitAmount": 18000
                               },
                               {
                                 "name": "정준원",
-                                "authority": "DEEPER",
+                                "authority": "17_DEEPER",
                                 "splitAmount": 12000
                               }
                             ]
