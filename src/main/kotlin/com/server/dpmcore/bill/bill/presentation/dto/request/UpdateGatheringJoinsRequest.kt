@@ -10,13 +10,13 @@ data class UpdateGatheringJoinsRequest(
         @field:Schema(
             description = "참여하려는 회식 일련번호",
             example = "1",
-            required = true,
+            requiredMode = Schema.RequiredMode.REQUIRED,
         )
         val gatheringId: GatheringId,
         @field:Schema(
             description = "참여 여부",
             example = "true",
-            required = true,
+            requiredMode = Schema.RequiredMode.REQUIRED,
         )
         val isJoined: Boolean,
     )
