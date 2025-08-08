@@ -67,7 +67,14 @@ data class BillListDetailResponse(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val invitationCheckedMemberCount: Int,
+    @field:Schema(
+        description = "정산에 참여하는 멤버 수",
+        example = "32",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
     val participantCount: Int,
-    val inviteAuthorities: List<BillListInviteAuthorityDetailResponse>? = BillListInviteAuthorityDetailResponse.defaultInviteAuthorityResponse(),
+    val inviteAuthorities: List<BillListInviteAuthorityDetailResponse>? =
+        BillListInviteAuthorityDetailResponse
+            .defaultInviteAuthorityResponse(),
     val gatherings: List<BillListGatheringDetailResponse>,
 )
