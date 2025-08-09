@@ -9,7 +9,6 @@ import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
 import com.server.dpmcore.bill.exception.BillAccountException
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
-import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
@@ -70,9 +69,10 @@ class BillMapper(
                                 ?: throw GatheringException.GatheringNotFoundException(),
                         )
                     val splitAmount =
-                        gatheringReceipt.find {
-                            it.gatheringId == gathering.id
-                        }?.splitAmount ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
+                        gatheringReceipt
+                            .find {
+                                it.gatheringId == gathering.id
+                            }?.splitAmount ?: 0
 
                     BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
                 },
@@ -104,10 +104,12 @@ class BillMapper(
         val participants: MutableMap<Long, MutableList<Long>> = mutableMapOf<Long, MutableList<Long>>()
 
         gatheringDetails.forEach { gatheringDetail ->
-            gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetail.gatheringId)
+            gatheringQueryUseCase
+                .findGatheringMemberByGatheringId(gatheringDetail.gatheringId)
                 .filter { it.isJoined }
                 .forEach { gatheringMember ->
-                    participants.computeIfAbsent(gatheringMember.memberId!!.value) { mutableListOf() }
+                    participants
+                        .computeIfAbsent(gatheringMember.memberId!!.value) { mutableListOf() }
                         .add(gatheringDetail.gatheringId.value)
                 }
         }
