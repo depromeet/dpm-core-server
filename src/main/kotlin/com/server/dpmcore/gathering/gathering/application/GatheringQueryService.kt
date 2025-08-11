@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gathering.application
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.gathering.gathering.application.query.model.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
@@ -58,6 +59,15 @@ class GatheringQueryService(
             )
         }
     }
+
+    override fun getSubmittedParticipantEachGathering(
+        billId: BillId,
+        memberId: MemberId,
+    ): List<SubmittedParticipantGathering> =
+        gatheringPersistencePort.getSubmittedParticipantEachGathering(
+            billId,
+            memberId,
+        )
 
     fun findById(gatheringId: Long) =
         gatheringPersistencePort
