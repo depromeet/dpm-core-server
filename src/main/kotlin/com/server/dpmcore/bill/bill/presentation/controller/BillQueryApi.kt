@@ -4,6 +4,7 @@ import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillSummaryListByMemberResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedParticipantEachGatheringResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import io.swagger.v3.oas.annotations.Operation
@@ -239,4 +240,47 @@ interface BillQueryApi {
     fun getMemberBillSummaries(
         @Positive billId: BillId,
     ): CustomResponse<BillSummaryListByMemberResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "이전에 제출한 정산 참여 여부 조회 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "이전에 제출한 정산 참여 여부 성공 응답",
+                        value = """
+                        {
+                          "status": "OK",
+                          "message": "요청에 성공했습니다",
+                          "code": "GLOBAL-200-01",
+                          "data": {
+                            "gatheringParticipationList": [
+                              {
+                                "gatheringId": 1,
+                                "isJoined": true
+                              },
+                              {
+                                "gatheringId": 2,
+                                "isJoined": true
+                              }
+                            ]
+                          }
+                        }
+                    """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "이전에 제출한 정산 참여 여부 조회 API",
+        description = "해당 멤버가 이전에 제출했던 회식 별 참석 여부를 조회합니다.",
+    )
+    fun getSubmittedParticipantEachGathering(
+        @Positive billId: BillId,
+        memberId: MemberId,
+    ): CustomResponse<SubmittedParticipantEachGatheringResponse>
 }
