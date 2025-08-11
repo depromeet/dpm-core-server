@@ -101,7 +101,9 @@ class GatheringRepository(
                         GatheringId(
                             record[GATHERINGS.GATHERING_ID] ?: throw GatheringException.GatheringNotFoundException(),
                         ),
-                    isJoined = record[GATHERING_MEMBERS.IS_JOINED] ?: throw GatheringMemberException.GatheringMemberNotFoundException(),
+                    isJoined =
+                        record[GATHERING_MEMBERS.IS_JOINED]
+                            ?: throw GatheringMemberException.GatheringMemberNotFoundException(),
                 )
             }
     }
