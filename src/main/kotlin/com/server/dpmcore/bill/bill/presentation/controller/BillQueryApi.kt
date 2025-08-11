@@ -46,7 +46,7 @@ interface BillQueryApi {
                                         "createdAt": "2024-01-01T19:00:00",
                                         "billAccountId": 1,
                                         "invitedMemberCount": 2,
-                                        "invitationConfirmedCount": 0,
+                                        "invitationSubmittedCount": 0,
                                         "invitationCheckedMemberCount": 1,
                                         "inviteAuthorities": [
                                           {
@@ -130,7 +130,7 @@ interface BillQueryApi {
                                             "createdAt": "2024-01-01T19:00:00",
                                             "billAccountId": 1,
                                             "invitedMemberCount": 2,
-                                            "invitationConfirmedCount": 0,
+                                            "invitationSubmittedCount": 0,
                                             "invitationCheckedMemberCount": 1,
                                             "inviteAuthorities": [
                                               {
