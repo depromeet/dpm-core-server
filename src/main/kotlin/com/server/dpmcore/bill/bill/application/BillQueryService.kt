@@ -59,7 +59,7 @@ class BillQueryService(
             gatheringQueryUseCase.getSubmittedParticipantEachGathering(billId, memberId)
         val responses =
             queryModels.map { model ->
-                SubmittedGatheringParticipationResponse.from(
+                SubmittedGatheringParticipationResponse.of(
                     gatheringId = model.gatheringId,
                     isJoined = model.isJoined,
                 )

@@ -7,7 +7,7 @@ data class SubmittedGatheringParticipationResponse(
     val isJoined: Boolean,
 ) {
     companion object {
-        fun from(
+        fun of(
             gatheringId: GatheringId,
             isJoined: Boolean,
         ): SubmittedGatheringParticipationResponse =
