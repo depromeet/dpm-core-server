@@ -2,7 +2,7 @@ package com.server.dpmcore.bill.bill.presentation.dto.response
 
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 
-class SubmittedGatheringParticipationResponse(
+data class SubmittedGatheringParticipationResponse(
     val gatheringId: GatheringId,
     val isJoined: Boolean,
 ) {
