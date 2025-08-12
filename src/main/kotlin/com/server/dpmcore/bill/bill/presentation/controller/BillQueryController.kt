@@ -50,7 +50,7 @@ class BillQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_DEEPER')")
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
     @GetMapping("/{billId}/members/submitted-participant")
     override fun getSubmittedParticipantEachGathering(
         @Positive @PathVariable billId: BillId,
