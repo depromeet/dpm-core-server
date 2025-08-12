@@ -8,9 +8,9 @@ import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.exception.GatheringMemberException
-import com.server.dpmcore.gathering.gathering.application.query.model.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -82,20 +82,19 @@ class GatheringRepository(
     override fun getSubmittedParticipantEachGathering(
         billId: BillId,
         memberId: MemberId,
-    ): List<SubmittedParticipantGathering> {
-        return dsl
+    ): List<SubmittedParticipantGathering> =
+        dsl
             .select(
                 GATHERINGS.GATHERING_ID,
                 GATHERING_MEMBERS.IS_JOINED,
-            )
-            .from(GATHERINGS)
+            ).from(GATHERINGS)
             .join(GATHERING_MEMBERS)
             .on(GATHERINGS.GATHERING_ID.eq(GATHERING_MEMBERS.GATHERING_ID))
             .where(
-                GATHERINGS.BILL_ID.eq(billId.value)
+                GATHERINGS.BILL_ID
+                    .eq(billId.value)
                     .and(GATHERING_MEMBERS.MEMBER_ID.eq(memberId.value)),
-            )
-            .fetch { record ->
+            ).fetch { record ->
                 SubmittedParticipantGathering(
                     gatheringId =
                         GatheringId(
@@ -106,5 +105,4 @@ class GatheringRepository(
                             ?: throw GatheringMemberException.GatheringMemberNotFoundException(),
                 )
             }
-    }
 }

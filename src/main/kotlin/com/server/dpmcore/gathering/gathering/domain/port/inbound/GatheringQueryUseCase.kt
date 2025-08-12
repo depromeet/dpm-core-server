@@ -1,9 +1,9 @@
 package com.server.dpmcore.gathering.gathering.domain.port.inbound
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
-import com.server.dpmcore.gathering.gathering.application.query.model.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.query.GatheringMemberReceiptQueryModel
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt

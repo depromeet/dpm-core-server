@@ -1,4 +1,4 @@
-package com.server.dpmcore.gathering.gathering.application.query.model
+package com.server.dpmcore.gathering.gathering.domain.model.query
 
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 
