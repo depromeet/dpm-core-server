@@ -31,7 +31,7 @@ interface AuthorityApi {
                                     "authorities": [
                                         {
                                             "id": 1,
-                                            "name": "ORGANIZER"
+                                            "name": "17_ORGANIZER"
                                         },
                                         {
                                             "id": 2,
