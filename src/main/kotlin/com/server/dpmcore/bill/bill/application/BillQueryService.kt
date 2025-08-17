@@ -7,6 +7,8 @@ import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillSummaryListByMemberResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedGatheringParticipationResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedParticipantEachGatheringResponse
 import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
@@ -47,5 +49,21 @@ class BillQueryService(
             }
 
         return BillSummaryListByMemberResponse(responses)
+    }
+
+    fun getSubmittedParticipantEachGathering(
+        billId: BillId,
+        memberId: MemberId,
+    ): SubmittedParticipantEachGatheringResponse {
+        val queryModels =
+            gatheringQueryUseCase.getSubmittedParticipantEachGathering(billId, memberId)
+        val responses =
+            queryModels.map { model ->
+                SubmittedGatheringParticipationResponse.of(
+                    gatheringId = model.gatheringId,
+                    isJoined = model.isJoined,
+                )
+            }
+        return SubmittedParticipantEachGatheringResponse(responses)
     }
 }

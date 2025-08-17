@@ -5,6 +5,7 @@ import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillSummaryListByMemberResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedParticipantEachGatheringResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.security.annotation.CurrentMemberId
@@ -46,6 +47,16 @@ class BillQueryController(
         @Positive @PathVariable billId: BillId,
     ): CustomResponse<BillSummaryListByMemberResponse> {
         val response = billQueryService.getMemberBillSummaries(billId)
+        return CustomResponse.ok(response)
+    }
+
+    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @GetMapping("/{billId}/members/submitted-participant")
+    override fun getSubmittedParticipantEachGathering(
+        @Positive @PathVariable billId: BillId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<SubmittedParticipantEachGatheringResponse> {
+        val response = billQueryService.getSubmittedParticipantEachGathering(billId, memberId)
         return CustomResponse.ok(response)
     }
 }

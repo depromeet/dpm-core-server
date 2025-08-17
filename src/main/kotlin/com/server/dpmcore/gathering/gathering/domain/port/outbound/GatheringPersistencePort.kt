@@ -4,6 +4,8 @@ import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
+import com.server.dpmcore.member.member.domain.model.MemberId
 
 interface GatheringPersistencePort {
     fun findGatheringById(id: Long): Gathering
@@ -25,4 +27,9 @@ interface GatheringPersistencePort {
     fun findAllByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering>
 
     fun findAllGatheringIdsByBillId(billId: BillId): List<GatheringId>
+
+    fun getSubmittedParticipantEachGathering(
+        billId: BillId,
+        memberId: MemberId,
+    ): List<SubmittedParticipantGathering>
 }
