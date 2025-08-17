@@ -6,4 +6,5 @@ enum class AttendanceStatus {
     LATE,
     ABSENT,
     EXCUSED_ABSENT,
+    EARLY_LEAVE,
 }
