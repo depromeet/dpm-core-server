@@ -3,9 +3,11 @@ package com.server.dpmcore.gathering.gathering.domain.port.inbound
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.query.GatheringMemberReceiptQueryModel
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
+import com.server.dpmcore.member.member.domain.model.MemberId
 
 interface GatheringQueryUseCase {
     fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering>
@@ -19,4 +21,9 @@ interface GatheringQueryUseCase {
     fun findGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember>
 
     fun getGatheringMemberReceiptByBillId(billId: BillId): List<GatheringMemberReceiptQueryModel>
+
+    fun getSubmittedParticipantEachGathering(
+        billId: BillId,
+        memberId: MemberId,
+    ): List<SubmittedParticipantGathering>
 }
