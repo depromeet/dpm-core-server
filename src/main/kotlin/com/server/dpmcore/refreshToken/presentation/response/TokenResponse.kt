@@ -10,7 +10,11 @@ data class TokenResponse(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val token: String,
-    @field:Schema(description = "토큰 만료 시간(초)", example = "7200", requiredMode = Schema.RequiredMode.REQUIRED)
+    @field:Schema(
+        description = "토큰 만료 시간(초)",
+        example = "7200",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
     val expirationTime: Long,
 ) {
     companion object {

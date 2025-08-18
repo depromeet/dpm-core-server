@@ -12,6 +12,12 @@ import org.springframework.stereotype.Component
 class CustomAuthenticationFailureHandler(
     private val securityProperties: SecurityProperties,
 ) : AuthenticationFailureHandler {
+    /**
+     * 소셜 로그인 인증 실패 시 호출되는 메서드로, 사용자를 오류 페이지로 리다이렉트함.
+     *
+     * @author LeeHanEum
+     * @since 2025.07.12
+     */
     override fun onAuthenticationFailure(
         request: HttpServletRequest?,
         response: HttpServletResponse?,

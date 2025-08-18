@@ -25,16 +25,40 @@ class MemberQueryService(
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
 ) : MemberQueryByAuthorityUseCase,
     MemberQueryUseCase {
+    /**
+     * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
+     *
+     * @throws MemberNotFoundException
+     *
+     * @author LeeHanEum
+     * @since 2025.07.17
+     */
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.of(
             getMemberById(memberId),
             memberAuthorityService.getAuthorityNamesByMemberId(memberId),
         )
 
+    /**
+     * 멤버의 식별자를 기반으로 멤버 객체를 조회함.
+     *
+     * @throws MemberNotFoundException
+     *
+     * @author LeeHanEum
+     * @since 2025.07.17
+     */
     fun getMemberById(memberId: MemberId) =
         memberPersistencePort.findById(memberId.value)
             ?: throw MemberNotFoundException()
 
+    /**
+     * 멤버를 탈퇴 처리(Soft Delete)하고, 클라이언트의 Refresh Token을 무효화 및 삭제함.
+     *
+     * @throws MemberNotFoundException
+     *
+     * @author LeeHanEum
+     * @since 2025.07.17
+     */
     @Transactional
     fun withdraw(
         memberId: MemberId,
@@ -48,18 +72,32 @@ class MemberQueryService(
         memberPersistencePort.delete(memberId.value)
     }
 
-    override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
-        memberPersistencePort
-            .findAllMemberIdByAuthorityIds(authorityIds)
-
+    /**
+     * 기수에 속한 멤버들의 식별자를 목록 조회함.
+     *
+     * @author its-sky
+     * @since 2025.07.23
+     */
     fun getMembersByCohort(value: String): List<MemberId> =
         memberPersistencePort
             .findAllByCohort(value)
 
-    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel =
-        memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
-
+    /**
+     * 멤버의 식별자를 기반으로 해당 멤버의 팀 번호를 조회함.
+     *
+     * @throws MemberTeamNotFoundException
+     *
+     * @author its-sky
+     * @since 2025.07.27
+     */
     fun getMemberTeamNumber(memberId: MemberId): Int =
         memberPersistencePort.findMemberTeamByMemberId(memberId)
             ?: throw MemberTeamNotFoundException()
+
+    override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
+        memberPersistencePort
+            .findAllMemberIdByAuthorityIds(authorityIds)
+
+    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel =
+        memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
 }
