@@ -13,7 +13,7 @@ class MemberAuthorityService(
     private val authorityQueryUseCase: AuthorityQueryUseCase,
 ) {
     /**
-     * 멤버 ID로 해당 멤버가 소유한 권한 이름 목록을 조회함.
+     * 멤버 식별자로 해당 멤버가 소유한 권한 이름 목록을 조회함.
      *
      * @author LeeHanEum
      * @since 2025.07.24
@@ -23,7 +23,7 @@ class MemberAuthorityService(
             .findAuthorityNamesByMemberId(memberId.value)
 
     /**
-     * 권한 타입으로 권한 ID를 조회하고, 해당 권한 ID로 멤버 권한을 추가함.
+     * 권한 타입으로 권한 식별자를 조회하고, 해당 권한 식별자로 멤버 권한을 추가함.
      *
      * @author LeeHanEum
      * @since 2025.08.02

@@ -24,7 +24,7 @@ data class AuthorityListResponse(
 ) {
     data class AuthorityResponse(
         @field:Schema(
-            description = "권한 식별자 ID",
+            description = "권한 식별자",
             example = "1",
             requiredMode = Schema.RequiredMode.REQUIRED,
         )
