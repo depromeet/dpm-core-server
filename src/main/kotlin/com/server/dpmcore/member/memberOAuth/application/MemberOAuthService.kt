@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service
 class MemberOAuthService(
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
 ) {
+    /**
+     * 멤버 가입 시, OAuth 클라이언트로부터 전달받은 제공자 정보를 저장함.
+     *
+     * @author LeeHanEum
+     * @since 2025.07.24
+     */
     fun addMemberOAuthProvider(
         member: Member,
         authAttribute: OAuthAttributes,

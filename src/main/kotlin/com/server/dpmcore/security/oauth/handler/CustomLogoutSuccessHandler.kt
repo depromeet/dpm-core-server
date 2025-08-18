@@ -28,6 +28,13 @@ class CustomLogoutSuccessHandler(
         private const val CHARACTER_ENCODING = "UTF-8"
     }
 
+    /**
+     * 로그아웃 성공 시 호출되는 메서드로, 클라이언트의 Refresh Token 쿠키를 무효화하고,
+     * 서버에 저장된 Refresh Token을 삭제한 후, 성공 응답을 반환함.
+     *
+     * @author LeeHanEum
+     * @since 2025.07.17
+     */
     override fun onLogoutSuccess(
         request: HttpServletRequest,
         response: HttpServletResponse,

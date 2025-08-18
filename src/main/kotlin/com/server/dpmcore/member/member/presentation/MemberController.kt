@@ -7,6 +7,7 @@ import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.presentation.request.InitMemberDataRequest
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import jakarta.servlet.http.HttpServletResponse
+import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -39,7 +40,7 @@ class MemberController(
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PatchMapping("/init")
     override fun initMemberDataAndApprove(
-        @RequestBody request: InitMemberDataRequest,
+        @Valid @RequestBody request: InitMemberDataRequest,
     ): CustomResponse<Void> {
         memberCommandService.initMemberDataAndApprove(request)
         return CustomResponse.noContent()

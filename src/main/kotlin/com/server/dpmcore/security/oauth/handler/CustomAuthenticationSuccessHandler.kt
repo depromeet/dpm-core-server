@@ -18,6 +18,13 @@ class CustomAuthenticationSuccessHandler(
     private val tokenInjector: JwtTokenInjector,
     private val handleMemberLoginUseCase: HandleMemberLoginUseCase,
 ) : AuthenticationSuccessHandler {
+    /**
+     * 소셜 로그인 인증 성공 시 호출되며, 브라우저 쿠키에서 요청 도메인을 확인하고 인증 정보를 기반으로 멤버 로그인 처리를 수행한 후,
+     * 리프레시 토큰을 응답 쿠키에 추가하고 사용자를 지정된 리다이렉트 URL로 이동시킴.
+     *
+     * @author LeeHanEum
+     * @since 2025.08.02
+     */
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,
         response: HttpServletResponse,

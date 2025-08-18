@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service
 class MemberTeamService(
     private val memberTeamPersistencePort: MemberTeamPersistencePort,
 ) {
+    /**
+     * 팀에 멤버를 추가함.
+     *
+     * @author LeeHanEum
+     * @since 2025.08.02
+     */
     fun addMemberToTeam(
         memberId: MemberId,
         teamId: TeamId,

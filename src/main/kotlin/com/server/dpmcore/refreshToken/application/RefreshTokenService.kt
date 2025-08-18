@@ -19,6 +19,17 @@ class RefreshTokenService(
     private val tokenInjector: JwtTokenInjector,
     private val tokenProvider: JwtTokenProvider,
 ) {
+    /**
+     * HTTP Header에서 Refresh Token을 추출하여, 해당 토큰을 기반으로 Access Token을 재발급하고,
+     * RTR(Refresh Token Rotation) 전략에 따라 Refresh Token도 재발급함.
+     *
+     * @throws TokenInvalidException
+     * @throws TokenNotFoundException
+     *
+     * @author LeeHanEum
+     * @author its-sky
+     * @since 2025.07.17
+     */
     @Transactional
     fun reissueBasedOnRefreshToken(
         request: HttpServletRequest,
