@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.port.outbound
 
+import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -29,4 +30,9 @@ interface GatheringMemberPersistencePort {
     ): List<GatheringMemberIsJoinQueryModel>
 
     fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember)
+
+    fun findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(
+        gatheringId: GatheringId,
+        memberId: MemberId,
+    ): List<BillMemberIsInvitationSubmittedQueryModel>
 }

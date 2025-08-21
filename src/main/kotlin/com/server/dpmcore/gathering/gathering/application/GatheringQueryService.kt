@@ -1,6 +1,8 @@
 package com.server.dpmcore.gathering.gathering.application
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
+import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
@@ -96,4 +98,12 @@ class GatheringQueryService(
         gatheringIds.sumOf { gatheringId ->
             gatheringReceiptQueryService.getSplitAmountByGatheringId(gatheringId)
         }
+
+    override fun getBillMemberSubmittedList(billId: BillId): List<BillMemberIsInvitationSubmittedQueryModel> {
+        val gatheringIds = getAllGatheringIdsByBillId(billId)
+        return gatheringMemberQueryService.getQueryGatheringMemberIsInvitationSubmitted(
+            gatheringIds.firstOrNull()
+                ?: throw GatheringException.GatheringNotFoundException(),
+        )
+    }
 }
