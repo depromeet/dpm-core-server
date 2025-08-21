@@ -19,7 +19,7 @@ class GatheringController(
     private val gatheringQueryService: GatheringQueryService,
 ) : GatheringApi {
     @PreAuthorize("!hasRole('ROLE_GUEST')")
-    @GetMapping("/{gatheringId}/members")
+    @GetMapping("/{gatheringId}/participant-members")
     override fun getGatheringMemberJoinList(
         @Positive @PathVariable gatheringId: GatheringId,
     ): CustomResponse<GatheringMemberJoinListResponse> {

@@ -72,11 +72,12 @@ class GatheringMemberRepository(
     override fun findGatheringMemberWithIsJoinByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): GatheringMemberIsJoinQueryModel {
-        val query =
+    ): List<GatheringMemberIsJoinQueryModel> {
+        val queryResults =
             dsl
                 .select(
                     MEMBERS.NAME,
+                    TEAMS.NUMBER,
                     MEMBERS.PART,
                     AUTHORITIES.NAME,
                     GATHERING_MEMBERS.IS_JOINED,
@@ -87,27 +88,34 @@ class GatheringMemberRepository(
                 .on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
                 .join(AUTHORITIES)
                 .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+                .leftJoin(MEMBER_TEAMS)
+                .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                .leftJoin(TEAMS)
+                .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
                 .where(
                     GATHERING_MEMBERS.GATHERING_ID
                         .eq(gatheringId.value)
                         .and(GATHERING_MEMBERS.MEMBER_ID.eq(memberId.value)),
-                ).fetchOne() ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+                ).fetch()
+        return queryResults.map { query ->
 
-        val memberName = query.get(MEMBERS.NAME)
-        val memberPart = query.get(MEMBERS.PART)
-        val authorityName = query.get(AUTHORITIES.NAME)
-        val isJoined = query.get(GATHERING_MEMBERS.IS_JOINED)
+            val memberName = query.get(MEMBERS.NAME)
+            val teamNumber = query.get(TEAMS.NUMBER)
+            val memberPart = query.get(MEMBERS.PART)
+            val authorityName = query.get(AUTHORITIES.NAME)
+            val isJoined = query.get(GATHERING_MEMBERS.IS_JOINED)
 
-        if (memberName == null || authorityName == null || isJoined == null) {
-            throw GatheringMemberException.GatheringMemberNotFoundException()
+            if (memberName == null || authorityName == null || isJoined == null) {
+                throw GatheringMemberException.GatheringMemberNotFoundException()
+            }
+            GatheringMemberIsJoinQueryModel(
+                name = memberName,
+                teamNumber = teamNumber ?: 0,
+                part = memberPart,
+                authority = authorityName,
+                isJoined = isJoined,
+            )
         }
-
-        return GatheringMemberIsJoinQueryModel(
-            name = memberName,
-            part = memberPart,
-            authority = authorityName,
-            isJoined = isJoined,
-        )
     }
 
     override fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
