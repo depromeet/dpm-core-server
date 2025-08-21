@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
+import com.server.dpmcore.bill.bill.presentation.dto.response.BillMemberSubmittedListResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillSummaryListByMemberResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedParticipantEachGatheringResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -283,4 +284,53 @@ interface BillQueryApi {
         @Positive billId: BillId,
         memberId: MemberId,
     ): CustomResponse<SubmittedParticipantEachGatheringResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "정산 참여 제출 여부 조회 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "정산 참여 제출 여부 조회 성공 응답",
+                        value = """
+                        {
+                          "status": "OK",
+                          "message": "요청에 성공했습니다",
+                          "code": "GLOBAL-200-01",
+                          "data": {
+                            "members": [
+                              {
+                                "name": "정준원",
+                                "teamNumber": 1,
+                                "authority": "ORGANIZER",
+                                "part": "SERVER",
+                                "isInvitationSubmitted": false
+                              },
+                              {
+                                "name": "신민철",
+                                "teamNumber": 1,
+                                "authority": "DEEPER",
+                                "part": "SERVER",
+                                "isInvitationSubmitted": false
+                              }
+                            ]
+                          }
+                        }
+                    """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "정산 참여 제출 여부 조회 API",
+        description = "초대된 정산에 참여 여부를 제출한 멤버들의 목록을 조회합니다.",
+    )
+    fun getBillMemberSubmittedList(
+        @Positive billId: BillId,
+        memberId: MemberId,
+    ): CustomResponse<BillMemberSubmittedListResponse>
 }

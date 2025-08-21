@@ -232,6 +232,7 @@ CREATE TABLE `gathering_members`
     `deleted_at`          datetime(6) DEFAULT NULL,
     `is_checked`          bit(1) NOT NULL,
     `is_joined`           bit(1) NOT NULL,
+    `is_invitation_submitted` bit(1) NOT NULL,
     `member_id`           bigint NOT NULL,
     `updated_at`          datetime(6) NOT NULL,
     `gathering_id`        bigint NOT NULL,

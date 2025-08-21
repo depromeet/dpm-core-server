@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.authority.domain.model.AuthorityType
+import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
 import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -48,6 +49,27 @@ class GatheringMemberQueryService(
                     )
             }
             queryResults.first()
+        }
+    }
+
+    fun getQueryGatheringMemberIsInvitationSubmitted(
+        gatheringId: GatheringId,
+    ): List<BillMemberIsInvitationSubmittedQueryModel> {
+        val memberIds = getMemberIdsByGatheringId(gatheringId)
+        return memberIds.map { memberId ->
+            var queryResults =
+                gatheringMemberPersistencePort
+                    .findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(gatheringId, memberId)
+            // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
+            if (queryResults.size > 1) {
+                queryResults =
+                    queryResults.sortedWith(
+                        compareBy {
+                            if (it.authority.equals(AuthorityType.ORGANIZER.name)) 0 else 1
+                        },
+                    )
+            }
+            queryResults.firstOrNull() ?: throw GatheringMemberException.GatheringMemberNotFoundException()
         }
     }
 }

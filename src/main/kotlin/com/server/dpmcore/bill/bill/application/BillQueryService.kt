@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.application
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
+import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
 import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
@@ -66,4 +67,7 @@ class BillQueryService(
             }
         return SubmittedParticipantEachGatheringResponse(responses)
     }
+
+    fun getBillMemberSubmittedList(billId: BillId): List<BillMemberIsInvitationSubmittedQueryModel> =
+        gatheringQueryUseCase.getBillMemberSubmittedList(billId)
 }
