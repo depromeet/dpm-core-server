@@ -3,6 +3,7 @@ package com.server.dpmcore.gathering.gatheringMember.infrastructure.repository
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.linecorp.kotlinjdsl.spring.data.updateQuery
+import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
@@ -17,6 +18,8 @@ import org.jooq.generated.tables.references.AUTHORITIES
 import org.jooq.generated.tables.references.GATHERING_MEMBERS
 import org.jooq.generated.tables.references.MEMBERS
 import org.jooq.generated.tables.references.MEMBER_AUTHORITIES
+import org.jooq.generated.tables.references.MEMBER_TEAMS
+import org.jooq.generated.tables.references.TEAMS
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -118,5 +121,55 @@ class GatheringMemberRepository(
                 set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
                 set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
             }.executeUpdate()
+    }
+
+    override fun findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(
+        gatheringId: GatheringId,
+        memberId: MemberId,
+    ): List<BillMemberIsInvitationSubmittedQueryModel> {
+        val queryResults =
+            dsl
+                .select(
+                    MEMBERS.NAME,
+                    TEAMS.NUMBER,
+                    MEMBERS.PART,
+                    AUTHORITIES.NAME,
+                    GATHERING_MEMBERS.IS_INVITATION_SUBMITTED,
+                ).from(GATHERING_MEMBERS)
+                .join(MEMBERS)
+                .on(GATHERING_MEMBERS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                .join(MEMBER_AUTHORITIES)
+                .on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
+                .join(AUTHORITIES)
+                .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+                .join(MEMBER_TEAMS)
+                .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                .join(TEAMS)
+                .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+                .where(
+                    GATHERING_MEMBERS.GATHERING_ID
+                        .eq(gatheringId.value)
+                        .and(GATHERING_MEMBERS.MEMBER_ID.eq(memberId.value)),
+                ).fetch()
+
+        return queryResults.map { query ->
+
+            val memberName = query.get(MEMBERS.NAME)
+            val teamNumber = query.get(TEAMS.NUMBER)
+            val memberPart = query.get(MEMBERS.PART)
+            val authorityName = query.get(AUTHORITIES.NAME)
+            val isInvitationSubmitted = query.get(GATHERING_MEMBERS.IS_INVITATION_SUBMITTED)
+
+            if (memberName == null || authorityName == null || isInvitationSubmitted == null) {
+                throw GatheringMemberException.GatheringMemberNotFoundException()
+            }
+            BillMemberIsInvitationSubmittedQueryModel(
+                name = memberName,
+                teamNumber = teamNumber ?: 0,
+                part = memberPart,
+                authority = authorityName,
+                isInvitationSubmitted = isInvitationSubmitted,
+            )
+        }
     }
 }
