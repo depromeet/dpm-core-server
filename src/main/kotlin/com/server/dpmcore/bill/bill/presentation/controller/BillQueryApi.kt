@@ -303,7 +303,7 @@ interface BillQueryApi {
                           "data": {
                             "members": [
                               {
-                                "name": "준원카카오",
+                                "name": "정준원",
                                 "teamNumber": 1,
                                 "authority": "ORGANIZER",
                                 "part": "SERVER",
