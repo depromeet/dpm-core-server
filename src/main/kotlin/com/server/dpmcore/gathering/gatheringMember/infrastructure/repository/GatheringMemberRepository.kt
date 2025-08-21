@@ -87,9 +87,9 @@ class GatheringMemberRepository(
                 .on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
                 .join(AUTHORITIES)
                 .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
-                .join(MEMBER_TEAMS)
+                .leftJoin(MEMBER_TEAMS)
                 .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-                .join(TEAMS)
+                .leftJoin(TEAMS)
                 .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
                 .where(
                     GATHERING_MEMBERS.GATHERING_ID
