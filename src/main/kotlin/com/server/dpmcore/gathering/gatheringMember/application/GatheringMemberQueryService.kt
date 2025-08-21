@@ -58,7 +58,7 @@ class GatheringMemberQueryService(
                         },
                     )
             }
-            queryResults.first()
+            queryResults.firstOrNull() ?: throw GatheringMemberException.GatheringMemberNotFoundException()
         }
     }
 }
