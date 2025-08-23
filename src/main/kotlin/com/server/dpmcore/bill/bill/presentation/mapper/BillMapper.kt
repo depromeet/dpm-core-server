@@ -11,6 +11,7 @@ import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
+import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -48,8 +49,8 @@ class BillMapper(
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
-            billTotalAmount = billTotalAmount,
-            billTotalSplitAmount = billTotalSplitAmount,
+            billTotalAmount = bill.getBillTotalAmount(gatheringReceipt),
+            billTotalSplitAmount = bill.getMemberBillSplitAmount(gatheringMembersByRetrievedMember, gatheringReceipt),
             billStatus = bill.billStatus,
             createdAt =
                 LocalDateTime.ofInstant(
@@ -58,9 +59,9 @@ class BillMapper(
                 ),
             billAccountId = bill.billAccount.id?.value ?: 0L,
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = gatheringMembers.count(),
-            invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
-            invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
+            invitedMemberCount = allBillGatheringMembers.count(),
+            invitationSubmittedCount = allBillGatheringMembers.count { it.isInvitationSubmitted },
+            invitationCheckedMemberCount = allBillGatheringMembers.count { it.isChecked },
             isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
             isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),
             isInvitationSubmitted = bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
@@ -141,9 +142,9 @@ class BillMapper(
                 instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = gatheringMembers.count(),
-            invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
-            invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
+            invitedMemberCount = allBillGatheringMembers.count(),
+            invitationSubmittedCount = allBillGatheringMembers.count { it.isInvitationSubmitted },
+            invitationCheckedMemberCount = allBillGatheringMembers.count { it.isChecked },
             participantCount = participantCount,
             isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
             isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),
