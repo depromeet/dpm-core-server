@@ -102,6 +102,7 @@ interface BillQueryApi {
     )
     fun getBillDetails(
         @Positive billId: BillId,
+        memberId: MemberId,
     ): CustomResponse<BillDetailResponse>
 
     @ApiResponses(

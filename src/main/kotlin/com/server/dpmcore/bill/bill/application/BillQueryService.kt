@@ -26,14 +26,17 @@ class BillQueryService(
         billPersistencePort.findById(billId)
             ?: throw BillException.BillNotFoundException()
 
-    fun getBillDetails(billId: BillId): BillDetailResponse = billMapper.toBillDetailResponse(getById(billId))
+    fun getBillDetails(
+        billId: BillId,
+        memberId: MemberId,
+    ): BillDetailResponse = billMapper.toBillDetailResponse(getById(billId), memberId)
 
     // TODO: 현재 17기 멤버만 존재하여 getAllBills()로 처리. 향후 다른 기수 추가 시 memberId 기반 필터링 구현 필요
-    override fun getBillByMemberId(memberId: MemberId): BillListResponse = getAllBills()
+    override fun getBillByMemberId(memberId: MemberId): BillListResponse = getAllBills(memberId)
 
-    fun getAllBills(): BillListResponse {
+    fun getAllBills(memberId: MemberId): BillListResponse {
         val bills = billPersistencePort.findAllBills()
-        return billMapper.toBillListResponse(bills)
+        return billMapper.toBillListResponse(bills, memberId)
     }
 
     fun getMemberBillSummaries(billId: BillId): BillSummaryListByMemberResponse {

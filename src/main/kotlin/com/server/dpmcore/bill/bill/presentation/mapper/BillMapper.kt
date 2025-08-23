@@ -20,7 +20,10 @@ import java.time.ZoneId
 class BillMapper(
     private val gatheringQueryUseCase: GatheringQueryUseCase,
 ) {
-    fun toBillDetailResponse(bill: Bill): BillDetailResponse {
+    fun toBillDetailResponse(
+        bill: Bill,
+        memberId: MemberId,
+    ): BillDetailResponse {
         val gatherings =
             gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException())
         if (gatherings.isEmpty()) throw GatheringException.GatheringRequiredException()
@@ -33,14 +36,12 @@ class BillMapper(
                     )
             }
 
-//        TODO : 자기가 참여한 모임만 합산해야함.
-        val billTotalAmount = gatheringReceipt.sumOf { it.amount }
-        val billTotalSplitAmount = gatheringReceipt.sumOf { it.splitAmount ?: 0 }
-
-        val gatheringMembers =
+        val allBillGatheringMembers =
             gatheringQueryUseCase.findGatheringMemberByGatheringId(
                 gatherings.get(0).id ?: throw GatheringException.GatheringIdRequiredException(),
             )
+
+        val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
         return BillDetailResponse(
             billId = bill.id ?: throw BillException.BillNotFoundException(),
@@ -60,6 +61,9 @@ class BillMapper(
             invitedMemberCount = gatheringMembers.count(),
             invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
+            isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
+            isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),
+            isInvitationSubmitted = bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
             gatherings =
                 gatherings.map { gathering ->
 
@@ -79,11 +83,14 @@ class BillMapper(
         )
     }
 
-    fun toBillListResponse(bills: List<Bill>): BillListResponse {
+    fun toBillListResponse(
+        bills: List<Bill>,
+        memberId: MemberId,
+    ): BillListResponse {
         val billDetailResponses =
             bills
                 .map {
-                    toBillListDetailResponse(it)
+                    toBillListDetailResponse(it, memberId)
                 }.toList()
 
         return BillListResponse(
@@ -91,15 +98,21 @@ class BillMapper(
         )
     }
 
-    fun toBillListDetailResponse(bill: Bill): BillListDetailResponse {
+    fun toBillListDetailResponse(
+        bill: Bill,
+        memberId: MemberId,
+    ): BillListDetailResponse {
         val gatheringDetails =
             gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
                 toBillListGatheringDetailResponse(it)
             }
         if (gatheringDetails.isEmpty()) throw GatheringException.GatheringRequiredException()
 
-        val gatheringMembers =
+//        TODO : 여기서 모든 gathering에 대해서 조회해서 체크하는 로직 필요(각 gathering마다 멤버가 다를 수 있어서)
+        val allBillGatheringMembers =
             gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetails.get(0).gatheringId)
+
+        val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
         val participants: MutableMap<Long, MutableList<Long>> = mutableMapOf<Long, MutableList<Long>>()
 
@@ -131,8 +144,11 @@ class BillMapper(
             invitedMemberCount = gatheringMembers.count(),
             invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
             invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
-//            inviteAuthorities = TODO(),
             participantCount = participantCount,
+            isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
+            isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),
+            isInvitationSubmitted = bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
+//            inviteAuthorities = TODO(),
             gatherings = gatheringDetails,
         )
     }

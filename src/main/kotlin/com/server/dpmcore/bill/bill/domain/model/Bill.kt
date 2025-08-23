@@ -75,6 +75,13 @@ class Bill(
         }
     }
 
+    fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isChecked }
+
+    fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isJoined }
+
+    fun getIsBillInvitationSubmitted(gatheringMembers: List<GatheringMember>): Boolean =
+        gatheringMembers.any { it.isInvitationSubmitted }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Bill) return false
