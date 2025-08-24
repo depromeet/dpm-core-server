@@ -64,9 +64,9 @@ class BillMapper(
                 ),
             billAccountId = bill.billAccount.id?.value ?: 0L,
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = allBillGatheringMembers.count(),
-            invitationSubmittedCount = allBillGatheringMembers.count { it.isInvitationSubmitted },
-            invitationCheckedMemberCount = allBillGatheringMembers.count { it.isChecked },
+            invitedMemberCount = bill.getBillInvitedMemberCount(allBillGatheringMembers),
+            invitationSubmittedCount = bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
+            invitationCheckedMemberCount = bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
             isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
             isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),
             isInvitationSubmitted = bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
@@ -112,7 +112,7 @@ class BillMapper(
 
 //        TODO : 여기서 모든 gathering에 대해서 조회해서 체크하는 로직 필요(각 gathering마다 멤버가 다를 수 있어서)
         val allBillGatheringMembers =
-            gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetails.get(0).gatheringId)
+            gatheringQueryUseCase.getAllGatheringMembersByBillId(bill.id)
 
         val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
@@ -143,9 +143,9 @@ class BillMapper(
                 instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = allBillGatheringMembers.count(),
-            invitationSubmittedCount = allBillGatheringMembers.count { it.isInvitationSubmitted },
-            invitationCheckedMemberCount = allBillGatheringMembers.count { it.isChecked },
+            invitedMemberCount = bill.getBillInvitedMemberCount(allBillGatheringMembers),
+            invitationSubmittedCount = bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
+            invitationCheckedMemberCount = bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
             participantCount = participantCount,
             isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
             isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),

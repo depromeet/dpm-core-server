@@ -120,6 +120,34 @@ class Bill(
     fun getIsBillInvitationSubmitted(gatheringMembers: List<GatheringMember>): Boolean =
         gatheringMembers.any { it.isInvitationSubmitted }
 
+    fun getBillInvitedMemberCount(allBillGatheringMembers: List<GatheringMember>): Int {
+        val invitedGatheringMemberSet = mutableSetOf<MemberId>()
+        allBillGatheringMembers.forEach { gatheringMember ->
+            invitedGatheringMemberSet.add(gatheringMember.memberId)
+        }
+        return invitedGatheringMemberSet.size
+    }
+
+    fun getBillInvitationSubmittedCount(allBillGatheringMembers: List<GatheringMember>): Int {
+        val invitationSubmittedSet = mutableSetOf<MemberId>()
+        allBillGatheringMembers.forEach { gatheringMember ->
+            if (gatheringMember.isInvitationSubmitted) {
+                invitationSubmittedSet.add(gatheringMember.memberId)
+            }
+        }
+        return invitationSubmittedSet.size
+    }
+
+    fun getBillInvitationCheckedMemberCount(allBillGatheringMembers: List<GatheringMember>): Int {
+        val invitationCheckedMemberSet = mutableSetOf<MemberId>()
+        allBillGatheringMembers.forEach { gatheringMember ->
+            if (gatheringMember.isChecked) {
+                invitationCheckedMemberSet.add(gatheringMember.memberId)
+            }
+        }
+        return invitationCheckedMemberSet.size
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Bill) return false
