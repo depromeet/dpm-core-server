@@ -25,8 +25,10 @@ class BillMapper(
         bill: Bill,
         memberId: MemberId,
     ): BillDetailResponse {
+        if (bill.id == null) throw BillException.BillNotFoundException()
+
         val gatherings =
-            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException())
+            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id)
         if (gatherings.isEmpty()) throw GatheringException.GatheringRequiredException()
 
         val gatheringReceipt =
@@ -45,7 +47,7 @@ class BillMapper(
         val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
         return BillDetailResponse(
-            billId = bill.id ?: throw BillException.BillNotFoundException(),
+            billId = bill.id,
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
