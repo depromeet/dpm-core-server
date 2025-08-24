@@ -2,7 +2,6 @@ package com.server.dpmcore.bill.bill.domain.model
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.bill.exception.BillException
-import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -108,15 +107,6 @@ class Bill(
             gatheringMembers: List<GatheringMember>,
             gatheringReceipts: List<GatheringReceipt>,
         ): Int {
-            if (gatheringMembers.isEmpty()) throw GatheringMemberException.GatheringMemberNotFoundException()
-            if (gatheringReceipts.isEmpty()) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-            gatheringMembers.forEach { gatheringMember ->
-                if (gatheringMember.id == null) throw GatheringMemberException.GatheringMemberNotFoundException()
-            }
-            gatheringReceipts.forEach { receipt ->
-                if (receipt.id == null) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-            }
-
             val retrieveGatheringMembers = gatheringMembers.filter { it.memberId == memberId }
 
             val gatheringMemberPairReceipts =
@@ -129,13 +119,7 @@ class Bill(
             return gatheringMemberPairReceipts.filter { it.first.isJoined }.sumOf { it.second.splitAmount ?: 0 }
         }
 
-        fun getBillTotalAmount(gatheringReceipts: List<GatheringReceipt>): Int {
-            if (gatheringReceipts.isEmpty()) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-            gatheringReceipts.forEach { receipt ->
-                if (receipt.id == null) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-            }
-            return gatheringReceipts.sumOf { it.amount }
-        }
+        fun getBillTotalAmount(gatheringReceipts: List<GatheringReceipt>): Int = gatheringReceipts.sumOf { it.amount }
 
         fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isChecked }
 
