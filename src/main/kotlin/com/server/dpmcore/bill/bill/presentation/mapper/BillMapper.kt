@@ -124,7 +124,7 @@ class BillMapper(
                 .filter { it.isJoined }
                 .forEach { gatheringMember ->
                     participants
-                        .computeIfAbsent(gatheringMember.memberId!!.value) { mutableListOf() }
+                        .computeIfAbsent(gatheringMember.memberId.value) { mutableListOf() }
                         .add(gatheringDetail.gatheringId.value)
                 }
         }
@@ -135,7 +135,7 @@ class BillMapper(
 
         return BillListDetailResponse(
             title = bill.title,
-            billId = bill.id ?: throw BillException.BillNotFoundException(),
+            billId = bill.id,
             description = bill.description,
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
