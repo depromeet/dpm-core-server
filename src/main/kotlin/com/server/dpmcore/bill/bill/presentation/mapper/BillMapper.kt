@@ -49,9 +49,9 @@ class BillMapper(
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
-            billTotalAmount = bill.getBillTotalAmount(gatheringReceipt),
+            billTotalAmount = Bill.getBillTotalAmount(gatheringReceipt),
             billTotalSplitAmount =
-                bill.getMemberBillSplitAmount(
+                Bill.getMemberBillSplitAmount(
                     memberId,
                     gatheringMembersByRetrievedMember,
                     gatheringReceipt,
@@ -64,12 +64,12 @@ class BillMapper(
                 ),
             billAccountId = bill.billAccount.id?.value ?: 0L,
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = bill.getBillInvitedMemberCount(allBillGatheringMembers),
-            invitationSubmittedCount = bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
-            invitationCheckedMemberCount = bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
-            isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
-            isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),
-            isInvitationSubmitted = bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
+            invitedMemberCount = Bill.getBillInvitedMemberCount(allBillGatheringMembers),
+            invitationSubmittedCount = Bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
+            invitationCheckedMemberCount = Bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
+            isViewed = Bill.getIsBillViewed(gatheringMembersByRetrievedMember),
+            isJoined = Bill.getIsBillJoined(gatheringMembersByRetrievedMember),
+            isInvitationSubmitted = Bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
             gatherings =
                 gatherings.map { gathering ->
 
@@ -78,7 +78,7 @@ class BillMapper(
                             gathering.id
                                 ?: throw GatheringException.GatheringNotFoundException(),
                         )
-                    val splitAmount = bill.getMemberBillSplitAmount(memberId, gatheringMembers, gatheringReceipt)
+                    val splitAmount = Bill.getMemberBillSplitAmount(memberId, gatheringMembers, gatheringReceipt)
 
                     BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
                 },
@@ -143,13 +143,13 @@ class BillMapper(
                 instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = bill.getBillInvitedMemberCount(allBillGatheringMembers),
-            invitationSubmittedCount = bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
-            invitationCheckedMemberCount = bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
+            invitedMemberCount = Bill.getBillInvitedMemberCount(allBillGatheringMembers),
+            invitationSubmittedCount = Bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
+            invitationCheckedMemberCount = Bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
             participantCount = participantCount,
-            isViewed = bill.getIsBillViewed(gatheringMembersByRetrievedMember),
-            isJoined = bill.getIsBillJoined(gatheringMembersByRetrievedMember),
-            isInvitationSubmitted = bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
+            isViewed = Bill.getIsBillViewed(gatheringMembersByRetrievedMember),
+            isJoined = Bill.getIsBillJoined(gatheringMembersByRetrievedMember),
+            isInvitationSubmitted = Bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
 //            inviteAuthorities = TODO(),
             gatherings = gatheringDetails,
         )

@@ -79,75 +79,6 @@ class Bill(
         }
     }
 
-    fun getMemberBillSplitAmount(
-        memberId: MemberId,
-        gatheringMembers: List<GatheringMember>,
-        gatheringReceipts: List<GatheringReceipt>,
-    ): Int {
-        if (gatheringMembers.isEmpty()) throw GatheringMemberException.GatheringMemberNotFoundException()
-        if (gatheringReceipts.isEmpty()) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-        gatheringMembers.forEach { gatheringMember ->
-            if (gatheringMember.id == null) throw GatheringMemberException.GatheringMemberNotFoundException()
-        }
-        gatheringReceipts.forEach { receipt ->
-            if (receipt.id == null) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-        }
-
-        val retrieveGatheringMembers = gatheringMembers.filter { it.memberId == memberId }
-
-        val gatheringMemberPairReceipts =
-            retrieveGatheringMembers.map { gatheringMember ->
-                val receipt =
-                    gatheringReceipts.find { it.gatheringId == gatheringMember.gatheringId }
-                        ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
-                Pair(gatheringMember, receipt)
-            }
-        return gatheringMemberPairReceipts.filter { it.first.isJoined }.sumOf { it.second.splitAmount ?: 0 }
-    }
-
-    fun getBillTotalAmount(gatheringReceipts: List<GatheringReceipt>): Int {
-        if (gatheringReceipts.isEmpty()) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-        gatheringReceipts.forEach { receipt ->
-            if (receipt.id == null) throw GatheringReceiptException.GatheringReceiptNotFoundException()
-        }
-        return gatheringReceipts.sumOf { it.amount }
-    }
-
-    fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isChecked }
-
-    fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isJoined }
-
-    fun getIsBillInvitationSubmitted(gatheringMembers: List<GatheringMember>): Boolean =
-        gatheringMembers.any { it.isInvitationSubmitted }
-
-    fun getBillInvitedMemberCount(allBillGatheringMembers: List<GatheringMember>): Int {
-        val invitedGatheringMemberSet = mutableSetOf<MemberId>()
-        allBillGatheringMembers.forEach { gatheringMember ->
-            invitedGatheringMemberSet.add(gatheringMember.memberId)
-        }
-        return invitedGatheringMemberSet.size
-    }
-
-    fun getBillInvitationSubmittedCount(allBillGatheringMembers: List<GatheringMember>): Int {
-        val invitationSubmittedSet = mutableSetOf<MemberId>()
-        allBillGatheringMembers.forEach { gatheringMember ->
-            if (gatheringMember.isInvitationSubmitted) {
-                invitationSubmittedSet.add(gatheringMember.memberId)
-            }
-        }
-        return invitationSubmittedSet.size
-    }
-
-    fun getBillInvitationCheckedMemberCount(allBillGatheringMembers: List<GatheringMember>): Int {
-        val invitationCheckedMemberSet = mutableSetOf<MemberId>()
-        allBillGatheringMembers.forEach { gatheringMember ->
-            if (gatheringMember.isChecked) {
-                invitationCheckedMemberSet.add(gatheringMember.memberId)
-            }
-        }
-        return invitationCheckedMemberSet.size
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Bill) return false
@@ -171,6 +102,75 @@ class Bill(
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
             )
+
+        fun getMemberBillSplitAmount(
+            memberId: MemberId,
+            gatheringMembers: List<GatheringMember>,
+            gatheringReceipts: List<GatheringReceipt>,
+        ): Int {
+            if (gatheringMembers.isEmpty()) throw GatheringMemberException.GatheringMemberNotFoundException()
+            if (gatheringReceipts.isEmpty()) throw GatheringReceiptException.GatheringReceiptNotFoundException()
+            gatheringMembers.forEach { gatheringMember ->
+                if (gatheringMember.id == null) throw GatheringMemberException.GatheringMemberNotFoundException()
+            }
+            gatheringReceipts.forEach { receipt ->
+                if (receipt.id == null) throw GatheringReceiptException.GatheringReceiptNotFoundException()
+            }
+
+            val retrieveGatheringMembers = gatheringMembers.filter { it.memberId == memberId }
+
+            val gatheringMemberPairReceipts =
+                retrieveGatheringMembers.map { gatheringMember ->
+                    val receipt =
+                        gatheringReceipts.find { it.gatheringId == gatheringMember.gatheringId }
+                            ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
+                    Pair(gatheringMember, receipt)
+                }
+            return gatheringMemberPairReceipts.filter { it.first.isJoined }.sumOf { it.second.splitAmount ?: 0 }
+        }
+
+        fun getBillTotalAmount(gatheringReceipts: List<GatheringReceipt>): Int {
+            if (gatheringReceipts.isEmpty()) throw GatheringReceiptException.GatheringReceiptNotFoundException()
+            gatheringReceipts.forEach { receipt ->
+                if (receipt.id == null) throw GatheringReceiptException.GatheringReceiptNotFoundException()
+            }
+            return gatheringReceipts.sumOf { it.amount }
+        }
+
+        fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isChecked }
+
+        fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isJoined }
+
+        fun getIsBillInvitationSubmitted(gatheringMembers: List<GatheringMember>): Boolean =
+            gatheringMembers.any { it.isInvitationSubmitted }
+
+        fun getBillInvitedMemberCount(allBillGatheringMembers: List<GatheringMember>): Int {
+            val invitedGatheringMemberSet = mutableSetOf<MemberId>()
+            allBillGatheringMembers.forEach { gatheringMember ->
+                invitedGatheringMemberSet.add(gatheringMember.memberId)
+            }
+            return invitedGatheringMemberSet.size
+        }
+
+        fun getBillInvitationSubmittedCount(allBillGatheringMembers: List<GatheringMember>): Int {
+            val invitationSubmittedSet = mutableSetOf<MemberId>()
+            allBillGatheringMembers.forEach { gatheringMember ->
+                if (gatheringMember.isInvitationSubmitted) {
+                    invitationSubmittedSet.add(gatheringMember.memberId)
+                }
+            }
+            return invitationSubmittedSet.size
+        }
+
+        fun getBillInvitationCheckedMemberCount(allBillGatheringMembers: List<GatheringMember>): Int {
+            val invitationCheckedMemberSet = mutableSetOf<MemberId>()
+            allBillGatheringMembers.forEach { gatheringMember ->
+                if (gatheringMember.isChecked) {
+                    invitationCheckedMemberSet.add(gatheringMember.memberId)
+                }
+            }
+            return invitationCheckedMemberSet.size
+        }
     }
 
     override fun toString(): String =
