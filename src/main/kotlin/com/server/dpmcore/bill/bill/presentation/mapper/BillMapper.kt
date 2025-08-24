@@ -50,7 +50,12 @@ class BillMapper(
             description = bill.description,
             hostUserId = bill.hostUserId.value,
             billTotalAmount = bill.getBillTotalAmount(gatheringReceipt),
-            billTotalSplitAmount = bill.getMemberBillSplitAmount(gatheringMembersByRetrievedMember, gatheringReceipt),
+            billTotalSplitAmount =
+                bill.getMemberBillSplitAmount(
+                    memberId,
+                    gatheringMembersByRetrievedMember,
+                    gatheringReceipt,
+                ),
             billStatus = bill.billStatus,
             createdAt =
                 LocalDateTime.ofInstant(
@@ -73,11 +78,7 @@ class BillMapper(
                             gathering.id
                                 ?: throw GatheringException.GatheringNotFoundException(),
                         )
-                    val splitAmount =
-                        gatheringReceipt
-                            .find {
-                                it.gatheringId == gathering.id
-                            }?.splitAmount ?: 0
+                    val splitAmount = bill.getMemberBillSplitAmount(memberId, gatheringMembers, gatheringReceipt)
 
                     BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
                 },

@@ -80,6 +80,7 @@ class Bill(
     }
 
     fun getMemberBillSplitAmount(
+        memberId: MemberId,
         gatheringMembers: List<GatheringMember>,
         gatheringReceipts: List<GatheringReceipt>,
     ): Int {
@@ -92,8 +93,10 @@ class Bill(
             if (receipt.id == null) throw GatheringReceiptException.GatheringReceiptNotFoundException()
         }
 
+        val retrieveGatheringMembers = gatheringMembers.filter { it.memberId == memberId }
+
         val gatheringMemberPairReceipts =
-            gatheringMembers.map { gatheringMember ->
+            retrieveGatheringMembers.map { gatheringMember ->
                 val receipt =
                     gatheringReceipts.find { it.gatheringId == gatheringMember.gatheringId }
                         ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
