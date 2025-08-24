@@ -106,4 +106,9 @@ class GatheringQueryService(
                 ?: throw GatheringException.GatheringNotFoundException(),
         )
     }
+
+    override fun getAllGatheringMembersByBillId(billId: BillId): List<GatheringMember> =
+        getAllGatheringIdsByBillId(billId).flatMap { gatheringId ->
+            gatheringMemberQueryService.getGatheringMemberByGatheringId(gatheringId)
+        }
 }

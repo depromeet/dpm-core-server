@@ -110,4 +110,16 @@ class GatheringMember(
                 updatedAt = Instant.now(),
             )
     }
+
+    override fun toString(): String =
+        "GatheringMember(id=$id," +
+            "gatheringId=$gatheringId," +
+            "memberId=$memberId," +
+            "isChecked=$isChecked," +
+            "isJoined=$isJoined," +
+            "isInvitationSubmitted=$isInvitationSubmitted," +
+            "createdAt=$createdAt," +
+            "completedAt=$completedAt," +
+            "updatedAt=$updatedAt," +
+            "deletedAt=$deletedAt)"
 }

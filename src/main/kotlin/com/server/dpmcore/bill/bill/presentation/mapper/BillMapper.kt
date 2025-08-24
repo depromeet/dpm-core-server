@@ -40,9 +40,7 @@ class BillMapper(
             }
 
         val allBillGatheringMembers =
-            gatheringQueryUseCase.findGatheringMemberByGatheringId(
-                gatherings.get(0).id ?: throw GatheringException.GatheringIdRequiredException(),
-            )
+            gatheringQueryUseCase.getAllGatheringMembersByBillId(bill.id)
 
         val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
