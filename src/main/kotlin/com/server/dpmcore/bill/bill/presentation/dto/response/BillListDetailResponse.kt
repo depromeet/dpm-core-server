@@ -73,6 +73,24 @@ data class BillListDetailResponse(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val participantCount: Int,
+    @field:Schema(
+        description = "초대를 확인(열람)한 여부",
+        example = "true",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
+    val isViewed: Boolean,
+    @field:Schema(
+        description = "정산 참여 여부",
+        example = "true",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
+    val isJoined: Boolean,
+    @field:Schema(
+        description = "정산 참여 제출 여부",
+        example = "true",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
+    val isInvitationSubmitted: Boolean,
     val inviteAuthorities: List<BillListInviteAuthorityDetailResponse>? =
         BillListInviteAuthorityDetailResponse
             .defaultInviteAuthorityResponse(),

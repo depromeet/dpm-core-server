@@ -63,32 +63,7 @@ class GatheringMember(
         this.updatedAt = Instant.now()
     }
 
-    fun isDeleted(): Boolean = deletedAt != null
-
     fun isConfirmed(): Boolean = completedAt != null
-
-    fun canUpdateAttendance(): Boolean = !isConfirmed()
-
-    /**
-     * 참석 여부 체크를 수행합니다.
-     * 이미 확정된 경우 예외를 발생시킵니다.
-     */
-    fun checkAttendance(now: Instant): GatheringMember {
-        if (isConfirmed()) {
-            throw GatheringMemberException.AlreadyConfirmedMemberException()
-        }
-
-        return GatheringMember(
-            id = id,
-            gatheringId = gatheringId,
-            memberId = memberId,
-            isChecked = true,
-            completedAt = now,
-            createdAt = createdAt,
-            updatedAt = now,
-            deletedAt = deletedAt,
-        )
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -110,4 +85,16 @@ class GatheringMember(
                 updatedAt = Instant.now(),
             )
     }
+
+    override fun toString(): String =
+        "GatheringMember(id=$id," +
+            "gatheringId=$gatheringId," +
+            "memberId=$memberId," +
+            "isChecked=$isChecked," +
+            "isJoined=$isJoined," +
+            "isInvitationSubmitted=$isInvitationSubmitted," +
+            "createdAt=$createdAt," +
+            "completedAt=$completedAt," +
+            "updatedAt=$updatedAt," +
+            "deletedAt=$deletedAt)"
 }

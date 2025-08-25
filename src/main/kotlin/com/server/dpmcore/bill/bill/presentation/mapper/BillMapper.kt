@@ -11,6 +11,7 @@ import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
+import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -20,9 +21,14 @@ import java.time.ZoneId
 class BillMapper(
     private val gatheringQueryUseCase: GatheringQueryUseCase,
 ) {
-    fun toBillDetailResponse(bill: Bill): BillDetailResponse {
+    fun toBillDetailResponse(
+        bill: Bill,
+        memberId: MemberId,
+    ): BillDetailResponse {
+        if (bill.id == null) throw BillException.BillNotFoundException()
+
         val gatherings =
-            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException())
+            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id)
         if (gatherings.isEmpty()) throw GatheringException.GatheringRequiredException()
 
         val gatheringReceipt =
@@ -33,22 +39,23 @@ class BillMapper(
                     )
             }
 
-//        TODO : 자기가 참여한 모임만 합산해야함.
-        val billTotalAmount = gatheringReceipt.sumOf { it.amount }
-        val billTotalSplitAmount = gatheringReceipt.sumOf { it.splitAmount ?: 0 }
+        val allBillGatheringMembers =
+            gatheringQueryUseCase.getAllGatheringMembersByBillId(bill.id)
 
-        val gatheringMembers =
-            gatheringQueryUseCase.findGatheringMemberByGatheringId(
-                gatherings.get(0).id ?: throw GatheringException.GatheringIdRequiredException(),
-            )
+        val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
         return BillDetailResponse(
-            billId = bill.id ?: throw BillException.BillNotFoundException(),
+            billId = bill.id,
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
-            billTotalAmount = billTotalAmount,
-            billTotalSplitAmount = billTotalSplitAmount,
+            billTotalAmount = Bill.getBillTotalAmount(gatheringReceipt),
+            billTotalSplitAmount =
+                Bill.getMemberBillSplitAmount(
+                    memberId,
+                    gatheringMembersByRetrievedMember,
+                    gatheringReceipt,
+                ),
             billStatus = bill.billStatus,
             createdAt =
                 LocalDateTime.ofInstant(
@@ -57,9 +64,12 @@ class BillMapper(
                 ),
             billAccountId = bill.billAccount.id?.value ?: 0L,
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = gatheringMembers.count(),
-            invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
-            invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
+            invitedMemberCount = Bill.getBillInvitedMemberCount(allBillGatheringMembers),
+            invitationSubmittedCount = Bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
+            invitationCheckedMemberCount = Bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
+            isViewed = Bill.getIsBillViewed(gatheringMembersByRetrievedMember),
+            isJoined = Bill.getIsBillJoined(gatheringMembersByRetrievedMember),
+            isInvitationSubmitted = Bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
             gatherings =
                 gatherings.map { gathering ->
 
@@ -68,22 +78,21 @@ class BillMapper(
                             gathering.id
                                 ?: throw GatheringException.GatheringNotFoundException(),
                         )
-                    val splitAmount =
-                        gatheringReceipt
-                            .find {
-                                it.gatheringId == gathering.id
-                            }?.splitAmount ?: 0
+                    val splitAmount = Bill.getMemberBillSplitAmount(memberId, gatheringMembers, gatheringReceipt)
 
                     BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
                 },
         )
     }
 
-    fun toBillListResponse(bills: List<Bill>): BillListResponse {
+    fun toBillListResponse(
+        bills: List<Bill>,
+        memberId: MemberId,
+    ): BillListResponse {
         val billDetailResponses =
             bills
                 .map {
-                    toBillListDetailResponse(it)
+                    toBillListDetailResponse(it, memberId)
                 }.toList()
 
         return BillListResponse(
@@ -91,15 +100,21 @@ class BillMapper(
         )
     }
 
-    fun toBillListDetailResponse(bill: Bill): BillListDetailResponse {
+    fun toBillListDetailResponse(
+        bill: Bill,
+        memberId: MemberId,
+    ): BillListDetailResponse {
         val gatheringDetails =
             gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
                 toBillListGatheringDetailResponse(it)
             }
         if (gatheringDetails.isEmpty()) throw GatheringException.GatheringRequiredException()
 
-        val gatheringMembers =
-            gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringDetails.get(0).gatheringId)
+//        TODO : 여기서 모든 gathering에 대해서 조회해서 체크하는 로직 필요(각 gathering마다 멤버가 다를 수 있어서)
+        val allBillGatheringMembers =
+            gatheringQueryUseCase.getAllGatheringMembersByBillId(bill.id)
+
+        val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
         val participants: MutableMap<Long, MutableList<Long>> = mutableMapOf<Long, MutableList<Long>>()
 
@@ -109,7 +124,7 @@ class BillMapper(
                 .filter { it.isJoined }
                 .forEach { gatheringMember ->
                     participants
-                        .computeIfAbsent(gatheringMember.memberId!!.value) { mutableListOf() }
+                        .computeIfAbsent(gatheringMember.memberId.value) { mutableListOf() }
                         .add(gatheringDetail.gatheringId.value)
                 }
         }
@@ -120,7 +135,7 @@ class BillMapper(
 
         return BillListDetailResponse(
             title = bill.title,
-            billId = bill.id ?: throw BillException.BillNotFoundException(),
+            billId = bill.id,
             description = bill.description,
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
@@ -128,11 +143,14 @@ class BillMapper(
                 instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
             billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
-            invitedMemberCount = gatheringMembers.count(),
-            invitationSubmittedCount = gatheringMembers.count { it.isInvitationSubmitted },
-            invitationCheckedMemberCount = gatheringMembers.count { it.isChecked },
-//            inviteAuthorities = TODO(),
+            invitedMemberCount = Bill.getBillInvitedMemberCount(allBillGatheringMembers),
+            invitationSubmittedCount = Bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
+            invitationCheckedMemberCount = Bill.getBillInvitationCheckedMemberCount(allBillGatheringMembers),
             participantCount = participantCount,
+            isViewed = Bill.getIsBillViewed(gatheringMembersByRetrievedMember),
+            isJoined = Bill.getIsBillJoined(gatheringMembersByRetrievedMember),
+            isInvitationSubmitted = Bill.getIsBillInvitationSubmitted(gatheringMembersByRetrievedMember),
+//            inviteAuthorities = TODO(),
             gatherings = gatheringDetails,
         )
     }

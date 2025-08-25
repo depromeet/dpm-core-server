@@ -26,8 +26,9 @@ class BillQueryController(
     @GetMapping("/{billId}")
     override fun getBillDetails(
         @Positive @PathVariable billId: BillId,
+        @CurrentMemberId memberId: MemberId,
     ): CustomResponse<BillDetailResponse> {
-        val response = billQueryService.getBillDetails(billId)
+        val response = billQueryService.getBillDetails(billId, memberId)
         return CustomResponse.ok(response)
     }
 
