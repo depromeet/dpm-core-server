@@ -29,4 +29,6 @@ interface GatheringQueryUseCase {
     ): List<SubmittedParticipantGathering>
 
     fun getBillMemberSubmittedList(billId: BillId): List<BillMemberIsInvitationSubmittedQueryModel>
+
+    fun getAllGatheringMembersByBillId(billId: BillId): List<GatheringMember>
 }
