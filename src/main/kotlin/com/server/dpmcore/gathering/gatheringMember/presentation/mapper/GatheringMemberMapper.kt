@@ -18,7 +18,7 @@ object GatheringMemberMapper {
                 gatheringMember.id
                     ?: throw GatheringMemberException.GatheringMemberIdRequiredException(),
             memberId = gatheringMember.memberId.value,
-            isCompleted = gatheringMember.isChecked,
+            isCompleted = gatheringMember.isViewed,
             isJoined = gatheringMember.isJoined,
         )
 }
