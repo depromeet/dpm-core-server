@@ -53,7 +53,7 @@ class GatheringMemberRepository(
         queryFactory
             .updateQuery<GatheringMemberEntity> {
                 where(col(GatheringMemberEntity::id).equal(id))
-                set(col(GatheringMemberEntity::isChecked), gatheringMember.isChecked)
+                set(col(GatheringMemberEntity::isViewed), gatheringMember.isViewed)
                 set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
                 set(col(GatheringMemberEntity::completedAt), gatheringMember.completedAt)
                 set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)

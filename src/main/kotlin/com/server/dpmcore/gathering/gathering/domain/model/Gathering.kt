@@ -54,7 +54,7 @@ class Gathering(
 
     fun getBillViewCount() =
         gatheringMembers.count { gatheringMember ->
-            gatheringMember.isChecked
+            gatheringMember.isViewed
         }
 
     override fun equals(other: Any?): Boolean {

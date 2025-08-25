@@ -121,7 +121,7 @@ class Bill(
 
         fun getBillTotalAmount(gatheringReceipts: List<GatheringReceipt>): Int = gatheringReceipts.sumOf { it.amount }
 
-        fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isChecked }
+        fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isViewed }
 
         fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isJoined }
 
@@ -149,7 +149,7 @@ class Bill(
         fun getBillInvitationCheckedMemberCount(allBillGatheringMembers: List<GatheringMember>): Int {
             val invitationCheckedMemberSet = mutableSetOf<MemberId>()
             allBillGatheringMembers.forEach { gatheringMember ->
-                if (gatheringMember.isChecked) {
+                if (gatheringMember.isViewed) {
                     invitationCheckedMemberSet.add(gatheringMember.memberId)
                 }
             }

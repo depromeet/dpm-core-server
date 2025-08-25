@@ -29,8 +29,8 @@ class GatheringMemberEntity(
     val gathering: GatheringEntity? = null,
     @Column(name = "member_id", nullable = false)
     val memberId: Long,
-    @Column(name = "is_checked", nullable = false)
-    val isChecked: Boolean = false,
+    @Column(name = "is_viewed", nullable = false)
+    val isViewed: Boolean = false,
     @Column(name = "is_joined", nullable = false)
     val isJoined: Boolean = false,
     @Column(name = "is_invitation_submitted", nullable = false)
@@ -52,7 +52,7 @@ class GatheringMemberEntity(
             GatheringMemberEntity(
                 id = gatheringMember.id?.value ?: 0L,
                 memberId = gatheringMember.memberId.value,
-                isChecked = gatheringMember.isChecked,
+                isViewed = gatheringMember.isViewed,
                 isJoined = gatheringMember.isJoined,
                 completedAt = gatheringMember.completedAt,
                 createdAt = gatheringMember.createdAt ?: Instant.now(),
@@ -67,7 +67,7 @@ class GatheringMemberEntity(
             id = GatheringMemberId(id),
             gatheringId = GatheringId(gathering?.id ?: 0L),
             memberId = MemberId(memberId),
-            isChecked = isChecked,
+            isViewed = isViewed,
             isJoined = isJoined,
             isInvitationSubmitted = isInvitationSubmitted,
             completedAt = completedAt,
