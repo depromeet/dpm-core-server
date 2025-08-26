@@ -1,4 +1,4 @@
-package com.server.dpmcore.member.member.domain.port.inbound.query
+package com.server.dpmcore.member.member.domain.model.query
 
 data class MemberNameAuthorityQueryModel(
     val name: String,
