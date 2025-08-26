@@ -1,4 +1,4 @@
-package com.server.dpmcore.cohort.domain.port
+package com.server.dpmcore.cohort.domain.port.outbount
 
 import com.server.dpmcore.cohort.domain.model.CohortId
 
