@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateMembersDepositRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -210,4 +211,83 @@ interface BillCommandApi {
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ): CustomResponse<Void>
+
+    @Operation(
+        summary = "개별 멤버 정산 입금 상태 변경",
+        description =
+            "개별 멤버에 대해서 정산 입금 상태를 변경 합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "개별 멤버 정산 입금 상태 변경 성공",
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "개별 멤버 정산 입금 상태 변경 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공하였습니다.",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "billId": 11
+                                            }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun updateMemberDeposit(
+        @Positive billId: BillId,
+        memberId: MemberId,
+    ): CustomResponse<BillPersistenceResponse>
+
+    @Operation(
+        summary = "복수 멤버 정산 입금 상태 변경",
+        description =
+            "복수의 멤버에 대해서 정산 입금 상태를 변경합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "복수 멤버 정산 입금 상태 변경 성공",
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "복수 멤버 정산 입금 상태 변경 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공하였습니다.",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "billId": 11
+                                            }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun updateMembersDeposit(
+        @Positive billId: BillId,
+        memberId: MemberId,
+        updateMemberDepositRequest: UpdateMembersDepositRequest,
+    ): CustomResponse<BillPersistenceResponse>
 }

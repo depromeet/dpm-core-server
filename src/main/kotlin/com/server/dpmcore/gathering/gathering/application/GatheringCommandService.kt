@@ -4,8 +4,10 @@ import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
+import com.server.dpmcore.bill.bill.domain.port.inbound.UpdateMembersDepositCommand
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
@@ -109,5 +111,39 @@ class GatheringCommandService(
                 )
             gatheringMemberCommandService.markAsGatheringParticipationSubmitConfirm(gatheringMember)
         }
+    }
+
+    override fun updateMemberDeposit(command: UpdateMembersDepositCommand) {
+        val bill = billQueryUseCase.getById(command.billId)
+        val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(command.billId)
+
+        // 해당 멤버가 참여하는지 체크
+        val gatheringMembers =
+            gatheringMemberQueryService.getGatheringMemberByGatheringIdsAndMemberIds(
+                gatheringIds,
+                command.members.map {
+                    it.memberId
+                },
+            )
+        println("조회된 gatheringMembers: $gatheringMembers")
+
+        gatheringMembers.forEach { gatheringMember ->
+            val isDeposit =
+                command.members.find { member -> member.memberId == gatheringMember.memberId }?.isDeposit
+                    ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+            gatheringMember.updateDiposite(isDeposit)
+        }
+
+        println("업데이트 후 gatheringMembers: $gatheringMembers")
+        val completedDepositMember = gatheringMembers.filter { it.completedAt != null }
+        val cancelDepositMember = gatheringMembers.filter { it.completedAt == null }
+
+        println("completedDepositMember: $completedDepositMember")
+        println("cancleDepositMember: $cancelDepositMember")
+//        val targetMembers = gatheringMembers.filter { member -> command.members.any { it.memberId == member.memberId } }
+//        targetMembers.forEach { member ->
+//            val isDeposit = command.members.first { it.memberId == member.memberId }.isDeposit
+//            gatheringMemberCommandService.updateMemberDeposit(member, isDeposit)
+//        }
     }
 }

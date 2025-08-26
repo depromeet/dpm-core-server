@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.application
 import com.server.dpmcore.bill.bill.application.mapper.BillGatheringMapper.toCommand
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.bill.bill.domain.port.inbound.UpdateMembersDepositCommand
 import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
@@ -108,4 +109,8 @@ class BillCommandService(
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ) = gatheringCommandUseCase.markAsJoinedEachGatheringMember(billId, request, memberId)
+
+    fun updateMemberDeposit(command: UpdateMembersDepositCommand) {
+        gatheringCommandUseCase.updateMemberDeposit(command)
+    }
 }

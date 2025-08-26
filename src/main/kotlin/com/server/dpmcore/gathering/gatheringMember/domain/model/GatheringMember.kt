@@ -65,6 +65,16 @@ class GatheringMember(
 
     fun isConfirmed(): Boolean = completedAt != null
 
+    fun updateDiposite(isDipositive: Boolean) {
+        if (isDipositive) {
+            this.completedAt = Instant.now()
+            this.updatedAt = Instant.now()
+        } else {
+            this.completedAt = null
+            this.updatedAt = Instant.now()
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is GatheringMember) return false

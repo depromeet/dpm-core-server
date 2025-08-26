@@ -2,6 +2,7 @@ package com.server.dpmcore.gathering.gathering.domain.port.inbound
 
 import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.bill.bill.domain.port.inbound.UpdateMembersDepositCommand
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
@@ -32,4 +33,6 @@ interface GatheringCommandUseCase {
         billId: BillId,
         memberId: MemberId,
     )
+
+    fun updateMemberDeposit(command: UpdateMembersDepositCommand)
 }
