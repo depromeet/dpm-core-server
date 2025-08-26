@@ -3,6 +3,8 @@ package com.server.dpmcore.bill.bill.presentation.controller
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateMemberDepositRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateMemberListDepositRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -209,5 +211,64 @@ interface BillCommandApi {
         @Positive billId: BillId,
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "개별 멤버 정산 입금 상태 변경",
+        description =
+            "개별 멤버에 대해서 정산 입금 상태를 변경 합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "개별 멤버 정산 입금 상태 변경 성공",
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "개별 멤버 정산 입금 상태 변경 응답",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun updateMemberDeposit(
+        @Positive billId: BillId,
+        memberId: MemberId,
+        updateMemberDepositRequest: UpdateMemberDepositRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "복수 멤버 정산 입금 상태 변경",
+        description =
+            "복수의 멤버에 대해서 정산 입금 상태를 변경합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "복수 멤버 정산 입금 상태 변경 성공",
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "복수 멤버 정산 입금 상태 변경 응답",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun updateMembersDeposit(
+        @Positive billId: BillId,
+        updateMemberDepositRequest: UpdateMemberListDepositRequest,
     ): CustomResponse<Void>
 }
