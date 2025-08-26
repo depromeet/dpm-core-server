@@ -129,7 +129,7 @@ class GatheringCommandService(
     }
 
     override fun updateMemberListDeposit(command: UpdateMemberListDepositCommand) {
-        val bill = billQueryUseCase.getById(command.billId)
+        billQueryUseCase.getById(command.billId)
         val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(command.billId)
 
         // 해당 멤버가 참여하는지 체크

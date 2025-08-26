@@ -188,7 +188,6 @@ class GatheringMemberRepository(
         gatheringIds: List<GatheringId>,
         memberIds: List<MemberId>,
     ): List<GatheringMember> {
-        println("들어온 gatheringIds: $gatheringIds")
         val queryResult =
             dsl
                 .select(

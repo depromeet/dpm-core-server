@@ -70,15 +70,15 @@ class GatheringMember(
     fun isConfirmed(): Boolean = completedAt != null
 
     fun updateDeposit(
-        isDipositive: Boolean,
+        isDeposit: Boolean,
         memo: String?,
     ) {
         val now = Instant.now()
         this.updatedAt = now
         this.memo = memo
 
-        if (isDipositive) {
-            this.completedAt = Instant.now()
+        if (isDeposit) {
+            this.completedAt = now
         } else {
             this.completedAt = null
         }
