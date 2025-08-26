@@ -9,10 +9,13 @@ import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
+import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.GatheringMemberIsJoinQueryModel
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
+import com.server.dpmcore.member.member.application.exception.MemberNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.AUTHORITIES
 import org.jooq.generated.tables.references.GATHERING_MEMBERS
@@ -177,6 +180,56 @@ class GatheringMemberRepository(
                 part = memberPart,
                 authority = authorityName,
                 isInvitationSubmitted = isInvitationSubmitted,
+            )
+        }
+    }
+
+    override fun findGatheringMembersByGatheringIdsAndMemberIds(
+        gatheringIds: List<GatheringId>,
+        memberIds: List<MemberId>,
+    ): List<GatheringMember> {
+        println("들어온 gatheringIds: $gatheringIds")
+        val queryResult =
+            dsl
+                .select(
+                    GATHERING_MEMBERS.GATHERING_MEMBER_ID,
+                    GATHERING_MEMBERS.MEMBER_ID,
+                    GATHERING_MEMBERS.GATHERING_ID,
+                    GATHERING_MEMBERS.IS_VIEWED,
+                    GATHERING_MEMBERS.IS_JOINED,
+                    GATHERING_MEMBERS.IS_INVITATION_SUBMITTED,
+                    GATHERING_MEMBERS.CREATED_AT,
+                    GATHERING_MEMBERS.COMPLETED_AT,
+                    GATHERING_MEMBERS.UPDATED_AT,
+                    GATHERING_MEMBERS.DELETED_AT,
+                ).from(GATHERING_MEMBERS)
+                .where(GATHERING_MEMBERS.MEMBER_ID.`in`(memberIds))
+                .and(GATHERING_MEMBERS.GATHERING_ID.`in`(gatheringIds))
+                .fetch()
+
+        return queryResult.map { query ->
+            val id = query.get(GATHERING_MEMBERS.GATHERING_MEMBER_ID)
+            val memberId = query.get(GATHERING_MEMBERS.MEMBER_ID)
+            val gatheringId = query.get(GATHERING_MEMBERS.GATHERING_ID)
+            val isViewed = query.get(GATHERING_MEMBERS.IS_VIEWED)
+            val isJoined = query.get(GATHERING_MEMBERS.IS_JOINED)
+            val isInvitationSubmitted = query.get(GATHERING_MEMBERS.IS_INVITATION_SUBMITTED)
+            val createdAt = query.get(GATHERING_MEMBERS.CREATED_AT)
+            val completedAt = query.get(GATHERING_MEMBERS.COMPLETED_AT)
+            val updatedAt = query.get(GATHERING_MEMBERS.UPDATED_AT)
+            val deletedAt = query.get(GATHERING_MEMBERS.DELETED_AT)
+
+            GatheringMember(
+                id = GatheringMemberId(id ?: throw GatheringMemberException.GatheringMemberNotFoundException()),
+                memberId = MemberId(memberId ?: throw MemberNotFoundException()),
+                gatheringId = GatheringId(gatheringId ?: throw GatheringException.GatheringNotFoundException()),
+                isViewed = isViewed!!,
+                isJoined = isJoined!!,
+                isInvitationSubmitted = isInvitationSubmitted!!,
+                createdAt = createdAt?.let { localDateTimeToInstant(it) },
+                completedAt = completedAt?.let { localDateTimeToInstant(it) },
+                updatedAt = updatedAt?.let { localDateTimeToInstant(it) },
+                deletedAt = deletedAt?.let { localDateTimeToInstant(it) },
             )
         }
     }
