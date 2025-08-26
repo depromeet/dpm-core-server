@@ -4,9 +4,9 @@ import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.application.exception.MemberNotFoundException
 import com.server.dpmcore.member.member.domain.exception.MemberTeamNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
+import com.server.dpmcore.member.member.domain.model.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryByAuthorityUseCase
 import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryUseCase
-import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import com.server.dpmcore.member.memberAuthority.application.MemberAuthorityService

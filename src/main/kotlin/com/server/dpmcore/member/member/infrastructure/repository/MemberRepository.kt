@@ -7,7 +7,7 @@ import com.server.dpmcore.common.jdsl.singleQueryOrNull
 import com.server.dpmcore.member.member.application.exception.MemberNameAuthorityRequiredException
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
-import com.server.dpmcore.member.member.domain.port.inbound.query.MemberNameAuthorityQueryModel
+import com.server.dpmcore.member.member.domain.model.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
 import org.jooq.DSLContext

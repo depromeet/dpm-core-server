@@ -1,6 +1,6 @@
 package com.server.dpmcore.session.application
 
-import com.server.dpmcore.cohort.application.CohortQueryService
+import com.server.dpmcore.cohort.domain.port.inbound.CohortQueryUseCase
 import com.server.dpmcore.session.application.query.SessionWeekQueryModel
 import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
@@ -15,7 +15,7 @@ import java.time.ZoneId
 @Service
 @Transactional(readOnly = true)
 class SessionQueryService(
-    private val cohortQueryService: CohortQueryService,
+    private val cohortQueryUseCase: CohortQueryUseCase,
     private val sessionPersistencePort: SessionPersistencePort,
 ) {
     fun getNextSession(): Session? {
@@ -27,7 +27,7 @@ class SessionQueryService(
     }
 
     fun getAllSessions(): List<Session> {
-        val cohortId = cohortQueryService.getLatestCohortId()
+        val cohortId = cohortQueryUseCase.getLatestCohortId()
 
         return sessionPersistencePort.findAllSessions(cohortId)
     }
@@ -44,7 +44,7 @@ class SessionQueryService(
             ?: throw SessionNotFoundException()
 
     fun getSessionWeeks(): List<SessionWeekQueryModel> {
-        val cohortId = cohortQueryService.getLatestCohortId()
+        val cohortId = cohortQueryUseCase.getLatestCohortId()
 
         return sessionPersistencePort
             .findAllSessions(cohortId)
