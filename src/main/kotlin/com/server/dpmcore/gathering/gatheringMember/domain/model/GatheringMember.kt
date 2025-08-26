@@ -19,6 +19,7 @@ class GatheringMember(
     isViewed: Boolean = false,
     isJoined: Boolean = false,
     isInvitationSubmitted: Boolean = false,
+    memo: String? = null,
     val createdAt: Instant? = null,
     completedAt: Instant? = null,
     updatedAt: Instant? = null,
@@ -31,6 +32,9 @@ class GatheringMember(
         private set
 
     var isInvitationSubmitted: Boolean = isInvitationSubmitted
+        private set
+
+    var memo: String? = memo
         private set
 
     var completedAt: Instant? = completedAt
@@ -64,6 +68,21 @@ class GatheringMember(
     }
 
     fun isConfirmed(): Boolean = completedAt != null
+
+    fun updateDeposit(
+        isDipositive: Boolean,
+        memo: String?,
+    ) {
+        val now = Instant.now()
+        this.updatedAt = now
+        this.memo = memo
+
+        if (isDipositive) {
+            this.completedAt = Instant.now()
+        } else {
+            this.completedAt = null
+        }
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
