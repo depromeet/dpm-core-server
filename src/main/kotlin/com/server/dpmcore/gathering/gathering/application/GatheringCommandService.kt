@@ -4,8 +4,11 @@ import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
+import com.server.dpmcore.bill.bill.domain.port.inbound.UpdateMemberDepositCommand
+import com.server.dpmcore.bill.bill.domain.port.inbound.UpdateMemberListDepositCommand
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
@@ -108,6 +111,42 @@ class GatheringCommandService(
                     memberId,
                 )
             gatheringMemberCommandService.markAsGatheringParticipationSubmitConfirm(gatheringMember)
+        }
+    }
+
+    override fun updateMemberDeposit(command: UpdateMemberDepositCommand) {
+        billQueryUseCase.getById(command.billId)
+        val gatherings = gatheringPersistencePort.findByBillId(command.billId)
+
+        gatherings.forEach { gathering ->
+            gathering.id ?: throw GatheringException.GatheringIdRequiredException()
+            val gatheringMember =
+                gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(gathering.id, command.memberId)
+
+            gatheringMember.updateDeposit(command.isDeposit, command.memo)
+            gatheringMemberCommandService.updateDeposit(gatheringMember)
+        }
+    }
+
+    override fun updateMemberListDeposit(command: UpdateMemberListDepositCommand) {
+        val bill = billQueryUseCase.getById(command.billId)
+        val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(command.billId)
+
+        // 해당 멤버가 참여하는지 체크
+        val gatheringMembers =
+            gatheringMemberQueryService.getGatheringMemberByGatheringIdsAndMemberIds(
+                gatheringIds,
+                command.members.map {
+                    it.memberId
+                },
+            )
+
+        gatheringMembers.forEach { gatheringMember ->
+            val isDeposit =
+                command.members.find { member -> member.memberId == gatheringMember.memberId }?.isDeposit
+                    ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+            gatheringMember.updateDeposit(isDeposit, null)
+            gatheringMemberCommandService.updateDeposit(gatheringMember)
         }
     }
 }

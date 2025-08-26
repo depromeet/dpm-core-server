@@ -36,4 +36,8 @@ class GatheringMemberCommandService(
         gatheringMember.gatheringParticipationSubmittedConfirm()
         gatheringMemberPersistencePort.markAsGatheringParticipationSubmitConfirm(gatheringMember)
     }
+
+    fun updateDeposit(gatheringMember: GatheringMember) {
+        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
+    }
 }
