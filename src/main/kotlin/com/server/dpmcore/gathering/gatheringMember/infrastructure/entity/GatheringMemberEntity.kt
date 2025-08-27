@@ -35,6 +35,8 @@ class GatheringMemberEntity(
     val isJoined: Boolean = false,
     @Column(name = "is_invitation_submitted", nullable = false)
     val isInvitationSubmitted: Boolean = false,
+    @Column(name = "memo")
+    val memo: String? = null,
     @Column(name = "completed_at")
     val completedAt: Instant? = null,
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -54,6 +56,8 @@ class GatheringMemberEntity(
                 memberId = gatheringMember.memberId.value,
                 isViewed = gatheringMember.isViewed,
                 isJoined = gatheringMember.isJoined,
+                isInvitationSubmitted = gatheringMember.isInvitationSubmitted,
+                memo = gatheringMember.memo,
                 completedAt = gatheringMember.completedAt,
                 createdAt = gatheringMember.createdAt ?: Instant.now(),
                 updatedAt = gatheringMember.updatedAt ?: Instant.now(),
@@ -70,6 +74,7 @@ class GatheringMemberEntity(
             isViewed = isViewed,
             isJoined = isJoined,
             isInvitationSubmitted = isInvitationSubmitted,
+            memo = memo,
             completedAt = completedAt,
             createdAt = createdAt,
             updatedAt = updatedAt,

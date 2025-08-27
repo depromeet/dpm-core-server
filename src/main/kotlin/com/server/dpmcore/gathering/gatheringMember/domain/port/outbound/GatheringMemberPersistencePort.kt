@@ -35,4 +35,9 @@ interface GatheringMemberPersistencePort {
         gatheringId: GatheringId,
         memberId: MemberId,
     ): List<BillMemberIsInvitationSubmittedQueryModel>
+
+    fun findGatheringMembersByGatheringIdsAndMemberIds(
+        gatheringIds: List<GatheringId>,
+        memberIds: List<MemberId>,
+    ): List<GatheringMember>
 }

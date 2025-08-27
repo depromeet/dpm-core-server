@@ -72,4 +72,11 @@ class GatheringMemberQueryService(
             queryResults.firstOrNull() ?: throw GatheringMemberException.GatheringMemberNotFoundException()
         }
     }
+
+    fun getGatheringMemberByGatheringIdsAndMemberIds(
+        gatheringIds: List<GatheringId>,
+        memberIds: List<MemberId>,
+    ): List<GatheringMember> =
+        gatheringMemberPersistencePort
+            .findGatheringMembersByGatheringIdsAndMemberIds(gatheringIds, memberIds)
 }

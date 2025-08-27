@@ -9,14 +9,10 @@ import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedParticipa
 import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.model.MemberId
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.media.Content
-import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Positive
-import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "Bill", description = "정산 API")
 interface BillQueryApi {

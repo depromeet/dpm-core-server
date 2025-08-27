@@ -7,18 +7,16 @@ import io.swagger.v3.core.converter.ModelConverterContext
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpEntity
 import org.springframework.http.ResponseEntity
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
 class ResponseModelConverter : ModelConverter {
-
     override fun resolve(
         type: AnnotatedType,
         context: ModelConverterContext,
-        chain: MutableIterator<ModelConverter>
+        chain: MutableIterator<ModelConverter>,
     ): Schema<*>? {
         val root = type.type ?: return next(chain, type, context)
 
@@ -31,19 +29,20 @@ class ResponseModelConverter : ModelConverter {
         val t: Type = p.actualTypeArguments.firstOrNull() ?: return next(chain, type, context)
         val tSchema = context.resolve(AnnotatedType(t))
 
-        val schemaName = tSchema.name
-            ?: (t as? Class<*>)?.simpleName
-            ?: (t as? ParameterizedType)?.rawType.let { (it as? Class<*>)?.simpleName }
-            ?: "Anonymous"
+        val schemaName =
+            tSchema.name
+                ?: (t as? Class<*>)?.simpleName
+                ?: (t as? ParameterizedType)?.rawType.let { (it as? Class<*>)?.simpleName }
+                ?: "Anonymous"
 
-
-        val s = ObjectSchema().apply {
-            name = schemaName
-            addProperty("status", StringSchema())
-            addProperty("message", StringSchema())
-            addProperty("code", StringSchema())
-            addProperty("data", tSchema)
-        }
+        val s =
+            ObjectSchema().apply {
+                name = schemaName
+                addProperty("status", StringSchema())
+                addProperty("message", StringSchema())
+                addProperty("code", StringSchema())
+                addProperty("data", tSchema)
+            }
 
         return s
     }
@@ -54,7 +53,9 @@ class ResponseModelConverter : ModelConverter {
             val raw = current.rawType as? Class<*>
             if (raw == ResponseEntity::class.java || raw == HttpEntity::class.java) {
                 current = current.actualTypeArguments.firstOrNull() ?: return current
-            } else break
+            } else {
+                break
+            }
         }
         return current
     }
@@ -62,6 +63,6 @@ class ResponseModelConverter : ModelConverter {
     private fun next(
         chain: MutableIterator<ModelConverter>,
         type: AnnotatedType,
-        context: ModelConverterContext
+        context: ModelConverterContext,
     ): Schema<*>? = if (chain.hasNext()) chain.next().resolve(type, context, chain) else null
 }
