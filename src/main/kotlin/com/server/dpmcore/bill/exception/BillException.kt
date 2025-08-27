@@ -16,4 +16,11 @@ open class BillException(
     class BillAlreadyCompletedException : BillException(BillExceptionCode.BILL_ALREADY_COMPLETED)
 
     class BillAlreadyParticipationClosedException : BillException(BillExceptionCode.BILL_ALREADY_PARTICIPATION_CLOSED)
+
+    class BillAlreadyPendingException : BillException(BillExceptionCode.BILL_ALREADY_PENDING)
+
+    class BillAlreadyOpenException : BillException(BillExceptionCode.BILL_ALREADY_OPEN)
+
+    class BillAlreadyInProgressException : BillException(BillExceptionCode.BILL_ALREADY_IN_PROGRESS)
+
 }
