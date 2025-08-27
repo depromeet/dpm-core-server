@@ -10,5 +10,5 @@ interface BillPersistencePort {
 
     fun findAllBills(): List<Bill>
 
-    fun closeBillParticipation(bill: Bill): Int
+    fun updateBillStatus(bill: Bill): Int
 }

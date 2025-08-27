@@ -24,7 +24,7 @@ class BillRepository(
 
     override fun findAllBills(): List<Bill> = billJpaRepository.findAll().map { it.toDomain() }
 
-    override fun closeBillParticipation(bill: Bill): Int =
+    override fun updateBillStatus(bill: Bill): Int =
         queryFactory
             .updateQuery(BillEntity::class) {
                 set(col(BillEntity::billStatus), bill.billStatus.name)

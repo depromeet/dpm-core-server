@@ -5,6 +5,7 @@ import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateBillStatusRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
@@ -86,7 +87,7 @@ class BillCommandService(
         }
 
         val closeParticipationBill = bill.closeParticipation()
-        billPersistencePort.closeBillParticipation(closeParticipationBill)
+        billPersistencePort.updateBillStatus(closeParticipationBill)
         return bill.id ?: throw BillException.BillIdRequiredException()
     }
 
@@ -108,4 +109,16 @@ class BillCommandService(
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
     ) = gatheringCommandUseCase.markAsJoinedEachGatheringMember(billId, request, memberId)
+
+    fun updateBillStatus(
+        billId: BillId,
+        request: UpdateBillStatusRequest,
+    ) {
+        val bill =
+            billPersistencePort.findById(billId)
+                ?: throw BillException.BillNotFoundException()
+
+        bill.updateStatus(request.status)
+        billPersistencePort.updateBillStatus(bill)
+    }
 }

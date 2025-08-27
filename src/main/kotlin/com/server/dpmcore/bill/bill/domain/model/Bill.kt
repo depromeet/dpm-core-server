@@ -37,11 +37,14 @@ class Bill(
     val hostUserId: MemberId,
     var gatheringIds: MutableList<GatheringId> = mutableListOf(),
     val completedAt: Instant? = null,
-    val billStatus: BillStatus = BillStatus.OPEN,
+    billStatus: BillStatus = BillStatus.OPEN,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
 ) {
+    var billStatus: BillStatus = billStatus
+        private set
+
     var updatedAt: Instant? = updatedAt
         private set
 
@@ -76,6 +79,36 @@ class Bill(
         if (billStatus != BillStatus.OPEN) {
             throw BillException.BillCannotCloseParticipationException()
         }
+    }
+
+    fun updateStatus(billStatus: BillStatus) {
+        val now = Instant.now()
+        when (billStatus) {
+            BillStatus.PENDING -> {
+                if (this.billStatus == BillStatus.PENDING) {
+                    throw BillException.BillAlreadyPendingException()
+                }
+            }
+            BillStatus.OPEN -> {
+                if (this.billStatus == BillStatus.OPEN) {
+                    throw BillException.BillAlreadyOpenException()
+                }
+            }
+            BillStatus.IN_PROGRESS -> {
+                TODO("모든 멤버 응답 제출해야 정산 진행 가능")
+                if (this.billStatus == BillStatus.IN_PROGRESS) {
+                    throw BillException.BillAlreadyInProgressException()
+                }
+            }
+            BillStatus.COMPLETED -> {
+                TODO("모든 멤버 입금해야 정산 완료 처리 됨")
+                if (this.billStatus == BillStatus.COMPLETED) {
+                    throw BillException.BillAlreadyCompletedException()
+                }
+            }
+        }
+        this.updatedAt = now
+        this.billStatus = billStatus
     }
 
     override fun equals(other: Any?): Boolean {
