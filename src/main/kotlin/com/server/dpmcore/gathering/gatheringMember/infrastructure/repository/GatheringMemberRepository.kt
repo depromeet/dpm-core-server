@@ -58,6 +58,8 @@ class GatheringMemberRepository(
                 where(col(GatheringMemberEntity::id).equal(id))
                 set(col(GatheringMemberEntity::isViewed), gatheringMember.isViewed)
                 set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
+                set(col(GatheringMemberEntity::isInvitationSubmitted), gatheringMember.isInvitationSubmitted)
+                set(col(GatheringMemberEntity::memo), gatheringMember.memo)
                 set(col(GatheringMemberEntity::completedAt), gatheringMember.completedAt)
                 set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
                 set(col(GatheringMemberEntity::deletedAt), gatheringMember.deletedAt)
