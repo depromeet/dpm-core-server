@@ -2,6 +2,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateBillStatusRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -209,5 +210,25 @@ interface BillCommandApi {
         @Positive billId: BillId,
         request: UpdateGatheringJoinsRequest,
         memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "정산 상태 변경",
+        description =
+            "정산의 상태를 변경합니다.",
+    )
+    @ApiResponse(
+        responseCode = "204",
+        description = "정산 상태 변경 처리",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+            ),
+        ],
+    )
+    fun updateBillStatus(
+        @Positive billId: BillId,
+        request: UpdateBillStatusRequest,
     ): CustomResponse<Void>
 }

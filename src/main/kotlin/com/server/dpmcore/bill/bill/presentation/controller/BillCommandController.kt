@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.presentation.controller
 import com.server.dpmcore.bill.bill.application.BillCommandService
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
+import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateBillStatusRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillPersistenceResponse
 import com.server.dpmcore.common.exception.CustomResponse
@@ -77,6 +78,16 @@ class BillCommandController(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
         billCommandService.markAsJoinedEachGathering(billId, request, memberId)
+        return CustomResponse.noContent()
+    }
+
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PatchMapping("/{billId}/status")
+    override fun updateBillStatus(
+        billId: BillId,
+        request: UpdateBillStatusRequest,
+    ): CustomResponse<Void> {
+        billCommandService.updateBillStatus(billId, request)
         return CustomResponse.noContent()
     }
 }
