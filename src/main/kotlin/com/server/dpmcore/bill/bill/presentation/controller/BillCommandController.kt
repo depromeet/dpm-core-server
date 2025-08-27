@@ -97,7 +97,7 @@ class BillCommandController(
     @PatchMapping("/{billId}/members/deposit")
     override fun updateMembersDeposit(
         @Positive @PathVariable billId: BillId,
-        @RequestBody updateMemberListDepositRequest: UpdateMemberListDepositRequest,
+        @RequestBody @Valid updateMemberListDepositRequest: UpdateMemberListDepositRequest,
     ): CustomResponse<Void> {
         billCommandService.updateMemberListDeposit(updateMemberListDepositRequest.toCommand(billId))
         return CustomResponse.noContent()
