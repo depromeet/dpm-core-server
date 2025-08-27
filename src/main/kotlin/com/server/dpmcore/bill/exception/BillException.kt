@@ -22,5 +22,4 @@ open class BillException(
     class BillAlreadyOpenException : BillException(BillExceptionCode.BILL_ALREADY_OPEN)
 
     class BillAlreadyInProgressException : BillException(BillExceptionCode.BILL_ALREADY_IN_PROGRESS)
-
 }
