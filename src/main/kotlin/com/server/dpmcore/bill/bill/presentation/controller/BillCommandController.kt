@@ -87,7 +87,7 @@ class BillCommandController(
     override fun updateMemberDeposit(
         @Positive @PathVariable billId: BillId,
         @PathVariable memberId: MemberId,
-        @RequestBody updateMemberDepositRequest: UpdateMemberDepositRequest,
+        @RequestBody @Valid updateMemberDepositRequest: UpdateMemberDepositRequest,
     ): CustomResponse<Void> {
         billCommandService.updateMemberDeposit(updateMemberDepositRequest.toCommand(billId, memberId))
         return CustomResponse.noContent()
