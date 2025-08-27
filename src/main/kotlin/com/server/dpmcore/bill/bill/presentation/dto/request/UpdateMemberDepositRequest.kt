@@ -15,7 +15,8 @@ data class UpdateMemberDepositRequest(
     @field:Schema(
         description = "상태 변경 메모",
         example = "1차는 참여하고, 2차는 불참했습니다.",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
     )
     val memo: String?,
 ) {
