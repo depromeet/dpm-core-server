@@ -22,6 +22,9 @@ enum class BillExceptionCode(
     ),
     BILL_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "BILL-400-03", "이미 완료된 정산입니다."),
     BILL_ALREADY_PARTICIPATION_CLOSED(HttpStatus.BAD_REQUEST, "BILL-400-04", "이미 참여 마감된 정산입니다."),
+    BILL_ALREADY_PENDING(HttpStatus.BAD_REQUEST, "BILL-400-05", "이미 PENDING 상태입니다."),
+    BILL_ALREADY_OPEN(HttpStatus.BAD_REQUEST, "BILL-400-06", "이미 OPEN 상태입니다."),
+    BILL_ALREADY_IN_PROGRESS(HttpStatus.BAD_REQUEST, "BILL-400-07", "이미 IN_PROGRESS 상태입니다."),
     ;
 
     override fun getStatus(): HttpStatus = status
