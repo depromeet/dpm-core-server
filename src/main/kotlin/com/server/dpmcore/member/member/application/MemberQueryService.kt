@@ -98,6 +98,6 @@ class MemberQueryService(
         memberPersistencePort
             .findAllMemberIdByAuthorityIds(authorityIds)
 
-    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel =
+    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel> =
         memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
 }

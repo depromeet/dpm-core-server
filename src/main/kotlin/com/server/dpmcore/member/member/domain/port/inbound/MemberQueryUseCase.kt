@@ -10,5 +10,5 @@ interface MemberQueryUseCase {
      * @author LeeHanEum
      * @since 2025.07.27
      */
-    fun getMemberNameAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel
+    fun getMemberNameAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel>
 }

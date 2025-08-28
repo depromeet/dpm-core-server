@@ -1,5 +1,6 @@
 package com.server.dpmcore.gathering.gathering.application
 
+import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
 import com.server.dpmcore.gathering.exception.GatheringException
@@ -89,10 +90,22 @@ class GatheringQueryService(
                     .map { memberId -> memberId to gatheringId }
             }.groupBy({ it.first }, { it.second })
 
-    private fun getMemberNameAuthority(memberId: MemberId): Pair<String, String> =
-        memberQueryUseCase
-            .getMemberNameAuthorityByMemberId(memberId)
-            .let { it.name to it.authority }
+    private fun getMemberNameAuthority(memberId: MemberId): Pair<String, String> {
+        var queryResults =
+            memberQueryUseCase
+                .getMemberNameAuthorityByMemberId(memberId)
+
+        // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
+        if (queryResults.size > 1) {
+            queryResults =
+                queryResults.sortedWith(
+                    compareBy {
+                        if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
+                    },
+                )
+        }
+        return queryResults.first().let { it.name to it.authority }
+    }
 
     private fun getTotalSplitAmount(gatheringIds: List<GatheringId>): Int =
         gatheringIds.sumOf { gatheringId ->

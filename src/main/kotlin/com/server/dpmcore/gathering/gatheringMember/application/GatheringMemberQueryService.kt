@@ -44,7 +44,7 @@ class GatheringMemberQueryService(
                 queryResults =
                     queryResults.sortedWith(
                         compareBy {
-                            if (it.authority.equals(AuthorityType.ORGANIZER.name)) 0 else 1
+                            if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
                         },
                     )
             }
@@ -65,7 +65,7 @@ class GatheringMemberQueryService(
                 queryResults =
                     queryResults.sortedWith(
                         compareBy {
-                            if (it.authority.equals(AuthorityType.ORGANIZER.name)) 0 else 1
+                            if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
                         },
                     )
             }
