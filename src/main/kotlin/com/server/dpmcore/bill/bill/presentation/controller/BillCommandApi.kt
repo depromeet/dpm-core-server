@@ -123,7 +123,7 @@ interface BillCommandApi {
     fun updateMemberDeposit(
         @Positive billId: BillId,
         memberId: MemberId,
-        updateMemberDepositRequest: UpdateMemberDepositRequest,
+        @Valid updateMemberDepositRequest: UpdateMemberDepositRequest,
     ): CustomResponse<Void>
 
     @Operation(
@@ -139,8 +139,8 @@ interface BillCommandApi {
             ),
         ],
     )
-    fun updateMembersDeposit(
+    fun updateMemberListDeposit(
         @Positive billId: BillId,
-        updateMemberDepositRequest: UpdateMemberListDepositRequest,
+        @Valid updateMemberListDepositRequest: UpdateMemberListDepositRequest,
     ): CustomResponse<Void>
 }
