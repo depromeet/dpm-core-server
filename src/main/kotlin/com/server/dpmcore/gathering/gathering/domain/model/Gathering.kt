@@ -47,7 +47,7 @@ class Gathering(
     fun isDeleted(): Boolean = deletedAt != null
 
 //    TODO : 회식 멤버가 null일 수 있음
-    fun getGatheringJoinMemberCount() =
+    fun getGatheringJoinMemberCount(gatheringMembers: List<GatheringMember>) =
         gatheringMembers.count { gatheringMember ->
             gatheringMember.isJoined && gatheringMember.deletedAt == null
         }
