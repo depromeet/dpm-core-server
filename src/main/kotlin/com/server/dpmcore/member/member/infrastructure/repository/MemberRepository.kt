@@ -113,7 +113,6 @@ class MemberRepository(
                 .fetch()
 
         return queryResults.map { queryResult ->
-
             val memberName = queryResult.get(MEMBERS.NAME)
             val authorityName = queryResult.get(AUTHORITIES.NAME)
 

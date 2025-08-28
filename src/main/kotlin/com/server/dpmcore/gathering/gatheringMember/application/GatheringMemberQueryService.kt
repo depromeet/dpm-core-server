@@ -36,18 +36,21 @@ class GatheringMemberQueryService(
     fun getQueryGatheringMemberIsJoined(gatheringId: GatheringId): List<GatheringMemberIsJoinQueryModel> {
         val memberIds = getMemberIdsByGatheringId(gatheringId)
         return memberIds.map { memberId ->
-            var queryResults =
+            val queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsJoinByGatheringIdAndMemberId(gatheringId, memberId)
-            // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
-            if (queryResults.size > 1) {
-                queryResults =
-                    queryResults.sortedWith(
-                        compareBy {
-                            if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
-                        },
-                    )
-            }
+                    .let { queryResults ->
+                        // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
+                        if (queryResults.size > 1) {
+                            queryResults.sortedWith(
+                                compareBy {
+                                    if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
+                                },
+                            )
+                        } else {
+                            queryResults
+                        }
+                    }
             queryResults.first()
         }
     }
@@ -60,15 +63,18 @@ class GatheringMemberQueryService(
             var queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(gatheringId, memberId)
-            // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
-            if (queryResults.size > 1) {
-                queryResults =
-                    queryResults.sortedWith(
-                        compareBy {
-                            if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
-                        },
-                    )
-            }
+                    .let { queryResults ->
+                        // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
+                        if (queryResults.size > 1) {
+                            queryResults.sortedWith(
+                                compareBy {
+                                    if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
+                                },
+                            )
+                        } else {
+                            queryResults
+                        }
+                    }
             queryResults.firstOrNull() ?: throw GatheringMemberException.GatheringMemberNotFoundException()
         }
     }

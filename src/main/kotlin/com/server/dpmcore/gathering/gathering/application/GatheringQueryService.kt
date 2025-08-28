@@ -91,19 +91,22 @@ class GatheringQueryService(
             }.groupBy({ it.first }, { it.second })
 
     private fun getMemberNameAuthority(memberId: MemberId): Pair<String, String> {
-        var queryResults =
+        val queryResults =
             memberQueryUseCase
                 .getMemberNameAuthorityByMemberId(memberId)
+                .let { queryResults ->
+                    // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
+                    if (queryResults.size > 1) {
+                        queryResults.sortedWith(
+                            compareBy {
+                                if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
+                            },
+                        )
+                    } else {
+                        queryResults
+                    }
+                }
 
-        // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
-        if (queryResults.size > 1) {
-            queryResults =
-                queryResults.sortedWith(
-                    compareBy {
-                        if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
-                    },
-                )
-        }
         return queryResults.first().let { it.name to it.authority }
     }
 
