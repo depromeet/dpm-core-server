@@ -100,8 +100,8 @@ class MemberRepository(
                 MemberId(it)
             }
 
-    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): MemberNameAuthorityQueryModel {
-        val record =
+    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel> {
+        val queryResults =
             dsl
                 .select(MEMBERS.NAME, AUTHORITIES.NAME)
                 .from(MEMBERS)
@@ -110,19 +110,21 @@ class MemberRepository(
                 .join(AUTHORITIES)
                 .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
                 .where(MEMBERS.MEMBER_ID.eq(memberId.value))
-                .fetchOne() ?: throw MemberNameAuthorityRequiredException()
+                .fetch()
 
-        val memberName = record.get(MEMBERS.NAME)
-        val authorityName = record.get(AUTHORITIES.NAME)
+        return queryResults.map { queryResult ->
+            val memberName = queryResult.get(MEMBERS.NAME)
+            val authorityName = queryResult.get(AUTHORITIES.NAME)
 
-        if (memberName == null || authorityName == null) {
-            throw MemberNameAuthorityRequiredException()
+            if (memberName == null || authorityName == null) {
+                throw MemberNameAuthorityRequiredException()
+            }
+
+            MemberNameAuthorityQueryModel(
+                name = memberName,
+                authority = authorityName,
+            )
         }
-
-        return MemberNameAuthorityQueryModel(
-            name = memberName,
-            authority = authorityName,
-        )
     }
 
     override fun findMemberTeamByMemberId(memberId: MemberId): Int? =
