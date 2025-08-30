@@ -32,7 +32,6 @@ class Gathering(
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
     billId: BillId? = null,
-    var gatheringMembers: MutableList<GatheringMember> = mutableListOf(),
     var gatheringReceipt: GatheringReceipt? = null,
 ) {
     var updatedAt: Instant? = updatedAt
@@ -67,8 +66,8 @@ class Gathering(
 
     override fun toString(): String =
         "Gathering(id=$id, title='$title', description=$description, heldAt=$heldAt, category=$category, " +
-            "hostUserId=$hostUserId, roundNumber=$roundNumber, createdAt=$createdAt, updatedAt=$updatedAt, " +
-            "deletedAt=$deletedAt, bill=$billId, gatheringMembers=$gatheringMembers)"
+                "hostUserId=$hostUserId, roundNumber=$roundNumber, createdAt=$createdAt, updatedAt=$updatedAt, " +
+                "deletedAt=$deletedAt, bill=$billId"
 
     companion object {
         fun create(command: GatheringCreateCommand): Gathering =
