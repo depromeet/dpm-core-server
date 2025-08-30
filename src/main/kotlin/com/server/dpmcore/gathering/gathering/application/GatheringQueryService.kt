@@ -53,7 +53,8 @@ class GatheringQueryService(
 
         return mappedIds.map { (memberId, gatheringIds) ->
             val (memberName, authority) = getMemberNameAuthority(memberId)
-            val totalSplitAmount = getTotalSplitAmount(gatheringIds)
+//            TODO : 여기 멤버에 해당하는 gathering의 분할 금액을 넘겨야하지 않은가..?
+            val totalSplitAmount = findTotalSplitAmount(gatheringIds)
 
             GatheringMemberReceiptQueryModel.of(
                 memberName = memberName,
@@ -110,10 +111,21 @@ class GatheringQueryService(
         return queryResults.first().let { it.name to it.authority }
     }
 
-    private fun getTotalSplitAmount(gatheringIds: List<GatheringId>): Int =
-        gatheringIds.sumOf { gatheringId ->
-            gatheringReceiptQueryService.getSplitAmountByGatheringId(gatheringId)
+    override fun findTotalSplitAmount(gatheringIds: List<GatheringId>): Int? {
+        var totalSplitAmount = 0
+
+        gatheringIds.forEach { gatheringId ->
+            val splitAmount = gatheringReceiptQueryService.getSplitAmountByGatheringId(gatheringId)
+
+            if (splitAmount == null) {
+                return null
+            } else {
+                totalSplitAmount += splitAmount
+            }
         }
+
+        return totalSplitAmount
+    }
 
     override fun getBillMemberSubmittedList(billId: BillId): List<BillMemberIsInvitationSubmittedQueryModel> {
         val gatheringIds = getAllGatheringIdsByBillId(billId)

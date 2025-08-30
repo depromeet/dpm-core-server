@@ -38,11 +38,17 @@ data class BillDetailResponse(
     )
     val billTotalAmount: Int,
     @field:Schema(
-        description = "조회하는 멤버가 지불해야 할 분할된 정산 금액(참여한 회식의 분할 금액의 합)",
+        description = "정산의 총 분할 금액(회식 분할 금액의 합)",
         example = "58600",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
-    val billTotalSplitAmount: Int,
+    val billTotalSplitAmount: Int?,
+    @field:Schema(
+        description = "조회하는 멤버가 지불해야 할 분할된 정산 금액(참여한 회식의 분할 금액의 합)",
+        example = "45500",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
+    val myTotalSplitAmount: Int?,
     @field:Schema(
         description = "정산 상태(OPEN, IN_PROGRESS, COMPLETED)",
         example = "IN_PROGRESS",

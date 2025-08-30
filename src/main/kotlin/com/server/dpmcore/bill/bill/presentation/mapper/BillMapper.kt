@@ -33,9 +33,11 @@ class BillMapper(
 
         val gatheringReceipt =
             gatherings.map { gathering ->
+                if (gathering.id == null) throw GatheringException.GatheringNotFoundException()
+
                 gatheringQueryUseCase
                     .findGatheringReceiptByGatheringId(
-                        gathering.id ?: throw GatheringException.GatheringNotFoundException(),
+                        gathering.id,
                     )
             }
 
@@ -44,18 +46,27 @@ class BillMapper(
 
         val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
+        val billTotalSplitAmount =
+            gatheringQueryUseCase.findTotalSplitAmount(
+                gatherings.map {
+                    it.id ?: throw GatheringException.GatheringNotFoundException()
+                },
+            )
+        val myTotalSplitAmount =
+            Bill.findMemberBillTotalSplitAmount(
+                memberId,
+                gatheringMembersByRetrievedMember,
+                gatheringReceipt,
+            )
+
         return BillDetailResponse(
             billId = bill.id,
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
             billTotalAmount = Bill.getBillTotalAmount(gatheringReceipt),
-            billTotalSplitAmount =
-                Bill.getMemberBillSplitAmount(
-                    memberId,
-                    gatheringMembersByRetrievedMember,
-                    gatheringReceipt,
-                ),
+            billTotalSplitAmount = billTotalSplitAmount,
+            myTotalSplitAmount = myTotalSplitAmount,
             billStatus = bill.billStatus,
             createdAt =
                 LocalDateTime.ofInstant(
@@ -78,8 +89,7 @@ class BillMapper(
                             gathering.id
                                 ?: throw GatheringException.GatheringNotFoundException(),
                         )
-                    val splitAmount = Bill.getMemberBillSplitAmount(memberId, gatheringMembers, gatheringReceipt)
-
+                    val splitAmount = gatheringReceipt.find { it.gatheringId == gathering.id }?.splitAmount
                     BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
                 },
         )

@@ -3,6 +3,7 @@ package com.server.dpmcore.bill.bill.domain.model
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.exception.GatheringReceiptException
+import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
@@ -102,11 +103,26 @@ class Bill(
                 updatedAt = Instant.now(),
             )
 
-        fun getMemberBillSplitAmount(
+        fun getBillSplitAmount(
+            gatherings: List<Gathering>,
+            gatheringReceipts: List<GatheringReceipt>,
+        ): Int? {
+            val gatheringPairReceipts =
+                gatherings.map { gathering ->
+                    val receipt =
+                        gatheringReceipts.find { it.gatheringId == gathering.id }
+                            ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
+                    Pair(gathering, receipt)
+                }
+
+            return gatheringPairReceipts.sumOf { it.second.splitAmount ?: 0 }
+        }
+
+        fun findMemberBillTotalSplitAmount(
             memberId: MemberId,
             gatheringMembers: List<GatheringMember>,
             gatheringReceipts: List<GatheringReceipt>,
-        ): Int {
+        ): Int? {
             val retrieveGatheringMembers = gatheringMembers.filter { it.memberId == memberId }
 
             val gatheringMemberPairReceipts =
@@ -116,7 +132,13 @@ class Bill(
                             ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
                     Pair(gatheringMember, receipt)
                 }
-            return gatheringMemberPairReceipts.filter { it.first.isJoined }.sumOf { it.second.splitAmount ?: 0 }
+            var myTotalSplitAmount = 0
+
+            gatheringMemberPairReceipts.filter { it.first.isJoined }.forEach {
+                val splitAmount = it.second.splitAmount ?: return null
+                myTotalSplitAmount += splitAmount
+            }
+            return myTotalSplitAmount
         }
 
         fun getBillTotalAmount(gatheringReceipts: List<GatheringReceipt>): Int = gatheringReceipts.sumOf { it.amount }
