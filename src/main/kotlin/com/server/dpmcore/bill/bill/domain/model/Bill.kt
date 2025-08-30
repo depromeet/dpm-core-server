@@ -130,7 +130,7 @@ class Bill(
         fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isViewed }
 
         fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean? =
-            if (gatheringMembers.isNotEmpty()) gatheringMembers.first().isJoined else null
+            if (gatheringMembers.isEmpty()) null else gatheringMembers.any { it.isJoined == true }
 
         fun getIsBillInvitationSubmitted(gatheringMembers: List<GatheringMember>): Boolean =
             gatheringMembers.any { it.isInvitationSubmitted }
