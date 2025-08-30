@@ -18,6 +18,6 @@ open class GatheringException(
     )
 
     class GatheringNotParticipantMemberException : GatheringException(
-        GatheringExceptionCode.GATHERING_NOT_PARTICIPAINT_MEMBER,
+        GatheringExceptionCode.GATHERING_NOT_PARTICIPANT_MEMBER,
     )
 }
