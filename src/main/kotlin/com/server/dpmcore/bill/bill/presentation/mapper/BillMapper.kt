@@ -131,7 +131,7 @@ class BillMapper(
         gatheringDetails.forEach { gatheringDetail ->
             gatheringQueryUseCase
                 .findGatheringMemberByGatheringId(gatheringDetail.gatheringId)
-                .filter { it.isJoined }
+                .filter { it.isJoined == true }
                 .forEach { gatheringMember ->
                     participants
                         .computeIfAbsent(gatheringMember.memberId.value) { mutableListOf() }
@@ -171,7 +171,7 @@ class BillMapper(
                 gathering.id ?: throw GatheringException.GatheringNotFoundException(),
             )
         val gatheringMembers = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
-        val joinMemberCount = gatheringMembers.count { it.isJoined }
+        val joinMemberCount = gatheringMembers.count { it.isJoined == true }
 
         return BillListGatheringDetailResponse(
             gatheringId = gathering.id,

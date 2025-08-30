@@ -32,9 +32,10 @@ data class GatheringMemberIsJoinQueryModel(
     @field:Schema(
         description = "gathering 참여 여부",
         example = "true",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = false,
     )
-    val isJoined: Boolean,
+    val isJoined: Boolean?,
 ) {
     companion object {
         fun of(
@@ -42,7 +43,7 @@ data class GatheringMemberIsJoinQueryModel(
             teamNumber: Int,
             authority: String,
             part: String?,
-            isJoined: Boolean,
+            isJoined: Boolean?,
         ) = GatheringMemberIsJoinQueryModel(
             name = name,
             teamNumber = teamNumber,

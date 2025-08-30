@@ -4,12 +4,12 @@ import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 
 data class SubmittedGatheringParticipationResponse(
     val gatheringId: GatheringId,
-    val isJoined: Boolean,
+    val isJoined: Boolean?,
 ) {
     companion object {
         fun of(
             gatheringId: GatheringId,
-            isJoined: Boolean,
+            isJoined: Boolean?,
         ): SubmittedGatheringParticipationResponse =
             SubmittedGatheringParticipationResponse(
                 gatheringId = gatheringId,

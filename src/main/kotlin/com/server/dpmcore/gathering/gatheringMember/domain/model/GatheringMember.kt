@@ -17,7 +17,7 @@ class GatheringMember(
     val memberId: MemberId,
     val gatheringId: GatheringId,
     isViewed: Boolean = false,
-    isJoined: Boolean = false,
+    isJoined: Boolean? = null,
     isInvitationSubmitted: Boolean = false,
     memo: String? = null,
     val createdAt: Instant? = null,
@@ -28,7 +28,7 @@ class GatheringMember(
     var isViewed: Boolean = isViewed
         private set
 
-    var isJoined: Boolean = isJoined
+    var isJoined: Boolean? = isJoined
         private set
 
     var isInvitationSubmitted: Boolean = isInvitationSubmitted

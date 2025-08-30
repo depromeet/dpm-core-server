@@ -134,7 +134,7 @@ class Bill(
                 }
             var myTotalSplitAmount = 0
 
-            gatheringMemberPairReceipts.filter { it.first.isJoined }.forEach {
+            gatheringMemberPairReceipts.filter { it.first.isJoined == true }.forEach {
                 val splitAmount = it.second.splitAmount ?: return null
                 myTotalSplitAmount += splitAmount
             }
@@ -145,7 +145,8 @@ class Bill(
 
         fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isViewed }
 
-        fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isJoined }
+        fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean? =
+            if (gatheringMembers.isNotEmpty()) gatheringMembers.first().isJoined else null
 
         fun getIsBillInvitationSubmitted(gatheringMembers: List<GatheringMember>): Boolean =
             gatheringMembers.any { it.isInvitationSubmitted }

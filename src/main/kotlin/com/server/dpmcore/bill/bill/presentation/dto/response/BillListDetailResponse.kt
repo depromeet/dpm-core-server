@@ -82,9 +82,10 @@ data class BillListDetailResponse(
     @field:Schema(
         description = "정산 참여 여부",
         example = "true",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
     )
-    val isJoined: Boolean,
+    val isJoined: Boolean?,
     @field:Schema(
         description = "정산 참여 제출 여부",
         example = "true",

@@ -25,7 +25,7 @@ data class BillDetailGatheringMemberResponse(
         example = "true",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
-    val isJoined: Boolean,
+    val isJoined: Boolean?,
     @field:Schema(
         description = "정산 완료 여부",
         example = "true",
