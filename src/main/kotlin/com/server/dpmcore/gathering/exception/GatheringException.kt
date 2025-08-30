@@ -16,4 +16,8 @@ open class GatheringException(
     class GatheringNotIncludedInBillException : GatheringException(
         GatheringExceptionCode.GATHERING_NOT_INCLUDED_IN_BILL,
     )
+
+    class GatheringNotParticipantMemberException : GatheringException(
+        GatheringExceptionCode.GATHERING_NOT_PARTICIPAINT_MEMBER,
+    )
 }
