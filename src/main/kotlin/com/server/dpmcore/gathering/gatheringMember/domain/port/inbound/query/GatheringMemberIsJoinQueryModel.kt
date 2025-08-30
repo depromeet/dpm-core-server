@@ -33,7 +33,7 @@ data class GatheringMemberIsJoinQueryModel(
         description = "gathering 참여 여부",
         example = "true",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-        nullable = false,
+        nullable = true,
     )
     val isJoined: Boolean?,
 ) {
