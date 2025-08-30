@@ -95,7 +95,7 @@ class BillCommandController(
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PatchMapping("/{billId}/members/deposit")
-    override fun updateMembersDeposit(
+    override fun updateMemberListDeposit(
         @Positive @PathVariable billId: BillId,
         @RequestBody @Valid updateMemberListDepositRequest: UpdateMemberListDepositRequest,
     ): CustomResponse<Void> {
