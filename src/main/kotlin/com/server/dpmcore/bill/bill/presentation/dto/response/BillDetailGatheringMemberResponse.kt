@@ -21,9 +21,10 @@ data class BillDetailGatheringMemberResponse(
     // TODO : 추후 이름 추가
 //    val name: String? = null,
     @field:Schema(
-        description = "회식 참여 여부",
+        description = "회식 참여 여부 (참여: true, 불참: false, 미응답: null)",
         example = "true",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
     )
     val isJoined: Boolean?,
     @field:Schema(
