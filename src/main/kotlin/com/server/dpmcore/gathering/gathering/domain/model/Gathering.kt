@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gathering.domain.model
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
+import com.server.dpmcore.gathering.exception.GatheringException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
@@ -45,16 +46,21 @@ class Gathering(
 
     fun isDeleted(): Boolean = deletedAt != null
 
-//    TODO : 회식 멤버가 null일 수 있음
-    fun getGatheringJoinMemberCount(gatheringMembers: List<GatheringMember>) =
-        gatheringMembers.count { gatheringMember ->
-            gatheringMember.isJoined && gatheringMember.deletedAt == null
+    //    TODO : 회식 멤버가 null일 수 있음
+    fun getGatheringJoinMemberCount(gatheringMembers: List<GatheringMember>): Int {
+        var joinMemberCount = 0
+
+        gatheringMembers.forEach { gatheringMember ->
+            if (gatheringMember.gatheringId != this.id) {
+                throw GatheringException.GatheringNotParticipantMemberException()
+            }
+            if (gatheringMember.isJoined && gatheringMember.deletedAt == null) {
+                joinMemberCount++
+            }
         }
 
-    fun getBillViewCount() =
-        gatheringMembers.count { gatheringMember ->
-            gatheringMember.isViewed
-        }
+        return joinMemberCount
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -66,8 +72,8 @@ class Gathering(
 
     override fun toString(): String =
         "Gathering(id=$id, title='$title', description=$description, heldAt=$heldAt, category=$category, " +
-                "hostUserId=$hostUserId, roundNumber=$roundNumber, createdAt=$createdAt, updatedAt=$updatedAt, " +
-                "deletedAt=$deletedAt, bill=$billId"
+            "hostUserId=$hostUserId, roundNumber=$roundNumber, createdAt=$createdAt, updatedAt=$updatedAt, " +
+            "deletedAt=$deletedAt, bill=$billId"
 
     companion object {
         fun create(command: GatheringCreateCommand): Gathering =
