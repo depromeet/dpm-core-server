@@ -48,6 +48,8 @@ class Gathering(
 
     //    TODO : 회식 멤버가 null일 수 있음
     fun getGatheringJoinMemberCount(gatheringMembers: List<GatheringMember>): Int {
+        if (this.id == null) throw GatheringException.GatheringIdRequiredException()
+
         var joinMemberCount = 0
 
         gatheringMembers.forEach { gatheringMember ->
