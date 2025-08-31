@@ -8,7 +8,7 @@ data class BillDetailInviteAuthorityResponse(
         example = "1",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
-    val inviteAuthorityId: Long = 1L,
+    val invitedAuthorityId: Long = 1L,
     @field:Schema(
         description = "정산 초대 대상 그룹 이름",
         example = "17_DEEPER",
@@ -26,12 +26,12 @@ data class BillDetailInviteAuthorityResponse(
         fun defaultInviteAuthorityResponse(): List<BillDetailInviteAuthorityResponse> =
             listOf(
                 BillDetailInviteAuthorityResponse(
-                    inviteAuthorityId = 1L,
+                    invitedAuthorityId = 1L,
                     authorityName = "17_DEEPER",
                     authorityMemberCount = 64,
                 ),
                 BillDetailInviteAuthorityResponse(
-                    inviteAuthorityId = 2L,
+                    invitedAuthorityId = 2L,
                     authorityName = "17_ORGANIZER",
                     authorityMemberCount = 12,
                 ),

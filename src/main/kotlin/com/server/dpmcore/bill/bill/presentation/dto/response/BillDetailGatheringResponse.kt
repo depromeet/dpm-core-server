@@ -82,7 +82,7 @@ data class BillDetailGatheringResponse(
                         java.time.ZoneId.of(TIME_ZONE),
                     ),
                 category = gathering.category,
-                joinMemberCount = gathering.getGatheringJoinMemberCount(),
+                joinMemberCount = gathering.getGatheringJoinMemberCount(gatheringMembers),
                 amount = gathering.gatheringReceipt?.amount ?: 0,
                 splitAmount = splitAmount,
             )
