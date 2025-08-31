@@ -23,13 +23,13 @@ data class BillSummaryListByMemberResponse(
             example = "50000",
             requiredMode = Schema.RequiredMode.REQUIRED,
         )
-        val splitAmount: Int,
+        val splitAmount: Int?,
     ) {
         companion object {
             fun of(
                 name: String,
                 authority: String,
-                splitAmount: Int,
+                splitAmount: Int?,
             ): BillSummaryByMemberResponse =
                 BillSummaryByMemberResponse(
                     name = name,

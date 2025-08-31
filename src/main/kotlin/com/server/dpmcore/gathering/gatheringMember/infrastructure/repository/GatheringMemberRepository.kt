@@ -225,7 +225,7 @@ class GatheringMemberRepository(
                 memberId = MemberId(memberId ?: throw MemberNotFoundException()),
                 gatheringId = GatheringId(gatheringId ?: throw GatheringException.GatheringNotFoundException()),
                 isViewed = isViewed!!,
-                isJoined = isJoined!!,
+                isJoined = isJoined,
                 isInvitationSubmitted = isInvitationSubmitted!!,
                 createdAt = createdAt?.let { localDateTimeToInstant(it) },
                 completedAt = completedAt?.let { localDateTimeToInstant(it) },

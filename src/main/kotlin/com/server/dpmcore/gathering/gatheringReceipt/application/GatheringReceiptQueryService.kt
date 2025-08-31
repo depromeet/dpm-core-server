@@ -19,6 +19,6 @@ class GatheringReceiptQueryService(
     override fun findByGatheringId(gatheringId: GatheringId): GatheringReceipt =
         gatheringReceiptPersistencePort.findByGathering(gatheringId).toDomain()
 
-    fun getSplitAmountByGatheringId(gatheringId: GatheringId): Int =
+    fun getSplitAmountByGatheringId(gatheringId: GatheringId): Int? =
         gatheringReceiptPersistencePort.findSplitAmountByGatheringId(gatheringId)
 }

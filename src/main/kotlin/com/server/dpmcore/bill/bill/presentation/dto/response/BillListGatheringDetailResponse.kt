@@ -67,5 +67,5 @@ data class BillListGatheringDetailResponse(
         example = "28300",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
-    val splitAmount: Int,
+    val splitAmount: Int?,
 )

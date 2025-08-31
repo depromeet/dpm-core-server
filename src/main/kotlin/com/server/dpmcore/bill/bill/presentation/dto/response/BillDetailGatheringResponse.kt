@@ -63,13 +63,13 @@ data class BillDetailGatheringResponse(
         example = "28300",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
-    val splitAmount: Int,
+    val splitAmount: Int?,
 ) {
     companion object {
         fun from(
             gathering: Gathering,
             gatheringMembers: List<GatheringMember>,
-            splitAmount: Int,
+            splitAmount: Int?,
         ): BillDetailGatheringResponse =
             BillDetailGatheringResponse(
                 gatheringId = gathering.id ?: throw GatheringException.GatheringIdRequiredException(),

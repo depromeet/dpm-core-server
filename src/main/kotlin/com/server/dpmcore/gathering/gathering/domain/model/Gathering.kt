@@ -56,7 +56,7 @@ class Gathering(
             if (gatheringMember.gatheringId != this.id) {
                 throw GatheringException.GatheringNotParticipantMemberException()
             }
-            if (gatheringMember.isJoined && gatheringMember.deletedAt == null) {
+            if ((gatheringMember.isJoined == true) && gatheringMember.deletedAt == null) {
                 joinMemberCount++
             }
         }

@@ -31,8 +31,8 @@ class GatheringMemberEntity(
     val memberId: Long,
     @Column(name = "is_viewed", nullable = false)
     val isViewed: Boolean = false,
-    @Column(name = "is_joined", nullable = false)
-    val isJoined: Boolean = false,
+    @Column(name = "is_joined")
+    val isJoined: Boolean? = null,
     @Column(name = "is_invitation_submitted", nullable = false)
     val isInvitationSubmitted: Boolean = false,
     @Column(name = "memo")
