@@ -80,7 +80,7 @@ class BillCommandService(
                         gathering.id,
                     ).closeParticipation(
                         gatheringMember.count {
-                            it.isJoined
+                            it.isJoined == true
                         },
                     )
             gatheringCommandUseCase.updateGatheringReceiptSplitAmount(receipt)

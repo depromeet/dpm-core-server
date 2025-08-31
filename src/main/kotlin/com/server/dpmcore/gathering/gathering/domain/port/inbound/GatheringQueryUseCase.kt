@@ -31,4 +31,6 @@ interface GatheringQueryUseCase {
     fun getBillMemberSubmittedList(billId: BillId): List<BillMemberIsInvitationSubmittedQueryModel>
 
     fun getAllGatheringMembersByBillId(billId: BillId): List<GatheringMember>
+
+    fun findTotalSplitAmount(gatheringIds: List<GatheringId>): Int?
 }

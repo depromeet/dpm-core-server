@@ -102,11 +102,11 @@ class Bill(
                 updatedAt = Instant.now(),
             )
 
-        fun getMemberBillSplitAmount(
+        fun findMemberBillTotalSplitAmount(
             memberId: MemberId,
             gatheringMembers: List<GatheringMember>,
             gatheringReceipts: List<GatheringReceipt>,
-        ): Int {
+        ): Int? {
             val retrieveGatheringMembers = gatheringMembers.filter { it.memberId == memberId }
 
             val gatheringMemberPairReceipts =
@@ -116,14 +116,21 @@ class Bill(
                             ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
                     Pair(gatheringMember, receipt)
                 }
-            return gatheringMemberPairReceipts.filter { it.first.isJoined }.sumOf { it.second.splitAmount ?: 0 }
+            var myTotalSplitAmount = 0
+
+            gatheringMemberPairReceipts.filter { it.first.isJoined == true }.forEach {
+                val splitAmount = it.second.splitAmount ?: return null
+                myTotalSplitAmount += splitAmount
+            }
+            return myTotalSplitAmount
         }
 
         fun getBillTotalAmount(gatheringReceipts: List<GatheringReceipt>): Int = gatheringReceipts.sumOf { it.amount }
 
         fun getIsBillViewed(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isViewed }
 
-        fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean = gatheringMembers.any { it.isJoined }
+        fun getIsBillJoined(gatheringMembers: List<GatheringMember>): Boolean? =
+            if (gatheringMembers.isEmpty()) null else gatheringMembers.any { it.isJoined == true }
 
         fun getIsBillInvitationSubmitted(gatheringMembers: List<GatheringMember>): Boolean =
             gatheringMembers.any { it.isInvitationSubmitted }
