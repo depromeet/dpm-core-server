@@ -186,7 +186,7 @@ class BillMapper(
 //            receipt = gatheringReceipt, TODO : 영수증 추 후 구현
             joinMemberCount = joinMemberCount,
             amount = gatheringReceipt.amount,
-            splitAmount = gatheringReceipt.splitAmount ?: 0,
+            splitAmount = gatheringReceipt.splitAmount,
         )
     }
 
