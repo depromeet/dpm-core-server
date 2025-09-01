@@ -27,31 +27,13 @@ class MemberRepository(
     private val queryFactory: SpringDataQueryFactory,
     private val dsl: DSLContext,
 ) : MemberPersistencePort {
-    override fun findByEmail(email: String): Member? =
-        queryFactory
-            .singleQueryOrNull {
-                select(entity(MemberEntity::class))
-                from(entity(MemberEntity::class))
-                where(col(MemberEntity::email).equal(email))
-            }?.toDomain()
+    override fun findByEmail(email: String): Member? = memberJpaRepository.findByEmail(email).toDomain()
 
     override fun save(member: Member): Member = memberJpaRepository.save(MemberEntity.from(member)).toDomain()
 
-    override fun findById(memberId: Long): Member? =
-        queryFactory
-            .singleQueryOrNull {
-                select(entity(MemberEntity::class))
-                from(entity(MemberEntity::class))
-                where(col(MemberEntity::id).equal(memberId))
-            }?.toDomain()
+    override fun findById(memberId: Long): Member? = memberJpaRepository.findById(memberId).orElse(null).toDomain()
 
-    override fun existsById(memberId: Long): Boolean =
-        queryFactory
-            .singleQueryOrNull {
-                select(col(MemberEntity::id))
-                from(entity(MemberEntity::class))
-                where(col(MemberEntity::id).equal(memberId))
-            } != null
+    override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
     override fun delete(memberId: Long) {
         queryFactory
