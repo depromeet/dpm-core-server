@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class MemberTeamRepository(
+    private val memberTeamJpaRepository: MemberTeamJpaRepository,
     private val dsl: DSLContext,
 ) : MemberTeamPersistencePort {
     override fun save(memberTeam: MemberTeam) {
@@ -17,4 +18,6 @@ class MemberTeamRepository(
             .set(MEMBER_TEAMS.TEAM_ID, memberTeam.teamId.value)
             .execute()
     }
+
+    override fun deleteByMemberId(memberId: Long) = memberTeamJpaRepository.deleteByMemberId(memberId)
 }

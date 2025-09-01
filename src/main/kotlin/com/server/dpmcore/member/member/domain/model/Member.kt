@@ -63,6 +63,12 @@ class Member(
         updatedAt = Instant.now()
     }
 
+    fun softDelete() {
+        status = MemberStatus.WITHDRAWN
+        deletedAt = Instant.now()
+        updatedAt = Instant.now()
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Member) return false

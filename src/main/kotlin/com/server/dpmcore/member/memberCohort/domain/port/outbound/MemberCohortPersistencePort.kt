@@ -4,4 +4,6 @@ import com.server.dpmcore.member.memberCohort.domain.model.MemberCohort
 
 interface MemberCohortPersistencePort {
     fun save(memberCohort: MemberCohort)
+
+    fun deleteByMemberId(memberId: Long)
 }

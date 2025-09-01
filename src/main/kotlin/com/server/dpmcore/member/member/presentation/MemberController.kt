@@ -33,7 +33,7 @@ class MemberController(
         memberId: MemberId,
         response: HttpServletResponse,
     ): CustomResponse<Void> {
-        memberQueryService.withdraw(memberId, response)
+        memberCommandService.withdraw(memberId, response)
         return CustomResponse.noContent()
     }
 

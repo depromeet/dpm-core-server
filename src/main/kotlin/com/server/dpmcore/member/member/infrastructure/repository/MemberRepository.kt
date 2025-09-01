@@ -19,7 +19,6 @@ import org.jooq.generated.tables.references.MEMBER_COHORTS
 import org.jooq.generated.tables.references.MEMBER_TEAMS
 import org.jooq.generated.tables.references.TEAMS
 import org.springframework.stereotype.Repository
-import java.time.Instant
 
 @Repository
 class MemberRepository(
@@ -34,14 +33,6 @@ class MemberRepository(
     override fun findById(memberId: Long): Member? = memberJpaRepository.findById(memberId).orElse(null).toDomain()
 
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
-
-    override fun delete(memberId: Long) {
-        queryFactory
-            .updateQuery(MemberEntity::class) {
-                set(col(MemberEntity::deletedAt), Instant.now())
-                where(col(MemberEntity::id).equal(memberId))
-            }.executeUpdate()
-    }
 
     override fun existsDeletedMemberById(memberId: Long): Boolean =
         queryFactory

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class MemberCohortRepository(
+    private val memberCohortJpaRepository: MemberCohortJpaRepository,
     private val dsl: DSLContext,
 ) : MemberCohortPersistencePort {
     override fun save(memberCohort: MemberCohort) {
@@ -17,4 +18,6 @@ class MemberCohortRepository(
             .set(MEMBER_COHORTS.COHORT_ID, memberCohort.cohortId.value)
             .execute()
     }
+
+    override fun deleteByMemberId(memberId: Long) = memberCohortJpaRepository.deleteByMemberId(memberId)
 }
