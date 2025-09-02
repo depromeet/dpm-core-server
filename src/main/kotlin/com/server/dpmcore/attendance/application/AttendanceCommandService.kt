@@ -27,7 +27,7 @@ class AttendanceCommandService(
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
         val attendance =
             attendancePersistencePort
-                .findAttendanceBy(command.sessionId, command.memberId)
+                .findAttendanceBy(command.sessionId.value, command.memberId.value)
                 ?.also {
                     if (it.isAttended()) {
                         throw CheckedAttendanceException()
@@ -48,7 +48,7 @@ class AttendanceCommandService(
     fun updateAttendanceStatus(command: AttendanceStatusUpdateCommand) {
         val attendance =
             attendancePersistencePort
-                .findAttendanceBy(command.sessionId, command.memberId)
+                .findAttendanceBy(command.sessionId.value, command.memberId.value)
                 ?: throw AttendanceNotFoundException()
 
         attendance.updateStatus(command.attendanceStatus)
