@@ -1,9 +1,6 @@
 package com.server.dpmcore.member.member.infrastructure.repository
 
-import com.linecorp.kotlinjdsl.querydsl.expression.col
-import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.server.dpmcore.authority.domain.model.AuthorityId
-import com.server.dpmcore.common.jdsl.singleQueryOrNull
 import com.server.dpmcore.member.member.application.exception.MemberNameAuthorityRequiredException
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -23,7 +20,6 @@ import org.springframework.stereotype.Repository
 @Repository
 class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
-    private val queryFactory: SpringDataQueryFactory,
     private val dsl: DSLContext,
 ) : MemberPersistencePort {
     override fun findByEmail(email: String): Member? = memberJpaRepository.findByEmail(email).toDomain()
@@ -35,16 +31,7 @@ class MemberRepository(
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
     override fun existsDeletedMemberById(memberId: Long): Boolean =
-        queryFactory
-            .singleQueryOrNull {
-                select(col(MemberEntity::id))
-                from(entity(MemberEntity::class))
-                where(
-                    col(MemberEntity::id)
-                        .equal(memberId)
-                        .and(col(MemberEntity::deletedAt).isNotNull()),
-                )
-            } != null
+        memberJpaRepository.existsByIdAndDeletedAtIsNotNull(memberId)
 
     override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
         dsl
