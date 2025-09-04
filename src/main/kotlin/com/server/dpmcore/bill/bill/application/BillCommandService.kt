@@ -1,6 +1,5 @@
 package com.server.dpmcore.bill.bill.application
 
-import com.server.dpmcore.bill.bill.application.exception.BillIdRequiredException
 import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.application.mapper.BillGatheringMapper.toCommand
 import com.server.dpmcore.bill.bill.domain.model.Bill
@@ -88,10 +87,7 @@ class BillCommandService(
 //            TODO : gathering updatedAt 업데이트
         }
 
-        return bill
-            .closeParticipation()
-            .also { billPersistencePort.save(it) }
-            .id ?: throw BillIdRequiredException()
+        return billPersistencePort.save(bill.closeParticipation())
     }
 
     fun markBillAsChecked(
