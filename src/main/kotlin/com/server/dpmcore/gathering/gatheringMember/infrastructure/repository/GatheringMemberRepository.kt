@@ -4,11 +4,12 @@ import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.linecorp.kotlinjdsl.spring.data.updateQuery
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
-import com.server.dpmcore.gathering.exception.GatheringException
-import com.server.dpmcore.gathering.exception.GatheringMemberException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.GatheringMemberIsJoinQueryModel
@@ -48,12 +49,12 @@ class GatheringMemberRepository(
         memberId: MemberId,
     ): GatheringMember =
         gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId)?.toDomain()
-            ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+            ?: throw GatheringMemberNotFoundException()
 
     override fun updateGatheringMemberById(gatheringMember: GatheringMember) {
         val id =
             gatheringMember.id?.value
-                ?: throw GatheringException.GatheringIdRequiredException()
+                ?: throw GatheringIdRequiredException()
 
         queryFactory
             .updateQuery<GatheringMemberEntity> {
@@ -110,7 +111,7 @@ class GatheringMemberRepository(
             .from(GATHERING_MEMBERS)
             .where(GATHERING_MEMBERS.GATHERING_ID.eq(gatheringId.value))
             .fetch(GATHERING_MEMBERS.MEMBER_ID)
-            .map { MemberId(it ?: throw GatheringMemberException.GatheringMemberNotFoundException()) }
+            .map { MemberId(it ?: throw GatheringMemberNotFoundException()) }
 
     override fun findGatheringMemberWithIsJoinByGatheringIdAndMemberId(
         gatheringId: GatheringId,
@@ -149,7 +150,7 @@ class GatheringMemberRepository(
             val isJoined = query.get(GATHERING_MEMBERS.IS_JOINED)
 
             if (memberName == null || authorityName == null || isJoined == null) {
-                throw GatheringMemberException.GatheringMemberNotFoundException()
+                throw GatheringMemberNotFoundException()
             }
             GatheringMemberIsJoinQueryModel(
                 name = memberName,
@@ -212,7 +213,7 @@ class GatheringMemberRepository(
             val isInvitationSubmitted = query.get(GATHERING_MEMBERS.IS_INVITATION_SUBMITTED)
 
             if (memberName == null || authorityName == null || isInvitationSubmitted == null) {
-                throw GatheringMemberException.GatheringMemberNotFoundException()
+                throw GatheringMemberNotFoundException()
             }
             BillMemberIsInvitationSubmittedQueryModel(
                 name = memberName,
@@ -259,9 +260,9 @@ class GatheringMemberRepository(
             val deletedAt = query.get(GATHERING_MEMBERS.DELETED_AT)
 
             GatheringMember(
-                id = GatheringMemberId(id ?: throw GatheringMemberException.GatheringMemberNotFoundException()),
+                id = GatheringMemberId(id ?: throw GatheringMemberNotFoundException()),
                 memberId = MemberId(memberId ?: throw MemberNotFoundException()),
-                gatheringId = GatheringId(gatheringId ?: throw GatheringException.GatheringNotFoundException()),
+                gatheringId = GatheringId(gatheringId ?: throw GatheringNotFoundException()),
                 isViewed = isViewed!!,
                 isJoined = isJoined,
                 isInvitationSubmitted = isInvitationSubmitted!!,

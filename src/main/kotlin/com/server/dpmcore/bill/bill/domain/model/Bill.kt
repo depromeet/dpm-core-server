@@ -2,9 +2,9 @@ package com.server.dpmcore.bill.bill.domain.model
 
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.bill.exception.BillException
-import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.GatheringReceiptNotFoundException
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
@@ -113,7 +113,7 @@ class Bill(
                 retrieveGatheringMembers.map { gatheringMember ->
                     val receipt =
                         gatheringReceipts.find { it.gatheringId == gatheringMember.gatheringId }
-                            ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
+                            ?: throw GatheringReceiptNotFoundException()
                     Pair(gatheringMember, receipt)
                 }
             var myTotalSplitAmount = 0

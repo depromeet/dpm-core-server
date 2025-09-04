@@ -2,13 +2,14 @@ package com.server.dpmcore.gathering.gathering.infrastructure.repository
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
-import com.server.dpmcore.gathering.exception.GatheringException
-import com.server.dpmcore.gathering.exception.GatheringMemberException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.GATHERINGS
@@ -28,7 +29,7 @@ class GatheringRepository(
     override fun findById(id: Long): Gathering =
         gatheringJpaRepository
             .findById(id)
-            .orElseThrow { GatheringException.GatheringNotFoundException() }
+            .orElseThrow { GatheringNotFoundException() }
             .toDomain()
 
     override fun saveAll(
@@ -52,7 +53,7 @@ class GatheringRepository(
             .from(GATHERINGS)
             .where(GATHERINGS.BILL_ID.eq(billId.value))
             .fetch(GATHERINGS.GATHERING_ID)
-            .map { GatheringId(it ?: throw GatheringException.GatheringIdRequiredException()) }
+            .map { GatheringId(it ?: throw GatheringIdRequiredException()) }
 
     override fun getSubmittedParticipantEachGathering(
         billId: BillId,
@@ -73,11 +74,11 @@ class GatheringRepository(
                 SubmittedParticipantGathering(
                     gatheringId =
                         GatheringId(
-                            record[GATHERINGS.GATHERING_ID] ?: throw GatheringException.GatheringNotFoundException(),
+                            record[GATHERINGS.GATHERING_ID] ?: throw GatheringNotFoundException(),
                         ),
                     isJoined =
                         record[GATHERING_MEMBERS.IS_JOINED]
-                            ?: throw GatheringMemberException.GatheringMemberNotFoundException(),
+                            ?: throw GatheringMemberNotFoundException(),
                 )
             }
 }

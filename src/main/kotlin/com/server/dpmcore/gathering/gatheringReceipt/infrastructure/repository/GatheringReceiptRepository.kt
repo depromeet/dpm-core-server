@@ -2,9 +2,10 @@ package com.server.dpmcore.gathering.gatheringReceipt.infrastructure.repository
 
 import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
-import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.GatheringReceiptIdRequiredException
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.GatheringReceiptNotFoundException
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceiptId
 import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptPersistencePort
@@ -30,11 +31,11 @@ class GatheringReceiptRepository(
     override fun findById(gatheringReceiptId: GatheringReceiptId): GatheringReceiptEntity =
         gatheringReceiptJpaRepository.findByIdOrNull(
             gatheringReceiptId.value,
-        ) ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
+        ) ?: throw GatheringReceiptNotFoundException()
 
     override fun findByGathering(gatheringId: GatheringId): GatheringReceiptEntity =
         gatheringReceiptJpaRepository.findByGatheringId(gatheringId)
-            ?: throw GatheringReceiptException.GatheringReceiptNotFoundException()
+            ?: throw GatheringReceiptNotFoundException()
 
     override fun updateSplitAmount(gatheringReceipt: GatheringReceipt): Int =
         queryFactory
@@ -46,7 +47,7 @@ class GatheringReceiptRepository(
                         GatheringReceiptEntity::id,
                     ).equal(
                         gatheringReceipt.id?.value
-                            ?: throw GatheringReceiptException.GatheringReceiptIdRequiredException(),
+                            ?: throw GatheringReceiptIdRequiredException(),
                     ),
                 )
             }.executeUpdate()

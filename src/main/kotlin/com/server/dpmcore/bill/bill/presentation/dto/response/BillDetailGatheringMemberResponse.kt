@@ -1,6 +1,6 @@
 package com.server.dpmcore.bill.bill.presentation.dto.response
 
-import com.server.dpmcore.gathering.exception.GatheringMemberException
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberIdRequiredException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
 import io.swagger.v3.oas.annotations.media.Schema
@@ -39,7 +39,7 @@ data class BillDetailGatheringMemberResponse(
             BillDetailGatheringMemberResponse(
                 gatheringMemberId =
                     gatheringMember.id
-                        ?: throw GatheringMemberException.GatheringMemberIdRequiredException(),
+                        ?: throw GatheringMemberIdRequiredException(),
                 memberId = gatheringMember.memberId.value,
 //                name = gatheringMember.memberId.name,
                 isJoined = gatheringMember.isJoined,

@@ -7,8 +7,8 @@ import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
 import com.server.dpmcore.bill.bill.domain.port.inbound.UpdateMemberDepositCommand
 import com.server.dpmcore.bill.bill.domain.port.inbound.UpdateMemberListDepositCommand
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
-import com.server.dpmcore.gathering.exception.GatheringException
-import com.server.dpmcore.gathering.exception.GatheringMemberException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotIncludedInBillException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
@@ -17,6 +17,7 @@ import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.Gather
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberCommandService
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -91,14 +92,14 @@ class GatheringCommandService(
     ) {
         val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(billId)
         val filteredGatheringIds = request.gatheringJoins.filter { it.gatheringId !in gatheringIds }
-        if (filteredGatheringIds.isNotEmpty()) throw GatheringException.GatheringNotIncludedInBillException()
+        if (filteredGatheringIds.isNotEmpty()) throw GatheringNotIncludedInBillException()
 
         request.gatheringJoins.forEach {
             val gatheringMember =
                 gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(it.gatheringId, memberId)
             gatheringMemberCommandService.markAsJoined(
                 GatheringJoinCommand.of(
-                    gatheringMember.id ?: throw GatheringException.GatheringIdRequiredException(),
+                    gatheringMember.id ?: throw GatheringIdRequiredException(),
                     it.isJoined,
                 ),
             )
@@ -125,7 +126,7 @@ class GatheringCommandService(
         val gatherings = gatheringPersistencePort.findByBillId(command.billId)
 
         gatherings.forEach { gathering ->
-            gathering.id ?: throw GatheringException.GatheringIdRequiredException()
+            gathering.id ?: throw GatheringIdRequiredException()
             val gatheringMember =
                 gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(gathering.id, command.memberId)
 
@@ -150,7 +151,7 @@ class GatheringCommandService(
         gatheringMembers.forEach { gatheringMember ->
             val isDeposit =
                 command.members.find { member -> member.memberId == gatheringMember.memberId }?.isDeposit
-                    ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+                    ?: throw GatheringMemberNotFoundException()
             gatheringMember.updateDeposit(isDeposit, null)
             gatheringMemberCommandService.updateDeposit(gatheringMember)
         }

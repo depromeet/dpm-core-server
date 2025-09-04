@@ -1,7 +1,8 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.model
 
-import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gatheringMember.application.exception.AlreadySubmittedInvitationException
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberIdRequiredException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
@@ -49,9 +50,9 @@ class GatheringMember(
     fun gatheringParticipationSubmittedConfirm() {
 //        TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
         if (isInvitationSubmitted) {
-            throw GatheringMemberException.AlreadySubmittedInvitationException()
+            throw AlreadySubmittedInvitationException()
         }
-        id ?: throw GatheringMemberException.GatheringMemberIdRequiredException()
+        id ?: throw GatheringMemberIdRequiredException()
 
         this.isInvitationSubmitted = true
         this.updatedAt = Instant.now()
