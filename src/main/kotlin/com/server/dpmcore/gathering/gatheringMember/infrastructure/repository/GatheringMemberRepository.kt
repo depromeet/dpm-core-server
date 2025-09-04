@@ -4,14 +4,14 @@ import com.linecorp.kotlinjdsl.querydsl.expression.col
 import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.linecorp.kotlinjdsl.spring.data.updateQuery
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
-import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
+import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command.GatheringMemberDepositCommand
+import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command.GatheringMemberJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.GatheringMemberIsJoinQueryModel
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
@@ -51,24 +51,6 @@ class GatheringMemberRepository(
         gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId)?.toDomain()
             ?: throw GatheringMemberNotFoundException()
 
-    override fun updateGatheringMemberById(gatheringMember: GatheringMember) {
-        val id =
-            gatheringMember.id?.value
-                ?: throw GatheringIdRequiredException()
-
-        queryFactory
-            .updateQuery<GatheringMemberEntity> {
-                where(col(GatheringMemberEntity::id).equal(id))
-                set(col(GatheringMemberEntity::isViewed), gatheringMember.isViewed)
-                set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
-                set(col(GatheringMemberEntity::isInvitationSubmitted), gatheringMember.isInvitationSubmitted)
-                set(col(GatheringMemberEntity::memo), gatheringMember.memo)
-                set(col(GatheringMemberEntity::completedAt), gatheringMember.completedAt)
-                set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
-                set(col(GatheringMemberEntity::deletedAt), gatheringMember.deletedAt)
-            }.executeUpdate()
-    }
-
     /**
      * JPA를 통해 루트 엔티티를 fetch하고 Dirty Checking을 통해 업데이트하면 불필요한 조회가 발생함.
      *
@@ -96,11 +78,35 @@ class GatheringMemberRepository(
      * @author LeeHanEum
      * @since 2025.09.04
      */
-    override fun updateIsJoinedById(command: GatheringJoinCommand) {
+    override fun updateIsJoinedById(command: GatheringMemberJoinCommand) {
         dsl
             .update(GATHERING_MEMBERS)
             .set(GATHERING_MEMBERS.IS_JOINED, command.isJoined)
             .set(GATHERING_MEMBERS.UPDATED_AT, LocalDateTime.now())
+            .where(GATHERING_MEMBERS.MEMBER_ID.eq(command.gatheringMemberId))
+            .execute()
+    }
+
+    /**
+     * JPA를 통해 루트 엔티티를 fetch하고 Dirty Checking을 통해 업데이트하면 불필요한 조회가 발생함.
+     *
+     * GatheringMember는 애그리거트 하위 도메인이므로, 조회 없이 jOOQ로 바로 업데이트.
+     *
+     * 애그리거트 루트에서 시작해 하위 도메인까지 전달되는 업데이트 명령을 Command 객체로 캡슐화하여, 데이터 무결성과 의도를 명확히 보장하고자 함
+     *
+     * @author LeeHanEum
+     * @since 2025.09.04
+     */
+    override fun updateDepositAndMemoById(command: GatheringMemberDepositCommand) {
+        val now = LocalDateTime.now()
+
+        dsl.update(GATHERING_MEMBERS)
+            .set(GATHERING_MEMBERS.UPDATED_AT, now)
+            .set(GATHERING_MEMBERS.MEMO, command.memo)
+            .set(
+                GATHERING_MEMBERS.COMPLETED_AT,
+                if (command.isDeposit) now else null,
+            )
             .where(GATHERING_MEMBERS.MEMBER_ID.eq(command.gatheringMemberId))
             .execute()
     }
@@ -173,6 +179,23 @@ class GatheringMemberRepository(
                 set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
                 set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
             }.executeUpdate()
+    }
+
+    /**
+     * JPA를 통해 루트 엔티티를 fetch하고 Dirty Checking을 통해 업데이트하면 불필요한 조회가 발생함.
+     *
+     * GatheringMember는 애그리거트 하위 도메인이므로, 조회 없이 jOOQ로 바로 업데이트.
+     *
+     * @author LeeHanEum
+     * @since 2025.09.04
+     */
+    override fun updateIsInvitationSubmittedById(gatheringMemberId: Long) {
+        dsl
+            .update(GATHERING_MEMBERS)
+            .set(GATHERING_MEMBERS.IS_INVITATION_SUBMITTED, true)
+            .set(GATHERING_MEMBERS.UPDATED_AT, LocalDateTime.now())
+            .where(GATHERING_MEMBERS.MEMBER_ID.eq(gatheringMemberId))
+            .execute()
     }
 
     override fun findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(

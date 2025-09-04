@@ -47,33 +47,15 @@ class GatheringMember(
     var deletedAt: Instant? = deletedAt
         private set
 
-    fun gatheringParticipationSubmittedConfirm() {
-//        TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
+    // TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
+    fun checkParticipationIsSubmitted() {
         if (isInvitationSubmitted) {
             throw AlreadySubmittedInvitationException()
         }
         id ?: throw GatheringMemberIdRequiredException()
-
-        this.isInvitationSubmitted = true
-        this.updatedAt = Instant.now()
     }
 
     fun isConfirmed(): Boolean = completedAt != null
-
-    fun updateDeposit(
-        isDeposit: Boolean,
-        memo: String?,
-    ) {
-        val now = Instant.now()
-        this.updatedAt = now
-        this.memo = memo
-
-        if (isDeposit) {
-            this.completedAt = now
-        } else {
-            this.completedAt = null
-        }
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
