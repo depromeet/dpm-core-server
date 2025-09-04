@@ -86,10 +86,6 @@ dependencies {
 
     implementation("io.jsonwebtoken:jjwt:0.12.6")
 
-    // kotlin-jdsl
-    val jdslVersion = "2.2.1.RELEASE"
-    implementation("com.linecorp.kotlin-jdsl:spring-data-kotlin-jdsl-starter-jakarta:$jdslVersion")
-
     implementation("org.jooq:jooq:3.19.1")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     jooqGenerator("org.jooq:jooq-meta:3.19.1")
