@@ -1,9 +1,9 @@
 package com.server.dpmcore.gathering.gathering.infrastructure.entity
 
+import com.server.dpmcore.bill.bill.application.exception.BillIdRequiredException
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.infrastructure.entity.BillEntity
-import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
@@ -103,7 +103,7 @@ class GatheringEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            billId = BillId(bill?.id ?: throw BillException.BillIdRequiredException()),
+            billId = BillId(bill?.id ?: throw BillIdRequiredException()),
             gatheringReceipt = receipt?.toDomain(),
         )
 }

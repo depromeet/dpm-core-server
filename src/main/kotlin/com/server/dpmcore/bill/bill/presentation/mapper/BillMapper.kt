@@ -1,13 +1,13 @@
 package com.server.dpmcore.bill.bill.presentation.mapper
 
+import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailGatheringResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListGatheringDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
-import com.server.dpmcore.bill.exception.BillAccountException
-import com.server.dpmcore.bill.exception.BillException
+import com.server.dpmcore.bill.billAccount.application.exception.BillAccountNotFoundException
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringRequiredException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
@@ -26,7 +26,7 @@ class BillMapper(
         bill: Bill,
         memberId: MemberId,
     ): BillDetailResponse {
-        if (bill.id == null) throw BillException.BillNotFoundException()
+        if (bill.id == null) throw BillNotFoundException()
 
         val gatherings =
             gatheringQueryUseCase.getAllGatheringsByBillId(bill.id)
@@ -116,7 +116,7 @@ class BillMapper(
         memberId: MemberId,
     ): BillListDetailResponse {
         val gatheringDetails =
-            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
+            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillNotFoundException()).map {
                 toBillListGatheringDetailResponse(it)
             }
         if (gatheringDetails.isEmpty()) throw GatheringRequiredException()
@@ -151,8 +151,8 @@ class BillMapper(
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
             createdAt =
-                instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
-            billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
+                instantToLocalDateTime(bill.createdAt ?: throw BillNotFoundException()),
+            billAccountId = bill.billAccount.id?.value ?: throw BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
             invitedMemberCount = Bill.getBillInvitedMemberCount(allBillGatheringMembers),
             invitationSubmittedCount = Bill.getBillInvitationSubmittedCount(allBillGatheringMembers),

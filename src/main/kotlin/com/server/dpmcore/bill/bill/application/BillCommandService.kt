@@ -1,5 +1,7 @@
 package com.server.dpmcore.bill.bill.application
 
+import com.server.dpmcore.bill.bill.application.exception.BillIdRequiredException
+import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.application.mapper.BillGatheringMapper.toCommand
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
@@ -10,7 +12,6 @@ import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
-import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
@@ -62,7 +63,7 @@ class BillCommandService(
     fun closeBillParticipation(billId: BillId): BillId {
         val bill =
             billPersistencePort.findById(billId)
-                ?: throw BillException.BillNotFoundException()
+                ?: throw BillNotFoundException()
 
         bill.checkParticipationClosable()
 
@@ -90,7 +91,7 @@ class BillCommandService(
         return bill
             .closeParticipation()
             .also { billPersistencePort.save(it) }
-            .id ?: throw BillException.BillIdRequiredException()
+            .id ?: throw BillIdRequiredException()
     }
 
     fun markBillAsChecked(

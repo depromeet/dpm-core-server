@@ -1,5 +1,6 @@
 package com.server.dpmcore.bill.bill.application
 
+import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.BillQueryUseCase
@@ -11,7 +12,6 @@ import com.server.dpmcore.bill.bill.presentation.dto.response.BillSummaryListByM
 import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedGatheringParticipationResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.SubmittedParticipantEachGatheringResponse
 import com.server.dpmcore.bill.bill.presentation.mapper.BillMapper
-import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
@@ -24,7 +24,7 @@ class BillQueryService(
 ) : BillQueryUseCase {
     override fun getById(billId: BillId): Bill =
         billPersistencePort.findById(billId)
-            ?: throw BillException.BillNotFoundException()
+            ?: throw BillNotFoundException()
 
     fun getBillDetails(
         billId: BillId,

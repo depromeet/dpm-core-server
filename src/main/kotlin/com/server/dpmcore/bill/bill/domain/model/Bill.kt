@@ -1,7 +1,8 @@
 package com.server.dpmcore.bill.bill.domain.model
 
+import com.server.dpmcore.bill.bill.application.exception.BillAlreadyCompletedException
+import com.server.dpmcore.bill.bill.application.exception.BillCannotCloseParticipationException
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
-import com.server.dpmcore.bill.exception.BillException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.application.exception.GatheringReceiptNotFoundException
@@ -52,7 +53,7 @@ class Bill(
 
     fun closeParticipation(): Bill {
         if (isCompleted()) {
-            throw BillException.BillAlreadyCompletedException()
+            throw BillAlreadyCompletedException()
         }
 
         return Bill(
@@ -71,10 +72,10 @@ class Bill(
 
     fun checkParticipationClosable() {
         if (isCompleted()) {
-            throw BillException.BillAlreadyCompletedException()
+            throw BillAlreadyCompletedException()
         }
         if (billStatus != BillStatus.OPEN) {
-            throw BillException.BillCannotCloseParticipationException()
+            throw BillCannotCloseParticipationException()
         }
     }
 
