@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -20,16 +21,11 @@ class GatheringMemberCommandService(
     }
 
     fun markAsChecked(gatheringMember: GatheringMember) {
-        gatheringMember.markAsChecked()
-        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
+        gatheringMemberPersistencePort.updateIsViewedById(gatheringMember.memberId.value)
     }
 
-    fun markAsJoined(
-        gatheringMember: GatheringMember,
-        isJoined: Boolean,
-    ) {
-        gatheringMember.markAsJoined(isJoined)
-        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
+    fun markAsJoined(command: GatheringJoinCommand) {
+        gatheringMemberPersistencePort.updateIsJoinedById(command)
     }
 
     fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {

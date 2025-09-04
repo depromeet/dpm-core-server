@@ -46,16 +46,6 @@ class GatheringMember(
     var deletedAt: Instant? = deletedAt
         private set
 
-    fun markAsChecked() {
-        this.isViewed = true
-        this.updatedAt = Instant.now()
-    }
-
-    fun markAsJoined(isJoined: Boolean) {
-        this.isJoined = isJoined
-        this.updatedAt = Instant.now()
-    }
-
     fun gatheringParticipationSubmittedConfirm() {
 //        TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
         if (isInvitationSubmitted) {

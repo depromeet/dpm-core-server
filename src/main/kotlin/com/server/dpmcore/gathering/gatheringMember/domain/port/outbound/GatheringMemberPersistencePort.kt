@@ -3,6 +3,7 @@ package com.server.dpmcore.gathering.gatheringMember.domain.port.outbound
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.GatheringMemberIsJoinQueryModel
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -40,4 +41,8 @@ interface GatheringMemberPersistencePort {
         gatheringIds: List<GatheringId>,
         memberIds: List<MemberId>,
     ): List<GatheringMember>
+
+    fun updateIsViewedById(gatheringMemberId: Long)
+
+    fun updateIsJoinedById(command: GatheringJoinCommand)
 }
