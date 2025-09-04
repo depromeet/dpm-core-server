@@ -11,8 +11,6 @@ import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringRecei
 import com.server.dpmcore.member.member.domain.model.MemberId
 
 interface GatheringQueryUseCase {
-    fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering>
-
     fun getAllGatheringsByBillId(billId: BillId): List<Gathering>
 
     fun getAllGatheringIdsByBillId(billId: BillId): List<GatheringId>

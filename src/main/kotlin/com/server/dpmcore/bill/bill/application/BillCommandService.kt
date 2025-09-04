@@ -87,9 +87,10 @@ class BillCommandService(
 //            TODO : gathering updatedAt 업데이트
         }
 
-        val closeParticipationBill = bill.closeParticipation()
-        billPersistencePort.closeBillParticipation(closeParticipationBill)
-        return bill.id ?: throw BillException.BillIdRequiredException()
+        return bill
+            .closeParticipation()
+            .also { billPersistencePort.save(it) }
+            .id ?: throw BillException.BillIdRequiredException()
     }
 
     fun markBillAsChecked(

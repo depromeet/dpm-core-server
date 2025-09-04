@@ -29,9 +29,6 @@ class GatheringQueryService(
     private val gatheringMemberQueryService: GatheringMemberQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
 ) : GatheringQueryUseCase {
-    override fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering> =
-        gatheringPersistencePort.findAllByGatheringIds(gatheringIds)
-
     override fun getAllGatheringsByBillId(billId: BillId): List<Gathering> =
         gatheringPersistencePort
             .findByBillId(billId)
