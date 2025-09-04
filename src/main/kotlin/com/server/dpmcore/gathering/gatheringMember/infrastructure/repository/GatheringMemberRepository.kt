@@ -1,8 +1,5 @@
 package com.server.dpmcore.gathering.gatheringMember.infrastructure.repository
 
-import com.linecorp.kotlinjdsl.querydsl.expression.col
-import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
-import com.linecorp.kotlinjdsl.spring.data.updateQuery
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
@@ -31,7 +28,6 @@ import java.time.LocalDateTime
 @Repository
 class GatheringMemberRepository(
     private val gatheringJpaRepository: GatheringMemberJpaRepository,
-    private val queryFactory: SpringDataQueryFactory,
     private val dsl: DSLContext,
 ) : GatheringMemberPersistencePort {
     override fun save(
@@ -166,19 +162,6 @@ class GatheringMemberRepository(
                 isJoined = isJoined,
             )
         }
-    }
-
-    override fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
-        val id =
-            gatheringMember.id?.value ?: 0L
-
-        queryFactory
-            .updateQuery<GatheringMemberEntity> {
-                where(col(GatheringMemberEntity::id).equal(id))
-                set(col(GatheringMemberEntity::isInvitationSubmitted), gatheringMember.isInvitationSubmitted)
-                set(col(GatheringMemberEntity::isJoined), gatheringMember.isJoined)
-                set(col(GatheringMemberEntity::updatedAt), gatheringMember.updatedAt)
-            }.executeUpdate()
     }
 
     /**
