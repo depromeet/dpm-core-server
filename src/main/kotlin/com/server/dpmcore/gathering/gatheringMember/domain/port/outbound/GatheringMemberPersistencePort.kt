@@ -45,5 +45,5 @@ interface GatheringMemberPersistencePort {
 
     fun updateDepositAndMemoById(command: GatheringMemberDepositCommand)
 
-    fun updateIsInvitationSubmittedById(gatheringMemberId: Long)
+    fun updateIsInvitationSubmittedById(memberId: Long)
 }
