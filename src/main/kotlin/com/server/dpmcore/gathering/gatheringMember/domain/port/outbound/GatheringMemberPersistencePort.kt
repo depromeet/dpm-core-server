@@ -39,7 +39,7 @@ interface GatheringMemberPersistencePort {
         memberIds: List<MemberId>,
     ): List<GatheringMember>
 
-    fun updateIsViewedById(gatheringMemberId: Long)
+    fun updateIsViewedById(memberId: Long)
 
     fun updateIsJoinedById(command: GatheringJoinCommand)
 

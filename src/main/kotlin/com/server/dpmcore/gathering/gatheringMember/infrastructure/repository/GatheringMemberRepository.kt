@@ -55,12 +55,12 @@ class GatheringMemberRepository(
      * @author LeeHanEum
      * @since 2025.09.04
      */
-    override fun updateIsViewedById(gatheringMemberId: Long) {
+    override fun updateIsViewedById(memberId: Long) {
         dsl
             .update(GATHERING_MEMBERS)
             .set(GATHERING_MEMBERS.IS_VIEWED, true)
             .set(GATHERING_MEMBERS.UPDATED_AT, LocalDateTime.now())
-            .where(GATHERING_MEMBERS.MEMBER_ID.eq(gatheringMemberId))
+            .where(GATHERING_MEMBERS.MEMBER_ID.eq(memberId))
             .execute()
     }
 
