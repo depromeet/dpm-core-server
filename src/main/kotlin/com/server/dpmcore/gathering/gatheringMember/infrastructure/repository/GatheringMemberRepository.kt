@@ -96,7 +96,8 @@ class GatheringMemberRepository(
     override fun updateDepositAndMemoById(command: GatheringDepositCommand) {
         val now = LocalDateTime.now()
 
-        dsl.update(GATHERING_MEMBERS)
+        dsl
+            .update(GATHERING_MEMBERS)
             .set(GATHERING_MEMBERS.UPDATED_AT, now)
             .set(GATHERING_MEMBERS.MEMO, command.memo)
             .set(
