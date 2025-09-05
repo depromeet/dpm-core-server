@@ -1,8 +1,8 @@
-package com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command
+package com.server.dpmcore.gathering.gathering.domain.port.inbound.command
 
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
 
-data class GatheringMemberJoinCommand(
+data class GatheringJoinCommand(
     val gatheringMemberId: Long,
     val isJoined: Boolean,
 ) {
@@ -10,7 +10,7 @@ data class GatheringMemberJoinCommand(
         fun of(
             gatheringMemberId: GatheringMemberId,
             isJoined: Boolean,
-        ) = GatheringMemberJoinCommand(
+        ) = GatheringJoinCommand(
             gatheringMemberId = gatheringMemberId.value,
             isJoined = isJoined,
         )

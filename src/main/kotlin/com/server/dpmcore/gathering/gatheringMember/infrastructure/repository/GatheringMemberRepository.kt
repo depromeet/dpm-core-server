@@ -4,11 +4,11 @@ import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvita
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringDepositCommand
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
-import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command.GatheringMemberDepositCommand
-import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command.GatheringMemberJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.GatheringMemberIsJoinQueryModel
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.infrastructure.entity.GatheringMemberEntity
@@ -74,7 +74,7 @@ class GatheringMemberRepository(
      * @author LeeHanEum
      * @since 2025.09.04
      */
-    override fun updateIsJoinedById(command: GatheringMemberJoinCommand) {
+    override fun updateIsJoinedById(command: GatheringJoinCommand) {
         dsl
             .update(GATHERING_MEMBERS)
             .set(GATHERING_MEMBERS.IS_JOINED, command.isJoined)
@@ -93,7 +93,7 @@ class GatheringMemberRepository(
      * @author LeeHanEum
      * @since 2025.09.04
      */
-    override fun updateDepositAndMemoById(command: GatheringMemberDepositCommand) {
+    override fun updateDepositAndMemoById(command: GatheringDepositCommand) {
         val now = LocalDateTime.now()
 
         dsl.update(GATHERING_MEMBERS)

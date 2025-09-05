@@ -1,9 +1,9 @@
 package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringDepositCommand
+import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
-import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command.GatheringMemberDepositCommand
-import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command.GatheringMemberJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
@@ -25,7 +25,7 @@ class GatheringMemberCommandService(
         gatheringMemberPersistencePort.updateIsViewedById(gatheringMember.memberId.value)
     }
 
-    fun markAsJoined(command: GatheringMemberJoinCommand) {
+    fun markAsJoined(command: GatheringJoinCommand) {
         gatheringMemberPersistencePort.updateIsJoinedById(command)
     }
 
@@ -34,7 +34,7 @@ class GatheringMemberCommandService(
         gatheringMemberPersistencePort.updateIsInvitationSubmittedById(gatheringMember.memberId.value)
     }
 
-    fun updateDepositAndMemo(command: GatheringMemberDepositCommand) {
+    fun updateDepositAndMemo(command: GatheringDepositCommand) {
         gatheringMemberPersistencePort.updateDepositAndMemoById(command)
     }
 }

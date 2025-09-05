@@ -1,8 +1,8 @@
-package com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.command
+package com.server.dpmcore.gathering.gathering.domain.port.inbound.command
 
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
 
-data class GatheringMemberDepositCommand(
+data class GatheringDepositCommand(
     val gatheringMemberId: Long,
     val isDeposit: Boolean,
     val memo: String?,
@@ -12,7 +12,7 @@ data class GatheringMemberDepositCommand(
             gatheringMemberId: GatheringMemberId,
             isDeposit: Boolean,
             memo: String?,
-        ) = GatheringMemberDepositCommand(
+        ) = GatheringDepositCommand(
             gatheringMemberId = gatheringMemberId.value,
             isDeposit = isDeposit,
             memo = memo,
