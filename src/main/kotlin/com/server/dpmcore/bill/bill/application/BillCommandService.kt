@@ -1,5 +1,6 @@
 package com.server.dpmcore.bill.bill.application
 
+import com.server.dpmcore.bill.bill.application.exception.BillAlreadyCompletedException
 import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.application.mapper.BillGatheringMapper.toCommand
 import com.server.dpmcore.bill.bill.domain.model.Bill
@@ -64,7 +65,8 @@ class BillCommandService(
             billPersistencePort.findById(billId)
                 ?: throw BillNotFoundException()
 
-        bill.checkParticipationClosable()
+        checkIsBillCompleted(bill)
+        checkIsBillClosable(bill)
 
         val gatherings = gatheringQueryUseCase.getAllGatheringsByBillId(billId)
 
@@ -86,8 +88,17 @@ class BillCommandService(
             gatheringCommandUseCase.updateGatheringReceiptSplitAmount(receipt)
 //            TODO : gathering updatedAt 업데이트
         }
+        checkIsBillCompleted(bill)
 
         return billPersistencePort.save(bill.closeParticipation())
+    }
+
+    private fun checkIsBillClosable(bill: Bill) {
+        if (bill.checkParticipationClosable()) throw BillAlreadyCompletedException()
+    }
+
+    private fun checkIsBillCompleted(bill: Bill) {
+        if (bill.isCompleted()) throw BillAlreadyCompletedException()
     }
 
     fun markBillAsChecked(

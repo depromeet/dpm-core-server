@@ -1,7 +1,5 @@
 package com.server.dpmcore.bill.bill.domain.model
 
-import com.server.dpmcore.bill.bill.application.exception.BillAlreadyCompletedException
-import com.server.dpmcore.bill.bill.application.exception.BillCannotCloseParticipationException
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccount
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -51,12 +49,8 @@ class Bill(
 
     fun isCompleted(): Boolean = completedAt != null
 
-    fun closeParticipation(): Bill {
-        if (isCompleted()) {
-            throw BillAlreadyCompletedException()
-        }
-
-        return Bill(
+    fun closeParticipation() =
+        Bill(
             id = id,
             billAccount = billAccount,
             title = title,
@@ -68,16 +62,8 @@ class Bill(
             updatedAt = Instant.now(),
             deletedAt = deletedAt,
         )
-    }
 
-    fun checkParticipationClosable() {
-        if (isCompleted()) {
-            throw BillAlreadyCompletedException()
-        }
-        if (billStatus != BillStatus.OPEN) {
-            throw BillCannotCloseParticipationException()
-        }
-    }
+    fun checkParticipationClosable(): Boolean = billStatus != BillStatus.OPEN
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
