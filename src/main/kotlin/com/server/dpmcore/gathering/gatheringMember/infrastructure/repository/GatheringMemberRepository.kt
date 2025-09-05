@@ -79,7 +79,7 @@ class GatheringMemberRepository(
             .update(GATHERING_MEMBERS)
             .set(GATHERING_MEMBERS.IS_JOINED, command.isJoined)
             .set(GATHERING_MEMBERS.UPDATED_AT, LocalDateTime.now())
-            .where(GATHERING_MEMBERS.MEMBER_ID.eq(command.gatheringMemberId))
+            .where(GATHERING_MEMBERS.GATHERING_MEMBER_ID.eq(command.gatheringMemberId))
             .execute()
     }
 
@@ -103,7 +103,7 @@ class GatheringMemberRepository(
                 GATHERING_MEMBERS.COMPLETED_AT,
                 if (command.isDeposit) now else null,
             )
-            .where(GATHERING_MEMBERS.MEMBER_ID.eq(command.gatheringMemberId))
+            .where(GATHERING_MEMBERS.GATHERING_MEMBER_ID.eq(command.gatheringMemberId))
             .execute()
     }
 
