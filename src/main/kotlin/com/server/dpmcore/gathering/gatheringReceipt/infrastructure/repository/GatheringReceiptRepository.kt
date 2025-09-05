@@ -45,7 +45,7 @@ class GatheringReceiptRepository(
      * @author LeeHanEum
      * @since 2025.09.04
      */
-    override fun updateSplitAmountById(command: GatheringReceiptSplitAmountCommand): Int {
+    override fun updateSplitAmountById(command: GatheringReceiptSplitAmountCommand): Int? {
         dsl
             .update(GATHERING_RECEIPTS)
             .set(GATHERING_RECEIPTS.SPLIT_AMOUNT, command.splitAmount)
@@ -53,7 +53,7 @@ class GatheringReceiptRepository(
             .where(GATHERING_RECEIPTS.GATHERING_RECEIPT_ID.eq(command.gatheringReceiptId))
             .execute()
 
-        return command.splitAmount ?: 0
+        return command.splitAmount
     }
 
     override fun findSplitAmountByGatheringId(gatheringId: GatheringId): Int? =
