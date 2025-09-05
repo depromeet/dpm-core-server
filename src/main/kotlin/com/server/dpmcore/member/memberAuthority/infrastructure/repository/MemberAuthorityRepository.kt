@@ -46,7 +46,8 @@ class MemberAuthorityRepository(
                 LocalDateTime.now(ZoneId.of(TIME_ZONE)),
             ).where(
                 MEMBER_AUTHORITIES.MEMBER_ID
-                    .eq(memberId),
+                    .eq(memberId)
+                    .and(MEMBER_AUTHORITIES.DELETED_AT.isNull()),
             ).execute()
     }
 
