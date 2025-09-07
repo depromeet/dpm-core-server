@@ -4,8 +4,6 @@ import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvita
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringDepositCommand
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMemberId
@@ -69,17 +67,15 @@ class GatheringMemberRepository(
      *
      * GatheringMember는 애그리거트 하위 도메인이므로, 조회 없이 jOOQ로 바로 업데이트.
      *
-     * 애그리거트 루트에서 시작해 하위 도메인까지 전달되는 업데이트 명령을 Command 객체로 캡슐화하여, 데이터 무결성과 의도를 명확히 보장하고자 함
-     *
      * @author LeeHanEum
      * @since 2025.09.04
      */
-    override fun updateIsJoinedById(command: GatheringJoinCommand) {
+    override fun updateIsJoinedById(gatheringMember: GatheringMember) {
         dsl
             .update(GATHERING_MEMBERS)
-            .set(GATHERING_MEMBERS.IS_JOINED, command.isJoined)
+            .set(GATHERING_MEMBERS.IS_JOINED, gatheringMember.isJoined)
             .set(GATHERING_MEMBERS.UPDATED_AT, LocalDateTime.now())
-            .where(GATHERING_MEMBERS.GATHERING_MEMBER_ID.eq(command.gatheringMemberId))
+            .where(GATHERING_MEMBERS.GATHERING_MEMBER_ID.eq(gatheringMember.id?.value))
             .execute()
     }
 
@@ -88,23 +84,25 @@ class GatheringMemberRepository(
      *
      * GatheringMember는 애그리거트 하위 도메인이므로, 조회 없이 jOOQ로 바로 업데이트.
      *
-     * 애그리거트 루트에서 시작해 하위 도메인까지 전달되는 업데이트 명령을 Command 객체로 캡슐화하여, 데이터 무결성과 의도를 명확히 보장하고자 함
-     *
      * @author LeeHanEum
      * @since 2025.09.04
      */
-    override fun updateDepositAndMemoById(command: GatheringDepositCommand) {
+    override fun updateDepositAndMemoById(
+        gatheringMember: GatheringMember,
+        isDeposit: Boolean,
+        memo: String?,
+    ) {
         val now = LocalDateTime.now()
 
         dsl
             .update(GATHERING_MEMBERS)
             .set(GATHERING_MEMBERS.UPDATED_AT, now)
-            .set(GATHERING_MEMBERS.MEMO, command.memo)
+            .set(GATHERING_MEMBERS.MEMO, memo)
             .set(
                 GATHERING_MEMBERS.COMPLETED_AT,
-                if (command.isDeposit) now else null,
+                if (isDeposit) now else null,
             )
-            .where(GATHERING_MEMBERS.GATHERING_MEMBER_ID.eq(command.gatheringMemberId))
+            .where(GATHERING_MEMBERS.GATHERING_MEMBER_ID.eq(gatheringMember.id?.value))
             .execute()
     }
 

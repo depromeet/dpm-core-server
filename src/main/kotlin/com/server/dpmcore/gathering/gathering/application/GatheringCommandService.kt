@@ -13,12 +13,9 @@ import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringDepositCommand
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberCommandService
 import com.server.dpmcore.gathering.gatheringMember.application.GatheringMemberQueryService
-import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberIdRequiredException
 import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptCommandService
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
@@ -99,12 +96,7 @@ class GatheringCommandService(
         request.gatheringJoins.forEach {
             val gatheringMember =
                 gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(it.gatheringId, memberId)
-            gatheringMemberCommandService.markAsJoined(
-                GatheringJoinCommand.of(
-                    gatheringMember.id ?: throw GatheringMemberIdRequiredException(),
-                    it.isJoined,
-                ),
-            )
+            gatheringMemberCommandService.markAsJoined(gatheringMember)
         }
     }
 
@@ -131,14 +123,7 @@ class GatheringCommandService(
             gathering.id ?: throw GatheringIdRequiredException()
             val gatheringMember =
                 gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(gathering.id, command.memberId)
-
-            gatheringMemberCommandService.updateDepositAndMemo(
-                GatheringDepositCommand.of(
-                    gatheringMember.id ?: throw GatheringMemberIdRequiredException(),
-                    command.isDeposit,
-                    command.memo,
-                ),
-            )
+            gatheringMemberCommandService.updateDepositAndMemo(gatheringMember, command.isDeposit, command.memo)
         }
     }
 
@@ -159,14 +144,7 @@ class GatheringCommandService(
             val isDeposit =
                 command.members.find { member -> member.memberId == gatheringMember.memberId }?.isDeposit
                     ?: throw GatheringMemberNotFoundException()
-
-            gatheringMemberCommandService.updateDepositAndMemo(
-                GatheringDepositCommand.of(
-                    gatheringMember.id ?: throw GatheringMemberIdRequiredException(),
-                    isDeposit,
-                    null,
-                ),
-            )
+            gatheringMemberCommandService.updateDepositAndMemo(gatheringMember, isDeposit, null)
         }
     }
 }

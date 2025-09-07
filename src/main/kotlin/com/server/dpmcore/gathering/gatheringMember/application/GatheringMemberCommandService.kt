@@ -1,8 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringDepositCommand
-import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringJoinCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -25,8 +23,8 @@ class GatheringMemberCommandService(
         gatheringMemberPersistencePort.updateIsViewedById(gatheringMember.memberId.value)
     }
 
-    fun markAsJoined(command: GatheringJoinCommand) {
-        gatheringMemberPersistencePort.updateIsJoinedById(command)
+    fun markAsJoined(gatheringMember: GatheringMember) {
+        gatheringMemberPersistencePort.updateIsJoinedById(gatheringMember)
     }
 
     fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
@@ -34,7 +32,11 @@ class GatheringMemberCommandService(
         gatheringMemberPersistencePort.updateIsInvitationSubmittedById(gatheringMember.memberId.value)
     }
 
-    fun updateDepositAndMemo(command: GatheringDepositCommand) {
-        gatheringMemberPersistencePort.updateDepositAndMemoById(command)
+    fun updateDepositAndMemo(
+        gatheringMember: GatheringMember,
+        isDeposit: Boolean,
+        memo: String?,
+    ) {
+        gatheringMemberPersistencePort.updateDepositAndMemoById(gatheringMember, isDeposit, memo)
     }
 }
