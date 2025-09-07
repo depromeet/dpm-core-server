@@ -1,5 +1,7 @@
 package com.server.dpmcore.cohort.infrastructure.entity
 
+import com.server.dpmcore.cohort.domain.model.Cohort
+import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.member.memberCohort.infrastructure.entity.MemberCohortEntity
 import com.server.dpmcore.team.infrastructure.entity.TeamEntity
 import jakarta.persistence.CascadeType
@@ -29,4 +31,12 @@ class CohortEntity(
     val teams: MutableList<TeamEntity> = mutableListOf(),
     @OneToMany(mappedBy = "cohort", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
-)
+) {
+    fun toDomain(): Cohort =
+        Cohort(
+            id = CohortId(id),
+            value = value,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
+}

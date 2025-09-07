@@ -44,7 +44,7 @@ class MemberLoginService(
         val newToken = tokenProvider.generateRefreshToken(memberId.toString())
         val refreshToken =
             refreshTokenPersistencePort
-                .findByMemberId(memberId)
+                .findByMemberId(memberId.value)
                 ?.apply { rotate(newToken) }
                 ?: RefreshToken.create(memberId, newToken)
         val savedToken = refreshTokenPersistencePort.save(refreshToken)

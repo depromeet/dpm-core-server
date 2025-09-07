@@ -11,19 +11,3 @@ data class GatheringCreateCommand(
     val heldAt: LocalDateTime,
     val receipt: ReceiptCommand,
 )
-
-data class ReceiptCommand(
-    val amount: Int,
-//    val photos: List<ReceiptPhotoCommand>,
-)
-
-data class ReceiptPhotoCommand(
-    val receiptId: Long,
-    val photoUrl: String?,
-)
-
-data class GatheringParticipantCommand(
-    val gatheringId: Long,
-    val isParticipated: Boolean,
-    val isConfirmed: Boolean,
-)

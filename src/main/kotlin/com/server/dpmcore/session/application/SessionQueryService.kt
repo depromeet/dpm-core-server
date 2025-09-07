@@ -29,16 +29,16 @@ class SessionQueryService(
     fun getAllSessions(): List<Session> {
         val cohortId = cohortQueryUseCase.getLatestCohortId()
 
-        return sessionPersistencePort.findAllSessions(cohortId)
+        return sessionPersistencePort.findAllSessions(cohortId.value)
     }
 
     fun getSessionById(sessionId: SessionId): Session =
-        sessionPersistencePort.findSessionById(sessionId)
+        sessionPersistencePort.findSessionById(sessionId.value)
             ?: throw SessionNotFoundException()
 
     fun getAttendanceTime(sessionId: SessionId): Instant =
         sessionPersistencePort
-            .findSessionById(sessionId)
+            .findSessionById(sessionId.value)
             ?.attendancePolicy
             ?.attendanceStart
             ?: throw SessionNotFoundException()
@@ -47,7 +47,7 @@ class SessionQueryService(
         val cohortId = cohortQueryUseCase.getLatestCohortId()
 
         return sessionPersistencePort
-            .findAllSessions(cohortId)
+            .findAllSessions(cohortId.value)
             .map { SessionWeekQueryModel(sessionId = it.id!!, week = it.week) }
     }
 }

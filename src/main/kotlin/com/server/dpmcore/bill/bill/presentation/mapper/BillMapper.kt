@@ -1,14 +1,15 @@
 package com.server.dpmcore.bill.bill.presentation.mapper
 
+import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailGatheringResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListGatheringDetailResponse
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillListResponse
-import com.server.dpmcore.bill.exception.BillAccountException
-import com.server.dpmcore.bill.exception.BillException
-import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.bill.billAccount.application.exception.BillAccountNotFoundException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringRequiredException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -25,15 +26,15 @@ class BillMapper(
         bill: Bill,
         memberId: MemberId,
     ): BillDetailResponse {
-        if (bill.id == null) throw BillException.BillNotFoundException()
+        if (bill.id == null) throw BillNotFoundException()
 
         val gatherings =
             gatheringQueryUseCase.getAllGatheringsByBillId(bill.id)
-        if (gatherings.isEmpty()) throw GatheringException.GatheringRequiredException()
+        if (gatherings.isEmpty()) throw GatheringRequiredException()
 
         val gatheringReceipt =
             gatherings.map { gathering ->
-                if (gathering.id == null) throw GatheringException.GatheringNotFoundException()
+                if (gathering.id == null) throw GatheringNotFoundException()
 
                 gatheringQueryUseCase
                     .findGatheringReceiptByGatheringId(
@@ -49,7 +50,7 @@ class BillMapper(
         val billTotalSplitAmount =
             gatheringQueryUseCase.findTotalSplitAmount(
                 gatherings.map {
-                    it.id ?: throw GatheringException.GatheringNotFoundException()
+                    it.id ?: throw GatheringNotFoundException()
                 },
             )
         val myTotalSplitAmount =
@@ -87,7 +88,7 @@ class BillMapper(
                     val gatheringMembers =
                         gatheringQueryUseCase.findGatheringMemberByGatheringId(
                             gathering.id
-                                ?: throw GatheringException.GatheringNotFoundException(),
+                                ?: throw GatheringNotFoundException(),
                         )
                     val splitAmount = gatheringReceipt.find { it.gatheringId == gathering.id }?.splitAmount
                     BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
@@ -115,10 +116,10 @@ class BillMapper(
         memberId: MemberId,
     ): BillListDetailResponse {
         val gatheringDetails =
-            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillException.BillNotFoundException()).map {
+            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillNotFoundException()).map {
                 toBillListGatheringDetailResponse(it)
             }
-        if (gatheringDetails.isEmpty()) throw GatheringException.GatheringRequiredException()
+        if (gatheringDetails.isEmpty()) throw GatheringRequiredException()
 
 //        TODO : 여기서 모든 gathering에 대해서 조회해서 체크하는 로직 필요(각 gathering마다 멤버가 다를 수 있어서)
         val allBillGatheringMembers =
@@ -150,8 +151,8 @@ class BillMapper(
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
             createdAt =
-                instantToLocalDateTime(bill.createdAt ?: throw BillException.BillNotFoundException()),
-            billAccountId = bill.billAccount.id?.value ?: throw BillAccountException.BillAccountNotFoundException(),
+                instantToLocalDateTime(bill.createdAt ?: throw BillNotFoundException()),
+            billAccountId = bill.billAccount.id?.value ?: throw BillAccountNotFoundException(),
 //            TODO : 매번 카운트 호출 좀 별로라서 고민해보면 좋을 것 같아요.
             invitedMemberCount = Bill.getBillInvitedMemberCount(allBillGatheringMembers),
             invitationSubmittedCount = Bill.getBillInvitationSubmittedCount(allBillGatheringMembers),
@@ -168,7 +169,7 @@ class BillMapper(
     fun toBillListGatheringDetailResponse(gathering: Gathering): BillListGatheringDetailResponse {
         val gatheringReceipt =
             gatheringQueryUseCase.findGatheringReceiptByGatheringId(
-                gathering.id ?: throw GatheringException.GatheringNotFoundException(),
+                gathering.id ?: throw GatheringNotFoundException(),
             )
         val gatheringMembers = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
         val joinMemberCount = gatheringMembers.count { it.isJoined == true }

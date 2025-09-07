@@ -1,8 +1,9 @@
 package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
-import com.server.dpmcore.gathering.exception.GatheringReceiptException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.MemberCountMustOverOneException
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.ReceiptAlreadySplitException
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
 import java.time.Instant
 
@@ -33,10 +34,10 @@ class GatheringReceipt(
 
     fun closeParticipation(joinMemberCount: Int): GatheringReceipt {
         if (joinMemberCount <= 0) {
-            throw GatheringReceiptException.MemberCountMustOverOneException()
+            throw MemberCountMustOverOneException()
         }
         if (splitAmount != null) {
-            throw GatheringReceiptException.ReceiptAlreadySplitException()
+            throw ReceiptAlreadySplitException()
         }
         return GatheringReceipt(
             id = id,

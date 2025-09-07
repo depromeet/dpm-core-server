@@ -10,19 +10,12 @@ import com.server.dpmcore.member.member.domain.port.inbound.MemberQueryUseCase
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import com.server.dpmcore.member.member.presentation.response.MemberDetailsResponse
 import com.server.dpmcore.member.memberAuthority.application.MemberAuthorityService
-import com.server.dpmcore.refreshToken.domain.port.inbound.RefreshTokenInvalidator
-import com.server.dpmcore.security.oauth.token.JwtTokenInjector
-import jakarta.servlet.http.HttpServletResponse
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames.REFRESH_TOKEN
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberAuthorityService: MemberAuthorityService,
-    private val tokenInjector: JwtTokenInjector,
-    private val refreshTokenInvalidator: RefreshTokenInvalidator,
 ) : MemberQueryByAuthorityUseCase,
     MemberQueryUseCase {
     /**
@@ -50,27 +43,6 @@ class MemberQueryService(
     fun getMemberById(memberId: MemberId) =
         memberPersistencePort.findById(memberId.value)
             ?: throw MemberNotFoundException()
-
-    /**
-     * 멤버를 탈퇴 처리(Soft Delete)하고, 클라이언트의 Refresh Token을 무효화 및 삭제함.
-     *
-     * @throws MemberNotFoundException
-     *
-     * @author LeeHanEum
-     * @since 2025.07.17
-     */
-    @Transactional
-    fun withdraw(
-        memberId: MemberId,
-        response: HttpServletResponse,
-    ) {
-        if (!memberPersistencePort.existsById(memberId.value)) throw MemberNotFoundException()
-
-        tokenInjector.invalidateCookie(REFRESH_TOKEN, response)
-        refreshTokenInvalidator.destroyRefreshToken(memberId)
-
-        memberPersistencePort.delete(memberId.value)
-    }
 
     /**
      * 기수에 속한 멤버들의 식별자를 목록 조회함.

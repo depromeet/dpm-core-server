@@ -25,4 +25,14 @@ class MemberCohortService(
             MemberCohort.of(memberId, cohortQueryUseCase.getLatestCohortId()),
         )
     }
+
+    /**
+     * 멤버 탈퇴 시에, 멤버를 기수에서 제거(Hard Delete)하여 기수 정보 조회 시 노출되지 않도록 함.
+     *
+     * @author LeeHanEum
+     * @since 2025.09.01
+     */
+    fun deleteMemberFromCohort(memberId: MemberId) {
+        memberCohortPersistencePort.deleteByMemberId(memberId.value)
+    }
 }

@@ -20,16 +20,12 @@ interface GatheringMemberPersistencePort {
         memberId: MemberId,
     ): GatheringMember
 
-    fun updateGatheringMemberById(gatheringMember: GatheringMember)
-
     fun findMemberIdsByGatheringId(gatheringId: GatheringId): List<MemberId>
 
     fun findGatheringMemberWithIsJoinByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
     ): List<GatheringMemberIsJoinQueryModel>
-
-    fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember)
 
     fun findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(
         gatheringId: GatheringId,
@@ -40,4 +36,16 @@ interface GatheringMemberPersistencePort {
         gatheringIds: List<GatheringId>,
         memberIds: List<MemberId>,
     ): List<GatheringMember>
+
+    fun updateIsViewedById(memberId: Long)
+
+    fun updateIsJoinedById(gatheringMember: GatheringMember)
+
+    fun updateDepositAndMemoById(
+        gatheringMember: GatheringMember,
+        isDeposit: Boolean,
+        memo: String?,
+    )
+
+    fun updateIsInvitationSubmittedById(memberId: Long)
 }

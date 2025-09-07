@@ -12,6 +12,6 @@ class RefreshTokenInvalidateService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
 ) : RefreshTokenInvalidator {
     override fun destroyRefreshToken(memberId: MemberId) {
-        refreshTokenPersistencePort.deleteByMemberId(memberId)
+        refreshTokenPersistencePort.deleteByMemberId(memberId.value)
     }
 }
