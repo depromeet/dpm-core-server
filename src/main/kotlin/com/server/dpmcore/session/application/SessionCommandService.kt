@@ -23,7 +23,7 @@ class SessionCommandService(
         attendanceStartTime: Instant,
     ) {
         val session =
-            sessionPersistencePort.findSessionById(sessionId)
+            sessionPersistencePort.findSessionById(sessionId.value)
                 ?: throw SessionNotFoundException()
 
         session.updateAttendanceStartTime(attendanceStartTime)

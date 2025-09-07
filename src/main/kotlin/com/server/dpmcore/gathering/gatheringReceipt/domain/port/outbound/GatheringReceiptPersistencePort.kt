@@ -1,4 +1,4 @@
-package com.server.dpmcore.gathering.gatheringReceipt.domain.port
+package com.server.dpmcore.gathering.gatheringReceipt.domain.port.outbound
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
@@ -16,7 +16,7 @@ interface GatheringReceiptPersistencePort {
 
     fun findByGathering(gatheringId: GatheringId): GatheringReceiptEntity
 
-    fun updateSplitAmount(gatheringReceipt: GatheringReceipt): Int
+    fun updateSplitAmountById(gatheringReceipt: GatheringReceipt): Int?
 
     fun findSplitAmountByGatheringId(gatheringId: GatheringId): Int?
 }

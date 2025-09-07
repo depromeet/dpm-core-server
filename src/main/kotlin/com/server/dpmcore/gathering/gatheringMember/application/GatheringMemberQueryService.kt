@@ -2,8 +2,8 @@ package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
-import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.GatheringMemberQueryUseCase
 import com.server.dpmcore.gathering.gatheringMember.domain.port.inbound.query.GatheringMemberIsJoinQueryModel
@@ -31,7 +31,7 @@ class GatheringMemberQueryService(
         gatheringMemberPersistencePort
             .findMemberIdsByGatheringId(gatheringId)
             .takeIf { it.isNotEmpty() }
-            ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+            ?: throw GatheringMemberNotFoundException()
 
     fun getQueryGatheringMemberIsJoined(gatheringId: GatheringId): List<GatheringMemberIsJoinQueryModel> {
         val memberIds = getMemberIdsByGatheringId(gatheringId)
@@ -75,7 +75,7 @@ class GatheringMemberQueryService(
                             queryResults
                         }
                     }
-            queryResults.firstOrNull() ?: throw GatheringMemberException.GatheringMemberNotFoundException()
+            queryResults.firstOrNull() ?: throw GatheringMemberNotFoundException()
         }
     }
 

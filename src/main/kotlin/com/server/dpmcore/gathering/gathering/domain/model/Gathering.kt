@@ -1,7 +1,8 @@
 package com.server.dpmcore.gathering.gathering.domain.model
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
-import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotParticipantMemberException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
@@ -48,13 +49,13 @@ class Gathering(
 
     //    TODO : 회식 멤버가 null일 수 있음
     fun getGatheringJoinMemberCount(gatheringMembers: List<GatheringMember>): Int {
-        if (this.id == null) throw GatheringException.GatheringIdRequiredException()
+        if (this.id == null) throw GatheringIdRequiredException()
 
         var joinMemberCount = 0
 
         gatheringMembers.forEach { gatheringMember ->
             if (gatheringMember.gatheringId != this.id) {
-                throw GatheringException.GatheringNotParticipantMemberException()
+                throw GatheringNotParticipantMemberException()
             }
             if ((gatheringMember.isJoined == true) && gatheringMember.deletedAt == null) {
                 joinMemberCount++

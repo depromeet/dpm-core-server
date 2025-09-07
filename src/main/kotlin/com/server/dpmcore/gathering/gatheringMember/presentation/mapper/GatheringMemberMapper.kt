@@ -1,7 +1,7 @@
 package com.server.dpmcore.gathering.gatheringMember.presentation.mapper
 
 import com.server.dpmcore.bill.bill.presentation.dto.response.BillDetailGatheringMemberResponse
-import com.server.dpmcore.gathering.exception.GatheringMemberException
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberIdRequiredException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 
 object GatheringMemberMapper {
@@ -16,7 +16,7 @@ object GatheringMemberMapper {
         BillDetailGatheringMemberResponse(
             gatheringMemberId =
                 gatheringMember.id
-                    ?: throw GatheringMemberException.GatheringMemberIdRequiredException(),
+                    ?: throw GatheringMemberIdRequiredException(),
             memberId = gatheringMember.memberId.value,
             isCompleted = gatheringMember.isViewed,
             isJoined = gatheringMember.isJoined,

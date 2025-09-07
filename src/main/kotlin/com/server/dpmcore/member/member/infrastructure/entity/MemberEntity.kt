@@ -40,13 +40,13 @@ class MemberEntity(
     val updatedAt: Instant? = null,
     @Column
     val deletedAt: Instant? = null,
-    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
-    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
-    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),
-    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberOAuths: MutableList<MemberOAuthEntity> = mutableListOf(),
 ) {
     fun toDomain(): Member =

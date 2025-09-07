@@ -1,7 +1,7 @@
 package com.server.dpmcore.cohort.domain.port.outbound
 
-import com.server.dpmcore.cohort.domain.model.CohortId
+import com.server.dpmcore.cohort.domain.model.Cohort
 
 interface CohortPersistencePort {
-    fun findCohortIdByValue(value: String): CohortId?
+    fun findByValue(value: String): Cohort
 }

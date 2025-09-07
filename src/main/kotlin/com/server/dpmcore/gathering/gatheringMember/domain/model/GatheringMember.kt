@@ -1,7 +1,8 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.model
 
-import com.server.dpmcore.gathering.exception.GatheringMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import com.server.dpmcore.gathering.gatheringMember.application.exception.AlreadySubmittedInvitationException
+import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberIdRequiredException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
@@ -46,43 +47,15 @@ class GatheringMember(
     var deletedAt: Instant? = deletedAt
         private set
 
-    fun markAsChecked() {
-        this.isViewed = true
-        this.updatedAt = Instant.now()
-    }
-
-    fun markAsJoined(isJoined: Boolean) {
-        this.isJoined = isJoined
-        this.updatedAt = Instant.now()
-    }
-
-    fun gatheringParticipationSubmittedConfirm() {
-//        TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
+    // TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
+    fun checkParticipationIsSubmitted() {
         if (isInvitationSubmitted) {
-            throw GatheringMemberException.AlreadySubmittedInvitationException()
+            throw AlreadySubmittedInvitationException()
         }
-        id ?: throw GatheringMemberException.GatheringMemberIdRequiredException()
-
-        this.isInvitationSubmitted = true
-        this.updatedAt = Instant.now()
+        id ?: throw GatheringMemberIdRequiredException()
     }
 
     fun isConfirmed(): Boolean = completedAt != null
-
-    fun updateDeposit(
-        isDeposit: Boolean,
-        memo: String?,
-    ) {
-        val now = Instant.now()
-        this.updatedAt = now
-        this.memo = memo
-
-        if (isDeposit) {
-            this.completedAt = now
-        } else {
-            this.completedAt = null
-        }
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -22,4 +22,14 @@ class MemberTeamService(
     ) {
         memberTeamPersistencePort.save(MemberTeam.of(memberId, teamId))
     }
+
+    /**
+     * 멤버 탈퇴 시에, 멤버를 팀에서 제거(Hard Delete)하여 팀 정보 조회 시 노출되지 않도록 함.
+     *
+     * @author LeeHanEum
+     * @since 2025.09.02
+     */
+    fun deleteMemberFromTeam(memberId: MemberId) {
+        memberTeamPersistencePort.deleteByMemberId(memberId.value)
+    }
 }

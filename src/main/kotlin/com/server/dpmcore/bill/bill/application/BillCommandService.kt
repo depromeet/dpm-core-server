@@ -1,5 +1,7 @@
 package com.server.dpmcore.bill.bill.application
 
+import com.server.dpmcore.bill.bill.application.exception.BillAlreadyCompletedException
+import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.application.mapper.BillGatheringMapper.toCommand
 import com.server.dpmcore.bill.bill.domain.model.Bill
 import com.server.dpmcore.bill.bill.domain.model.BillId
@@ -10,8 +12,7 @@ import com.server.dpmcore.bill.bill.presentation.dto.request.CreateBillRequest
 import com.server.dpmcore.bill.bill.presentation.dto.request.UpdateGatheringJoinsRequest
 import com.server.dpmcore.bill.billAccount.application.BillAccountQueryService
 import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
-import com.server.dpmcore.bill.exception.BillException
-import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -62,15 +63,16 @@ class BillCommandService(
     fun closeBillParticipation(billId: BillId): BillId {
         val bill =
             billPersistencePort.findById(billId)
-                ?: throw BillException.BillNotFoundException()
+                ?: throw BillNotFoundException()
 
-        bill.checkParticipationClosable()
+        checkIsBillCompleted(bill)
+        checkIsBillClosable(bill)
 
         val gatherings = gatheringQueryUseCase.getAllGatheringsByBillId(billId)
 
         // GatheringReceipt 정산 금액 마감
         gatherings.map { gathering ->
-            gathering.id ?: throw GatheringException.GatheringNotFoundException()
+            gathering.id ?: throw GatheringNotFoundException()
 
             val gatheringMember = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
 
@@ -86,10 +88,17 @@ class BillCommandService(
             gatheringCommandUseCase.updateGatheringReceiptSplitAmount(receipt)
 //            TODO : gathering updatedAt 업데이트
         }
+        checkIsBillCompleted(bill)
 
-        val closeParticipationBill = bill.closeParticipation()
-        billPersistencePort.closeBillParticipation(closeParticipationBill)
-        return bill.id ?: throw BillException.BillIdRequiredException()
+        return billPersistencePort.save(bill.closeParticipation())
+    }
+
+    private fun checkIsBillClosable(bill: Bill) {
+        if (bill.checkParticipationClosable()) throw BillAlreadyCompletedException()
+    }
+
+    private fun checkIsBillCompleted(bill: Bill) {
+        if (bill.isCompleted()) throw BillAlreadyCompletedException()
     }
 
     fun markBillAsChecked(

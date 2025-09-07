@@ -3,7 +3,7 @@ package com.server.dpmcore.gathering.gatheringReceipt.application
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
-import com.server.dpmcore.gathering.gatheringReceipt.domain.port.GatheringReceiptPersistencePort
+import com.server.dpmcore.gathering.gatheringReceipt.domain.port.outbound.GatheringReceiptPersistencePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,7 +19,5 @@ class GatheringReceiptCommandService(
     ) = gatheringReceiptPersistencePort.save(GatheringReceipt.create(receipt, gathering.id!!), gathering)
 
     fun updateSplitAmount(receipt: GatheringReceipt): Boolean =
-        gatheringReceiptPersistencePort.updateSplitAmount(
-            receipt,
-        ) != 0
+        gatheringReceiptPersistencePort.updateSplitAmountById(receipt) != 0
 }

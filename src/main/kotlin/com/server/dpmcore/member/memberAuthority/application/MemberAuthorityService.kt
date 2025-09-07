@@ -35,4 +35,14 @@ class MemberAuthorityService(
         val authorityId = authorityQueryUseCase.getAuthorityIdByType(authorityType)
         memberAuthorityPersistencePort.save(MemberAuthority.of(memberId, authorityId))
     }
+
+    /**
+     * 멤버 탈퇴 시에, 멤버가 소유한 모든 권한을 Soft Delete 처리하여, 권한을 회수함.
+     *
+     *
+     * @author LeeHanEum
+     * @since 2025.09.01
+     */
+    fun revokeAllAuthorities(memberId: MemberId) =
+        memberAuthorityPersistencePort.softDeleteAllByMemberId(memberId.value)
 }

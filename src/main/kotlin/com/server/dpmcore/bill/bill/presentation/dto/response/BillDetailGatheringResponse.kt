@@ -1,6 +1,6 @@
 package com.server.dpmcore.bill.bill.presentation.dto.response
 
-import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
@@ -72,7 +72,7 @@ data class BillDetailGatheringResponse(
             splitAmount: Int?,
         ): BillDetailGatheringResponse =
             BillDetailGatheringResponse(
-                gatheringId = gathering.id ?: throw GatheringException.GatheringIdRequiredException(),
+                gatheringId = gathering.id ?: throw GatheringIdRequiredException(),
                 title = gathering.title,
                 description = gathering.description,
                 roundNumber = gathering.roundNumber,

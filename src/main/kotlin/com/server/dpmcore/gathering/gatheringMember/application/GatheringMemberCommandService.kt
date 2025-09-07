@@ -20,24 +20,23 @@ class GatheringMemberCommandService(
     }
 
     fun markAsChecked(gatheringMember: GatheringMember) {
-        gatheringMember.markAsChecked()
-        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
+        gatheringMemberPersistencePort.updateIsViewedById(gatheringMember.memberId.value)
     }
 
-    fun markAsJoined(
-        gatheringMember: GatheringMember,
-        isJoined: Boolean,
-    ) {
-        gatheringMember.markAsJoined(isJoined)
-        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
+    fun markAsJoined(gatheringMember: GatheringMember) {
+        gatheringMemberPersistencePort.updateIsJoinedById(gatheringMember)
     }
 
     fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
-        gatheringMember.gatheringParticipationSubmittedConfirm()
-        gatheringMemberPersistencePort.markAsGatheringParticipationSubmitConfirm(gatheringMember)
+        gatheringMember.checkParticipationIsSubmitted()
+        gatheringMemberPersistencePort.updateIsInvitationSubmittedById(gatheringMember.memberId.value)
     }
 
-    fun updateDeposit(gatheringMember: GatheringMember) {
-        gatheringMemberPersistencePort.updateGatheringMemberById(gatheringMember)
+    fun updateDepositAndMemo(
+        gatheringMember: GatheringMember,
+        isDeposit: Boolean,
+        memo: String?,
+    ) {
+        gatheringMemberPersistencePort.updateDepositAndMemoById(gatheringMember, isDeposit, memo)
     }
 }

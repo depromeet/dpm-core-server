@@ -12,13 +12,11 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendan
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBySessionQuery
-import com.server.dpmcore.member.member.domain.model.MemberId
-import com.server.dpmcore.session.domain.model.SessionId
 
 interface AttendancePersistencePort {
     fun findAttendanceBy(
-        sessionId: SessionId,
-        memberId: MemberId,
+        sessionId: Long,
+        memberId: Long,
     ): Attendance?
 
     fun save(attendance: Attendance)

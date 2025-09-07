@@ -3,7 +3,7 @@ package com.server.dpmcore.gathering.gathering.application
 import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
-import com.server.dpmcore.gathering.exception.GatheringException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
@@ -29,9 +29,6 @@ class GatheringQueryService(
     private val gatheringMemberQueryService: GatheringMemberQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
 ) : GatheringQueryUseCase {
-    override fun getAllGatheringsByGatheringIds(gatheringIds: List<GatheringId>): List<Gathering> =
-        gatheringPersistencePort.findAllByGatheringIds(gatheringIds)
-
     override fun getAllGatheringsByBillId(billId: BillId): List<Gathering> =
         gatheringPersistencePort
             .findByBillId(billId)
@@ -131,7 +128,7 @@ class GatheringQueryService(
         val gatheringIds = getAllGatheringIdsByBillId(billId)
         return gatheringMemberQueryService.getQueryGatheringMemberIsInvitationSubmitted(
             gatheringIds.firstOrNull()
-                ?: throw GatheringException.GatheringNotFoundException(),
+                ?: throw GatheringNotFoundException(),
         )
     }
 

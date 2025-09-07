@@ -1,7 +1,5 @@
 package com.server.dpmcore.attendance.infrastructure.repository
 
-import com.linecorp.kotlinjdsl.querydsl.expression.col
-import com.linecorp.kotlinjdsl.spring.data.SpringDataQueryFactory
 import com.server.dpmcore.attendance.application.query.model.MemberAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberDetailAttendanceQueryModel
 import com.server.dpmcore.attendance.application.query.model.MemberSessionAttendanceQueryModel
@@ -17,9 +15,6 @@ import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendan
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.attendance.infrastructure.entity.AttendanceEntity
-import com.server.dpmcore.common.jdsl.singleQueryOrNull
-import com.server.dpmcore.member.member.domain.model.MemberId
-import com.server.dpmcore.session.domain.model.SessionId
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.ATTENDANCES
 import org.jooq.generated.tables.references.MEMBERS
@@ -36,26 +31,16 @@ private const val PAGE_SIZE = 20
 @Repository
 class AttendanceRepository(
     private val attendanceJpaRepository: AttendanceJpaRepository,
-    private val queryFactory: SpringDataQueryFactory,
     private val dsl: DSLContext,
 ) : AttendancePersistencePort {
-    override fun findAttendanceBy(
-        sessionId: SessionId,
-        memberId: MemberId,
-    ): Attendance? =
-        queryFactory
-            .singleQueryOrNull<AttendanceEntity> {
-                select(entity(AttendanceEntity::class))
-                from(entity(AttendanceEntity::class))
-                whereAnd(
-                    col(AttendanceEntity::sessionId).equal(sessionId.value),
-                    col(AttendanceEntity::memberId).equal(memberId.value),
-                )
-            }?.toDomain()
-
     override fun save(attendance: Attendance) {
         attendanceJpaRepository.save(AttendanceEntity.from(attendance))
     }
+
+    override fun findAttendanceBy(
+        sessionId: Long,
+        memberId: Long,
+    ): Attendance? = attendanceJpaRepository.findBySessionIdAndMemberId(sessionId, memberId)?.toDomain()
 
     override fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,

@@ -15,6 +15,6 @@ class CohortQueryService(
     private val cohortProperties: CohortProperties,
 ) : CohortQueryUseCase {
     override fun getLatestCohortId(): CohortId =
-        cohortPersistencePort.findCohortIdByValue(cohortProperties.value)
+        cohortPersistencePort.findByValue(cohortProperties.value).id
             ?: throw CohortNotFoundException()
 }
