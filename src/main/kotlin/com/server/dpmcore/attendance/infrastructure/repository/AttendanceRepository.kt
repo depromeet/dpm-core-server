@@ -64,7 +64,7 @@ class AttendanceRepository(
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
                 query.toCondition(myTeamNumber),
-            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc())
+            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 SessionAttendanceQueryModel(
@@ -118,7 +118,7 @@ class AttendanceRepository(
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
                 MEMBERS.PART,
-            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc())
+            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 MemberAttendanceQueryModel(
