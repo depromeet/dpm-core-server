@@ -12,17 +12,17 @@ inline fun <T> List<T>.paginate(
     pageSize: Int = PAGE_SIZE,
     crossinline idSelector: (T) -> Long,
 ): PaginatedResult<T> {
-    val sorted = this.sortedBy { idSelector(it) }
+    val content = if (this.size > pageSize) this.take(pageSize) else this
 
-    return if (sorted.size > pageSize) {
+    return if (this.size > pageSize) {
         PaginatedResult(
-            content = sorted.take(pageSize),
+            content = content,
             hasNext = true,
-            nextCursorId = idSelector(sorted.last()),
+            nextCursorId = idSelector(content.last()),
         )
     } else {
         PaginatedResult(
-            content = sorted,
+            content = content,
             hasNext = false,
             nextCursorId = null,
         )
