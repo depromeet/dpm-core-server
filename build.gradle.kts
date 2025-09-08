@@ -199,6 +199,22 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("dpm-core-server.jar")
 }
 
+// Schema 관련 Tasks 등록
+tasks.register<ValidateSchemaTask>("validateSchema") {
+    group = "verification"
+    description = "JPA Entity와 Schema.sql 동기화 검증"
+}
+
+tasks.register<GenerateSchemaFromEntitiesTask>("generateSchemaFromEntities") {
+    group = "build"
+    description = "JPA Entity로부터 Schema.sql 생성"
+}
+
+// 빌드 전에 스키마 검증 실행
+tasks.named("compileKotlin") {
+    dependsOn("validateSchema")
+}
+
 tasks.named("jib") {
     dependsOn("generateJooq")
 }
