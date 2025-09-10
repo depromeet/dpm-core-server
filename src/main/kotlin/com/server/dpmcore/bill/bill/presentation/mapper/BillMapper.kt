@@ -92,7 +92,8 @@ class BillMapper(
                                 ?: throw GatheringNotFoundException(),
                         )
                     val splitAmount = gatheringReceipt.find { it.gatheringId == gathering.id }?.splitAmount
-                    BillDetailGatheringResponse.from(gathering, gatheringMembers, splitAmount)
+                    val joinMemberCount = gatheringQueryUseCase.getGatheringJoinMemberCount(gathering, gatheringMembers)
+                    BillDetailGatheringResponse.of(gathering, joinMemberCount, splitAmount)
                 },
         )
     }

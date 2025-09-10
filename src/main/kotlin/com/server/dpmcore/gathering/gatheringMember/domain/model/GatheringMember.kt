@@ -57,6 +57,10 @@ class GatheringMember(
 
     fun isConfirmed(): Boolean = completedAt != null
 
+    fun isGatheringIdMatches(gatheringId: GatheringId) = this.gatheringId == gatheringId
+
+    fun isJoined(): Boolean = this.isJoined == true && this.deletedAt == null
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is GatheringMember) return false

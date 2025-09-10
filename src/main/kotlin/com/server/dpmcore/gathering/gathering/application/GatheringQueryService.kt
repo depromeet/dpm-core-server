@@ -3,6 +3,7 @@ package com.server.dpmcore.gathering.gathering.application
 import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
@@ -136,4 +137,16 @@ class GatheringQueryService(
         getAllGatheringIdsByBillId(billId).flatMap { gatheringId ->
             gatheringMemberQueryService.getGatheringMemberByGatheringId(gatheringId)
         }
+
+    override fun getGatheringJoinMemberCount(
+        gathering: Gathering,
+        gatheringMembers: List<GatheringMember>,
+    ): Int {
+        val gatheringId = validateGatheringIdIsNotNull(gathering)
+        return gatheringMemberQueryService.countGatheringParticipants(gatheringId, gatheringMembers)
+    }
+
+    private fun validateGatheringIdIsNotNull(gathering: Gathering): GatheringId {
+        return gathering.id ?: throw GatheringIdRequiredException()
+    }
 }

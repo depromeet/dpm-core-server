@@ -2,6 +2,7 @@ package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotParticipantMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -85,4 +86,19 @@ class GatheringMemberQueryService(
     ): List<GatheringMember> =
         gatheringMemberPersistencePort
             .findGatheringMembersByGatheringIdsAndMemberIds(gatheringIds, memberIds)
+
+    fun countGatheringParticipants(
+        gatheringId: GatheringId,
+        gatheringMembers: List<GatheringMember>,
+    ): Int =
+        gatheringMembers
+            .onEach { validateGatheringIdMatches(it, gatheringId) }
+            .count { it.isJoined() }
+
+    private fun validateGatheringIdMatches(
+        gatheringMember: GatheringMember,
+        gatheringId: GatheringId,
+    ) {
+        if (gatheringMember.isGatheringIdMatches(gatheringId)) throw GatheringNotParticipantMemberException()
+    }
 }

@@ -1,10 +1,7 @@
 package com.server.dpmcore.gathering.gathering.domain.model
 
 import com.server.dpmcore.bill.bill.domain.model.BillId
-import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
-import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotParticipantMemberException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.GatheringCreateCommand
-import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
@@ -46,24 +43,6 @@ class Gathering(
         private set
 
     fun isDeleted(): Boolean = deletedAt != null
-
-    //    TODO : 회식 멤버가 null일 수 있음
-    fun getGatheringJoinMemberCount(gatheringMembers: List<GatheringMember>): Int {
-        if (this.id == null) throw GatheringIdRequiredException()
-
-        var joinMemberCount = 0
-
-        gatheringMembers.forEach { gatheringMember ->
-            if (gatheringMember.gatheringId != this.id) {
-                throw GatheringNotParticipantMemberException()
-            }
-            if ((gatheringMember.isJoined == true) && gatheringMember.deletedAt == null) {
-                joinMemberCount++
-            }
-        }
-
-        return joinMemberCount
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

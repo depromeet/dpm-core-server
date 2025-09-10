@@ -4,7 +4,6 @@ import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdR
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringCategory
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
-import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -66,9 +65,9 @@ data class BillDetailGatheringResponse(
     val splitAmount: Int?,
 ) {
     companion object {
-        fun from(
+        fun of(
             gathering: Gathering,
-            gatheringMembers: List<GatheringMember>,
+            joinMemberCount: Int,
             splitAmount: Int?,
         ): BillDetailGatheringResponse =
             BillDetailGatheringResponse(
@@ -82,7 +81,7 @@ data class BillDetailGatheringResponse(
                         java.time.ZoneId.of(TIME_ZONE),
                     ),
                 category = gathering.category,
-                joinMemberCount = gathering.getGatheringJoinMemberCount(gatheringMembers),
+                joinMemberCount = joinMemberCount,
                 amount = gathering.gatheringReceipt?.amount ?: 0,
                 splitAmount = splitAmount,
             )
