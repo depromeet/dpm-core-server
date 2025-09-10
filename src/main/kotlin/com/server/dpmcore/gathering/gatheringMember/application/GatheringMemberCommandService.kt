@@ -1,6 +1,7 @@
 package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import com.server.dpmcore.gathering.gatheringMember.application.exception.AlreadySubmittedInvitationException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
 import com.server.dpmcore.gathering.gatheringMember.domain.port.outbound.GatheringMemberPersistencePort
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -28,8 +29,12 @@ class GatheringMemberCommandService(
     }
 
     fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
-        gatheringMember.checkParticipationIsSubmitted()
+        checkParticipationIsSubmitted(gatheringMember)
         gatheringMemberPersistencePort.updateIsInvitationSubmittedById(gatheringMember.memberId.value)
+    }
+
+    private fun checkParticipationIsSubmitted(gatheringMember: GatheringMember) {
+        if (gatheringMember.isInvitationSubmitted) throw AlreadySubmittedInvitationException()
     }
 
     fun updateDepositAndMemo(
