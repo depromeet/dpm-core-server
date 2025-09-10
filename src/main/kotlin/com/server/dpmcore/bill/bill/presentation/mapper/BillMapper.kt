@@ -12,6 +12,7 @@ import com.server.dpmcore.gathering.gathering.application.exception.GatheringNot
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringRequiredException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.GatheringReceiptNotFoundException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import org.springframework.stereotype.Component
@@ -58,7 +59,7 @@ class BillMapper(
                 memberId,
                 gatheringMembersByRetrievedMember,
                 gatheringReceipt,
-            )
+            ) ?: throw GatheringReceiptNotFoundException()
 
         return BillDetailResponse(
             billId = bill.id,
