@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.application
 
-import com.server.dpmcore.attendance.domain.exception.AttendanceNotFoundException
+import com.server.dpmcore.attendance.application.exception.AttendanceNotFoundException
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery

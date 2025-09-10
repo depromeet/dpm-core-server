@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.application
 
-import com.server.dpmcore.attendance.domain.exception.AttendanceNotFoundException
+import com.server.dpmcore.attendance.application.exception.AttendanceNotFoundException
 import com.server.dpmcore.attendance.domain.model.Attendance
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceCreateCommand
