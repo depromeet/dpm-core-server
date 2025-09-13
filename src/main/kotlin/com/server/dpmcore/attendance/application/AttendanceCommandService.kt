@@ -9,7 +9,7 @@ import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceStatu
 import com.server.dpmcore.attendance.domain.port.outbound.AttendancePersistencePort
 import com.server.dpmcore.cohort.application.config.CohortProperties
 import com.server.dpmcore.member.member.application.MemberQueryService
-import com.server.dpmcore.member.member.domain.exception.CohortMembersNotFoundException
+import com.server.dpmcore.member.member.application.exception.CohortMembersNotFoundException
 import com.server.dpmcore.session.application.SessionQueryService
 import com.server.dpmcore.session.domain.exception.CheckedAttendanceException
 import com.server.dpmcore.session.domain.model.SessionId

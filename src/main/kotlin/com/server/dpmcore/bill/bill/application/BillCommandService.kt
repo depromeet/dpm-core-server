@@ -15,6 +15,9 @@ import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.MemberCountMustOverOneException
+import com.server.dpmcore.gathering.gatheringReceipt.application.exception.ReceiptAlreadySplitException
+import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -72,25 +75,37 @@ class BillCommandService(
 
         // GatheringReceipt 정산 금액 마감
         gatherings.map { gathering ->
-            gathering.id ?: throw GatheringNotFoundException()
+            val gatheringId = gathering.id ?: throw GatheringNotFoundException()
 
-            val gatheringMember = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
+            val joinMemberCount =
+                gatheringQueryUseCase
+                    .findGatheringMemberByGatheringId(gatheringId)
+                    .count { it.isJoined == true }
 
             val receipt =
-                gatheringQueryUseCase
-                    .findGatheringReceiptByGatheringId(
-                        gathering.id,
-                    ).closeParticipation(
-                        gatheringMember.count {
-                            it.isJoined == true
-                        },
-                    )
+                gatheringQueryUseCase.findGatheringReceiptByGatheringId(gatheringId).apply {
+                    checkJoinMemberCountMoreThenOne(this, joinMemberCount)
+                    checkIsExistsSplitAmount(this)
+                    closeParticipation(joinMemberCount)
+                }
+
             gatheringCommandUseCase.updateGatheringReceiptSplitAmount(receipt)
-//            TODO : gathering updatedAt 업데이트
+            // TODO: gathering.updatedAt 업데이트
         }
         checkIsBillCompleted(bill)
 
         return billPersistencePort.save(bill.closeParticipation())
+    }
+
+    private fun checkIsExistsSplitAmount(receipt: GatheringReceipt) {
+        if (receipt.isExistsSplitAmount()) throw ReceiptAlreadySplitException()
+    }
+
+    private fun checkJoinMemberCountMoreThenOne(
+        receipt: GatheringReceipt,
+        joinMemberCount: Int,
+    ) {
+        if (receipt.validateJoinMemberCount(joinMemberCount)) throw MemberCountMustOverOneException()
     }
 
     private fun checkIsBillClosable(bill: Bill) {

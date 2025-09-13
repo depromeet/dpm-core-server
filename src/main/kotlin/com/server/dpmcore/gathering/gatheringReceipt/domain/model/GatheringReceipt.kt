@@ -2,8 +2,6 @@ package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
-import com.server.dpmcore.gathering.gatheringReceipt.application.exception.MemberCountMustOverOneException
-import com.server.dpmcore.gathering.gatheringReceipt.application.exception.ReceiptAlreadySplitException
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
 import java.time.Instant
 
@@ -32,14 +30,8 @@ class GatheringReceipt(
 
     fun isDeleted(): Boolean = deletedAt != null
 
-    fun closeParticipation(joinMemberCount: Int): GatheringReceipt {
-        if (joinMemberCount <= 0) {
-            throw MemberCountMustOverOneException()
-        }
-        if (splitAmount != null) {
-            throw ReceiptAlreadySplitException()
-        }
-        return GatheringReceipt(
+    fun closeParticipation(joinMemberCount: Int) =
+        GatheringReceipt(
             id = id,
             splitAmount = (amount / joinMemberCount),
             amount = amount,
@@ -49,7 +41,10 @@ class GatheringReceipt(
             gatheringReceiptPhotos = gatheringReceiptPhotos,
             gatheringId = gatheringId,
         )
-    }
+
+    fun isExistsSplitAmount() = splitAmount != null
+
+    fun validateJoinMemberCount(joinMemberCount: Int) = joinMemberCount <= 0
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
