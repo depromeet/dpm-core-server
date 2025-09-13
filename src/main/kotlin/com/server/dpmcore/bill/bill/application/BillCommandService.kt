@@ -74,7 +74,7 @@ class BillCommandService(
         val gatherings = gatheringQueryUseCase.getAllGatheringsByBillId(billId)
 
         // GatheringReceipt 정산 금액 마감
-        gatherings.map { gathering ->
+        gatherings.forEach { gathering ->
             val gatheringId = gathering.id ?: throw GatheringNotFoundException()
 
             val joinMemberCount =
@@ -83,7 +83,7 @@ class BillCommandService(
                     .count { it.isJoined == true }
 
             val receipt =
-                gatheringQueryUseCase.findGatheringReceiptByGatheringId(gatheringId).apply {
+                gatheringQueryUseCase.findGatheringReceiptByGatheringId(gatheringId).run {
                     checkJoinMemberCountMoreThenOne(this, joinMemberCount)
                     checkIsExistsSplitAmount(this)
                     closeParticipation(joinMemberCount)
