@@ -47,6 +47,14 @@ class GatheringMember(
 
     fun isConfirmed(): Boolean = completedAt != null
 
+    /**
+     * 회식 멤버의 회식 식별자와 매개변수로 전달된 회식 식별자가 일치하는지 확인합니다.
+     *
+     * @param gatheringId 확인할 회식 식별자
+     * @return 일치하면 true, 그렇지 않으면 false
+     * @author LeeHanEum
+     * @since 2025.09.13
+     */
     fun isGatheringIdMatches(gatheringId: GatheringId) = this.gatheringId == gatheringId
 
     fun isJoined(): Boolean = this.isJoined == true && this.deletedAt == null

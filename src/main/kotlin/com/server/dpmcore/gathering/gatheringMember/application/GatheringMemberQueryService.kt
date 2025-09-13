@@ -87,6 +87,13 @@ class GatheringMemberQueryService(
         gatheringMemberPersistencePort
             .findGatheringMembersByGatheringIdsAndMemberIds(gatheringIds, memberIds)
 
+    /**
+     * 각 회식 멤버가 회식 참여자에 속하는지 확인한 후, 참여자 수를 카운트합니다.
+     *
+     * @throws GatheringNotParticipantMemberException 회식 멤버가 해당 회식에 속하지 않는 경우
+     * @author LeeHanEum
+     * @since 2025.09.13
+     */
     fun countGatheringParticipants(
         gatheringId: GatheringId,
         gatheringMembers: List<GatheringMember>,
