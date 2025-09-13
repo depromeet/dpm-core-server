@@ -19,8 +19,6 @@ import com.server.dpmcore.member.member.application.MemberQueryService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-private const val PAGE_SIZE = 20
-
 @Service
 @Transactional(readOnly = true)
 class AttendanceQueryService(

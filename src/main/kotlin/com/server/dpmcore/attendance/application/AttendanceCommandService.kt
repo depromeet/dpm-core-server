@@ -56,7 +56,7 @@ class AttendanceCommandService(
         session: Session,
         inputCode: String,
     ) {
-        if (session.isValidInputCode(inputCode)) throw InvalidAttendanceCodeException()
+        if (session.isInvalidInputCode(inputCode)) throw InvalidAttendanceCodeException()
     }
 
     fun updateAttendanceStatus(command: AttendanceStatusUpdateCommand) {

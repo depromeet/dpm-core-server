@@ -99,6 +99,6 @@ class GatheringMemberQueryService(
         gatheringMember: GatheringMember,
         gatheringId: GatheringId,
     ) {
-        if (gatheringMember.isGatheringIdMatches(gatheringId)) throw GatheringNotParticipantMemberException()
+        if (!gatheringMember.isGatheringIdMatches(gatheringId)) throw GatheringNotParticipantMemberException()
     }
 }
