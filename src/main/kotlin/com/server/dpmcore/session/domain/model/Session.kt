@@ -1,10 +1,8 @@
 package com.server.dpmcore.session.domain.model
 
+import com.server.dpmcore.attendance.domain.model.AttendanceCheck
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.cohort.domain.model.CohortId
-import com.server.dpmcore.session.domain.exception.AttendanceStartTimeDateMismatchException
-import com.server.dpmcore.session.domain.exception.InvalidAttendanceCodeException
-import com.server.dpmcore.session.domain.exception.TooEarlyAttendanceException
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
 import java.time.Instant
 import java.time.ZoneId
@@ -38,23 +36,18 @@ class Session internal constructor(
 
     fun getAttachments(): List<SessionAttachment> = attachments.toList()
 
-    fun attend(
-        attendedAt: Instant,
-        inputCode: String,
-    ): AttendanceStatus {
-        if (inputCode != attendancePolicy.attendanceCode) {
-            throw InvalidAttendanceCodeException()
-        }
+    fun attend(attendedAt: Instant): AttendanceCheck = determineAttendanceStatus(attendedAt)
 
-        return determineAttendanceStatus(attendedAt)
-    }
+    fun isValidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
-    private fun determineAttendanceStatus(now: Instant): AttendanceStatus =
+    private fun determineAttendanceStatus(now: Instant): AttendanceCheck =
         when {
-            now.isBefore(attendancePolicy.attendanceStart) -> throw TooEarlyAttendanceException()
-            now.isBefore(attendancePolicy.attendanceStart.plus(16, ChronoUnit.MINUTES)) -> AttendanceStatus.PRESENT
-            now.isBefore(attendancePolicy.attendanceStart.plus(31, ChronoUnit.MINUTES)) -> AttendanceStatus.LATE
-            else -> AttendanceStatus.ABSENT
+            now.isBefore(attendancePolicy.attendanceStart) -> AttendanceCheck.TooEarly
+            now.isBefore(attendancePolicy.attendanceStart.plus(16, ChronoUnit.MINUTES)) ->
+                AttendanceCheck.Success(AttendanceStatus.PRESENT)
+            now.isBefore(attendancePolicy.attendanceStart.plus(31, ChronoUnit.MINUTES)) ->
+                AttendanceCheck.Success(AttendanceStatus.LATE)
+            else -> AttendanceCheck.Success(AttendanceStatus.ABSENT)
         }
 
     override fun equals(other: Any?): Boolean {
@@ -71,20 +64,15 @@ class Session internal constructor(
     }
 
     fun updateAttendanceStartTime(newStartTime: Instant) {
-        if (!isSameDateAsSession(newStartTime)) {
-            throw AttendanceStartTimeDateMismatchException()
-        }
-
         this.attendancePolicy =
             attendancePolicy.copy(
                 attendanceStart = newStartTime,
             )
     }
 
-    private fun isSameDateAsSession(target: Instant): Boolean {
+    fun isSameDateAsSession(target: Instant): Boolean {
         val zone = ZoneId.of("Asia/Seoul")
-        return this.date.atZone(zone).toLocalDate() ==
-            target.atZone(zone).toLocalDate()
+        return this.date.atZone(zone).toLocalDate() == target.atZone(zone).toLocalDate()
     }
 
     companion object {

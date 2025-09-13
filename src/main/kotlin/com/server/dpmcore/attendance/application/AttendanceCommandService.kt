@@ -2,6 +2,7 @@ package com.server.dpmcore.attendance.application
 
 import com.server.dpmcore.attendance.application.exception.AttendanceNotFoundException
 import com.server.dpmcore.attendance.domain.model.Attendance
+import com.server.dpmcore.attendance.domain.model.AttendanceCheck
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceCreateCommand
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceRecordCommand
@@ -11,7 +12,10 @@ import com.server.dpmcore.cohort.application.config.CohortProperties
 import com.server.dpmcore.member.member.application.MemberQueryService
 import com.server.dpmcore.member.member.application.exception.CohortMembersNotFoundException
 import com.server.dpmcore.session.application.SessionQueryService
-import com.server.dpmcore.session.domain.exception.CheckedAttendanceException
+import com.server.dpmcore.session.application.exception.CheckedAttendanceException
+import com.server.dpmcore.session.application.exception.InvalidAttendanceCodeException
+import com.server.dpmcore.session.application.exception.TooEarlyAttendanceException
+import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -34,15 +38,25 @@ class AttendanceCommandService(
                     }
                 } ?: throw AttendanceNotFoundException()
 
+        val session = sessionQueryService.getSessionById(command.sessionId)
+        validateInputCode(session, command.attendanceCode)
+
         val status =
-            sessionQueryService
-                .getSessionById(command.sessionId)
-                .attend(command.attendedAt, command.attendanceCode)
-
+            when (val result = session.attend(command.attendedAt)) {
+                AttendanceCheck.TooEarly -> throw TooEarlyAttendanceException()
+                is AttendanceCheck.Success -> result.status
+            }
         attendance.markAttendance(status, command.attendedAt)
-        attendancePersistencePort.save(attendance)
 
+        attendancePersistencePort.save(attendance)
         return status
+    }
+
+    private fun validateInputCode(
+        session: Session,
+        inputCode: String,
+    ) {
+        if (session.isValidInputCode(inputCode)) throw InvalidAttendanceCodeException()
     }
 
     fun updateAttendanceStatus(command: AttendanceStatusUpdateCommand) {

@@ -1,8 +1,8 @@
 package com.server.dpmcore.session.application
 
 import com.server.dpmcore.cohort.domain.port.inbound.CohortQueryUseCase
+import com.server.dpmcore.session.application.exception.SessionNotFoundException
 import com.server.dpmcore.session.application.query.SessionWeekQueryModel
-import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.domain.port.outbound.SessionPersistencePort

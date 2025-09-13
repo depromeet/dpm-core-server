@@ -1,8 +1,9 @@
 package com.server.dpmcore.session.application
 
+import com.server.dpmcore.session.application.exception.AttendanceStartTimeDateMismatchException
+import com.server.dpmcore.session.application.exception.InvalidSessionIdException
+import com.server.dpmcore.session.application.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.event.SessionCreateEvent
-import com.server.dpmcore.session.domain.exception.InvalidSessionIdException
-import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
@@ -26,9 +27,17 @@ class SessionCommandService(
             sessionPersistencePort.findSessionById(sessionId.value)
                 ?: throw SessionNotFoundException()
 
+        checkIsSameDateAsSession(session, attendanceStartTime)
         session.updateAttendanceStartTime(attendanceStartTime)
 
         sessionPersistencePort.save(session)
+    }
+
+    private fun checkIsSameDateAsSession(
+        session: Session,
+        attendanceStartTime: Instant,
+    ) {
+        if (!session.isSameDateAsSession(attendanceStartTime)) throw AttendanceStartTimeDateMismatchException()
     }
 
     fun createSession(command: SessionCreateCommand) {
