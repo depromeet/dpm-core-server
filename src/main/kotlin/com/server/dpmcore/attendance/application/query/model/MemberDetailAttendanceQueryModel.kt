@@ -10,4 +10,5 @@ data class MemberDetailAttendanceQueryModel(
     val excusedAbsentCount: Int,
     val onlineAbsentCount: Int,
     val offlineAbsentCount: Int,
+    val earlyLeaveCount: Int,
 )
