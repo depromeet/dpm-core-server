@@ -1,6 +1,6 @@
 package com.server.dpmcore.member.memberCohort.application
 
-import com.server.dpmcore.cohort.domain.exception.CohortNotFoundException
+import com.server.dpmcore.cohort.application.exception.CohortNotFoundException
 import com.server.dpmcore.cohort.domain.port.inbound.CohortQueryUseCase
 import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.memberCohort.domain.model.MemberCohort
