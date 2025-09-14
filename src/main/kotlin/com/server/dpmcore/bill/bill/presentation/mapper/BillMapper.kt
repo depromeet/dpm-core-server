@@ -54,7 +54,7 @@ class BillMapper(
                     it.id ?: throw GatheringNotFoundException()
                 },
             )
-        val myTotalSplitAmount =
+        val myTotalSplitAmount: Int =
             Bill.findMemberBillTotalSplitAmount(
                 memberId,
                 gatheringMembersByRetrievedMember,
