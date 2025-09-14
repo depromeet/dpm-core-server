@@ -8,8 +8,8 @@ package com.server.dpmcore.attendance.domain.model
  * @author LeeHanEum
  * @since 2025.09.13
  */
-sealed class AttendanceCheck {
-    data class Success(val status: AttendanceStatus) : AttendanceCheck()
+sealed class AttendanceResult {
+    data class Success(val status: AttendanceStatus) : AttendanceResult()
 
-    data object TooEarly : AttendanceCheck()
+    data object TooEarly : AttendanceResult()
 }

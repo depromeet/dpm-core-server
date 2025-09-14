@@ -1,6 +1,6 @@
 package com.server.dpmcore.session.domain.model
 
-import com.server.dpmcore.attendance.domain.model.AttendanceCheck
+import com.server.dpmcore.attendance.domain.model.AttendanceResult
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
@@ -38,7 +38,7 @@ class Session internal constructor(
 
     fun getAttachments(): List<SessionAttachment> = attachments.toList()
 
-    fun attend(attendedAt: Instant): AttendanceCheck = determineAttendanceStatus(attendedAt)
+    fun attend(attendedAt: Instant): AttendanceResult = determineAttendanceStatus(attendedAt)
 
     fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
@@ -52,14 +52,14 @@ class Session internal constructor(
      * @since 2025.09.13
      *
      */
-    private fun determineAttendanceStatus(now: Instant): AttendanceCheck =
+    private fun determineAttendanceStatus(now: Instant): AttendanceResult =
         when {
-            now.isBefore(attendancePolicy.attendanceStart) -> AttendanceCheck.TooEarly
+            now.isBefore(attendancePolicy.attendanceStart) -> AttendanceResult.TooEarly
             now.isBefore(attendancePolicy.attendanceStart.plus(16, ChronoUnit.MINUTES)) ->
-                AttendanceCheck.Success(AttendanceStatus.PRESENT)
+                AttendanceResult.Success(AttendanceStatus.PRESENT)
             now.isBefore(attendancePolicy.attendanceStart.plus(31, ChronoUnit.MINUTES)) ->
-                AttendanceCheck.Success(AttendanceStatus.LATE)
-            else -> AttendanceCheck.Success(AttendanceStatus.ABSENT)
+                AttendanceResult.Success(AttendanceStatus.LATE)
+            else -> AttendanceResult.Success(AttendanceStatus.ABSENT)
         }
 
     override fun equals(other: Any?): Boolean {

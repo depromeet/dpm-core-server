@@ -2,7 +2,7 @@ package com.server.dpmcore.attendance.application
 
 import com.server.dpmcore.attendance.application.exception.AttendanceNotFoundException
 import com.server.dpmcore.attendance.domain.model.Attendance
-import com.server.dpmcore.attendance.domain.model.AttendanceCheck
+import com.server.dpmcore.attendance.domain.model.AttendanceResult
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceCreateCommand
 import com.server.dpmcore.attendance.domain.port.inbound.command.AttendanceRecordCommand
@@ -43,8 +43,8 @@ class AttendanceCommandService(
 
         val status =
             when (val result = session.attend(command.attendedAt)) {
-                AttendanceCheck.TooEarly -> throw TooEarlyAttendanceException()
-                is AttendanceCheck.Success -> result.status
+                AttendanceResult.TooEarly -> throw TooEarlyAttendanceException()
+                is AttendanceResult.Success -> result.status
             }
         attendance.markAttendance(status, command.attendedAt)
 
