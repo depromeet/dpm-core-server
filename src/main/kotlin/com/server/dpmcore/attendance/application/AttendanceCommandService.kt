@@ -12,10 +12,9 @@ import com.server.dpmcore.cohort.application.config.CohortProperties
 import com.server.dpmcore.member.member.application.MemberQueryService
 import com.server.dpmcore.member.member.application.exception.CohortMembersNotFoundException
 import com.server.dpmcore.session.application.SessionQueryService
+import com.server.dpmcore.session.application.SessionValidator
 import com.server.dpmcore.session.application.exception.CheckedAttendanceException
-import com.server.dpmcore.session.application.exception.InvalidAttendanceCodeException
 import com.server.dpmcore.session.application.exception.TooEarlyAttendanceException
-import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,6 +26,7 @@ class AttendanceCommandService(
     private val sessionQueryService: SessionQueryService,
     private val memberService: MemberQueryService,
     private val cohortProperties: CohortProperties,
+    private val sessionValidator: SessionValidator,
 ) {
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
         val attendance =
@@ -39,7 +39,7 @@ class AttendanceCommandService(
                 } ?: throw AttendanceNotFoundException()
 
         val session = sessionQueryService.getSessionById(command.sessionId)
-        validateInputCode(session, command.attendanceCode)
+        sessionValidator.validateInputCode(session, command.attendanceCode)
 
         val status =
             when (val result = session.attend(command.attendedAt)) {
@@ -50,13 +50,6 @@ class AttendanceCommandService(
 
         attendancePersistencePort.save(attendance)
         return status
-    }
-
-    private fun validateInputCode(
-        session: Session,
-        inputCode: String,
-    ) {
-        if (session.isInvalidInputCode(inputCode)) throw InvalidAttendanceCodeException()
     }
 
     fun updateAttendanceStatus(command: AttendanceStatusUpdateCommand) {

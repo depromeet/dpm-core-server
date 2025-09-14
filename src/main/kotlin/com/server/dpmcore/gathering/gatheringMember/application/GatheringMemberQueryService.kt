@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class GatheringMemberQueryService(
     private val gatheringMemberPersistencePort: GatheringMemberPersistencePort,
+    private val gatheringMemberValidator: GatheringMemberValidator,
 ) : GatheringMemberQueryUseCase {
     override fun getGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
         gatheringMemberPersistencePort.findByGatheringId(gatheringId)
@@ -99,13 +100,6 @@ class GatheringMemberQueryService(
         gatheringMembers: List<GatheringMember>,
     ): Int =
         gatheringMembers
-            .onEach { validateGatheringIdMatches(it, gatheringId) }
+            .onEach { gatheringMemberValidator.validateGatheringIdMatches(it, gatheringId) }
             .count { it.isJoined() }
-
-    private fun validateGatheringIdMatches(
-        gatheringMember: GatheringMember,
-        gatheringId: GatheringId,
-    ) {
-        if (!gatheringMember.isGatheringIdMatches(gatheringId)) throw GatheringNotParticipantMemberException()
-    }
 }

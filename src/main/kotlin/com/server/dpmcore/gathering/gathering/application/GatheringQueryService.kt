@@ -30,6 +30,7 @@ class GatheringQueryService(
     private val gatheringReceiptQueryService: GatheringReceiptQueryService,
     private val gatheringMemberQueryService: GatheringMemberQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val gatheringValidator: GatheringValidator,
 ) : GatheringQueryUseCase {
     override fun getAllGatheringsByBillId(billId: BillId): List<Gathering> =
         gatheringPersistencePort
@@ -154,11 +155,7 @@ class GatheringQueryService(
         gathering: Gathering,
         gatheringMembers: List<GatheringMember>,
     ): Int {
-        val gatheringId = validateGatheringIdIsNotNull(gathering)
+        val gatheringId = gatheringValidator.validateGatheringIdIsNotNull(gathering)
         return gatheringMemberQueryService.countGatheringParticipants(gatheringId, gatheringMembers)
-    }
-
-    private fun validateGatheringIdIsNotNull(gathering: Gathering): GatheringId {
-        return gathering.id ?: throw GatheringIdRequiredException()
     }
 }
