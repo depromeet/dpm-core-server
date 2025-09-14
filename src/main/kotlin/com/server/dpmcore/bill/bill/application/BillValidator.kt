@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 @Component
 class BillValidator {
     fun checkIsBillClosable(bill: Bill) {
-        if (bill.checkParticipationClosable()) throw BillAlreadyCompletedException()
+        if (bill.isParticipationClosable()) throw BillAlreadyCompletedException()
     }
 
     fun checkIsBillCompleted(bill: Bill) {

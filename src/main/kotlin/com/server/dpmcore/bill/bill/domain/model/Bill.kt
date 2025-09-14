@@ -62,7 +62,7 @@ class Bill(
             deletedAt = deletedAt,
         )
 
-    fun checkParticipationClosable(): Boolean = billStatus != BillStatus.OPEN
+    fun isParticipationClosable(): Boolean = billStatus != BillStatus.OPEN
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
