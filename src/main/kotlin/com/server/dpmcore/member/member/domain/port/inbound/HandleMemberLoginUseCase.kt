@@ -2,6 +2,7 @@ package com.server.dpmcore.member.member.domain.port.inbound
 
 import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes
+import jakarta.servlet.http.HttpServletRequest
 
 interface HandleMemberLoginUseCase {
     /**
@@ -11,7 +12,7 @@ interface HandleMemberLoginUseCase {
      * @since 2025.08.15
      */
     fun handleLoginSuccess(
-        requestDomain: String,
+        request: HttpServletRequest,
         authAttributes: OAuthAttributes,
     ): LoginResult
 }

@@ -31,7 +31,7 @@ class CustomAuthenticationSuccessHandler(
         authentication: Authentication,
     ) {
         resolveLoginResultFromAuthentication(
-            request.cookies?.firstOrNull { it.name == REQUEST_DOMAIN }?.value ?: request.serverName,
+            request,
             authentication,
         ).let { loginResult ->
             loginResult.refreshToken?.let {
@@ -47,10 +47,10 @@ class CustomAuthenticationSuccessHandler(
     }
 
     private fun resolveLoginResultFromAuthentication(
-        requestDomain: String,
+        request: HttpServletRequest,
         authentication: Authentication,
     ): LoginResult {
         val oAuth2User = authentication.principal as CustomOAuth2User
-        return handleMemberLoginUseCase.handleLoginSuccess(requestDomain, oAuth2User.authAttributes)
+        return handleMemberLoginUseCase.handleLoginSuccess(request, oAuth2User.authAttributes)
     }
 }

@@ -13,6 +13,8 @@ import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes
 import com.server.dpmcore.security.oauth.token.JwtTokenProvider
 import com.server.dpmcore.security.properties.SecurityProperties
+import com.server.dpmcore.security.redirect.LoginRedirectHandler
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,15 +28,16 @@ class MemberLoginService(
     private val securityProperties: SecurityProperties,
     private val tokenProvider: JwtTokenProvider,
     private val environment: Environment,
+    private val redirectHandler: LoginRedirectHandler,
 ) : HandleMemberLoginUseCase {
     @Transactional
     override fun handleLoginSuccess(
-        requestDomain: String,
+        request: HttpServletRequest,
         authAttributes: OAuthAttributes,
     ): LoginResult =
         memberPersistencePort
             .findByEmail(authAttributes.getEmail())
-            ?.let { member -> handleExistingMemberLogin(requestDomain, member) }
+            ?.let { member -> handleExistingMemberLogin(request, member) }
             ?: handleUnregisteredMember(authAttributes)
 
     private fun generateLoginResult(
@@ -53,7 +56,7 @@ class MemberLoginService(
     }
 
     private fun handleExistingMemberLogin(
-        requestDomain: String,
+        request: HttpServletRequest,
         member: Member,
     ): LoginResult {
         member.id?.value ?: return LoginResult(null, securityProperties.restrictedRedirectUrl)
@@ -62,46 +65,14 @@ class MemberLoginService(
             return LoginResult(null, securityProperties.restrictedRedirectUrl)
         }
 
-        return generateLoginResult(member.id, buildRedirectUrlByRoleAndDomain(requestDomain, member.id))
+        return generateLoginResult(
+            member.id,
+            redirectHandler.determineRedirectUrl(
+                memberAuthorityService.resolvePrimaryAuthorityType(member.id),
+                request,
+            ),
+        )
     }
-
-    private fun buildRedirectUrlByRoleAndDomain(
-        requestDomain: String,
-        memberId: MemberId,
-    ) = when {
-        hasAdminRole(memberId) -> adminRedirectUrl(requestDomain)
-        else -> securityProperties.coreRedirectUrl + "?$IS_ADMIN_FALSE"
-    }
-
-    private fun adminRedirectUrl(requestDomain: String): String {
-        if (environment.activeProfiles.contains(PROFILE_LOCAL)) {
-            return "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
-        }
-
-        val coreSuffix = if (environment.activeProfiles.contains(PROFILE_DEV)) CLIENT_SUFFIX else CORE_SUFFIX
-
-        val redirectUrl =
-            when (requestDomain) {
-                "$coreSuffix.${securityProperties.cookie.domain}" -> {
-                    "${securityProperties.coreRedirectUrl}?$IS_ADMIN_TRUE"
-                }
-
-                "$ADMIN_SUFFIX.${securityProperties.cookie.domain}" -> {
-                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
-                }
-
-                else -> {
-                    "${securityProperties.adminRedirectUrl}?$IS_ADMIN_TRUE"
-                }
-            }
-
-        return redirectUrl
-    }
-
-    private fun hasAdminRole(memberId: MemberId): Boolean =
-        memberAuthorityService
-            .getAuthorityNamesByMemberId(memberId)
-            .any { it in ADMIN_AUTHORITIES }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
         val member =
@@ -112,16 +83,5 @@ class MemberLoginService(
             member.id ?: throw MemberIdRequiredException(),
             securityProperties.restrictedRedirectUrl,
         )
-    }
-
-    companion object {
-        private val ADMIN_AUTHORITIES = setOf("ORGANIZER")
-        private const val IS_ADMIN_TRUE = "isAdmin=true"
-        private const val IS_ADMIN_FALSE = "isAdmin=false"
-        private const val ADMIN_SUFFIX = "admin"
-        private const val CORE_SUFFIX = "core"
-        private const val CLIENT_SUFFIX = "client"
-        private const val PROFILE_DEV = "dev"
-        private const val PROFILE_LOCAL = "local"
     }
 }
