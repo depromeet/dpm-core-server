@@ -124,6 +124,7 @@ object AttendanceMapper {
                     lateCount = memberAttendanceModel.lateCount,
                     excusedAbsentCount = memberAttendanceModel.excusedAbsentCount,
                     absentCount = memberAttendanceModel.onlineAbsentCount + memberAttendanceModel.offlineAbsentCount,
+                    earlyLeaveCount = memberAttendanceModel.earlyLeaveCount,
                 ),
             sessions =
                 sessionAttendancesModel.map { session ->

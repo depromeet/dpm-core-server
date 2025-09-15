@@ -21,6 +21,7 @@ data class MemberDetailAttendanceCountInfo(
     val lateCount: Int,
     val excusedAbsentCount: Int,
     val absentCount: Int,
+    val earlyLeaveCount: Int,
 )
 
 data class MemberDetailSessionInfo(

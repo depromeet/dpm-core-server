@@ -337,7 +337,8 @@ interface AttendanceApi {
                                                 "presentCount": 1,
                                                 "lateCount": 1,
                                                 "excusedAbsentCount": 0,
-                                                "absentCount": 0
+                                                "absentCount": 0,
+                                                "earlyLeaveCount": 0
                                             },
                                             "sessions": [
                                                 {
@@ -400,7 +401,8 @@ interface AttendanceApi {
                                                 "presentCount": 1,
                                                 "lateCount": 1,
                                                 "excusedAbsentCount": 0,
-                                                "absentCount": 0
+                                                "absentCount": 0,
+                                                "earlyLeaveCount": 0
                                             },
                                             "sessions": [
                                                 {
