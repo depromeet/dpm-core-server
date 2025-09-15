@@ -3,7 +3,9 @@ package com.server.dpmcore.gathering.gathering.application
 import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.bill.bill.domain.model.BillId
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotParticipantMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
@@ -28,6 +30,7 @@ class GatheringQueryService(
     private val gatheringReceiptQueryService: GatheringReceiptQueryService,
     private val gatheringMemberQueryService: GatheringMemberQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val gatheringValidator: GatheringValidator,
 ) : GatheringQueryUseCase {
     override fun getAllGatheringsByBillId(billId: BillId): List<Gathering> =
         gatheringPersistencePort
@@ -136,4 +139,23 @@ class GatheringQueryService(
         getAllGatheringIdsByBillId(billId).flatMap { gatheringId ->
             gatheringMemberQueryService.getGatheringMemberByGatheringId(gatheringId)
         }
+
+    /**
+     * 회식 정산서 정보 반환 시, 회식 참여 인원 수를 반환하는 메서드 입니다.
+     *
+     * @param gathering 회식 정보
+     * @param gatheringMembers 해당 회식에 속한 회식 멤버 리스트
+     * @return 회식에 참여한 멤버 수
+     * @throws GatheringIdRequiredException 회식 ID가 null인 경우
+     * @throws GatheringNotParticipantMemberException 회식 멤버가 해당 회식에 속하지 않는 경우
+     * @author LeeHanEum
+     * @since 2025.09.13
+     */
+    override fun getGatheringJoinMemberCount(
+        gathering: Gathering,
+        gatheringMembers: List<GatheringMember>,
+    ): Int {
+        val gatheringId = gatheringValidator.validateGatheringIdIsNotNull(gathering)
+        return gatheringMemberQueryService.countGatheringParticipants(gatheringId, gatheringMembers)
+    }
 }

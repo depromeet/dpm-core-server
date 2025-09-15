@@ -1,6 +1,6 @@
 package com.server.dpmcore.attendance.application
 
-import com.server.dpmcore.attendance.domain.exception.AttendanceNotFoundException
+import com.server.dpmcore.attendance.application.exception.AttendanceNotFoundException
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
 import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
@@ -18,8 +18,6 @@ import com.server.dpmcore.common.util.paginate
 import com.server.dpmcore.member.member.application.MemberQueryService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-
-private const val PAGE_SIZE = 20
 
 @Service
 @Transactional(readOnly = true)
