@@ -1,7 +1,7 @@
 package com.server.dpmcore.cohort.application
 
 import com.server.dpmcore.cohort.application.config.CohortProperties
-import com.server.dpmcore.cohort.domain.exception.CohortNotFoundException
+import com.server.dpmcore.cohort.application.exception.CohortNotFoundException
 import com.server.dpmcore.cohort.domain.model.CohortId
 import com.server.dpmcore.cohort.domain.port.inbound.CohortQueryUseCase
 import com.server.dpmcore.cohort.domain.port.outbound.CohortPersistencePort

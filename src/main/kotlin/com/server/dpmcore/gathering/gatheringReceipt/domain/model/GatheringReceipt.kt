@@ -2,8 +2,6 @@ package com.server.dpmcore.gathering.gatheringReceipt.domain.model
 
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.command.ReceiptCommand
-import com.server.dpmcore.gathering.gatheringReceipt.application.exception.MemberCountMustOverOneException
-import com.server.dpmcore.gathering.gatheringReceipt.application.exception.ReceiptAlreadySplitException
 import com.server.dpmcore.gathering.gatheringReceiptPhoto.domain.model.GatheringReceiptPhoto
 import java.time.Instant
 
@@ -32,14 +30,15 @@ class GatheringReceipt(
 
     fun isDeleted(): Boolean = deletedAt != null
 
-    fun closeParticipation(joinMemberCount: Int): GatheringReceipt {
-        if (joinMemberCount <= 0) {
-            throw MemberCountMustOverOneException()
-        }
-        if (splitAmount != null) {
-            throw ReceiptAlreadySplitException()
-        }
-        return GatheringReceipt(
+    /**
+     * 회식 정산서의 인당 부담 금액을 계산하고 수정 시각을 갱신합니다.
+     *
+     * @param joinMemberCount 참여 인원 수
+     * @author LeeHanEum
+     * @since 2025.09.13
+     */
+    fun closeParticipation(joinMemberCount: Int) =
+        GatheringReceipt(
             id = id,
             splitAmount = (amount / joinMemberCount),
             amount = amount,
@@ -49,7 +48,16 @@ class GatheringReceipt(
             gatheringReceiptPhotos = gatheringReceiptPhotos,
             gatheringId = gatheringId,
         )
-    }
+
+    /**
+     * 회식 정산서의 참여 인원 수가 0 이하인지 검증합니다.
+     *
+     * @author LeeHanEum
+     * @since 2025.09.13
+     */
+    fun validateJoinMemberCount(joinMemberCount: Int) = joinMemberCount <= 0
+
+    fun isExistsSplitAmount() = splitAmount != null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

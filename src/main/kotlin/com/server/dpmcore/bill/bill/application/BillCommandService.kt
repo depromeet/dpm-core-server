@@ -1,6 +1,5 @@
 package com.server.dpmcore.bill.bill.application
 
-import com.server.dpmcore.bill.bill.application.exception.BillAlreadyCompletedException
 import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.application.mapper.BillGatheringMapper.toCommand
 import com.server.dpmcore.bill.bill.domain.model.Bill
@@ -15,6 +14,7 @@ import com.server.dpmcore.bill.billAccount.domain.model.BillAccountId
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringCommandUseCase
 import com.server.dpmcore.gathering.gathering.domain.port.inbound.GatheringQueryUseCase
+import com.server.dpmcore.gathering.gatheringReceipt.application.GatheringReceiptValidator
 import com.server.dpmcore.member.member.domain.model.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,6 +26,8 @@ class BillCommandService(
     private val billAccountQueryService: BillAccountQueryService,
     private val gatheringCommandUseCase: GatheringCommandUseCase,
     private val gatheringQueryUseCase: GatheringQueryUseCase,
+    private val billValidator: BillValidator,
+    private val gatheringReceiptValidator: GatheringReceiptValidator,
 ) {
     fun saveBillWithGatherings(
         hostUserId: MemberId,
@@ -65,40 +67,33 @@ class BillCommandService(
             billPersistencePort.findById(billId)
                 ?: throw BillNotFoundException()
 
-        checkIsBillCompleted(bill)
-        checkIsBillClosable(bill)
+        billValidator.checkIsBillCompleted(bill)
+        billValidator.checkIsBillClosable(bill)
 
         val gatherings = gatheringQueryUseCase.getAllGatheringsByBillId(billId)
 
         // GatheringReceipt 정산 금액 마감
-        gatherings.map { gathering ->
-            gathering.id ?: throw GatheringNotFoundException()
+        gatherings.forEach { gathering ->
+            val gatheringId = gathering.id ?: throw GatheringNotFoundException()
 
-            val gatheringMember = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
+            val joinMemberCount =
+                gatheringQueryUseCase
+                    .findGatheringMemberByGatheringId(gatheringId)
+                    .count { it.isJoined == true }
 
             val receipt =
-                gatheringQueryUseCase
-                    .findGatheringReceiptByGatheringId(
-                        gathering.id,
-                    ).closeParticipation(
-                        gatheringMember.count {
-                            it.isJoined == true
-                        },
-                    )
+                gatheringQueryUseCase.findGatheringReceiptByGatheringId(gatheringId).run {
+                    gatheringReceiptValidator.checkJoinMemberCountMoreThenOne(this, joinMemberCount)
+                    gatheringReceiptValidator.checkIsExistsSplitAmount(this)
+                    closeParticipation(joinMemberCount)
+                }
+
             gatheringCommandUseCase.updateGatheringReceiptSplitAmount(receipt)
-//            TODO : gathering updatedAt 업데이트
+            // TODO: gathering.updatedAt 업데이트
         }
-        checkIsBillCompleted(bill)
+        billValidator.checkIsBillCompleted(bill)
 
         return billPersistencePort.save(bill.closeParticipation())
-    }
-
-    private fun checkIsBillClosable(bill: Bill) {
-        if (bill.checkParticipationClosable()) throw BillAlreadyCompletedException()
-    }
-
-    private fun checkIsBillCompleted(bill: Bill) {
-        if (bill.isCompleted()) throw BillAlreadyCompletedException()
     }
 
     fun markBillAsChecked(

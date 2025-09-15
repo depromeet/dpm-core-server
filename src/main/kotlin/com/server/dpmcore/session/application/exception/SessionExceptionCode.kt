@@ -1,4 +1,4 @@
-package com.server.dpmcore.session.domain.exception
+package com.server.dpmcore.session.application.exception
 
 import com.server.dpmcore.common.exception.ExceptionCode
 import org.springframework.http.HttpStatus

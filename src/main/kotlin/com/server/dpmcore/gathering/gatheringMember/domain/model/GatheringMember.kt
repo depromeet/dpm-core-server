@@ -1,8 +1,6 @@
 package com.server.dpmcore.gathering.gatheringMember.domain.model
 
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
-import com.server.dpmcore.gathering.gatheringMember.application.exception.AlreadySubmittedInvitationException
-import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberIdRequiredException
 import com.server.dpmcore.member.member.domain.model.MemberId
 import java.time.Instant
 
@@ -47,15 +45,19 @@ class GatheringMember(
     var deletedAt: Instant? = deletedAt
         private set
 
-    // TODO : 논의 필요, 이 로직 자체가 사용자에게는 응답이 필요하지 않아서 Exception을 발생시키는 것이 맞는지
-    fun checkParticipationIsSubmitted() {
-        if (isInvitationSubmitted) {
-            throw AlreadySubmittedInvitationException()
-        }
-        id ?: throw GatheringMemberIdRequiredException()
-    }
-
     fun isConfirmed(): Boolean = completedAt != null
+
+    /**
+     * 회식 멤버의 회식 식별자와 매개변수로 전달된 회식 식별자가 일치하는지 확인합니다.
+     *
+     * @param gatheringId 확인할 회식 식별자
+     * @return 일치하면 true, 그렇지 않으면 false
+     * @author LeeHanEum
+     * @since 2025.09.13
+     */
+    fun isGatheringIdMatches(gatheringId: GatheringId) = this.gatheringId == gatheringId
+
+    fun isJoined(): Boolean = this.isJoined == true && this.deletedAt == null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

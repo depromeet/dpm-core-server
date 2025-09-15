@@ -2,6 +2,7 @@ package com.server.dpmcore.gathering.gatheringMember.application
 
 import com.server.dpmcore.authority.domain.model.AuthorityType
 import com.server.dpmcore.bill.bill.domain.port.inbound.query.BillMemberIsInvitationSubmittedQueryModel
+import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotParticipantMemberException
 import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
 import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
 import com.server.dpmcore.gathering.gatheringMember.domain.model.GatheringMember
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class GatheringMemberQueryService(
     private val gatheringMemberPersistencePort: GatheringMemberPersistencePort,
+    private val gatheringMemberValidator: GatheringMemberValidator,
 ) : GatheringMemberQueryUseCase {
     override fun getGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
         gatheringMemberPersistencePort.findByGatheringId(gatheringId)
@@ -85,4 +87,19 @@ class GatheringMemberQueryService(
     ): List<GatheringMember> =
         gatheringMemberPersistencePort
             .findGatheringMembersByGatheringIdsAndMemberIds(gatheringIds, memberIds)
+
+    /**
+     * 각 회식 멤버가 회식 참여자에 속하는지 확인한 후, 참여자 수를 카운트합니다.
+     *
+     * @throws GatheringNotParticipantMemberException 회식 멤버가 해당 회식에 속하지 않는 경우
+     * @author LeeHanEum
+     * @since 2025.09.13
+     */
+    fun countGatheringParticipants(
+        gatheringId: GatheringId,
+        gatheringMembers: List<GatheringMember>,
+    ): Int =
+        gatheringMembers
+            .onEach { gatheringMemberValidator.validateGatheringIdMatches(it, gatheringId) }
+            .count { it.isJoined() }
 }

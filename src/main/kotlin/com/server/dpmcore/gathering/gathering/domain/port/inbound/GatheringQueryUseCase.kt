@@ -31,4 +31,9 @@ interface GatheringQueryUseCase {
     fun getAllGatheringMembersByBillId(billId: BillId): List<GatheringMember>
 
     fun findTotalSplitAmount(gatheringIds: List<GatheringId>): Int?
+
+    fun getGatheringJoinMemberCount(
+        gathering: Gathering,
+        gatheringMembers: List<GatheringMember>,
+    ): Int
 }

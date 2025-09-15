@@ -1,8 +1,8 @@
 package com.server.dpmcore.session.application
 
+import com.server.dpmcore.session.application.exception.InvalidSessionIdException
+import com.server.dpmcore.session.application.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.event.SessionCreateEvent
-import com.server.dpmcore.session.domain.exception.InvalidSessionIdException
-import com.server.dpmcore.session.domain.exception.SessionNotFoundException
 import com.server.dpmcore.session.domain.model.Session
 import com.server.dpmcore.session.domain.model.SessionId
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
@@ -17,6 +17,7 @@ import java.time.Instant
 class SessionCommandService(
     private val sessionPersistencePort: SessionPersistencePort,
     private val eventPublisher: ApplicationEventPublisher,
+    private val sessionValidator: SessionValidator,
 ) {
     fun updateSessionStartTime(
         sessionId: SessionId,
@@ -26,6 +27,7 @@ class SessionCommandService(
             sessionPersistencePort.findSessionById(sessionId.value)
                 ?: throw SessionNotFoundException()
 
+        sessionValidator.validateIsSameDateAsSession(session, attendanceStartTime)
         session.updateAttendanceStartTime(attendanceStartTime)
 
         sessionPersistencePort.save(session)

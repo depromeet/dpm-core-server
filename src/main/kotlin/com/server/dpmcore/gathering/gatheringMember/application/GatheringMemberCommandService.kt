@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class GatheringMemberCommandService(
     private val gatheringMemberPersistencePort: GatheringMemberPersistencePort,
+    private val gatheringMemberValidator: GatheringMemberValidator,
 ) {
     fun saveEachGatheringMembers(
         memberIds: List<MemberId>,
@@ -28,7 +29,7 @@ class GatheringMemberCommandService(
     }
 
     fun markAsGatheringParticipationSubmitConfirm(gatheringMember: GatheringMember) {
-        gatheringMember.checkParticipationIsSubmitted()
+        gatheringMemberValidator.checkParticipationIsSubmitted(gatheringMember)
         gatheringMemberPersistencePort.updateIsInvitationSubmittedById(gatheringMember.memberId.value)
     }
 

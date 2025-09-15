@@ -1,4 +1,4 @@
-package com.server.dpmcore.cohort.domain.exception
+package com.server.dpmcore.cohort.application.exception
 
 import com.server.dpmcore.common.exception.BusinessException
 import com.server.dpmcore.common.exception.ExceptionCode

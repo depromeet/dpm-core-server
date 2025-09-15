@@ -1,10 +1,8 @@
 package com.server.dpmcore.session.domain.model
 
+import com.server.dpmcore.attendance.domain.model.AttendanceResult
 import com.server.dpmcore.attendance.domain.model.AttendanceStatus
 import com.server.dpmcore.cohort.domain.model.CohortId
-import com.server.dpmcore.session.domain.exception.AttendanceStartTimeDateMismatchException
-import com.server.dpmcore.session.domain.exception.InvalidAttendanceCodeException
-import com.server.dpmcore.session.domain.exception.TooEarlyAttendanceException
 import com.server.dpmcore.session.domain.port.inbound.command.SessionCreateCommand
 import java.time.Instant
 import java.time.ZoneId
@@ -13,7 +11,9 @@ import kotlin.random.Random
 
 /**
  * 세션(Session) 도메인 모델
+ *
  * 세션은 특정 기수의 주간 활동 정보를 나타내며, 출석 정책과 장소, 이벤트 이름 등을 포함합니다.
+ *
  * 세션 생성 시에 출석 코드가 자동으로 생성됩니다.
  */
 class Session internal constructor(
@@ -38,23 +38,28 @@ class Session internal constructor(
 
     fun getAttachments(): List<SessionAttachment> = attachments.toList()
 
-    fun attend(
-        attendedAt: Instant,
-        inputCode: String,
-    ): AttendanceStatus {
-        if (inputCode != attendancePolicy.attendanceCode) {
-            throw InvalidAttendanceCodeException()
-        }
+    fun attend(attendedAt: Instant): AttendanceResult = determineAttendanceStatus(attendedAt)
 
-        return determineAttendanceStatus(attendedAt)
-    }
+    fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
-    private fun determineAttendanceStatus(now: Instant): AttendanceStatus =
+    /**
+     * 현재 시각을 기준으로 출석 상태를 결정하고 해당 상태를 sealed class 의 형태로 반환합니다.
+     *
+     * 디프만 출석 도메인 정책에 의거, 출석 시작 전 상태는 저장하지 않습니다.
+     *
+     * @param now 현재 시각
+     * @author LeeHanEum
+     * @since 2025.09.13
+     *
+     */
+    private fun determineAttendanceStatus(now: Instant): AttendanceResult =
         when {
-            now.isBefore(attendancePolicy.attendanceStart) -> throw TooEarlyAttendanceException()
-            now.isBefore(attendancePolicy.attendanceStart.plus(16, ChronoUnit.MINUTES)) -> AttendanceStatus.PRESENT
-            now.isBefore(attendancePolicy.attendanceStart.plus(31, ChronoUnit.MINUTES)) -> AttendanceStatus.LATE
-            else -> AttendanceStatus.ABSENT
+            now.isBefore(attendancePolicy.attendanceStart) -> AttendanceResult.TooEarly
+            now.isBefore(attendancePolicy.attendanceStart.plus(16, ChronoUnit.MINUTES)) ->
+                AttendanceResult.Success(AttendanceStatus.PRESENT)
+            now.isBefore(attendancePolicy.attendanceStart.plus(31, ChronoUnit.MINUTES)) ->
+                AttendanceResult.Success(AttendanceStatus.LATE)
+            else -> AttendanceResult.Success(AttendanceStatus.ABSENT)
         }
 
     override fun equals(other: Any?): Boolean {
@@ -71,20 +76,15 @@ class Session internal constructor(
     }
 
     fun updateAttendanceStartTime(newStartTime: Instant) {
-        if (!isSameDateAsSession(newStartTime)) {
-            throw AttendanceStartTimeDateMismatchException()
-        }
-
         this.attendancePolicy =
             attendancePolicy.copy(
                 attendanceStart = newStartTime,
             )
     }
 
-    private fun isSameDateAsSession(target: Instant): Boolean {
+    fun isSameDateAsSession(target: Instant): Boolean {
         val zone = ZoneId.of("Asia/Seoul")
-        return this.date.atZone(zone).toLocalDate() ==
-            target.atZone(zone).toLocalDate()
+        return this.date.atZone(zone).toLocalDate() == target.atZone(zone).toLocalDate()
     }
 
     companion object {
