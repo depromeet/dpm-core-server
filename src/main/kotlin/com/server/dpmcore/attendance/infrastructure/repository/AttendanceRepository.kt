@@ -235,6 +235,10 @@ class AttendanceRepository(
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
                 ).`as`(OFFLINE_ABSENT_COUNT),
+                sum(
+                    `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.EARLY_LEAVE.name), DSL.inline(1))
+                        .otherwise(DSL.inline(0)),
+                ).`as`(EARLY_LEAVE_COUNT),
             ).from(ATTENDANCES)
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
@@ -261,6 +265,7 @@ class AttendanceRepository(
                     excusedAbsentCount = it.get(EXCUSED_ABSENT_COUNT, Int::class.java) ?: 0,
                     onlineAbsentCount = it.get(ONLINE_ABSENT_COUNT, Int::class.java) ?: 0,
                     offlineAbsentCount = it.get(OFFLINE_ABSENT_COUNT, Int::class.java) ?: 0,
+                    earlyLeaveCount = it.get(EARLY_LEAVE_COUNT, Int::class.java) ?: 0,
                 )
             }
 
@@ -337,5 +342,6 @@ class AttendanceRepository(
         private const val OFFLINE_ABSENT_COUNT = "offline_absent_count"
         private const val PRESENT_COUNT = "present_count"
         private const val EXCUSED_ABSENT_COUNT = "excused_absent_count"
+        private const val EARLY_LEAVE_COUNT = "early_leave_count"
     }
 }
