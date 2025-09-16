@@ -1,5 +1,6 @@
 package com.server.dpmcore.member.member.application
 
+import com.server.dpmcore.common.constant.Profile
 import com.server.dpmcore.member.member.application.exception.MemberIdRequiredException
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.member.domain.model.MemberId
@@ -13,7 +14,7 @@ import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.dto.OAuthAttributes
 import com.server.dpmcore.security.oauth.token.JwtTokenProvider
 import com.server.dpmcore.security.properties.SecurityProperties
-import com.server.dpmcore.security.redirect.LoginRedirectHandler
+import com.server.dpmcore.security.redirect.handler.LoginRedirectHandler
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
@@ -59,17 +60,18 @@ class MemberLoginService(
         request: HttpServletRequest,
         member: Member,
     ): LoginResult {
-        member.id?.value ?: return LoginResult(null, securityProperties.restrictedRedirectUrl)
+        member.id?.value ?: return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
 
         if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(member.id.value)) {
-            return LoginResult(null, securityProperties.restrictedRedirectUrl)
+            return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
         }
 
         return generateLoginResult(
             member.id,
             redirectHandler.determineRedirectUrl(
-                memberAuthorityService.resolvePrimaryAuthorityType(member.id),
                 request,
+                memberAuthorityService.resolvePrimaryAuthorityType(member.id),
+                Profile.get(environment),
             ),
         )
     }
@@ -81,7 +83,7 @@ class MemberLoginService(
 
         return generateLoginResult(
             member.id ?: throw MemberIdRequiredException(),
-            securityProperties.restrictedRedirectUrl,
+            securityProperties.redirect.restrictedRedirectUrl,
         )
     }
 }
