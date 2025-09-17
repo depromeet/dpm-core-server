@@ -7,6 +7,16 @@ import org.springframework.stereotype.Component
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+/**
+ * 리다이렉트 과정에서 오류가 발생했을 때 동작하는 별도의 전략 컴포넌트입니다.
+ *
+ * 모든 리다이렉트 전략의 최종 fallback 으로 동작하는 컴포넌트입니다.
+ *
+ * 따라서 CompositeRedirectStrategy 에서 관리되지 않으며 별도의 컴포넌트로 존재합니다.
+ *
+ * @author LeeHanEum
+ * @since 2025.09.17
+ */
 @Component
 class ErrorRedirectStrategy(
     private val properties: SecurityProperties,

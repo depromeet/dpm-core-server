@@ -6,6 +6,12 @@ import com.server.dpmcore.security.properties.SecurityProperties
 import com.server.dpmcore.security.redirect.model.RedirectContext
 import com.server.dpmcore.security.redirect.validator.RedirectValidator
 
+/**
+ * `PROD` 및 `DEV` 환경에서의 리다이렉트 URL을 결정하는 전략 클래스입니다.
+ *
+ * @author LeeHanEum
+ * @since 2025.09.17
+ */
 class ServerRedirectStrategy(
     private val properties: SecurityProperties,
     private val validator: RedirectValidator,
