@@ -1,9 +1,7 @@
 package com.server.dpmcore.security.redirect.strategy
 
 import com.server.dpmcore.security.redirect.model.RedirectContext
-import org.springframework.stereotype.Component
 
-@Component
 class CompositeRedirectStrategy(
     private val strategies: List<RedirectStrategy>,
 ) : RedirectStrategy {

@@ -4,7 +4,6 @@ import com.server.dpmcore.security.properties.SecurityProperties
 import com.server.dpmcore.security.redirect.strategy.CompositeRedirectStrategy
 import com.server.dpmcore.security.redirect.strategy.ErrorRedirectStrategy
 import com.server.dpmcore.security.redirect.strategy.LocalRedirectStrategy
-import com.server.dpmcore.security.redirect.strategy.RedirectStrategy
 import com.server.dpmcore.security.redirect.strategy.ServerRedirectStrategy
 import com.server.dpmcore.security.redirect.strategy.SwaggerRedirectStrategy
 import com.server.dpmcore.security.redirect.validator.RedirectValidator
@@ -18,7 +17,7 @@ class RedirectConfig(
     private val errorStrategy: ErrorRedirectStrategy,
 ) {
     @Bean
-    fun redirectStrategy(): RedirectStrategy =
+    fun redirectStrategy(): CompositeRedirectStrategy =
         CompositeRedirectStrategy(
             listOf(
                 ServerRedirectStrategy(properties, validator, errorStrategy),
