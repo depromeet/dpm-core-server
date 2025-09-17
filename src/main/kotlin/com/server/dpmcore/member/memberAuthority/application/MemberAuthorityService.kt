@@ -55,13 +55,14 @@ class MemberAuthorityService(
      * @since 2025.9.15
      */
     fun resolvePrimaryAuthorityType(memberId: MemberId): AuthorityType {
-        val authorities = memberAuthorityPersistencePort
-            .findAuthorityNamesByMemberId(memberId.value)
-            .map { it.uppercase() }
+        val authorities =
+            memberAuthorityPersistencePort
+                .findAuthorityNamesByMemberId(memberId.value)
+                .map { it.uppercase() }
 
         return when {
-            "ORGANIZER" in authorities -> AuthorityType.ORGANIZER
-            "DEEPER" in authorities -> AuthorityType.DEEPER
+            AuthorityType.ORGANIZER.name in authorities -> AuthorityType.ORGANIZER
+            AuthorityType.DEEPER.name in authorities -> AuthorityType.DEEPER
             authorities.isEmpty() -> AuthorityType.GUEST
             else -> AuthorityType.entries.firstOrNull { it.name in authorities } ?: AuthorityType.GUEST
         }
