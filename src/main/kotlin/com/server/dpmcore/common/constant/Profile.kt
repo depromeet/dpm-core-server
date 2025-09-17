@@ -6,16 +6,14 @@ enum class Profile(val value: String) {
     LOCAL("local"),
     DEV("dev"),
     PROD("prod"),
+    TEST("test"),
     ;
 
     companion object {
         fun get(environment: Environment): Profile {
-            val active =
-                environment.activeProfiles.firstOrNull()
-                    ?: throw IllegalArgumentException("No active profile found")
-
+            val active = environment.activeProfiles.firstOrNull()
             return entries.find { it.value.equals(active, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported profile: $active")
+                ?: TEST // fallback
         }
     }
 }
