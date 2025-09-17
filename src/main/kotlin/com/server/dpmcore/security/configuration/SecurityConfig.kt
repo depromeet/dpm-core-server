@@ -69,6 +69,8 @@ class SecurityConfig(
                     listOf(
                         "https://localhost:3000",
                         "https://local.depromeet-core.shop",
+                        "https://local-core.depromeet-core.shop:3010",
+                        "https://local-admin.depromeet-core.shop:3020",
                         "https://client.depromeet-core.shop",
                         "https://admin.depromeet-core.shop",
                         "https://api.depromeet-core.shop",
