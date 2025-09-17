@@ -8,7 +8,7 @@ class SwaggerRedirectStrategy(
     private val properties: SecurityProperties,
 ) : RedirectStrategy {
     override fun supports(context: RedirectContext): Boolean =
-        context.profile == Profile.LOCAL && context.requestUrl?.startsWith("localhost") ?: false
+        (context.profile == Profile.LOCAL) && (context.requestUrl?.startsWith("localhost") == true)
 
     override fun resolve(context: RedirectContext): String = properties.redirect.swaggerUrl
 }
