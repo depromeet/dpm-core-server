@@ -60,17 +60,17 @@ class MemberLoginService(
         request: HttpServletRequest,
         member: Member,
     ): LoginResult {
-        member.id?.value ?: return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
+        val memberId = member.id ?: return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
 
-        if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(member.id.value)) {
+        if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(memberId.value)) {
             return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
         }
 
         return generateLoginResult(
-            member.id,
+            memberId,
             redirectHandler.determineRedirectUrl(
                 request,
-                memberAuthorityService.resolvePrimaryAuthorityType(member.id),
+                memberAuthorityService.resolvePrimaryAuthorityType(memberId),
                 Profile.get(environment),
             ),
         )
