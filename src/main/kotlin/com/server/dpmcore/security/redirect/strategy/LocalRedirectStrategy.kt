@@ -34,15 +34,15 @@ class LocalRedirectStrategy(
 
     private fun resolveDeeperRedirect(requestUrl: String): String? =
         when {
-            requestUrl.contains("local-core") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
-            requestUrl.contains("local-admin") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
+            requestUrl.startsWith("local-core.") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
+            requestUrl.startsWith("local-admin.") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
             else -> null
         }
 
     private fun resolveOrganizerRedirect(requestUrl: String): String? =
         when {
-            requestUrl.contains("local-core") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=true"
-            requestUrl.contains("local-admin") -> "https://local-admin.${properties.cookie.domain}:3020?isAdmin=true"
+            requestUrl.startsWith("local-core.") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=true"
+            requestUrl.startsWith("local-admin.") -> "https://local-admin.${properties.cookie.domain}:3020?isAdmin=true"
             else -> null
         }
 }

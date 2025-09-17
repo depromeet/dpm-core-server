@@ -39,13 +39,13 @@ class ServerRedirectStrategy(
         profile: Profile,
     ): String? =
         when {
-            requestUrl.contains("client") && profile == Profile.DEV ->
+            requestUrl.startsWith("client.") && profile == Profile.DEV ->
                 "${properties.redirect.coreRedirectUrl}?isAdmin=false"
 
-            requestUrl.contains("core") && profile == Profile.PROD ->
+            requestUrl.startsWith("core.") && profile == Profile.PROD ->
                 "${properties.redirect.coreRedirectUrl}?isAdmin=false"
 
-            requestUrl.contains("admin") -> "${properties.redirect.coreRedirectUrl}?isAdmin=false"
+            requestUrl.startsWith("admin.") -> "${properties.redirect.coreRedirectUrl}?isAdmin=false"
             else -> null
         }
 
@@ -54,13 +54,13 @@ class ServerRedirectStrategy(
         profile: Profile,
     ): String? =
         when {
-            requestUrl.contains("client") && profile == Profile.DEV ->
+            requestUrl.startsWith("client.") && profile == Profile.DEV ->
                 "${properties.redirect.coreRedirectUrl}?isAdmin=true"
 
-            requestUrl.contains("core") && profile == Profile.PROD ->
+            requestUrl.startsWith("core.") && profile == Profile.PROD ->
                 "${properties.redirect.coreRedirectUrl}?isAdmin=true"
 
-            requestUrl.contains("admin") -> "${properties.redirect.adminRedirectUrl}?isAdmin=true"
+            requestUrl.startsWith("admin.") -> "${properties.redirect.adminRedirectUrl}?isAdmin=true"
             else -> null
         }
 }
