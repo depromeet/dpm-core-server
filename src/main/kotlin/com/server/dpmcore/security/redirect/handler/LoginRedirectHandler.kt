@@ -5,17 +5,14 @@ import com.server.dpmcore.common.constant.Profile
 import com.server.dpmcore.security.redirect.model.LoginIntent
 import com.server.dpmcore.security.redirect.model.RedirectContext
 import com.server.dpmcore.security.redirect.strategy.CompositeRedirectStrategy
-import jakarta.servlet.http.HttpServletRequest
 import org.springframework.stereotype.Component
-
-private const val REQUEST_DOMAIN = "REQUEST_DOMAIN"
 
 @Component
 class LoginRedirectHandler(
     private val strategy: CompositeRedirectStrategy,
 ) {
     fun determineRedirectUrl(
-        request: HttpServletRequest,
+        requestUrl: String,
         authority: AuthorityType,
         profile: Profile,
     ): String {
@@ -23,14 +20,10 @@ class LoginRedirectHandler(
             RedirectContext(
                 authority = authority,
                 profile = profile,
-                requestUrl = extractRequestURL(request),
+                requestUrl = requestUrl,
                 intent = LoginIntent.DIRECT,
             )
 
         return strategy.resolve(context)
-    }
-
-    private fun extractRequestURL(request: HttpServletRequest): String {
-        return request.cookies?.firstOrNull { it.name == REQUEST_DOMAIN }?.value ?: request.serverName
     }
 }

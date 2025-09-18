@@ -51,6 +51,10 @@ class CustomAuthenticationSuccessHandler(
         authentication: Authentication,
     ): LoginResult {
         val oAuth2User = authentication.principal as CustomOAuth2User
-        return handleMemberLoginUseCase.handleLoginSuccess(request, oAuth2User.authAttributes)
+        return handleMemberLoginUseCase.handleLoginSuccess(extractRequestURL(request), oAuth2User.authAttributes)
+    }
+
+    private fun extractRequestURL(request: HttpServletRequest): String {
+        return request.cookies?.firstOrNull { it.name == REQUEST_DOMAIN }?.value ?: request.serverName
     }
 }

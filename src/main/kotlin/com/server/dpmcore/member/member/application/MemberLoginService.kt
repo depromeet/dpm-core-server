@@ -15,7 +15,6 @@ import com.server.dpmcore.security.oauth.dto.OAuthAttributes
 import com.server.dpmcore.security.oauth.token.JwtTokenProvider
 import com.server.dpmcore.security.properties.SecurityProperties
 import com.server.dpmcore.security.redirect.handler.LoginRedirectHandler
-import jakarta.servlet.http.HttpServletRequest
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -33,12 +32,12 @@ class MemberLoginService(
 ) : HandleMemberLoginUseCase {
     @Transactional
     override fun handleLoginSuccess(
-        request: HttpServletRequest,
+        requestUrl: String,
         authAttributes: OAuthAttributes,
     ): LoginResult =
         memberPersistencePort
             .findByEmail(authAttributes.getEmail())
-            ?.let { member -> handleExistingMemberLogin(request, member) }
+            ?.let { member -> handleExistingMemberLogin(requestUrl, member) }
             ?: handleUnregisteredMember(authAttributes)
 
     private fun generateLoginResult(
@@ -57,7 +56,7 @@ class MemberLoginService(
     }
 
     private fun handleExistingMemberLogin(
-        request: HttpServletRequest,
+        requestUrl: String,
         member: Member,
     ): LoginResult {
         val memberId = member.id ?: return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
@@ -69,7 +68,7 @@ class MemberLoginService(
         return generateLoginResult(
             memberId,
             redirectHandler.determineRedirectUrl(
-                request,
+                requestUrl,
                 memberAuthorityService.resolvePrimaryAuthorityType(memberId),
                 Profile.get(environment),
             ),
