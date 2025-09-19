@@ -45,4 +45,26 @@ class MemberAuthorityService(
      */
     fun revokeAllAuthorities(memberId: MemberId) =
         memberAuthorityPersistencePort.softDeleteAllByMemberId(memberId.value)
+
+    /**
+     * 멤버 식별자로 해당 멤버의 최우선 권한 타입을 조회합니다.
+     *
+     * 권한 타입의 위계는 ORGANIZER > DEEPER > GUEST 순입니다.
+     *
+     * @author LeeHanEum
+     * @since 2025.9.15
+     */
+    fun resolvePrimaryAuthorityType(memberId: MemberId): AuthorityType {
+        val authorities =
+            memberAuthorityPersistencePort
+                .findAuthorityNamesByMemberId(memberId.value)
+                .map { it.uppercase() }
+
+        return when {
+            AuthorityType.ORGANIZER.name in authorities -> AuthorityType.ORGANIZER
+            AuthorityType.DEEPER.name in authorities -> AuthorityType.DEEPER
+            authorities.isEmpty() -> AuthorityType.GUEST
+            else -> AuthorityType.entries.firstOrNull { it.name in authorities } ?: AuthorityType.GUEST
+        }
+    }
 }

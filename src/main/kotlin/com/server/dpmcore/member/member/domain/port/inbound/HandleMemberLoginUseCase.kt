@@ -11,7 +11,7 @@ interface HandleMemberLoginUseCase {
      * @since 2025.08.15
      */
     fun handleLoginSuccess(
-        requestDomain: String,
+        requestUrl: String,
         authAttributes: OAuthAttributes,
     ): LoginResult
 }
