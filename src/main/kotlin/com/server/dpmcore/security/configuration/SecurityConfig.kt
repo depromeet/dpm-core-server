@@ -16,8 +16,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
-import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.CorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
@@ -57,28 +55,8 @@ class SecurityConfig(
 
     private fun configurationCors(httpSecurity: HttpSecurity) {
         httpSecurity
-            .cors { it.configurationSource(corsConfigurationSource()) }
+            .cors { }
     }
-
-    private fun corsConfigurationSource(): CorsConfigurationSource =
-        CorsConfigurationSource { _ ->
-            CorsConfiguration().apply {
-                allowedHeaders = listOf("*")
-                allowedMethods = listOf("*")
-                allowedOriginPatterns =
-                    listOf(
-                        "https://localhost:3000",
-                        "https://local.depromeet-core.shop",
-                        "https://client.depromeet-core.shop",
-                        "https://admin.depromeet-core.shop",
-                        "https://api.depromeet-core.shop",
-                        "https://core.depromeet.com",
-                        "https://admin.depromeet.com",
-                        "https://api.depromeet.com",
-                    )
-                allowCredentials = true
-            }
-        }
 
     private fun configureAuthorizeHttpRequests(httpSecurity: HttpSecurity) {
         httpSecurity
