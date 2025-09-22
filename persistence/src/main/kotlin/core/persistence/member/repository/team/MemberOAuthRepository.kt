@@ -3,7 +3,7 @@ package core.persistence.member.repository.team
 import com.server.dpmcore.member.member.domain.model.Member
 import com.server.dpmcore.member.memberOAuth.domain.model.MemberOAuth
 import com.server.dpmcore.member.memberOAuth.domain.port.MemberOAuthPersistencePort
-import com.server.dpmcore.member.memberOAuth.infrastructure.entity.MemberOAuthEntity
+import core.entity.member.MemberOAuthEntity
 import org.springframework.stereotype.Repository
 
 @Repository

@@ -117,3 +117,7 @@ tasks.withType<Test> {
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("dpm-core-server.jar")
 }
+
+springBoot {
+    mainClass.set("core.application.CoreApplication")
+}

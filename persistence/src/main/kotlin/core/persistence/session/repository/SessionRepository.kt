@@ -1,8 +1,8 @@
 package core.persistence.session.repository
 
-import com.server.dpmcore.session.domain.model.Session
-import com.server.dpmcore.session.domain.port.outbound.SessionPersistencePort
-import core.persistence.session.entity.SessionEntity
+import core.domain.session.aggregate.Session
+import core.domain.session.port.outbound.SessionPersistencePort
+import core.entity.session.SessionEntity
 import org.springframework.stereotype.Repository
 import java.time.Instant
 

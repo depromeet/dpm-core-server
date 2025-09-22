@@ -2,9 +2,9 @@ package core.persistence.bill.repository
 
 import com.server.dpmcore.bill.bill.application.exception.BillNotFoundException
 import com.server.dpmcore.bill.bill.domain.model.Bill
-import com.server.dpmcore.bill.bill.domain.model.BillId
+import core.domain.bill.vo.BillId
 import com.server.dpmcore.bill.bill.domain.port.outbound.BillPersistencePort
-import core.persistence.bill.entity.BillEntity
+import core.entity.bill.BillEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 

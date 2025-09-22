@@ -1,12 +1,12 @@
 package core.persistence.gathering.repository.receipt
 
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
-import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import core.domain.gathering.vo.GatheringId
 import com.server.dpmcore.gathering.gatheringReceipt.application.exception.GatheringReceiptNotFoundException
 import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
-import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceiptId
+import core.domain.gathering.vo.GatheringReceiptId
 import com.server.dpmcore.gathering.gatheringReceipt.domain.port.outbound.GatheringReceiptPersistencePort
-import com.server.dpmcore.gathering.gatheringReceipt.infrastructure.entity.GatheringReceiptEntity
+import core.entity.gathering.GatheringReceiptEntity
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.GATHERING_RECEIPTS
 import org.springframework.data.repository.findByIdOrNull

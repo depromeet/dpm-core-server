@@ -1,7 +1,7 @@
 package core.persistence.cohort.repository
 
-import com.server.dpmcore.cohort.domain.model.Cohort
-import com.server.dpmcore.cohort.domain.port.outbound.CohortPersistencePort
+import core.domain.cohort.aggregate.Cohort
+import core.domain.cohort.port.outbound.CohortPersistencePort
 import org.springframework.stereotype.Repository
 
 @Repository

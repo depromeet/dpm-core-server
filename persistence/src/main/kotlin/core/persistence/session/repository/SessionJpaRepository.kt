@@ -1,6 +1,6 @@
 package core.persistence.session.repository
 
-import core.persistence.session.entity.SessionEntity
+import core.entity.session.SessionEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.Instant
 

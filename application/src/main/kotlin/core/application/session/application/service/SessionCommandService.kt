@@ -4,6 +4,7 @@ import core.application.session.application.exception.InvalidSessionIdException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.validator.SessionValidator
 import core.domain.session.aggregate.Session
+import core.domain.session.event.SessionCreateEvent
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId

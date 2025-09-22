@@ -1,16 +1,15 @@
 package core.persistence.gathering.repository
 
 import com.server.dpmcore.bill.bill.domain.model.Bill
-import com.server.dpmcore.bill.bill.domain.model.BillId
+import core.domain.bill.vo.BillId
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringIdRequiredException
 import com.server.dpmcore.gathering.gathering.application.exception.GatheringNotFoundException
 import com.server.dpmcore.gathering.gathering.domain.model.Gathering
-import com.server.dpmcore.gathering.gathering.domain.model.GatheringId
+import core.domain.gathering.vo.GatheringId
 import com.server.dpmcore.gathering.gathering.domain.model.query.SubmittedParticipantGathering
 import com.server.dpmcore.gathering.gathering.domain.port.outbound.GatheringPersistencePort
-import com.server.dpmcore.gathering.gathering.infrastructure.entity.GatheringEntity
+import core.entity.gathering.GatheringEntity
 import com.server.dpmcore.gathering.gatheringMember.application.exception.GatheringMemberNotFoundException
-import com.server.dpmcore.member.member.domain.model.MemberId
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.GATHERINGS
 import org.jooq.generated.tables.references.GATHERING_MEMBERS

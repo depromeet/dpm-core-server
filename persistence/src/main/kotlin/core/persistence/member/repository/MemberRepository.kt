@@ -1,12 +1,11 @@
 package core.persistence.member.repository
 
-import com.server.dpmcore.authority.domain.model.AuthorityId
 import com.server.dpmcore.member.member.application.exception.MemberNameAuthorityRequiredException
 import com.server.dpmcore.member.member.domain.model.Member
-import com.server.dpmcore.member.member.domain.model.MemberId
 import com.server.dpmcore.member.member.domain.model.query.MemberNameAuthorityQueryModel
 import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
-import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
+import core.entity.member.MemberEntity
+import core.domain.authority.vo.AuthorityId
 import org.jooq.DSLContext
 import org.jooq.generated.tables.references.AUTHORITIES
 import org.jooq.generated.tables.references.COHORTS

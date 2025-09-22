@@ -1,6 +1,6 @@
 package core.persistence.attendance.repository
 
-import core.persistence.attendance.entity.AttendanceEntity
+import core.entity.attendance.AttendanceEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {

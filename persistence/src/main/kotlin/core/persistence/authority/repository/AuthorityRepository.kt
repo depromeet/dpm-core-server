@@ -1,14 +1,14 @@
 package core.persistence.authority.repository
 
-import com.server.dpmcore.authority.domain.model.Authority
-import com.server.dpmcore.authority.domain.model.AuthorityId
-import com.server.dpmcore.authority.domain.port.outbound.AuthorityPersistencePort
-import com.server.dpmcore.member.member.domain.model.MemberId
+import core.domain.authority.aggregate.Authority
+import core.domain.authority.port.outbound.AuthorityPersistencePort
+import core.domain.authority.vo.AuthorityId
+import core.domain.member.vo.MemberId
 import org.jooq.DSLContext
-import org.jooq.generated.tables.references.AUTHORITIES
-import org.jooq.generated.tables.references.MEMBERS
-import org.jooq.generated.tables.references.MEMBER_AUTHORITIES
-import org.jooq.generated.tables.references.MEMBER_OAUTH
+import jooq.dsl.tables.references.AUTHORITIES
+import jooq.dsl.tables.references.MEMBERS
+import jooq.dsl.tables.references.MEMBER_AUTHORITIES
+import jooq.dsl.tables.references.MEMBER_OAUTH
 import org.springframework.stereotype.Repository
 
 @Repository

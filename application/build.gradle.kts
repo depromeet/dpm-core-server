@@ -32,14 +32,14 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt:0.12.6")
 }
 
-tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
-    archiveFileName.set("dpm-core-server.jar")
-}
-
 tasks.register("prepareKotlinBuildScriptModel") {}
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveFileName.set("dpm-core-server.jar")
 }

@@ -17,5 +17,6 @@ rootProject.name = "dpm-core-server"
 
 include("application")
 include("domain")
+include("entity")
 include("persistence")
 include("codegen")

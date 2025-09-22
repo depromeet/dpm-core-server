@@ -1,9 +1,9 @@
 package core.domain.session.aggregate
 
-import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.vo.AttendanceResult
 import core.domain.cohort.vo.CohortId
+import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
 import java.time.Instant
@@ -18,7 +18,7 @@ import kotlin.random.Random
  *
  * 세션 생성 시에 출석 코드가 자동으로 생성됩니다.
  */
-class Session internal constructor(
+class Session (
     val id: SessionId? = null,
     val cohortId: CohortId,
     val date: Instant,

@@ -1,8 +1,5 @@
 package core.application.attendance.presentation.controller
 
-import com.server.dpmcore.attendance.domain.model.AttendanceStatus
-import core.domain.member.vo.MemberId
-import com.server.dpmcore.session.domain.model.SessionId
 import core.application.attendance.presentation.request.AttendanceRecordRequest
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
 import core.application.attendance.presentation.response.AttendanceResponse
@@ -12,6 +9,9 @@ import core.application.attendance.presentation.response.MemberAttendancesRespon
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
+import core.domain.attendance.enums.AttendanceStatus
+import core.domain.member.vo.MemberId
+import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject

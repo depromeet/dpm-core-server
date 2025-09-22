@@ -1,6 +1,6 @@
 package core.persistence.member.repository
 
-import com.server.dpmcore.member.member.infrastructure.entity.MemberEntity
+import core.entity.member.MemberEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {

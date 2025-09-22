@@ -1,8 +1,8 @@
 package core.persistence.refreshToken.repository
 
-import com.server.dpmcore.refreshToken.domain.model.RefreshToken
-import com.server.dpmcore.refreshToken.domain.port.outbound.RefreshTokenPersistencePort
-import core.persistence.refreshToken.entity.RefreshTokenEntity
+import core.domain.refreshToken.aggregate.RefreshToken
+import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+import core.entity.refreshToken.RefreshTokenEntity
 import org.springframework.stereotype.Repository
 
 @Repository
