@@ -1,7 +1,3 @@
-import org.jooq.meta.jaxb.ForcedType
-import org.jooq.meta.jaxb.Logging
-import org.jooq.meta.jaxb.Property
-
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
@@ -69,6 +65,8 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":domain"))
+
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -100,85 +98,6 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-jooq {
-    configurations {
-        create("main") {
-            // name of the jOOQ configuration
-            generateSchemaSourceOnCompilation.set(true)
-
-            jooqConfiguration.apply {
-                logging = Logging.WARN
-                jdbc = null
-
-                generator.apply {
-                    name = "org.jooq.codegen.KotlinGenerator"
-                    database.apply {
-                        name = "org.jooq.meta.extensions.ddl.DDLDatabase"
-                        properties.addAll(
-                            listOf(
-                                Property().apply {
-                                    key = "scripts"
-                                    value = "src/main/resources/db/schema.sql"
-                                },
-                                Property().apply {
-                                    key = "sort"
-                                    value = "semantic"
-                                },
-                                Property().apply {
-                                    key = "unqualifiedSchema"
-                                    value = "none"
-                                },
-                                Property().apply {
-                                    key = "defaultNameCase"
-                                    value = "lower"
-                                },
-                            ),
-                        )
-                        forcedTypes.addAll(
-                            listOf(
-                                ForcedType().apply {
-                                    name = "INSTANT"
-                                    expression = ".*\\.date"
-                                    types = "timestamp.*"
-                                },
-                                ForcedType().apply {
-                                    name = "INSTANT"
-                                    expression = ".*\\.attendance_start"
-                                    types = "timestamp.*"
-                                },
-                                ForcedType().apply {
-                                    name = "INSTANT"
-                                    expression = ".*\\.attended_at"
-                                    types = "timestamp.*"
-                                },
-                            ),
-                        )
-                    }
-                    generate.apply {
-                        isDaos = true
-                        isRecords = true
-                        isFluentSetters = true
-                        isJavaTimeTypes = true
-                        isDeprecated = false
-                    }
-                    target.apply {
-                        directory = "build/generated-src/jooq"
-                    }
-                    strategy.name = "org.jooq.codegen.DefaultGeneratorStrategy"
-                }
-            }
-        }
-    }
-}
-
-sourceSets {
-    main {
-        kotlin {
-            srcDirs(listOf("src/main/kotlin", "src/generated", "build/generated-src/jooq"))
-        }
-    }
-}
-
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
@@ -197,8 +116,4 @@ tasks.withType<Test> {
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("dpm-core-server.jar")
-}
-
-tasks.named("jib") {
-    dependsOn("generateJooq")
 }
