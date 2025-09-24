@@ -129,9 +129,10 @@ class GatheringCommandService(
         val gatherings = gatheringPersistencePort.findByBillId(command.billId)
 
         gatherings.forEach { gathering ->
-            gathering.id ?: throw GatheringIdRequiredException()
             val gatheringMember =
-                gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(gathering.id, command.memberId)
+                gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(
+                    gathering.id ?: throw GatheringIdRequiredException(), command.memberId,
+                )
             gatheringMemberCommandService.updateDepositAndMemo(gatheringMember, command.isDeposit, command.memo)
         }
     }

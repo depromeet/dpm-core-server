@@ -1,8 +1,8 @@
 package core.persistence.member.repository.team
 
-import com.server.dpmcore.member.member.domain.model.Member
-import com.server.dpmcore.member.memberOAuth.domain.model.MemberOAuth
-import com.server.dpmcore.member.memberOAuth.domain.port.MemberOAuthPersistencePort
+import core.domain.member.aggregate.Member
+import core.domain.member.aggregate.MemberOAuth
+import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.entity.member.MemberOAuthEntity
 import org.springframework.stereotype.Repository
 

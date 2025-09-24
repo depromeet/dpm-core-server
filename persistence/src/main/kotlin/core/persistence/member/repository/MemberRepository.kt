@@ -1,19 +1,19 @@
 package core.persistence.member.repository
 
-import com.server.dpmcore.member.member.application.exception.MemberNameAuthorityRequiredException
-import com.server.dpmcore.member.member.domain.model.Member
-import com.server.dpmcore.member.member.domain.model.query.MemberNameAuthorityQueryModel
-import com.server.dpmcore.member.member.domain.port.outbound.MemberPersistencePort
 import core.entity.member.MemberEntity
 import core.domain.authority.vo.AuthorityId
+import core.domain.member.aggregate.Member
+import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.port.outbound.query.MemberNameAuthorityQueryModel
+import core.domain.member.vo.MemberId
+import jooq.dsl.tables.references.AUTHORITIES
+import jooq.dsl.tables.references.COHORTS
+import jooq.dsl.tables.references.MEMBERS
+import jooq.dsl.tables.references.MEMBER_AUTHORITIES
+import jooq.dsl.tables.references.MEMBER_COHORTS
+import jooq.dsl.tables.references.MEMBER_TEAMS
+import jooq.dsl.tables.references.TEAMS
 import org.jooq.DSLContext
-import org.jooq.generated.tables.references.AUTHORITIES
-import org.jooq.generated.tables.references.COHORTS
-import org.jooq.generated.tables.references.MEMBERS
-import org.jooq.generated.tables.references.MEMBER_AUTHORITIES
-import org.jooq.generated.tables.references.MEMBER_COHORTS
-import org.jooq.generated.tables.references.MEMBER_TEAMS
-import org.jooq.generated.tables.references.TEAMS
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -59,32 +59,20 @@ class MemberRepository(
                 MemberId(it)
             }
 
-    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel> {
-        val queryResults =
-            dsl
-                .select(MEMBERS.NAME, AUTHORITIES.NAME)
-                .from(MEMBERS)
-                .join(MEMBER_AUTHORITIES)
-                .on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
-                .join(AUTHORITIES)
-                .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
-                .where(MEMBERS.MEMBER_ID.eq(memberId.value))
-                .fetch()
-
-        return queryResults.map { queryResult ->
-            val memberName = queryResult.get(MEMBERS.NAME)
-            val authorityName = queryResult.get(AUTHORITIES.NAME)
-
-            if (memberName == null || authorityName == null) {
-                throw MemberNameAuthorityRequiredException()
+    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel> =
+        dsl.select(MEMBERS.NAME, AUTHORITIES.NAME)
+            .from(MEMBERS)
+            .join(MEMBER_AUTHORITIES).on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
+            .join(AUTHORITIES).on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+            .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .fetch()
+            .mapNotNull { (memberName, authorityName) ->
+                memberName?.let { name ->
+                    authorityName?.let { authority ->
+                        MemberNameAuthorityQueryModel(name, authority)
+                    }
+                }
             }
-
-            MemberNameAuthorityQueryModel(
-                name = memberName,
-                authority = authorityName,
-            )
-        }
-    }
 
     override fun findMemberTeamByMemberId(memberId: MemberId): Int? =
         dsl

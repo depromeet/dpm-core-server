@@ -27,24 +27,22 @@ class BillMapper(
         bill: Bill,
         memberId: MemberId,
     ): BillDetailResponse {
-        if (bill.id == null) throw BillNotFoundException()
+        val billId = bill.id ?: throw BillNotFoundException()
 
         val gatherings =
-            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id)
+            gatheringQueryUseCase.getAllGatheringsByBillId(billId)
         if (gatherings.isEmpty()) throw GatheringRequiredException()
 
         val gatheringReceipt =
             gatherings.map { gathering ->
-                if (gathering.id == null) throw GatheringNotFoundException()
-
                 gatheringQueryUseCase
                     .findGatheringReceiptByGatheringId(
-                        gathering.id,
+                        gathering.id ?: throw GatheringNotFoundException(),
                     )
             }
 
         val allBillGatheringMembers =
-            gatheringQueryUseCase.getAllGatheringMembersByBillId(bill.id)
+            gatheringQueryUseCase.getAllGatheringMembersByBillId(billId)
 
         val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
@@ -62,7 +60,7 @@ class BillMapper(
             ) ?: throw GatheringReceiptNotFoundException()
 
         return BillDetailResponse(
-            billId = bill.id,
+            billId = billId,
             title = bill.title,
             description = bill.description,
             hostUserId = bill.hostUserId.value,
@@ -117,15 +115,17 @@ class BillMapper(
         bill: Bill,
         memberId: MemberId,
     ): BillListDetailResponse {
+        val billId = bill.id ?: throw BillNotFoundException()
+
         val gatheringDetails =
-            gatheringQueryUseCase.getAllGatheringsByBillId(bill.id ?: throw BillNotFoundException()).map {
+            gatheringQueryUseCase.getAllGatheringsByBillId(billId).map {
                 toBillListGatheringDetailResponse(it)
             }
         if (gatheringDetails.isEmpty()) throw GatheringRequiredException()
 
 //        TODO : 여기서 모든 gathering에 대해서 조회해서 체크하는 로직 필요(각 gathering마다 멤버가 다를 수 있어서)
         val allBillGatheringMembers =
-            gatheringQueryUseCase.getAllGatheringMembersByBillId(bill.id)
+            gatheringQueryUseCase.getAllGatheringMembersByBillId(billId)
 
         val gatheringMembersByRetrievedMember = allBillGatheringMembers.filter { it.memberId == memberId }
 
@@ -148,7 +148,7 @@ class BillMapper(
 
         return BillListDetailResponse(
             title = bill.title,
-            billId = bill.id,
+            billId = billId,
             description = bill.description,
             billTotalAmount = billTotalAmount,
             billStatus = bill.billStatus,
@@ -169,15 +169,17 @@ class BillMapper(
     }
 
     fun toBillListGatheringDetailResponse(gathering: Gathering): BillListGatheringDetailResponse {
+        val gatheringId = gathering.id ?: throw GatheringNotFoundException()
+
         val gatheringReceipt =
             gatheringQueryUseCase.findGatheringReceiptByGatheringId(
                 gathering.id ?: throw GatheringNotFoundException(),
             )
-        val gatheringMembers = gatheringQueryUseCase.findGatheringMemberByGatheringId(gathering.id)
+        val gatheringMembers = gatheringQueryUseCase.findGatheringMemberByGatheringId(gatheringId)
         val joinMemberCount = gatheringMembers.count { it.isJoined == true }
 
         return BillListGatheringDetailResponse(
-            gatheringId = gathering.id,
+            gatheringId = gatheringId,
             title = gathering.title,
             description = gathering.description,
             roundNumber = gathering.roundNumber,

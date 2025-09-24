@@ -32,3 +32,19 @@ java {
     }
 }
 
+tasks.named("compileKotlin") {
+    dependsOn(":codegen:generateJooq")
+}
+
+tasks.named("compileJava") {
+    dependsOn(":codegen:generateJooq")
+}
+
+sourceSets {
+    val main by getting {
+        java {
+            srcDir(project(":codegen").layout.buildDirectory.dir("generated/jooq"))
+        }
+    }
+}
+

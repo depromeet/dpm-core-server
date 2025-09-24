@@ -16,15 +16,11 @@ dependencies {
     jooqGenerator(project(":entity"))
 
     implementation("org.jooq:jooq:3.19.1")
-    implementation("org.jooq:jooq-meta:3.19.1")
-    implementation("org.jooq:jooq-codegen:3.19.1")
-    jooqGenerator("org.jooq:jooq-meta-extensions:3.19.1")
-    jooqGenerator("com.mysql:mysql-connector-j:$mysqlVersion")
+    implementation("org.springframework.boot:spring-boot-starter-jooq")
+    jooqGenerator("org.jooq:jooq-meta:3.19.1")
+    jooqGenerator("org.jooq:jooq-codegen:3.19.1")
     jooqGenerator("org.jooq:jooq-meta-extensions-hibernate:3.19.1")
-
-    runtimeOnly("com.mysql:mysql-connector-j:$mysqlVersion")
-
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    jooqGenerator("com.mysql:mysql-connector-j:$mysqlVersion")
 }
 
 jooq {
@@ -85,7 +81,11 @@ jooq {
                     }
 
                     target.apply {
-                        directory = "../persistence/build/generated/jooq"
+                        target.apply {
+                            directory = "${project.layout.buildDirectory.get()}/generated/jooq"
+                            packageName = "jooq.dsl"
+                            encoding = "UTF-8"
+                        }
                         packageName = "jooq.dsl"
                         encoding = "UTF-8"
                     }
@@ -118,4 +118,3 @@ java {
 tasks.named("generateJooq") {
     dependsOn(":entity:classes")
 }
-

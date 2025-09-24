@@ -1,15 +1,16 @@
 package core.persistence.attendance.extension
 
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetAttendancesBySessionWeekQuery
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailAttendanceBySessionQuery
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetDetailMemberAttendancesQuery
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetMemberAttendancesQuery
-import com.server.dpmcore.attendance.domain.port.inbound.query.GetMyAttendanceBySessionQuery
+import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
+import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
+import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
+import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
+import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
+import jooq.dsl.tables.references.ATTENDANCES
+import jooq.dsl.tables.references.MEMBERS
+import jooq.dsl.tables.references.SESSIONS
+import jooq.dsl.tables.references.TEAMS
 import org.jooq.Condition
-import org.jooq.generated.tables.references.ATTENDANCES
-import org.jooq.generated.tables.references.MEMBERS
-import org.jooq.generated.tables.references.SESSIONS
-import org.jooq.generated.tables.references.TEAMS
+
 
 fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     val conditions = mutableListOf<Condition>()
@@ -33,7 +34,7 @@ fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condi
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
+        conditions += ATTENDANCES.MEMBERID.greaterOrEqual(it)
     }
 
     return conditions
@@ -59,7 +60,7 @@ fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
+        conditions += ATTENDANCES.MEMBERID.greaterOrEqual(it)
     }
 
     return conditions
@@ -68,15 +69,15 @@ fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
 fun GetDetailAttendanceBySessionQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
-    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
+    conditions += ATTENDANCES.SESSIONID.eq(this.sessionId.value)
+    conditions += ATTENDANCES.MEMBERID.eq(this.memberId.value)
     return conditions
 }
 
 fun GetDetailMemberAttendancesQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
+    conditions += ATTENDANCES.MEMBERID.eq(this.memberId.value)
 
     return conditions
 }
@@ -84,8 +85,8 @@ fun GetDetailMemberAttendancesQuery.toCondition(): List<Condition> {
 fun GetMyAttendanceBySessionQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
-    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
+    conditions += ATTENDANCES.SESSIONID.eq(this.sessionId.value)
+    conditions += ATTENDANCES.MEMBERID.eq(this.memberId.value)
 
     return conditions
 }

@@ -84,13 +84,6 @@ dependencies {
 
     implementation("io.jsonwebtoken:jjwt:0.12.6")
 
-    implementation("org.jooq:jooq:3.19.1")
-    implementation("org.springframework.boot:spring-boot-starter-jooq")
-    jooqGenerator("org.jooq:jooq-meta:3.19.1")
-    jooqGenerator("org.jooq:jooq-codegen:3.19.1")
-    jooqGenerator("org.jooq:jooq-meta-extensions:3.19.1")
-    jooqGenerator("com.mysql:mysql-connector-j")
-
     runtimeOnly("com.mysql:mysql-connector-j")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

@@ -77,7 +77,13 @@ class MemberLoginService(
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
         val member =
-            memberPersistencePort.save(Member.create(authAttributes.getEmail(), authAttributes.getName(), environment))
+            memberPersistencePort.save(
+                Member.create(
+                    authAttributes.getEmail(),
+                    authAttributes.getName(),
+                    Profile.get(environment).value,
+                ),
+            )
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
 
         return generateLoginResult(

@@ -72,10 +72,6 @@ class GatheringQueryService(
             memberId,
         )
 
-    fun findById(gatheringId: Long) =
-        gatheringPersistencePort
-            .findById(gatheringId)
-
     fun getGatheringMemberJoinList(gatheringId: GatheringId): GatheringMemberJoinListResponse {
         val query: List<GatheringMemberIsJoinQueryModel> =
             gatheringMemberQueryService.getQueryGatheringMemberIsJoined(gatheringId)

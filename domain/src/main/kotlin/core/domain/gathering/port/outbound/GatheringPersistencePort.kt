@@ -13,8 +13,6 @@ interface GatheringPersistencePort {
         gathering: Gathering,
     ): Gathering
 
-    fun findById(id: Long): Gathering
-
     fun findByBillId(billId: BillId): List<Gathering>
 
     fun saveAll(

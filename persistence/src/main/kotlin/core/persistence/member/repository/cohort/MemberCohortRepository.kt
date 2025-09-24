@@ -1,9 +1,9 @@
 package core.persistence.member.repository.cohort
 
-import com.server.dpmcore.member.memberCohort.domain.model.MemberCohort
-import com.server.dpmcore.member.memberCohort.domain.port.outbound.MemberCohortPersistencePort
+import core.domain.member.aggregate.MemberCohort
+import core.domain.member.port.outbound.MemberCohortPersistencePort
+import jooq.dsl.tables.references.MEMBER_COHORTS
 import org.jooq.DSLContext
-import org.jooq.generated.tables.references.MEMBER_COHORTS
 import org.springframework.stereotype.Repository
 
 @Repository

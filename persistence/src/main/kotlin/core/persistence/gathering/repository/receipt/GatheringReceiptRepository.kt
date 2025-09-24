@@ -1,15 +1,13 @@
 package core.persistence.gathering.repository.receipt
 
-import com.server.dpmcore.gathering.gathering.domain.model.Gathering
+import core.domain.gathering.aggregate.Gathering
+import core.domain.gathering.aggregate.GatheringReceipt
+import core.domain.gathering.port.outbound.GatheringReceiptPersistencePort
 import core.domain.gathering.vo.GatheringId
-import com.server.dpmcore.gathering.gatheringReceipt.application.exception.GatheringReceiptNotFoundException
-import com.server.dpmcore.gathering.gatheringReceipt.domain.model.GatheringReceipt
 import core.domain.gathering.vo.GatheringReceiptId
-import com.server.dpmcore.gathering.gatheringReceipt.domain.port.outbound.GatheringReceiptPersistencePort
 import core.entity.gathering.GatheringReceiptEntity
+import jooq.dsl.tables.references.GATHERING_RECEIPTS
 import org.jooq.DSLContext
-import org.jooq.generated.tables.references.GATHERING_RECEIPTS
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
@@ -25,14 +23,11 @@ class GatheringReceiptRepository(
         gatheringReceiptJpaRepository.save(GatheringReceiptEntity.from(gatheringReceipt, gathering))
     }
 
-    override fun findById(gatheringReceiptId: GatheringReceiptId): GatheringReceiptEntity =
-        gatheringReceiptJpaRepository.findByIdOrNull(
-            gatheringReceiptId.value,
-        ) ?: throw GatheringReceiptNotFoundException()
+    override fun findById(gatheringReceiptId: GatheringReceiptId): GatheringReceipt? =
+        gatheringReceiptJpaRepository.findById(gatheringReceiptId)?.toDomain()
 
-    override fun findByGathering(gatheringId: GatheringId): GatheringReceiptEntity =
-        gatheringReceiptJpaRepository.findByGatheringId(gatheringId)
-            ?: throw GatheringReceiptNotFoundException()
+    override fun findByGathering(gatheringId: GatheringId): GatheringReceipt? =
+        gatheringReceiptJpaRepository.findByGatheringId(gatheringId)?.toDomain()
 
     /**
      * JPA를 통해 루트 엔티티를 fetch하고 Dirty Checking을 통해 업데이트하면 불필요한 조회가 발생함.
@@ -47,7 +42,7 @@ class GatheringReceiptRepository(
             .update(GATHERING_RECEIPTS)
             .set(GATHERING_RECEIPTS.SPLIT_AMOUNT, gatheringReceipt.splitAmount)
             .set(GATHERING_RECEIPTS.UPDATED_AT, LocalDateTime.now())
-            .where(GATHERING_RECEIPTS.GATHERING_RECEIPT_ID.eq(gatheringReceipt.id?.value))
+            .where(GATHERING_RECEIPTS.RECEIPT_ID.eq(gatheringReceipt.id?.value))
             .execute()
 
         return gatheringReceipt.splitAmount

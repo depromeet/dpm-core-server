@@ -15,7 +15,9 @@ import core.domain.bill.vo.BillAccountId
 import core.domain.bill.vo.BillId
 import core.domain.gathering.port.inbound.GatheringCommandUseCase
 import core.domain.gathering.port.inbound.GatheringQueryUseCase
+import core.domain.gathering.port.inbound.command.GatheringCreateCommand
 import core.domain.gathering.port.inbound.command.JoinGatheringCommand
+import core.domain.gathering.port.inbound.command.ReceiptCommand
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -44,9 +46,22 @@ class BillCommandService(
         billId: BillId,
         hostUserId: MemberId,
     ) {
-        val gatheringCommands = request.gatherings.map { it.toCommand(hostUserId) }
+        val gatheringCommands = request.gatherings.map { gathering ->
+            GatheringCreateCommand(
+                title = gathering.title,
+                description = gathering.description,
+                hostUserId = hostUserId,
+                roundNumber = gathering.roundNumber,
+                heldAt = gathering.heldAt,
+                receipt = ReceiptCommand(
+                    amount = gathering.receipt.amount
+                )
+            )
+        }
+
         gatheringCommandUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
     }
+
 
     private fun verifyAccountThenCreateBill(
         hostUserId: MemberId,
@@ -116,7 +131,7 @@ class BillCommandService(
         memberId: MemberId,
     ) = gatheringCommandUseCase.markAsJoinedEachGatheringMember(
         billId = billId,
-        commands = request.gatheringJoins.map {
+        command = request.gatheringJoins.map {
             JoinGatheringCommand(
                 gatheringId = it.gatheringId,
                 isJoined = it.isJoined,

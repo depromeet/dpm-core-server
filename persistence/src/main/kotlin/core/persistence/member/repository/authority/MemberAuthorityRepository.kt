@@ -1,17 +1,16 @@
 package core.persistence.member.repository.authority
 
-import com.server.dpmcore.member.memberAuthority.domain.model.MemberAuthority
-import com.server.dpmcore.member.memberAuthority.domain.port.outbound.MemberAuthorityPersistencePort
+import core.domain.member.aggregate.MemberAuthority
+import core.domain.member.port.outbound.MemberAuthorityPersistencePort
+import jooq.dsl.tables.references.AUTHORITIES
+import jooq.dsl.tables.references.MEMBER_AUTHORITIES
 import org.jooq.DSLContext
-import org.jooq.generated.tables.references.AUTHORITIES
-import org.jooq.generated.tables.references.MEMBER_AUTHORITIES
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Repository
 class MemberAuthorityRepository(
-    private val memberAuthorityJpaRepository: MemberAuthorityJpaRepository,
     private val dsl: DSLContext,
 ) : MemberAuthorityPersistencePort {
     override fun save(memberAuthority: MemberAuthority) {
@@ -20,7 +19,7 @@ class MemberAuthorityRepository(
             .set(MEMBER_AUTHORITIES.MEMBER_ID, memberAuthority.memberId.value)
             .set(MEMBER_AUTHORITIES.AUTHORITY_ID, memberAuthority.authorityId.value)
             .set(
-                MEMBER_AUTHORITIES.GRANTED_AT,
+                MEMBER_AUTHORITIES.GRANTEDAT,
                 memberAuthority.grantedAt
                     ?.atZone(ZoneId.of(TIME_ZONE))
                     ?.toLocalDateTime()
@@ -42,12 +41,12 @@ class MemberAuthorityRepository(
         dsl
             .update(MEMBER_AUTHORITIES)
             .set(
-                MEMBER_AUTHORITIES.DELETED_AT,
+                MEMBER_AUTHORITIES.DELETEDAT,
                 LocalDateTime.now(ZoneId.of(TIME_ZONE)),
             ).where(
                 MEMBER_AUTHORITIES.MEMBER_ID
                     .eq(memberId)
-                    .and(MEMBER_AUTHORITIES.DELETED_AT.isNull()),
+                    .and(MEMBER_AUTHORITIES.DELETEDAT.isNull()),
             ).execute()
     }
 
@@ -60,7 +59,7 @@ class MemberAuthorityRepository(
             .where(
                 MEMBER_AUTHORITIES.MEMBER_ID
                     .eq(memberId)
-                    .and(MEMBER_AUTHORITIES.DELETED_AT.isNull()),
+                    .and(MEMBER_AUTHORITIES.DELETEDAT.isNull()),
             ).fetch(AUTHORITIES.NAME)
             .filterNotNull()
 

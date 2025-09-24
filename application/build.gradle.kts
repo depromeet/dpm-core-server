@@ -43,3 +43,7 @@ java {
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("dpm-core-server.jar")
 }
+
+tasks.named("compileKotlin") {
+    dependsOn(":persistence:compileKotlin")
+}

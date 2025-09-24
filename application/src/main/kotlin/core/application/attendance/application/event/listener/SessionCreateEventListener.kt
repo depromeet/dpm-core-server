@@ -1,6 +1,6 @@
-package core.persistence.attendance.event.listener
+package core.application.attendance.application.event.listener
 
-import com.server.dpmcore.attendance.application.AttendanceCommandService
+import core.application.attendance.application.service.AttendanceCommandService
 import core.domain.session.event.SessionCreateEvent
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase

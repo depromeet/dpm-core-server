@@ -28,6 +28,7 @@ class GatheringMemberQueryService(
     ): GatheringMember =
         gatheringMemberPersistencePort
             .findByGatheringIdAndMemberId(gatheringId, memberId)
+            ?: throw GatheringMemberNotFoundException()
 
     fun getMemberIdsByGatheringId(gatheringId: GatheringId): List<MemberId> =
         gatheringMemberPersistencePort
