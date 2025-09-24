@@ -101,6 +101,7 @@ allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
+    annotation("org.springframework.stereotype.Repository")
 }
 
 tasks.withType<Test> {
@@ -113,4 +114,10 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 
 springBoot {
     mainClass.set("core.application.CoreApplication")
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xjsr305=strict")
+    }
 }

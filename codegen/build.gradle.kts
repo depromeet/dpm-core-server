@@ -118,3 +118,11 @@ java {
 tasks.named("generateJooq") {
     dependsOn(":entity:classes")
 }
+
+sourceSets {
+    val main by getting {
+        java {
+            srcDir("${project.layout.buildDirectory.get()}/generated/jooq")
+        }
+    }
+}

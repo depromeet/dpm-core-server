@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     kotlin("plugin.jpa")
+    kotlin("plugin.spring")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
 }
@@ -8,6 +9,7 @@ plugins {
 dependencies {
     implementation(project(":domain"))
     implementation(project(":entity"))
+    implementation(project(":codegen"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
@@ -40,11 +42,5 @@ tasks.named("compileJava") {
     dependsOn(":codegen:generateJooq")
 }
 
-sourceSets {
-    val main by getting {
-        java {
-            srcDir(project(":codegen").layout.buildDirectory.dir("generated/jooq"))
-        }
-    }
-}
+
 
