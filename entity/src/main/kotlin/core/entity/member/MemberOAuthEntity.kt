@@ -21,7 +21,7 @@ class MemberOAuthEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_oauth_id", nullable = false, updatable = false)
     val id: Long,
-    @Column(nullable = false, updatable = false, unique = true)
+    @Column(name = "external_id", nullable = false, updatable = false, unique = true)
     val externalId: String,
     @Column(nullable = false)
     val provider: String,

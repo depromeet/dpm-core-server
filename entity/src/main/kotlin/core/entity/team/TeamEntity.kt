@@ -28,9 +28,9 @@ class TeamEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cohort_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val cohort: CohortEntity,
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Long,
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     val updatedAt: Long,
     @OneToMany(mappedBy = "team", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberTeams: MutableList<MemberTeamEntity> = mutableListOf(),

@@ -17,17 +17,16 @@ import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.entity.attendance.AttendanceEntity
 import core.persistence.attendance.extension.toCondition
-import jooq.dsl.tables.references.ATTENDANCES
-import jooq.dsl.tables.references.MEMBERS
-import jooq.dsl.tables.references.MEMBER_TEAMS
-import jooq.dsl.tables.references.SESSIONS
-import jooq.dsl.tables.references.TEAMS
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.ATTENDANCES
+import org.jooq.dsl.tables.references.MEMBERS
+import org.jooq.dsl.tables.references.MEMBER_TEAMS
+import org.jooq.dsl.tables.references.SESSIONS
+import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.sum
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 import java.time.ZoneId
 
 private const val PAGE_SIZE = 20
@@ -52,27 +51,27 @@ class AttendanceRepository(
     ): List<SessionAttendanceQueryModel> =
         dsl
             .select(
-                ATTENDANCES.MEMBERID,
+                ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
                 MEMBERS.PART,
                 ATTENDANCES.STATUS,
             ).from(ATTENDANCES)
             .join(MEMBERS)
-            .on(ATTENDANCES.MEMBERID.eq(MEMBERS.MEMBER_ID))
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(SESSIONS)
-            .on(ATTENDANCES.MEMBERID.eq(SESSIONS.SESSION_ID))
+            .on(ATTENDANCES.MEMBER_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBER_TEAMS)
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
                 query.toCondition(myTeamNumber),
-            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBERID.asc())
+            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 SessionAttendanceQueryModel(
-                    id = record[ATTENDANCES.MEMBERID]!!,
+                    id = record[ATTENDANCES.MEMBER_ID]!!,
                     name = record[MEMBERS.NAME]!!,
                     teamNumber = record[TEAMS.NUMBER]!!,
                     part = record[MEMBERS.PART]!!,
@@ -86,7 +85,7 @@ class AttendanceRepository(
     ): List<MemberAttendanceQueryModel> =
         dsl
             .select(
-                ATTENDANCES.MEMBERID,
+                ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
                 MEMBERS.PART,
@@ -96,21 +95,21 @@ class AttendanceRepository(
                 ).`as`(LATE_COUNT),
                 sum(
                     `when`(
-                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.ISONLINE.eq(true)),
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
                 ).`as`(ONLINE_ABSENT_COUNT),
                 sum(
                     `when`(
-                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.ISONLINE.eq(false)),
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
                 ).`as`(OFFLINE_ABSENT_COUNT),
             ).from(ATTENDANCES)
             .join(MEMBERS)
-            .on(ATTENDANCES.MEMBERID.eq(MEMBERS.MEMBER_ID))
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(SESSIONS)
-            .on(ATTENDANCES.SESSIONID.eq(SESSIONS.SESSION_ID))
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBER_TEAMS)
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
@@ -118,15 +117,15 @@ class AttendanceRepository(
             .where(
                 query.toCondition(myTeamNumber),
             ).groupBy(
-                ATTENDANCES.MEMBERID,
+                ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
                 MEMBERS.PART,
-            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBERID.asc())
+            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
             .limit(PAGE_SIZE + 1)
             .fetch { record ->
                 MemberAttendanceQueryModel(
-                    id = record[ATTENDANCES.MEMBERID]!!,
+                    id = record[ATTENDANCES.MEMBER_ID]!!,
                     name = record[MEMBERS.NAME]!!,
                     teamNumber = record[TEAMS.NUMBER]!!,
                     part = record[MEMBERS.PART]!!,
@@ -151,27 +150,27 @@ class AttendanceRepository(
                 ).`as`(LATE_COUNT),
                 sum(
                     `when`(
-                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.ISONLINE.eq(true)),
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
                 ).`as`(ONLINE_ABSENT_COUNT),
                 sum(
                     `when`(
-                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.ISONLINE.eq(false)),
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
                 ).`as`(OFFLINE_ABSENT_COUNT),
                 SESSIONS.SESSION_ID,
                 SESSIONS.WEEK,
-                SESSIONS.EVENTNAME,
+                SESSIONS.EVENT_NAME,
                 SESSIONS.DATE,
                 ATTENDANCES.STATUS,
-                ATTENDANCES.ATTENDEDAT,
+                ATTENDANCES.ATTENDED_AT,
             ).from(ATTENDANCES)
             .join(MEMBERS)
-            .on(ATTENDANCES.MEMBERID.eq(MEMBERS.MEMBER_ID))
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(SESSIONS)
-            .on(ATTENDANCES.SESSIONID.eq(SESSIONS.SESSION_ID))
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBER_TEAMS)
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
@@ -184,10 +183,10 @@ class AttendanceRepository(
                 MEMBERS.PART,
                 SESSIONS.SESSION_ID,
                 SESSIONS.WEEK,
-                SESSIONS.EVENTNAME,
+                SESSIONS.EVENT_NAME,
                 SESSIONS.DATE,
                 ATTENDANCES.STATUS,
-                ATTENDANCES.ATTENDEDAT,
+                ATTENDANCES.ATTENDED_AT,
             ).fetchOne {
                 SessionDetailAttendanceQueryModel(
                     memberId = it[MEMBERS.MEMBER_ID]!!,
@@ -199,10 +198,10 @@ class AttendanceRepository(
                     offlineAbsentCount = it.get(OFFLINE_ABSENT_COUNT, Int::class.java) ?: 0,
                     sessionId = it[SESSIONS.SESSION_ID]!!,
                     sessionWeek = it[SESSIONS.WEEK]!!,
-                    sessionEventName = it[SESSIONS.EVENTNAME]!!,
+                    sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDEDAT]
+                    attendedAt = it[ATTENDANCES.ATTENDED_AT]
                         ?.atZone(ZoneId.of("Asia/Seoul"))
                         ?.toInstant(),
                 )
@@ -231,13 +230,13 @@ class AttendanceRepository(
                 ).`as`(EXCUSED_ABSENT_COUNT),
                 sum(
                     `when`(
-                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.ISONLINE.eq(true)),
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
                 ).`as`(ONLINE_ABSENT_COUNT),
                 sum(
                     `when`(
-                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.ISONLINE.eq(false)),
+                        ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(false)),
                         DSL.inline(1),
                     ).otherwise(DSL.inline(0)),
                 ).`as`(OFFLINE_ABSENT_COUNT),
@@ -247,9 +246,9 @@ class AttendanceRepository(
                 ).`as`(EARLY_LEAVE_COUNT),
             ).from(ATTENDANCES)
             .join(MEMBERS)
-            .on(ATTENDANCES.MEMBERID.eq(MEMBERS.MEMBER_ID))
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(SESSIONS)
-            .on(ATTENDANCES.SESSIONID.eq(SESSIONS.SESSION_ID))
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBER_TEAMS)
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
@@ -282,21 +281,21 @@ class AttendanceRepository(
             .select(
                 SESSIONS.SESSION_ID,
                 SESSIONS.WEEK,
-                SESSIONS.EVENTNAME,
+                SESSIONS.EVENT_NAME,
                 SESSIONS.DATE,
                 ATTENDANCES.STATUS,
             ).from(ATTENDANCES)
             .join(SESSIONS)
-            .on(ATTENDANCES.SESSIONID.eq(SESSIONS.SESSION_ID))
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBERS)
-            .on(ATTENDANCES.MEMBERID.eq(MEMBERS.MEMBER_ID))
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .where(query.toCondition())
             .orderBy(SESSIONS.WEEK.asc(), SESSIONS.DATE.asc())
             .fetch { record ->
                 MemberSessionAttendanceQueryModel(
                     sessionId = record[SESSIONS.SESSION_ID]!!,
                     sessionWeek = record[SESSIONS.WEEK]!!,
-                    sessionEventName = record[SESSIONS.EVENTNAME]!!,
+                    sessionEventName = record[SESSIONS.EVENT_NAME]!!,
                     sessionDate = record[SESSIONS.DATE]!!,
                     sessionAttendanceStatus = record[ATTENDANCES.STATUS]!!,
                 )
@@ -306,25 +305,25 @@ class AttendanceRepository(
         dsl
             .select(
                 ATTENDANCES.STATUS,
-                ATTENDANCES.ATTENDEDAT,
+                ATTENDANCES.ATTENDED_AT,
                 SESSIONS.WEEK,
-                SESSIONS.EVENTNAME,
+                SESSIONS.EVENT_NAME,
                 SESSIONS.DATE,
                 SESSIONS.PLACE,
             ).from(ATTENDANCES)
             .join(SESSIONS)
-            .on(ATTENDANCES.SESSIONID.eq(SESSIONS.SESSION_ID))
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBERS)
-            .on(ATTENDANCES.MEMBERID.eq(MEMBERS.MEMBER_ID))
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .where(query.toCondition())
             .fetchOne {
                 MyDetailAttendanceQueryModel(
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDEDAT]
+                    attendedAt = it[ATTENDANCES.ATTENDED_AT]
                         ?.atZone(ZoneId.of("Asia/Seoul"))
                         ?.toInstant(),
                     sessionWeek = it[SESSIONS.WEEK]!!,
-                    sessionEventName = it[SESSIONS.EVENTNAME]!!,
+                    sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
                     sessionPlace = it[SESSIONS.PLACE]!!,
                 )
@@ -334,13 +333,10 @@ class AttendanceRepository(
         val records =
             attendances.map { attendance ->
                 dsl.newRecord(ATTENDANCES).apply {
-                    memberid = attendance.memberId.value
-                    sessionid = attendance.sessionId.value
+                    memberId = attendance.memberId.value
+                    sessionId = attendance.sessionId.value
                     status = attendance.status.name
-                    attendedat = LocalDateTime.ofInstant(
-                        attendance.attendedAt,
-                        ZoneId.of(TIME_ZONE),
-                    )
+                    attendedAt = attendance.attendedAt
                 }
             }
 
@@ -354,6 +350,5 @@ class AttendanceRepository(
         private const val PRESENT_COUNT = "present_count"
         private const val EXCUSED_ABSENT_COUNT = "excused_absent_count"
         private const val EARLY_LEAVE_COUNT = "early_leave_count"
-        private const val TIME_ZONE = "Asia/Seoul"
     }
 }

@@ -30,11 +30,11 @@ class MemberEntity(
     val part: String? = null,
     @Column(nullable = false)
     val status: String,
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant? = null,
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant? = null,
-    @Column
+    @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),

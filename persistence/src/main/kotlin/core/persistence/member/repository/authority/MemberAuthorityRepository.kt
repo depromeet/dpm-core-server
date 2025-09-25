@@ -2,8 +2,8 @@ package core.persistence.member.repository.authority
 
 import core.domain.member.aggregate.MemberAuthority
 import core.domain.member.port.outbound.MemberAuthorityPersistencePort
-import jooq.dsl.tables.references.AUTHORITIES
-import jooq.dsl.tables.references.MEMBER_AUTHORITIES
+import org.jooq.dsl.tables.references.AUTHORITIES
+import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -19,7 +19,7 @@ class MemberAuthorityRepository(
             .set(MEMBER_AUTHORITIES.MEMBER_ID, memberAuthority.memberId.value)
             .set(MEMBER_AUTHORITIES.AUTHORITY_ID, memberAuthority.authorityId.value)
             .set(
-                MEMBER_AUTHORITIES.GRANTEDAT,
+                MEMBER_AUTHORITIES.GRANTED_AT,
                 memberAuthority.grantedAt
                     ?.atZone(ZoneId.of(TIME_ZONE))
                     ?.toLocalDateTime()
@@ -41,12 +41,12 @@ class MemberAuthorityRepository(
         dsl
             .update(MEMBER_AUTHORITIES)
             .set(
-                MEMBER_AUTHORITIES.DELETEDAT,
+                MEMBER_AUTHORITIES.DELETED_AT,
                 LocalDateTime.now(ZoneId.of(TIME_ZONE)),
             ).where(
                 MEMBER_AUTHORITIES.MEMBER_ID
                     .eq(memberId)
-                    .and(MEMBER_AUTHORITIES.DELETEDAT.isNull()),
+                    .and(MEMBER_AUTHORITIES.DELETED_AT.isNull()),
             ).execute()
     }
 
@@ -59,7 +59,7 @@ class MemberAuthorityRepository(
             .where(
                 MEMBER_AUTHORITIES.MEMBER_ID
                     .eq(memberId)
-                    .and(MEMBER_AUTHORITIES.DELETEDAT.isNull()),
+                    .and(MEMBER_AUTHORITIES.DELETED_AT.isNull()),
             ).fetch(AUTHORITIES.NAME)
             .filterNotNull()
 

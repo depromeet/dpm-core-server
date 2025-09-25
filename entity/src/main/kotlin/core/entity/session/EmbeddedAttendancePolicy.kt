@@ -7,9 +7,9 @@ import java.time.Instant
 
 @Embeddable
 class EmbeddedAttendancePolicy(
-    @Column(nullable = false)
+    @Column(name = "attendance_start", nullable = false)
     val attendanceStart: Instant,
-    @Column(nullable = false)
+    @Column(name = "attendance_code", nullable = false)
     val attendanceCode: String,
 ) {
     fun toDomain(): AttendancePolicy =

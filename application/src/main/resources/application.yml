@@ -67,6 +67,7 @@ management:
 logging:
   level:
     org.jooq.tools.LoggerListener: DEBUG
+    org.springframework.jdbc: DEBUG
 
 cohort:
   value: ${COHORT_VALUE:17}

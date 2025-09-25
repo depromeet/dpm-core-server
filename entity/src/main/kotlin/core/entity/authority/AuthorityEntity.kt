@@ -23,9 +23,9 @@ class AuthorityEntity(
     val id: Long,
     @Column(nullable = false)
     val name: String,
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
     @OneToMany(mappedBy = "authority", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),

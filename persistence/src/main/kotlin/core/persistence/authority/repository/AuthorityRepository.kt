@@ -4,10 +4,10 @@ import core.domain.authority.aggregate.Authority
 import core.domain.authority.port.outbound.AuthorityPersistencePort
 import core.domain.authority.vo.AuthorityId
 import core.domain.member.vo.MemberId
-import jooq.dsl.tables.references.AUTHORITIES
-import jooq.dsl.tables.references.MEMBERS
-import jooq.dsl.tables.references.MEMBER_AUTHORITIES
-import jooq.dsl.tables.references.MEMBER_OAUTH
+import org.jooq.dsl.tables.references.AUTHORITIES
+import org.jooq.dsl.tables.references.MEMBERS
+import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
+import org.jooq.dsl.tables.references.MEMBER_OAUTH
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 
@@ -28,7 +28,7 @@ class AuthorityRepository(
             .on(MEMBER_AUTHORITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_OAUTH)
             .on(MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .where(MEMBER_OAUTH.EXTERNALID.eq(externalId).and(MEMBER_AUTHORITIES.DELETEDAT.isNull))
+            .where(MEMBER_OAUTH.EXTERNAL_ID.eq(externalId).and(MEMBER_AUTHORITIES.DELETED_AT.isNull))
             .fetch(AUTHORITIES.NAME)
             .filterNotNull()
 
@@ -40,7 +40,7 @@ class AuthorityRepository(
             .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
             .join(MEMBERS)
             .on(MEMBER_AUTHORITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .where(MEMBERS.MEMBER_ID.eq(memberId.value).and(MEMBER_AUTHORITIES.DELETEDAT.isNull))
+            .where(MEMBERS.MEMBER_ID.eq(memberId.value).and(MEMBER_AUTHORITIES.DELETED_AT.isNull))
             .fetch(AUTHORITIES.NAME)
             .filterNotNull()
 

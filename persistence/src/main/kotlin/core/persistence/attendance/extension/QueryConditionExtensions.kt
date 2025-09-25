@@ -5,10 +5,10 @@ import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQue
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
-import jooq.dsl.tables.references.ATTENDANCES
-import jooq.dsl.tables.references.MEMBERS
-import jooq.dsl.tables.references.SESSIONS
-import jooq.dsl.tables.references.TEAMS
+import org.jooq.dsl.tables.references.ATTENDANCES
+import org.jooq.dsl.tables.references.MEMBERS
+import org.jooq.dsl.tables.references.SESSIONS
+import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.Condition
 
 
@@ -34,7 +34,7 @@ fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condi
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBERID.greaterOrEqual(it)
+        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
     }
 
     return conditions
@@ -60,7 +60,7 @@ fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     }
 
     this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBERID.greaterOrEqual(it)
+        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
     }
 
     return conditions
@@ -69,15 +69,15 @@ fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
 fun GetDetailAttendanceBySessionQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += ATTENDANCES.SESSIONID.eq(this.sessionId.value)
-    conditions += ATTENDANCES.MEMBERID.eq(this.memberId.value)
+    conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
+    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
     return conditions
 }
 
 fun GetDetailMemberAttendancesQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += ATTENDANCES.MEMBERID.eq(this.memberId.value)
+    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
 
     return conditions
 }
@@ -85,8 +85,8 @@ fun GetDetailMemberAttendancesQuery.toCondition(): List<Condition> {
 fun GetMyAttendanceBySessionQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
-    conditions += ATTENDANCES.SESSIONID.eq(this.sessionId.value)
-    conditions += ATTENDANCES.MEMBERID.eq(this.memberId.value)
+    conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
+    conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
 
     return conditions
 }

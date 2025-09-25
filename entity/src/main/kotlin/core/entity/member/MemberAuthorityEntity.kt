@@ -31,9 +31,9 @@ class MemberAuthorityEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "authority_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val authority: AuthorityEntity,
-    @Column(nullable = false, updatable = false)
+    @Column(name = "granted_at", nullable = false, updatable = false)
     val grantedAt: Instant? = null,
-    @Column
+    @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
 ) {
     fun toDomain() =

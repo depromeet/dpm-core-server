@@ -6,13 +6,13 @@ import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameAuthorityQueryModel
 import core.domain.member.vo.MemberId
-import jooq.dsl.tables.references.AUTHORITIES
-import jooq.dsl.tables.references.COHORTS
-import jooq.dsl.tables.references.MEMBERS
-import jooq.dsl.tables.references.MEMBER_AUTHORITIES
-import jooq.dsl.tables.references.MEMBER_COHORTS
-import jooq.dsl.tables.references.MEMBER_TEAMS
-import jooq.dsl.tables.references.TEAMS
+import org.jooq.dsl.tables.references.AUTHORITIES
+import org.jooq.dsl.tables.references.COHORTS
+import org.jooq.dsl.tables.references.MEMBERS
+import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
+import org.jooq.dsl.tables.references.MEMBER_COHORTS
+import org.jooq.dsl.tables.references.MEMBER_TEAMS
+import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 

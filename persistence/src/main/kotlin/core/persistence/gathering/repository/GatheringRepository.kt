@@ -8,8 +8,8 @@ import core.domain.gathering.port.outbound.query.SubmittedParticipantGathering
 import core.domain.gathering.vo.GatheringId
 import core.domain.member.vo.MemberId
 import core.entity.gathering.GatheringEntity
-import jooq.dsl.tables.references.GATHERINGS
-import jooq.dsl.tables.references.GATHERING_MEMBERS
+import org.jooq.dsl.tables.references.GATHERINGS
+import org.jooq.dsl.tables.references.GATHERING_MEMBERS
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 

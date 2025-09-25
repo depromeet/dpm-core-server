@@ -14,6 +14,8 @@ val mysqlVersion = "8.0.33"
 dependencies {
     implementation(project(":entity"))
     jooqGenerator(project(":entity"))
+    implementation("org.jooq:jooq-meta:3.19.1")
+    implementation("org.jooq:jooq-codegen:3.19.1")
 
     implementation("org.jooq:jooq:3.19.1")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
@@ -47,7 +49,23 @@ jooq {
                                 Property().apply {
                                     key = "useAttributeConverters"
                                     value = "true"
-                                }
+                                },
+                                Property().apply {
+                                    key = "defaultNameCase"
+                                    value = "lower"
+                                },
+                                Property().apply {
+                                    key = "sort"
+                                    value = "semantic"
+                                },
+                                Property().apply {
+                                    key = "unqualifiedSchema"
+                                    value = "none"
+                                },
+                                Property().apply {
+                                    key = "renderNameCase"
+                                    value = "lower"
+                                },
                             )
                         )
 
@@ -81,16 +99,14 @@ jooq {
                     }
 
                     target.apply {
-                        target.apply {
-                            directory = "${project.layout.buildDirectory.get()}/generated/jooq"
-                            packageName = "jooq.dsl"
-                            encoding = "UTF-8"
-                        }
-                        packageName = "jooq.dsl"
+                        directory = "${project.layout.buildDirectory.get()}/generated"
+                        packageName = "org.jooq.dsl"
                         encoding = "UTF-8"
                     }
 
-                    strategy.name = "org.jooq.codegen.DefaultGeneratorStrategy"
+                    strategy.apply {
+                        name = "org.jooq.codegen.DefaultGeneratorStrategy"
+                    }
                 }
             }
         }
@@ -122,7 +138,7 @@ tasks.named("generateJooq") {
 sourceSets {
     val main by getting {
         java {
-            srcDir("${project.layout.buildDirectory.get()}/generated/jooq")
+            srcDir("${project.layout.buildDirectory.get()}/generated")
         }
     }
 }

@@ -20,13 +20,13 @@ class AttendanceEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "attendance_id", nullable = false, updatable = false)
     val id: Long,
-    @Column(nullable = false)
+    @Column(name = "session_id", nullable = false)
     val sessionId: Long,
-    @Column(nullable = false)
+    @Column(name = "member_id", nullable = false)
     val memberId: Long,
     @Column(nullable = false)
     val status: String,
-    @Column(nullable = true)
+    @Column(name = "attended_at", nullable = true)
     val attendedAt: Instant? = null,
 ) {
     fun toDomain(): Attendance =

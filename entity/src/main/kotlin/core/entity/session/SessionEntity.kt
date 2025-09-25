@@ -22,7 +22,7 @@ class SessionEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "session_id", nullable = false, updatable = false)
     val id: Long,
-    @Column(nullable = false)
+    @Column(name = "cohort_id", nullable = false)
     val cohortId: Long,
     @Column(nullable = false)
     val date: Instant,
@@ -30,9 +30,10 @@ class SessionEntity(
     val week: Int,
     @Embedded
     val attendancePolicy: EmbeddedAttendancePolicy,
-    @Column(nullable = false)
+    @Column(name = "is_online", nullable = false)
     val isOnline: Boolean,
     val place: String,
+    @Column(name = "event_name")
     val eventName: String,
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val attachments: MutableList<SessionAttachmentEntity> = mutableListOf(),

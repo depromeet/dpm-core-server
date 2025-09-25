@@ -2,7 +2,7 @@ package core.persistence.member.repository.team
 
 import core.domain.member.aggregate.MemberTeam
 import core.domain.member.port.outbound.MemberTeamPersistencePort
-import jooq.dsl.tables.references.MEMBER_TEAMS
+import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 
