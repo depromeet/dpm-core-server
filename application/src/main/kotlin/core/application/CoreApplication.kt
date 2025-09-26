@@ -6,12 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
-@SpringBootApplication(scanBasePackages = ["core.application", "core.persistence"])
-//@SpringBootApplication(scanBasePackages = ["core.application"])
-@EnableJpaRepositories(basePackages = ["core.persistence"])
-@EntityScan(basePackages = ["core.entity"])
 @ConfigurationPropertiesScan
-//@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["core.application", "core.persistence"])
 class CoreApplication
 
 fun main(args: Array<String>) {

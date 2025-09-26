@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.spring")
     kotlin("plugin.jpa")
+    kotlin("plugin.spring")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
 }
@@ -21,11 +21,6 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-
-    runtimeOnly("com.mysql:mysql-connector-j")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 
