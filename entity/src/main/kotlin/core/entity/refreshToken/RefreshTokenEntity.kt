@@ -1,7 +1,7 @@
 package core.entity.refreshToken
 
-import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.member.vo.MemberId
+import core.domain.refreshToken.aggregate.RefreshToken
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
