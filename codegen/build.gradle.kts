@@ -3,27 +3,26 @@ import org.jooq.meta.jaxb.Logging
 import org.jooq.meta.jaxb.Property
 
 plugins {
-    kotlin("jvm")
-    id("nu.studer.jooq")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.jooq)
 }
 
-val mysqlVersion = "8.0.33"
-
 dependencies {
+    implementation(libs.jooq)
+    implementation(libs.jooq.meta)
+    implementation(libs.jooq.codegen)
+    implementation(libs.jooq.meta.extensions.hibernate)
+    implementation(libs.spring.boot.starter.jooq)
+
+    jooqGenerator(libs.jooq.meta)
+    jooqGenerator(libs.jooq.codegen)
+    jooqGenerator(libs.jooq.meta.extensions.hibernate)
+    jooqGenerator(libs.mysql.connector)
+
     implementation(project(":entity"))
     jooqGenerator(project(":entity"))
-
-    implementation("org.jooq:jooq-meta:3.19.1")
-    implementation("org.jooq:jooq-codegen:3.19.1")
-    implementation("org.jooq:jooq:3.19.1")
-    implementation("org.springframework.boot:spring-boot-starter-jooq")
-
-    jooqGenerator("org.jooq:jooq-meta:3.19.1")
-    jooqGenerator("org.jooq:jooq-codegen:3.19.1")
-    jooqGenerator("org.jooq:jooq-meta-extensions-hibernate:3.19.1")
-    jooqGenerator("com.mysql:mysql-connector-j:$mysqlVersion")
 }
 
 jooq {

@@ -1,12 +1,12 @@
 plugins {
-    kotlin("jvm") version "1.9.25" apply false
-    kotlin("plugin.jpa") version "1.9.25" apply false
-    kotlin("plugin.spring") version "1.9.25" apply false
-    id("org.springframework.boot") version "3.5.0" apply false
-    id("io.spring.dependency-management") version "1.1.7" apply false
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.0" apply false
-    id("com.google.cloud.tools.jib") version "3.4.2" apply false
-    id("nu.studer.jooq") version "9.0" apply false
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.jpa) apply false
+    alias(libs.plugins.kotlin.spring) apply false
+    alias(libs.plugins.spring.boot) apply false
+    alias(libs.plugins.spring.dependency.management) apply false
+    alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.jib) apply false
+    alias(libs.plugins.jooq) apply false
 }
 
 group = "core.server"
@@ -19,7 +19,11 @@ allprojects {
 }
 
 subprojects {
-    plugins.apply("org.jlleitschuh.gradle.ktlint")
+    val libs = rootProject.libs
+
+    fun getPlugin(provider: Provider<PluginDependency>): String = provider.get().pluginId
+
+    apply(plugin = getPlugin(libs.plugins.ktlint))
 
     configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
         verbose.set(true)

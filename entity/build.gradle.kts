@@ -1,14 +1,15 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.jpa")
-    kotlin("plugin.spring")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.jpa)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
+    implementation(libs.spring.boot.starter.data.jpa)
+
     implementation(project(":domain"))
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 }
 
 tasks.getByName<Jar>("jar") {

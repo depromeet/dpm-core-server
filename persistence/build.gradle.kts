@@ -1,21 +1,21 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.jpa")
-    kotlin("plugin.spring")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.jpa)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.jooq)
+
+    runtimeOnly(libs.mysql.connector)
+
     implementation(project(":domain"))
     implementation(project(":entity"))
     implementation(project(":codegen"))
-
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-jooq")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-
-    runtimeOnly("com.mysql:mysql-connector-j")
 }
 
 tasks.getByName<Jar>("jar") {
