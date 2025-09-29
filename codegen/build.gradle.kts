@@ -67,7 +67,7 @@ jooq {
                                     key = "renderNameCase"
                                     value = "lower"
                                 },
-                            )
+                            ),
                         )
 
                         forcedTypes.addAll(
@@ -86,8 +86,8 @@ jooq {
                                     name = "INSTANT"
                                     expression = ".*\\.attended_at"
                                     types = "timestamp.*"
-                                }
-                            )
+                                },
+                            ),
                         )
                     }
 

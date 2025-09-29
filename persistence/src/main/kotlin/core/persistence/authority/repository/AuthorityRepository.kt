@@ -4,11 +4,11 @@ import core.domain.authority.aggregate.Authority
 import core.domain.authority.port.outbound.AuthorityPersistencePort
 import core.domain.authority.vo.AuthorityId
 import core.domain.member.vo.MemberId
+import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.AUTHORITIES
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
 import org.jooq.dsl.tables.references.MEMBER_OAUTH
-import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 
 @Repository

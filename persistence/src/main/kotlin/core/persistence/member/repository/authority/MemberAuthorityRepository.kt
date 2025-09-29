@@ -2,9 +2,9 @@ package core.persistence.member.repository.authority
 
 import core.domain.member.aggregate.MemberAuthority
 import core.domain.member.port.outbound.MemberAuthorityPersistencePort
+import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.AUTHORITIES
 import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
-import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId

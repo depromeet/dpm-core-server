@@ -5,12 +5,11 @@ import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQue
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
+import org.jooq.Condition
 import org.jooq.dsl.tables.references.ATTENDANCES
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.SESSIONS
 import org.jooq.dsl.tables.references.TEAMS
-import org.jooq.Condition
-
 
 fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     val conditions = mutableListOf<Condition>()

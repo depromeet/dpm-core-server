@@ -1,8 +1,8 @@
 package core.application.security.oauth.token
 
-import core.domain.member.vo.MemberId
 import core.application.security.properties.TokenProperties
 import core.domain.authority.port.inbound.AuthorityQueryUseCase
+import core.domain.member.vo.MemberId
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders

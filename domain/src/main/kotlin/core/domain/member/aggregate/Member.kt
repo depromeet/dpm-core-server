@@ -96,11 +96,12 @@ class Member(
             name: String,
             activeProfile: String,
         ): Member {
-            val profileStatusMap = mapOf(
-                "prod" to MemberStatus.PENDING,
-                "dev" to MemberStatus.ACTIVE,
-                "local" to MemberStatus.ACTIVE,
-            )
+            val profileStatusMap =
+                mapOf(
+                    "prod" to MemberStatus.PENDING,
+                    "dev" to MemberStatus.ACTIVE,
+                    "local" to MemberStatus.ACTIVE,
+                )
 
             val matchedStatus = profileStatusMap[activeProfile] ?: MemberStatus.WITHDRAWN
 
