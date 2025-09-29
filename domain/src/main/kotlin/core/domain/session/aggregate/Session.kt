@@ -18,7 +18,7 @@ import kotlin.random.Random
  *
  * 세션 생성 시에 출석 코드가 자동으로 생성됩니다.
  */
-class Session (
+class Session(
     val id: SessionId? = null,
     val cohortId: CohortId,
     val date: Instant,
