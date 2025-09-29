@@ -4,6 +4,7 @@ plugins {
     kotlin("plugin.spring")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
+    id("com.google.cloud.tools.jib")
 }
 
 dependencies {
@@ -23,24 +24,26 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
-
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
-
     implementation("io.jsonwebtoken:jjwt:0.12.6")
-}
 
-tasks.register("prepareKotlinBuildScriptModel") {}
+    runtimeOnly("com.mysql:mysql-connector-j")
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("dpm-core-server.jar")
 }
 
-tasks.named("compileKotlin") {
-    dependsOn(":persistence:compileKotlin")
+springBoot {
+    mainClass.set("core.application.CoreApplication")
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xjsr305=strict")
+    }
 }

@@ -18,29 +18,10 @@ dependencies {
     runtimeOnly("com.mysql:mysql-connector-j")
 }
 
-tasks.register("prepareKotlinBuildScriptModel") {}
-
-tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
-    enabled = false
-}
-
 tasks.getByName<Jar>("jar") {
     enabled = true
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
 }
 
 tasks.named("compileKotlin") {
     dependsOn(":codegen:generateJooq")
 }
-
-tasks.named("compileJava") {
-    dependsOn(":codegen:generateJooq")
-}
-
-
-

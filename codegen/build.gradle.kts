@@ -4,7 +4,7 @@ import org.jooq.meta.jaxb.Property
 
 plugins {
     kotlin("jvm")
-    id("nu.studer.jooq") version "9.0"
+    id("nu.studer.jooq")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
 }
@@ -14,11 +14,12 @@ val mysqlVersion = "8.0.33"
 dependencies {
     implementation(project(":entity"))
     jooqGenerator(project(":entity"))
+
     implementation("org.jooq:jooq-meta:3.19.1")
     implementation("org.jooq:jooq-codegen:3.19.1")
-
     implementation("org.jooq:jooq:3.19.1")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
+
     jooqGenerator("org.jooq:jooq-meta:3.19.1")
     jooqGenerator("org.jooq:jooq-codegen:3.19.1")
     jooqGenerator("org.jooq:jooq-meta-extensions-hibernate:3.19.1")
@@ -113,22 +114,12 @@ jooq {
     }
 }
 
-tasks.register("prepareKotlinBuildScriptModel") {}
-
 tasks.getByName<Jar>("jar") {
     enabled = true
 }
 
-tasks {
-    withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
-        enabled = false
-    }
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
+tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
+    enabled = false
 }
 
 tasks.named("generateJooq") {
