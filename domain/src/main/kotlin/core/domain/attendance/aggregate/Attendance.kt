@@ -11,7 +11,7 @@ import java.time.Instant
  * 출석(Attendance) 도메인 모델
  * 출석은 특정 세션(Session)에 대한 디퍼의 출석 정보를 포함합니다.
  */
-class Attendance (
+class Attendance(
     val id: AttendanceId? = null,
     val sessionId: SessionId,
     val memberId: MemberId,
