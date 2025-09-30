@@ -60,7 +60,7 @@ class AttendanceRepository(
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(SESSIONS)
-            .on(ATTENDANCES.MEMBER_ID.eq(SESSIONS.SESSION_ID))
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBER_TEAMS)
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
