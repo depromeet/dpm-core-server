@@ -32,6 +32,27 @@ dependencies {
     implementation(project(":persistence"))
 }
 
+jib {
+    from {
+        image = "eclipse-temurin:21-jre"
+    }
+    to {
+        val dockerHubUser = System.getenv("DOCKER_USERNAME") ?: "dpm-core"
+        val dockerHubRepository = System.getenv("DOCKER_REPOSITORY") ?: "dpm-core"
+
+        image = "$dockerHubUser/$dockerHubRepository"
+
+        auth {
+            username = System.getenv("DOCKER_USERNAME")
+            password = System.getenv("DOCKER_PASSWORD")
+        }
+    }
+    container {
+        ports = listOf("8080")
+        jvmFlags = listOf("-Xms512m", "-Xmx512m", "-Duser.timezone=Asia/Seoul")
+    }
+}
+
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("dpm-core-server.jar")
 }
