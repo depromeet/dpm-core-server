@@ -1,0 +1,93 @@
+[versions]
+
+# Kotlin
+kotlin = "1.9.25"
+
+# Ktlint
+ktlint = "12.1.0"
+
+# Spring Boot
+spring_boot = "3.5.0"
+spring_dependency_management = "1.1.7"
+
+# jib
+jib = "3.4.2"
+
+# jooq
+jooq = "9.0"
+jooq_generator = "3.19.1"
+
+# Springdoc
+springdoc = "2.8.8"
+
+# Kotlin Logging
+kotlin_logging = "7.0.7"
+
+# jwt
+jjwt = "0.12.6"
+
+# MySQL
+mysql = "8.0.33"
+
+
+[plugins]
+
+# Kotlin plugins
+kotlin_jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin_jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+kotlin_spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+
+# Ktlint plugin
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+
+# Spring Boot plugins
+spring_boot = { id = "org.springframework.boot", version.ref = "spring_boot" }
+spring_dependency_management = { id = "io.spring.dependency-management", version.ref = "spring_dependency_management" }
+
+# jib plugin
+jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }
+
+# jooq plugin
+jooq = { id = "nu.studer.jooq", version.ref = "jooq" }
+
+
+[libraries]
+
+# Spring Boot Starter
+spring_boot_starter_web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_boot" }
+spring_boot_starter_data_jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring_boot" }
+spring_boot_starter_validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring_boot" }
+spring_boot_starter_actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring_boot" }
+spring_boot_starter_security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "spring_boot" }
+spring_boot_starter_oauth2_client = { module = "org.springframework.boot:spring-boot-starter-oauth2-client", version.ref = "spring_boot" }
+spring_boot_starter_thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf", version.ref = "spring_boot" }
+spring_boot_starter_jooq = { module = "org.springframework.boot:spring-boot-starter-jooq", version.ref = "spring_boot" }
+spring_boot_starter_test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring_boot" }
+
+# Kotlin
+kotlin_reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+jackson_module_kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+
+# Springdoc
+springdoc_openapi_starter_webmvc_ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# Kotlin Logging
+kotlin_logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin_logging" }
+
+# jwt
+jsonwebtoken_jjwt = { module = "io.jsonwebtoken:jjwt", version.ref = "jjwt" }
+
+# MySQL
+mysql_connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
+
+# Junit
+kotlin_test_junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+junit_platform_launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+# jooq
+jooq = { module = "org.jooq:jooq", version.ref = "jooq_generator" }
+jooq_meta = { module = "org.jooq:jooq-meta", version.ref = "jooq_generator" }
+jooq_codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq_generator" }
+jooq_meta_extensions_hibernate = { module = "org.jooq:jooq-meta-extensions-hibernate", version.ref = "jooq_generator" }
+
+
