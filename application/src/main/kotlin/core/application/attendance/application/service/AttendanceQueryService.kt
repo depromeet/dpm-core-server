@@ -36,11 +36,14 @@ class AttendanceQueryService(
                 .findSessionAttendancesByQuery(query, myTeamNumber)
                 .sortedBy { it.teamNumber }
         val paginatedResult = queryResult.paginate { it.id }
+        val totalElements =
+            attendancePersistencePort.countSessionAttendancesByQuery(query, myTeamNumber)
 
         return AttendanceMapper.toSessionAttendancesResponse(
             members = paginatedResult.content,
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
+            totalElements = totalElements
         )
     }
 
@@ -54,6 +57,8 @@ class AttendanceQueryService(
                 .findMemberAttendancesByQuery(query, myTeamNumber)
                 .sortedBy { it.teamNumber }
         val paginatedResult = queryResult.paginate { it.id }
+        val totalElements =
+            attendancePersistencePort.countMemberAttendancesByQuery(query, myTeamNumber)
 
         return AttendanceMapper.toMemberAttendancesResponse(
             members =
@@ -74,15 +79,16 @@ class AttendanceQueryService(
                     }.toList(),
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
+            totalElements = totalElements
         )
     }
 
     fun getDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): DetailAttendancesBySessionResponse {
         val queryResult = (
-            attendancePersistencePort
-                .findDetailAttendanceBySession(query)
-                ?: throw AttendanceNotFoundException()
-        )
+                attendancePersistencePort
+                    .findDetailAttendanceBySession(query)
+                    ?: throw AttendanceNotFoundException()
+                )
 
         return AttendanceMapper.toDetailAttendanceBySessionResponse(
             queryResult,
