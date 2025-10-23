@@ -44,7 +44,8 @@ interface SessionQueryApi {
                                             "eventName": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
-                                            "date": "2025-08-02T14:00:00.000000"
+                                            "date": "2025-08-02T14:00:00.000000",
+                                            "attendanceCode": "3821"
                                         }
                                     }
                                 """,
