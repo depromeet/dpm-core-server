@@ -123,7 +123,8 @@ interface AttendanceApi {
                                                 }
                                             ],
                                             "hasNextPage": false,
-                                            "nextCursorId": null
+                                            "nextCursorId": null,
+                                            "totalElements": 26
                                         }
                                     }
                                 """,
@@ -183,7 +184,8 @@ interface AttendanceApi {
                                                 }
                                             ],
                                             "hasNextPage": false,
-                                            "nextCursorId": null
+                                            "nextCursorId": null,
+                                            "totalElements": 26
                                         }
                                     }
                                 """,
