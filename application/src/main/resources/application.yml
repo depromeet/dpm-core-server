@@ -89,7 +89,6 @@ cors:
     - https://core.depromeet.shop
     - https://admin.depromeet.shop
     - https://api.depromeet.shop
-    - https://api.depromeet.shop
     - https://core.depromeet.com
     - https://admin.depromeet.com
     - https://api.depromeet.com
