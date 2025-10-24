@@ -1,9 +1,9 @@
 package core.application.security.redirect.strategy
 
+import core.application.common.constant.Profile
 import core.application.security.properties.SecurityProperties
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.validator.RedirectValidator
-import core.application.common.constant.Profile
 import core.domain.authority.enums.AuthorityType
 
 /**
@@ -25,47 +25,26 @@ class ServerRedirectStrategy(
                 return errorStrategy.resolve(it)
             }
 
-        val profile =
-            context.profile ?: context.copy(error = "Invalid Server Environment").let {
-                return errorStrategy.resolve(it)
-            }
-
         val redirectUrl =
             when (context.authority) {
-                AuthorityType.DEEPER -> resolveDeeperRedirect(requestUrl, profile)
-                AuthorityType.ORGANIZER -> resolveOrganizerRedirect(requestUrl, profile)
+                AuthorityType.DEEPER -> resolveDeeperRedirect(requestUrl)
+                AuthorityType.ORGANIZER -> resolveOrganizerRedirect(requestUrl)
                 else -> null
             } ?: context.copy(error = "Unsupported Redirect URL").let { errorStrategy.resolve(it) }
 
         return validator.validate(redirectUrl)
     }
 
-    private fun resolveDeeperRedirect(
-        requestUrl: String,
-        profile: Profile,
-    ): String? =
+    private fun resolveDeeperRedirect(requestUrl: String): String? =
         when {
-            requestUrl.startsWith("client.") && profile == Profile.DEV ->
-                "${properties.redirect.coreRedirectUrl}?isAdmin=false"
-
-            requestUrl.startsWith("core.") && profile == Profile.PROD ->
-                "${properties.redirect.coreRedirectUrl}?isAdmin=false"
-
+            requestUrl.startsWith("core.") -> "${properties.redirect.coreRedirectUrl}?isAdmin=false"
             requestUrl.startsWith("admin.") -> "${properties.redirect.coreRedirectUrl}?isAdmin=false"
             else -> null
         }
 
-    private fun resolveOrganizerRedirect(
-        requestUrl: String,
-        profile: Profile,
-    ): String? =
+    private fun resolveOrganizerRedirect(requestUrl: String): String? =
         when {
-            requestUrl.startsWith("client.") && profile == Profile.DEV ->
-                "${properties.redirect.coreRedirectUrl}?isAdmin=true"
-
-            requestUrl.startsWith("core.") && profile == Profile.PROD ->
-                "${properties.redirect.coreRedirectUrl}?isAdmin=true"
-
+            requestUrl.startsWith("core.") -> "${properties.redirect.coreRedirectUrl}?isAdmin=true"
             requestUrl.startsWith("admin.") -> "${properties.redirect.adminRedirectUrl}?isAdmin=true"
             else -> null
         }

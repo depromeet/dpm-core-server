@@ -83,12 +83,12 @@ attendance:
 cors:
   allowed-origins:
     - https://localhost:3000
-    - https://local.depromeet-core.shop
-    - https://local-core.depromeet-core.shop:3010
-    - https://local-admin.depromeet-core.shop:3020
-    - https://client.depromeet-core.shop
-    - https://admin.depromeet-core.shop
-    - https://api.depromeet-core.shop
+    - https://local.depromeet.shop
+    - https://local-core.depromeet.shop:3010
+    - https://local-admin.depromeet.shop:3020
+    - https://core.depromeet.shop
+    - https://admin.depromeet.shop
+    - https://api.depromeet.shop
     - https://core.depromeet.com
     - https://admin.depromeet.com
     - https://api.depromeet.com
