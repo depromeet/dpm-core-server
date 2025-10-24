@@ -25,6 +25,7 @@ object SessionMapper {
                 place = place,
                 isOnline = isOnline,
                 date = instantToLocalDateTime(date),
+                attendanceCode = attendancePolicy.attendanceCode,
             )
         }
 

@@ -39,6 +39,7 @@ object AttendanceMapper {
         members: List<SessionAttendanceQueryModel>,
         hasNext: Boolean,
         nextCursorId: Long?,
+        totalElements: Int,
     ): SessionAttendancesResponse =
         SessionAttendancesResponse(
             members =
@@ -53,17 +54,20 @@ object AttendanceMapper {
                 },
             hasNext = hasNext,
             nextCursorId = nextCursorId,
+            totalElements = totalElements,
         )
 
     fun toMemberAttendancesResponse(
         members: List<MemberAttendanceResponse>,
         hasNext: Boolean,
         nextCursorId: Long?,
+        totalElements: Int,
     ): MemberAttendancesResponse =
         MemberAttendancesResponse(
             members = members,
             hasNext = hasNext,
             nextCursorId = nextCursorId,
+            totalElements = totalElements,
         )
 
     fun toAttendanceStatusUpdateCommand(

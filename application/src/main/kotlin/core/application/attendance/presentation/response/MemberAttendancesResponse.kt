@@ -4,4 +4,5 @@ data class MemberAttendancesResponse(
     val members: List<MemberAttendanceResponse>,
     val hasNext: Boolean,
     val nextCursorId: Long?,
+    val totalElements: Int,
 )

@@ -24,6 +24,7 @@ import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.dsl.tables.references.SESSIONS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
+import org.jooq.impl.DSL.select
 import org.jooq.impl.DSL.sum
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
@@ -342,6 +343,53 @@ class AttendanceRepository(
 
         dsl.batchInsert(records).execute()
     }
+
+    override fun countSessionAttendancesByQuery(query: GetAttendancesBySessionWeekQuery, myTeamNumber: Int?): Int =
+        dsl
+            .selectCount()
+            .from(ATTENDANCES)
+            .join(MEMBERS)
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(SESSIONS)
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+            .join(MEMBER_TEAMS)
+            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(query.toCondition(myTeamNumber))
+            .fetchOne(0, Int::class.java) ?: 0
+
+    override fun countMemberAttendancesByQuery(
+        query: GetMemberAttendancesQuery,
+        myTeamNumber: Int?,
+    ): Int =
+        dsl
+            .selectCount()
+            .from(
+                select(
+                    ATTENDANCES.MEMBER_ID,
+                    MEMBERS.NAME,
+                    TEAMS.NUMBER,
+                    MEMBERS.PART,
+                )
+                    .from(ATTENDANCES)
+                    .join(MEMBERS)
+                    .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                    .join(SESSIONS)
+                    .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+                    .join(MEMBER_TEAMS)
+                    .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                    .join(TEAMS)
+                    .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+                    .where(query.toCondition(myTeamNumber))
+                    .groupBy(
+                        ATTENDANCES.MEMBER_ID,
+                        MEMBERS.NAME,
+                        TEAMS.NUMBER,
+                        MEMBERS.PART,
+                    ),
+            )
+            .fetchOne(0, Int::class.java) ?: 0
 
     companion object {
         private const val LATE_COUNT = "late_count"
