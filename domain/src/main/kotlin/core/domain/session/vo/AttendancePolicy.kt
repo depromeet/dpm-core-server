@@ -4,6 +4,17 @@ import java.time.Instant
 
 data class AttendancePolicy(
     val attendanceStart: Instant,
+
+    /**
+     * 출석 코드를 나타냅니다.
+     *
+     * 출석 코드는 숫자 연산을 요구하지 않기 때문에 `String` 타입을 사용합니다.
+     *
+     * 또한, 향후 영문자 등 다양한 형식의 출석 코드로 확장될 가능성을 고려하여 문자열 기반으로 설계되었습니다.
+     *
+     * @author LeeHanEum
+     * @since 2025.07.07
+     */
     val attendanceCode: String,
 ) {
     override fun equals(other: Any?): Boolean {
