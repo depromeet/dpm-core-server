@@ -90,4 +90,9 @@ jooq_meta = { module = "org.jooq:jooq-meta", version.ref = "jooq_generator" }
 jooq_codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq_generator" }
 jooq_meta_extensions_hibernate = { module = "org.jooq:jooq-meta-extensions-hibernate", version.ref = "jooq_generator" }
 
+# Kotest
+kotest_runner_junit5 = { module = "io.kotest:kotest-runner-junit5", version = "5.9.0" }
+kotest_assertions_core = { module = "io.kotest:kotest-assertions-core", version = "5.9.0" }
+kotest_property = { module = "io.kotest:kotest-property", version = "5.9.0" }
+kotest_extensions_spring = { module = "io.kotest.extensions:kotest-extensions-spring", version = "1.3.0" }
 
