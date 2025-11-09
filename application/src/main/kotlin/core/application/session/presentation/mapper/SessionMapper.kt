@@ -14,6 +14,8 @@ import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
@@ -88,7 +90,13 @@ object SessionMapper {
         }
 
         return SessionWeeksResponse(
-            sessions = model.map { SessionWeekResponse(id = it.sessionId, week = it.week) },
+            sessions = model.map {
+                SessionWeekResponse(
+                    id = it.sessionId,
+                    week = it.week,
+                    date = LocalDateTime.ofInstant(it.date, ZoneId.of("Asia/Seoul")),
+                )
+            },
         )
     }
 }

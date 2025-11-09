@@ -48,6 +48,6 @@ class SessionQueryService(
 
         return sessionPersistencePort
             .findAllSessions(cohortId.value)
-            .map { SessionWeekQueryModel(sessionId = it.id!!, week = it.week) }
+            .map { SessionWeekQueryModel(sessionId = it.id!!, week = it.week, date = it.date) }
     }
 }
