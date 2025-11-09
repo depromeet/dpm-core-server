@@ -205,7 +205,18 @@ interface SessionQueryApi {
                                         "message": "요청에 성공했습니다",
                                         "code": "G000",
                                         "data": {
-                                            "weeks": [1, 2, 3, 4]
+                                            "sessions": [
+                                              {
+                                                "id": 5,
+                                                "week": 1,
+                                                "date": "2025-08-02T13:00:00"
+                                              },
+                                              {
+                                                "id": 6,
+                                                "week": 2,
+                                                "date": "2025-08-09T14:00:00"
+                                              }
+                                            ]
                                         }
                                     }
                                 """,
