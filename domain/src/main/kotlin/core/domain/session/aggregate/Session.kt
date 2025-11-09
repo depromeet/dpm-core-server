@@ -4,6 +4,7 @@ import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.vo.AttendanceResult
 import core.domain.cohort.vo.CohortId
 import core.domain.session.port.inbound.command.SessionCreateCommand
+import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
 import java.time.Instant
@@ -21,14 +22,18 @@ import kotlin.random.Random
 class Session(
     val id: SessionId? = null,
     val cohortId: CohortId,
-    val date: Instant,
-    val week: Int,
+    date: Instant,
+    week: Int,
     private val attachments: MutableList<SessionAttachment> = mutableListOf(),
     place: String,
     eventName: String,
     isOnline: Boolean = false,
     attendancePolicy: AttendancePolicy,
 ) {
+    var date: Instant = date
+        private set
+    var week: Int = week
+        private set
     var attendancePolicy: AttendancePolicy = attendancePolicy
         private set
     var place: String = place
@@ -87,6 +92,21 @@ class Session(
     fun isSameDateAsSession(target: Instant): Boolean {
         val zone = ZoneId.of("Asia/Seoul")
         return this.date.atZone(zone).toLocalDate() == target.atZone(zone).toLocalDate()
+    }
+
+    fun updateSession(command: SessionUpdateCommand) {
+        this.date = command.date
+        this.week = command.week
+        this.place = command.place ?: this.place
+        this.eventName = command.eventName ?: this.eventName
+        this.isOnline = command.isOnline ?: this.isOnline
+        this.attendancePolicy =
+            AttendancePolicy(
+                attendanceStart = command.attendanceStart,
+                lateStart = command.lateStart,
+                absentStart = command.absentStart,
+                attendanceCode = this.attendancePolicy.attendanceCode,
+            )
     }
 
     companion object {
