@@ -122,7 +122,7 @@ interface SessionCommandApi {
                                 name = "세션 수정 요청 예시",
                                 value = """
                                 {
-                                  "id": 1,
+                                  "sessionId": 1,
                                   "name": "OT & 팀빌딩",
                                   "date": "2025-08-02T14:00:00",
                                   "isOnline": false,
