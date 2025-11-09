@@ -41,6 +41,8 @@ interface AttendancePersistencePort {
 
     fun saveInBatch(attendances: List<Attendance>)
 
+    fun updateInBatch(attendances: List<Attendance>)
+
     fun countSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
         myTeamNumber: Int?,

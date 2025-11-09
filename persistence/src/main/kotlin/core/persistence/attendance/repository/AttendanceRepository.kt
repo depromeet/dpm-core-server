@@ -344,6 +344,20 @@ class AttendanceRepository(
         dsl.batchInsert(records).execute()
     }
 
+    override fun updateInBatch(attendances: List<Attendance>) {
+        attendances.forEach { attendance ->
+            dsl
+                .update(ATTENDANCES)
+                .set(ATTENDANCES.STATUS, attendance.status.name)
+                .set(ATTENDANCES.ATTENDED_AT, attendance.attendedAt)
+                .where(
+                    ATTENDANCES.MEMBER_ID.eq(attendance.memberId.value)
+                        .and(ATTENDANCES.SESSION_ID.eq(attendance.sessionId.value)),
+                )
+                .execute()
+        }
+    }
+
     override fun countSessionAttendancesByQuery(query: GetAttendancesBySessionWeekQuery, myTeamNumber: Int?): Int =
         dsl
             .selectCount()
