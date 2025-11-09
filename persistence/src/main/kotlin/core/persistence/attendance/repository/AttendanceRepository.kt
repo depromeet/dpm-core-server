@@ -355,6 +355,10 @@ class AttendanceRepository(
                 .update(ATTENDANCES)
                 .set(ATTENDANCES.STATUS, attendance.status.name)
                 .set(ATTENDANCES.ATTENDED_AT, attendance.attendedAt)
+                .set(
+                    ATTENDANCES.UPDATED_AT,
+                    attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime(),
+                )
                 .where(
                     ATTENDANCES.MEMBER_ID.eq(attendance.memberId.value)
                         .and(ATTENDANCES.SESSION_ID.eq(attendance.sessionId.value)),
