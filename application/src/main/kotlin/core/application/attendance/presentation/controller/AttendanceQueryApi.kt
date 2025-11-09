@@ -57,6 +57,10 @@ interface AttendanceQueryApi {
                                                     "attendanceStatus": "LATE"
                                                 }
                                             ],
+                                            "filter": {
+                                              "teamNumber": 7,
+                                              "isMyTeam": false
+                                            },
                                             "hasNextPage": false,
                                             "nextCursorId": null,
                                             "totalElements": 26
@@ -118,6 +122,10 @@ interface AttendanceQueryApi {
                                                     "attendanceStatus": "NORMAL"
                                                 }
                                             ],
+                                            "filter": {
+                                              "teamNumber": 7,
+                                              "isMyTeam": false
+                                            },
                                             "hasNextPage": false,
                                             "nextCursorId": null,
                                             "totalElements": 26

@@ -41,6 +41,8 @@ class AttendanceQueryService(
 
         return AttendanceMapper.toSessionAttendancesResponse(
             members = paginatedResult.content,
+            onlyMyTeam = query.onlyMyTeam ?: false,
+            myTeamNumber = myTeamNumber,
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
             totalElements = totalElements
@@ -77,6 +79,8 @@ class AttendanceQueryService(
                                 ),
                         )
                     }.toList(),
+            onlyMyTeam = query.onlyMyTeam ?: false,
+            myTeamNumber = myTeamNumber,
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
             totalElements = totalElements
