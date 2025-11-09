@@ -79,7 +79,7 @@ class AttendanceQueryService(
                                 ),
                         )
                     }.toList(),
-            onlyMyTeam = query.onlyMyTeam ?: false,
+            onlyMyTeam = (query.teams?.contains(myTeamNumber) == true) || (query.onlyMyTeam ?: false),
             myTeamNumber = myTeamNumber,
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
