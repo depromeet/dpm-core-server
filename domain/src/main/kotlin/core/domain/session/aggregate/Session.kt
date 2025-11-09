@@ -95,14 +95,16 @@ class Session(
 
             return Session(
                 cohortId = CohortId(command.cohortId),
-                date = command.date.plus(command.startHour, ChronoUnit.HOURS),
+                date = command.date,
                 week = command.week,
                 place = command.place ?: "온라인",
                 eventName = command.eventName ?: "${command.week}주차 세션",
                 isOnline = command.isOnline ?: true,
                 attendancePolicy =
                     AttendancePolicy(
-                        attendanceStart = command.date.plus(command.startHour, ChronoUnit.HOURS),
+                        attendanceStart = command.attendanceStart,
+                        lateStart = command.lateStart,
+                        absentStart = command.absentStart,
                         attendanceCode = generateAttendanceCode(),
                     ),
             )

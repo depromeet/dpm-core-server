@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 
-@Tag(name = "세션(Session)")
+@Tag(name = "Session Query", description = "세션 조회 API")
 interface SessionQueryApi {
     @Operation(
         summary = "다음 세션 조회",

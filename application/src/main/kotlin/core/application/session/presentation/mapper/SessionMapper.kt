@@ -69,15 +69,17 @@ object SessionMapper {
 
     fun toSessionCreateCommand(
         request: SessionCreateRequest,
-        startHour: Long,
+        cohortId: Long
     ) = SessionCreateCommand(
-        cohortId = request.cohortId,
+        eventName = request.name,
         date = localDateTimeToInstant(request.date),
-        week = request.week,
-        place = request.place,
-        eventName = request.eventName,
         isOnline = request.isOnline,
-        startHour = startHour,
+        place = request.place,
+        week = request.week,
+        attendanceStart = localDateTimeToInstant(request.attendanceStart),
+        lateStart = localDateTimeToInstant(request.lateStart),
+        absentStart = localDateTimeToInstant(request.absentStart),
+        cohortId = cohortId,
     )
 
     fun toSessionWeeksResponse(model: List<SessionWeekQueryModel>): SessionWeeksResponse {
