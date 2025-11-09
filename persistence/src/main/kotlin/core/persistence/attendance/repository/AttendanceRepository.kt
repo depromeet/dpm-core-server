@@ -167,6 +167,7 @@ class AttendanceRepository(
                 SESSIONS.DATE,
                 ATTENDANCES.STATUS,
                 ATTENDANCES.ATTENDED_AT,
+                ATTENDANCES.UPDATED_AT,
             ).from(ATTENDANCES)
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
@@ -188,6 +189,7 @@ class AttendanceRepository(
                 SESSIONS.DATE,
                 ATTENDANCES.STATUS,
                 ATTENDANCES.ATTENDED_AT,
+                ATTENDANCES.UPDATED_AT,
             ).fetchOne {
                 SessionDetailAttendanceQueryModel(
                     memberId = it[MEMBERS.MEMBER_ID]!!,
@@ -203,7 +205,10 @@ class AttendanceRepository(
                     sessionDate = it[SESSIONS.DATE]!!,
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
                     attendedAt = it[ATTENDANCES.ATTENDED_AT]
-                        ?.atZone(ZoneId.of("Asia/Seoul"))
+                        ?.atZone(ZoneId.of("UTC"))
+                        ?.toInstant(),
+                    updatedAt = it[ATTENDANCES.UPDATED_AT]
+                        ?.atZone(ZoneId.of("UTC"))
                         ?.toInstant(),
                 )
             }

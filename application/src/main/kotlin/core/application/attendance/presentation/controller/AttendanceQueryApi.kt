@@ -177,7 +177,8 @@ interface AttendanceQueryApi {
                                             },
                                             "attendance": {
                                                 "status": "LATE",
-                                                "attendedAt": "2025-08-09T14:05:12.000000"
+                                                "attendedAt": "2025-08-09T14:05:12.000000",
+                                                "updatedAt": "2025-08-09T14:05:12.000000"
                                             }
                                         }
                                     }

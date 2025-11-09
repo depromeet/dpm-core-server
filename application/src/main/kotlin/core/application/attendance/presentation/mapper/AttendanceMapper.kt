@@ -105,6 +105,7 @@ object AttendanceMapper {
                 DetailAttendancesBySessionResponse.DetailAttendance(
                     status = model.attendanceStatus,
                     attendedAt = model.attendedAt?.let { instantToLocalDateTime(it) },
+                    updatedAt = model.updatedAt?.let { instantToLocalDateTime(it) },
                 ),
         )
 
