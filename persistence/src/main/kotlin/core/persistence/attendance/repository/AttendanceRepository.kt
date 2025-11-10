@@ -352,21 +352,18 @@ class AttendanceRepository(
     }
 
     override fun updateInBatch(attendances: List<Attendance>) {
-        attendances.forEach { attendance ->
-            dsl
-                .update(ATTENDANCES)
-                .set(ATTENDANCES.STATUS, attendance.status.name)
-                .set(ATTENDANCES.ATTENDED_AT, attendance.attendedAt)
-                .set(
-                    ATTENDANCES.UPDATED_AT,
-                    attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime(),
-                )
-                .where(
-                    ATTENDANCES.MEMBER_ID.eq(attendance.memberId.value)
-                        .and(ATTENDANCES.SESSION_ID.eq(attendance.sessionId.value)),
-                )
-                .execute()
+        val records = attendances.map { attendance ->
+            dsl.newRecord(ATTENDANCES).apply {
+                attendanceId = attendance.id?.value  // ← PK 세팅
+                memberId = attendance.memberId.value
+                sessionId = attendance.sessionId.value
+                status = attendance.status.name
+                attendedAt = attendance.attendedAt
+                updatedAt = attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
+            }
         }
+
+        dsl.batchUpdate(records).execute()
     }
 
     override fun countSessionAttendancesByQuery(
