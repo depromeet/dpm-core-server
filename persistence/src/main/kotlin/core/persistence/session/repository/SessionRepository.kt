@@ -13,11 +13,11 @@ class SessionRepository(
     override fun save(session: Session): Session = sessionJpaRepository.save(SessionEntity.from(session)).toDomain()
 
     override fun findNextSessionBy(startOfToday: Instant): Session? =
-        sessionJpaRepository.findFirstByDateAfterOrderByDateAsc(startOfToday)?.toDomain()
+        sessionJpaRepository.findFirstByDateAfterAndDeletedAtIsNullOrderByDateAsc(startOfToday)?.toDomain()
 
     override fun findAllSessions(cohortId: Long): List<Session> =
-        sessionJpaRepository.findAllByCohortIdOrderByIdAsc(cohortId).map { it.toDomain() }
+        sessionJpaRepository.findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId).map { it.toDomain() }
 
     override fun findSessionById(sessionId: Long): Session? =
-        sessionJpaRepository.findById(sessionId).orElse(null)?.toDomain()
+        sessionJpaRepository.findByIdAndDeletedAtIsNull(sessionId)?.toDomain()
 }
