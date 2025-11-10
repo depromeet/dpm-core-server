@@ -42,6 +42,23 @@ class Attendance(
         this.attendedAt = attendedAt
     }
 
+    fun updateStatusByAttendancePolicy(lateStart: Instant, absentStart: Instant) {
+        if (this.updatedAt != null) return
+
+        val attendedAt = this.attendedAt ?: return
+
+        val newStatus = when {
+            attendedAt.isBefore(lateStart) -> AttendanceStatus.PRESENT
+            attendedAt.isBefore(absentStart) -> AttendanceStatus.LATE
+            else -> AttendanceStatus.ABSENT
+        }
+
+        if (this.status != newStatus) {
+            this.status = newStatus
+            this.updatedAt = Instant.now()
+        }
+    }
+
     fun updateStatus(status: AttendanceStatus) {
         this.status = status
         this.updatedAt = Instant.now()

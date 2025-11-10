@@ -7,6 +7,7 @@ import core.domain.session.aggregate.Session
 import core.domain.session.event.SessionCreateEvent
 import core.domain.session.event.SessionDeleteEvent
 import core.domain.session.event.SessionUpdateEvent
+import core.domain.session.extension.hasChangedComparedTo
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.outbound.SessionPersistencePort
@@ -77,40 +78,17 @@ class SessionCommandService(
         command: SessionUpdateCommand,
         session: Session,
     ) {
-        val changed = hasPolicyChanged(previous, command)
-        if (!changed) return
+        if (!previous.hasChangedComparedTo(command)) return
 
         val sessionId = session.id ?: throw InvalidSessionIdException()
 
         val event =
             SessionUpdateEvent(
                 sessionId = sessionId,
-                attendanceStart =
-                    SessionUpdateEvent.UpdateTime(
-                        from = previous.attendanceStart,
-                        to = command.attendanceStart,
-                    ),
-                lateStart =
-                    SessionUpdateEvent.UpdateTime(
-                        from = previous.lateStart,
-                        to = command.lateStart,
-                    ),
-                absentStart =
-                    SessionUpdateEvent.UpdateTime(
-                        from = previous.absentStart,
-                        to = command.absentStart,
-                    ),
+                lateStart = command.lateStart,
+                absentStart = command.absentStart,
             )
 
         eventPublisher.publishEvent(event)
-    }
-
-    private fun hasPolicyChanged(
-        previous: AttendancePolicy,
-        command: SessionUpdateCommand,
-    ): Boolean {
-        return previous.attendanceStart != command.attendanceStart ||
-            previous.lateStart != command.lateStart ||
-            previous.absentStart != command.absentStart
     }
 }

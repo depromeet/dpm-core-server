@@ -79,6 +79,18 @@ class AttendanceCommandService(
         attendancePersistencePort.updateInBatch(attendances)
     }
 
+    fun updateAttendancesByPolicy(
+        sessionId: SessionId,
+        lateStart: Instant,
+        absentStart: Instant,
+    ) {
+        val attendances =
+            attendancePersistencePort.findAllBySessionId(sessionId.value)
+                .onEach { it.updateStatusByAttendancePolicy(lateStart, absentStart) }
+
+        attendancePersistencePort.updateInBatch(attendances)
+    }
+
     fun createAttendances(sessionId: SessionId) {
         val memberIds = memberService.getMembersByCohort(cohortProperties.value)
         if (memberIds.isEmpty()) {
