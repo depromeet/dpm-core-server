@@ -43,7 +43,7 @@ class AttendanceRepository(
     override fun findAttendanceBy(
         sessionId: Long,
         memberId: Long,
-    ): Attendance? = attendanceJpaRepository.findBySessionIdAndMemberId(sessionId, memberId)?.toDomain()
+    ): Attendance? = attendanceJpaRepository.findBySessionIdAndMemberIdAndDeletedAtIsNull(sessionId, memberId)?.toDomain()
 
     override fun findAllBySessionId(sessionId: Long): List<Attendance> =
         attendanceJpaRepository.findAllBySessionIdAndDeletedAtIsNull(sessionId).map { it.toDomain() }
