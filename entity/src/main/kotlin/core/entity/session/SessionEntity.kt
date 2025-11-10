@@ -35,6 +35,8 @@ class SessionEntity(
     val place: String,
     @Column(name = "event_name")
     val eventName: String,
+    @Column(name = "deleted_at", nullable = true)
+    val deletedAt: Instant? = null,
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
     val attachments: MutableList<SessionAttachmentEntity> = mutableListOf(),
 ) {
@@ -48,6 +50,7 @@ class SessionEntity(
             isOnline = this.isOnline,
             place = this.place,
             eventName = this.eventName,
+            deletedAt = this.deletedAt,
             attachments = this.attachments.map { it.toDomain() }.toMutableList(),
         )
 
@@ -63,6 +66,7 @@ class SessionEntity(
                     isOnline = domainModel.isOnline,
                     place = domainModel.place,
                     eventName = domainModel.eventName,
+                    deletedAt = domainModel.deletedAt,
                 )
             val attachmentEntities =
                 domainModel.getAttachments().map {

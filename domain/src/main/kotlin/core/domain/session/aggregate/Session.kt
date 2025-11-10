@@ -29,6 +29,7 @@ class Session(
     eventName: String,
     isOnline: Boolean = false,
     attendancePolicy: AttendancePolicy,
+    deletedAt: Instant? = null,
 ) {
     var date: Instant = date
         private set
@@ -41,6 +42,8 @@ class Session(
     var eventName: String = eventName
         private set
     var isOnline: Boolean = isOnline
+        private set
+    var deletedAt: Instant? = deletedAt
         private set
 
     fun getAttachments(): List<SessionAttachment> = attachments.toList()
