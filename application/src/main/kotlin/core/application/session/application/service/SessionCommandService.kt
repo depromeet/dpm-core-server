@@ -51,10 +51,11 @@ class SessionCommandService(
                 ?: throw SessionNotFoundException()
 
         val previousAttendancePolicy = session.attendancePolicy
-        publishIfAttendancePolicyChanged(previousAttendancePolicy, command, session)
 
         session.updateSession(command)
         sessionPersistencePort.save(session)
+
+        publishIfAttendancePolicyChanged(previousAttendancePolicy, command, session)
     }
 
     private fun publishIfAttendancePolicyChanged(
