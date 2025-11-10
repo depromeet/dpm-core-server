@@ -13,6 +13,7 @@ import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
+import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -64,7 +65,7 @@ class AttendanceCommandController(
     @PatchMapping("/v1/sessions/{sessionId}/attendances/bulk")
     override fun updateAttendanceBulk(
         @PathVariable sessionId: SessionId,
-        @RequestBody request: AttendanceStatusBulkUpdateRequest,
+        @Valid @RequestBody request: AttendanceStatusBulkUpdateRequest,
     ): CustomResponse<Void> {
         attendanceCommandService.updateAttendanceStatusBulk(
             sessionId,
