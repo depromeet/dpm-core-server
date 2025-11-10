@@ -9,7 +9,7 @@ import core.domain.session.vo.SessionId
  * 세션 첨부파일은 특정 세션에 대한 파일 첨부 정보를 나타냅니다.
  * 이 모델은 세션에 첨부된 파일의 메타데이터를 관리합니다.
  */
-class SessionAttachment (
+class SessionAttachment(
     val id: SessionAttachmentId? = null,
     val sessionId: SessionId,
     val title: String,

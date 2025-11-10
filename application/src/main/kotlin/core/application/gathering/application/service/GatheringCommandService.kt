@@ -91,9 +91,10 @@ class GatheringCommandService(
     ) {
         val gatheringIds = gatheringPersistencePort.findAllGatheringIdsByBillId(billId)
 
-        val invalidGatheringIds = commands
-            .map { it.gatheringId }
-            .filterNot { it in gatheringIds }
+        val invalidGatheringIds =
+            commands
+                .map { it.gatheringId }
+                .filterNot { it in gatheringIds }
 
         if (invalidGatheringIds.isNotEmpty()) {
             throw GatheringNotIncludedInBillException()
@@ -131,7 +132,8 @@ class GatheringCommandService(
         gatherings.forEach { gathering ->
             val gatheringMember =
                 gatheringMemberQueryService.getGatheringMemberByGatheringIdAndMemberId(
-                    gathering.id ?: throw GatheringIdRequiredException(), command.memberId,
+                    gathering.id ?: throw GatheringIdRequiredException(),
+                    command.memberId,
                 )
             gatheringMemberCommandService.updateDepositAndMemo(gatheringMember, command.isDeposit, command.memo)
         }

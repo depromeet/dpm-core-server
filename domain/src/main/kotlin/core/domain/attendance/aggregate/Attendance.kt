@@ -17,11 +17,15 @@ class Attendance(
     val memberId: MemberId,
     status: AttendanceStatus,
     attendedAt: Instant? = null,
+    updatedAt: Instant? = null,
 ) {
     var status: AttendanceStatus = status
         private set
 
     var attendedAt: Instant? = attendedAt
+        private set
+
+    var updatedAt: Instant? = updatedAt
         private set
 
     fun isAttended() = this.status != AttendanceStatus.PENDING
@@ -36,6 +40,7 @@ class Attendance(
 
     fun updateStatus(status: AttendanceStatus) {
         this.status = status
+        this.updatedAt = Instant.now()
     }
 
     override fun equals(other: Any?): Boolean {

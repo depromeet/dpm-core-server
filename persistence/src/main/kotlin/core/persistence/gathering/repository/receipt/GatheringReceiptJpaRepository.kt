@@ -7,5 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface GatheringReceiptJpaRepository : JpaRepository<GatheringReceiptEntity, Long> {
     fun findById(gatheringReceiptId: GatheringReceiptId): GatheringReceiptEntity?
+
     fun findByGatheringId(gatheringId: GatheringId): GatheringReceiptEntity?
 }

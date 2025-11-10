@@ -6,8 +6,8 @@ import core.domain.gathering.port.outbound.GatheringReceiptPersistencePort
 import core.domain.gathering.vo.GatheringId
 import core.domain.gathering.vo.GatheringReceiptId
 import core.entity.gathering.GatheringReceiptEntity
-import org.jooq.dsl.tables.references.GATHERING_RECEIPTS
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.GATHERING_RECEIPTS
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 

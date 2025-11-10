@@ -13,8 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 class GatheringReceiptQueryService(
     private val gatheringReceiptPersistencePort: GatheringReceiptPersistencePort,
 ) : GatheringReceiptQueryUseCase {
-    fun findById(gatheringReceiptId: GatheringReceiptId) =
-        gatheringReceiptPersistencePort.findById(gatheringReceiptId)
+    fun findById(gatheringReceiptId: GatheringReceiptId) = gatheringReceiptPersistencePort.findById(gatheringReceiptId)
 
     override fun findByGatheringId(gatheringId: GatheringId): GatheringReceipt =
         gatheringReceiptPersistencePort.findByGathering(gatheringId)

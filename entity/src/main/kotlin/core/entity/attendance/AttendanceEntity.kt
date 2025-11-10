@@ -28,6 +28,8 @@ class AttendanceEntity(
     val status: String,
     @Column(name = "attended_at", nullable = true)
     val attendedAt: Instant? = null,
+    @Column(name = "updated_at", nullable = true)
+    val updatedAt: Instant? = null,
 ) {
     fun toDomain(): Attendance =
         Attendance(
@@ -36,6 +38,7 @@ class AttendanceEntity(
             memberId = MemberId(this.memberId),
             status = AttendanceStatus.valueOf(this.status),
             attendedAt = this.attendedAt,
+            updatedAt = this.updatedAt,
         )
 
     companion object {
@@ -46,6 +49,7 @@ class AttendanceEntity(
                 memberId = domainModel.memberId.value,
                 status = domainModel.status.name,
                 attendedAt = domainModel.attendedAt,
+                updatedAt = domainModel.updatedAt,
             )
     }
 }

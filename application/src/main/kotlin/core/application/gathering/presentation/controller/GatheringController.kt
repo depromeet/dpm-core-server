@@ -1,10 +1,10 @@
 package core.application.gathering.presentation.controller
 
-import core.domain.gathering.vo.GatheringId
 import core.application.common.exception.CustomResponse
 import core.application.gathering.application.service.GatheringCommandService
 import core.application.gathering.application.service.GatheringQueryService
 import core.application.gathering.presentation.response.GatheringMemberJoinListResponse
+import core.domain.gathering.vo.GatheringId
 import jakarta.validation.constraints.Positive
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping

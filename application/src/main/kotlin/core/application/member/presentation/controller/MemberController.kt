@@ -1,11 +1,11 @@
 package core.application.member.presentation.controller
 
-import core.domain.member.vo.MemberId
 import core.application.common.exception.CustomResponse
 import core.application.member.application.service.MemberCommandService
 import core.application.member.application.service.MemberQueryService
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.domain.member.vo.MemberId
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize

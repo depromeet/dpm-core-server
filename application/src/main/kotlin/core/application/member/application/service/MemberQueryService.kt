@@ -1,15 +1,15 @@
 package core.application.member.application.service
 
-import core.domain.authority.vo.AuthorityId
-import core.domain.member.vo.MemberId
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
 import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.domain.authority.vo.AuthorityId
 import core.domain.member.port.inbound.MemberQueryByAuthorityUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameAuthorityQueryModel
+import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 
 @Service

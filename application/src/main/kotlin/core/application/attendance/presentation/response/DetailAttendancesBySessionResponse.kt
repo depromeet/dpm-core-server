@@ -25,5 +25,6 @@ data class DetailAttendancesBySessionResponse(
     data class DetailAttendance(
         val status: String,
         val attendedAt: LocalDateTime?,
+        val updatedAt: LocalDateTime?,
     )
 }

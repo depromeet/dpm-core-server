@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 
-@Tag(name = "세션(Session)")
+@Tag(name = "Session Query", description = "세션 조회 API")
 interface SessionQueryApi {
     @Operation(
         summary = "다음 세션 조회",
@@ -205,7 +205,18 @@ interface SessionQueryApi {
                                         "message": "요청에 성공했습니다",
                                         "code": "G000",
                                         "data": {
-                                            "weeks": [1, 2, 3, 4]
+                                            "sessions": [
+                                              {
+                                                "id": 5,
+                                                "week": 1,
+                                                "date": "2025-08-02T13:00:00"
+                                              },
+                                              {
+                                                "id": 6,
+                                                "week": 2,
+                                                "date": "2025-08-09T14:00:00"
+                                              }
+                                            ]
                                         }
                                     }
                                 """,

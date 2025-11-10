@@ -46,22 +46,23 @@ class BillCommandService(
         billId: BillId,
         hostUserId: MemberId,
     ) {
-        val gatheringCommands = request.gatherings.map { gathering ->
-            GatheringCreateCommand(
-                title = gathering.title,
-                description = gathering.description,
-                hostUserId = hostUserId,
-                roundNumber = gathering.roundNumber,
-                heldAt = gathering.heldAt,
-                receipt = ReceiptCommand(
-                    amount = gathering.receipt.amount
+        val gatheringCommands =
+            request.gatherings.map { gathering ->
+                GatheringCreateCommand(
+                    title = gathering.title,
+                    description = gathering.description,
+                    hostUserId = hostUserId,
+                    roundNumber = gathering.roundNumber,
+                    heldAt = gathering.heldAt,
+                    receipt =
+                        ReceiptCommand(
+                            amount = gathering.receipt.amount,
+                        ),
                 )
-            )
-        }
+            }
 
         gatheringCommandUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
     }
-
 
     private fun verifyAccountThenCreateBill(
         hostUserId: MemberId,
@@ -131,15 +132,15 @@ class BillCommandService(
         memberId: MemberId,
     ) = gatheringCommandUseCase.markAsJoinedEachGatheringMember(
         billId = billId,
-        command = request.gatheringJoins.map {
-            JoinGatheringCommand(
-                gatheringId = it.gatheringId,
-                isJoined = it.isJoined,
-            )
-        },
+        command =
+            request.gatheringJoins.map {
+                JoinGatheringCommand(
+                    gatheringId = it.gatheringId,
+                    isJoined = it.isJoined,
+                )
+            },
         memberId = memberId,
     )
-
 
     fun updateMemberDeposit(command: UpdateMemberDepositCommand) {
         gatheringCommandUseCase.updateMemberDeposit(command)

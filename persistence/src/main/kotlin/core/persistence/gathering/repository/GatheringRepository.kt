@@ -8,9 +8,9 @@ import core.domain.gathering.port.outbound.query.SubmittedParticipantGathering
 import core.domain.gathering.vo.GatheringId
 import core.domain.member.vo.MemberId
 import core.entity.gathering.GatheringEntity
+import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.GATHERINGS
 import org.jooq.dsl.tables.references.GATHERING_MEMBERS
-import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -51,14 +51,14 @@ class GatheringRepository(
     ): List<SubmittedParticipantGathering> =
         dsl.select(
             GATHERINGS.GATHERING_ID,
-            GATHERING_MEMBERS.IS_JOINED
+            GATHERING_MEMBERS.IS_JOINED,
         )
             .from(GATHERINGS)
             .join(GATHERING_MEMBERS)
             .on(GATHERINGS.GATHERING_ID.eq(GATHERING_MEMBERS.GATHERING_ID))
             .where(
                 GATHERINGS.BILL_ID.eq(billId.value)
-                    .and(GATHERING_MEMBERS.MEMBER_ID.eq(memberId.value))
+                    .and(GATHERING_MEMBERS.MEMBER_ID.eq(memberId.value)),
             )
             .fetch()
             .mapNotNull { record ->
@@ -68,8 +68,10 @@ class GatheringRepository(
                 if (gatheringId != null && isJoined != null) {
                     SubmittedParticipantGathering(
                         gatheringId = GatheringId(gatheringId),
-                        isJoined = isJoined
+                        isJoined = isJoined,
                     )
-                } else null
+                } else {
+                    null
+                }
             }
 }

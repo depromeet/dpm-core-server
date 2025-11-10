@@ -1,10 +1,10 @@
 package core.application.member.presentation.controller
 
-import core.domain.member.vo.MemberId
 import core.application.common.exception.CustomResponse
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.annotation.CurrentMemberId
+import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject

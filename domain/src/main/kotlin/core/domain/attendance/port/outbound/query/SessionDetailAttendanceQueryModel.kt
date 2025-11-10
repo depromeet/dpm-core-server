@@ -16,4 +16,5 @@ data class SessionDetailAttendanceQueryModel(
     val sessionDate: Instant,
     val attendanceStatus: String,
     val attendedAt: Instant?,
+    val updatedAt: Instant?,
 )

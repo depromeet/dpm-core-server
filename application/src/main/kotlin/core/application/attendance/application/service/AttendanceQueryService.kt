@@ -41,9 +41,11 @@ class AttendanceQueryService(
 
         return AttendanceMapper.toSessionAttendancesResponse(
             members = paginatedResult.content,
+            onlyMyTeam = query.onlyMyTeam ?: false,
+            myTeamNumber = myTeamNumber,
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
-            totalElements = totalElements
+            totalElements = totalElements,
         )
     }
 
@@ -77,18 +79,20 @@ class AttendanceQueryService(
                                 ),
                         )
                     }.toList(),
+            onlyMyTeam = (query.teams?.contains(myTeamNumber) == true) || (query.onlyMyTeam ?: false),
+            myTeamNumber = myTeamNumber,
             hasNext = paginatedResult.hasNext,
             nextCursorId = paginatedResult.nextCursorId,
-            totalElements = totalElements
+            totalElements = totalElements,
         )
     }
 
     fun getDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): DetailAttendancesBySessionResponse {
         val queryResult = (
-                attendancePersistencePort
-                    .findDetailAttendanceBySession(query)
-                    ?: throw AttendanceNotFoundException()
-                )
+            attendancePersistencePort
+                .findDetailAttendanceBySession(query)
+                ?: throw AttendanceNotFoundException()
+        )
 
         return AttendanceMapper.toDetailAttendanceBySessionResponse(
             queryResult,
