@@ -13,8 +13,7 @@ class BillRepository(
 ) : BillPersistencePort {
     override fun save(bill: Bill): BillId = BillId(billJpaRepository.save(BillEntity.from(bill)).id)
 
-    override fun findById(billId: BillId): Bill? =
-        billJpaRepository.findByIdOrNull(billId.value)?.toDomain()
+    override fun findById(billId: BillId): Bill? = billJpaRepository.findByIdOrNull(billId.value)?.toDomain()
 
     override fun findAllBills(): List<Bill> = billJpaRepository.findAll().map { it.toDomain() }
 }

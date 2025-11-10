@@ -1,8 +1,8 @@
 package core.application.gathering.presentation.controller
 
-import core.domain.gathering.vo.GatheringId
 import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.response.GatheringMemberJoinListResponse
+import core.domain.gathering.vo.GatheringId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject

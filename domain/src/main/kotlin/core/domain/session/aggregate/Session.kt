@@ -4,6 +4,7 @@ import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.vo.AttendanceResult
 import core.domain.cohort.vo.CohortId
 import core.domain.session.port.inbound.command.SessionCreateCommand
+import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
 import java.time.Instant
@@ -21,14 +22,18 @@ import kotlin.random.Random
 class Session(
     val id: SessionId? = null,
     val cohortId: CohortId,
-    val date: Instant,
-    val week: Int,
+    date: Instant,
+    week: Int,
     private val attachments: MutableList<SessionAttachment> = mutableListOf(),
     place: String,
     eventName: String,
     isOnline: Boolean = false,
     attendancePolicy: AttendancePolicy,
 ) {
+    var date: Instant = date
+        private set
+    var week: Int = week
+        private set
     var attendancePolicy: AttendancePolicy = attendancePolicy
         private set
     var place: String = place
@@ -89,20 +94,37 @@ class Session(
         return this.date.atZone(zone).toLocalDate() == target.atZone(zone).toLocalDate()
     }
 
+    fun updateSession(command: SessionUpdateCommand) {
+        this.date = command.date
+        this.week = command.week
+        this.place = command.place ?: this.place
+        this.eventName = command.eventName ?: this.eventName
+        this.isOnline = command.isOnline ?: this.isOnline
+        this.attendancePolicy =
+            AttendancePolicy(
+                attendanceStart = command.attendanceStart,
+                lateStart = command.lateStart,
+                absentStart = command.absentStart,
+                attendanceCode = this.attendancePolicy.attendanceCode,
+            )
+    }
+
     companion object {
         fun create(command: SessionCreateCommand): Session {
             fun generateAttendanceCode(): String = Random.nextInt(1000, 10000).toString()
 
             return Session(
                 cohortId = CohortId(command.cohortId),
-                date = command.date.plus(command.startHour, ChronoUnit.HOURS),
+                date = command.date,
                 week = command.week,
                 place = command.place ?: "온라인",
                 eventName = command.eventName ?: "${command.week}주차 세션",
                 isOnline = command.isOnline ?: true,
                 attendancePolicy =
                     AttendancePolicy(
-                        attendanceStart = command.date.plus(command.startHour, ChronoUnit.HOURS),
+                        attendanceStart = command.attendanceStart,
+                        lateStart = command.lateStart,
+                        absentStart = command.absentStart,
                         attendanceCode = generateAttendanceCode(),
                     ),
             )

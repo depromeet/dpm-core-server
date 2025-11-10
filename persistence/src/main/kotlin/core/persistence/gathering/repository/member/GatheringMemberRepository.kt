@@ -9,13 +9,13 @@ import core.domain.gathering.vo.GatheringId
 import core.domain.gathering.vo.GatheringMemberId
 import core.domain.member.vo.MemberId
 import core.entity.gathering.GatheringMemberEntity
+import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.AUTHORITIES
 import org.jooq.dsl.tables.references.GATHERING_MEMBERS
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.dsl.tables.references.TEAMS
-import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -38,8 +38,7 @@ class GatheringMemberRepository(
     override fun findByGatheringIdAndMemberId(
         gatheringId: GatheringId,
         memberId: MemberId,
-    ): GatheringMember? =
-        gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId)?.toDomain()
+    ): GatheringMember? = gatheringJpaRepository.findByGatheringIdAndMemberId(gatheringId, memberId)?.toDomain()
 
     /**
      * JPA를 통해 루트 엔티티를 fetch하고 Dirty Checking을 통해 업데이트하면 불필요한 조회가 발생함.
@@ -144,7 +143,9 @@ class GatheringMemberRepository(
                         authority = authority,
                         isJoined = isJoined,
                     )
-                } else null
+                } else {
+                    null
+                }
             }
 
     /**
@@ -199,7 +200,9 @@ class GatheringMemberRepository(
                         authority = authority,
                         isInvitationSubmitted = isSubmitted,
                     )
-                } else null
+                } else {
+                    null
+                }
             }
 
     override fun findGatheringMembersByGatheringIdsAndMemberIds(
@@ -238,15 +241,21 @@ class GatheringMemberRepository(
                         isViewed = isViewed,
                         isJoined = isJoined,
                         isInvitationSubmitted = isInvitationSubmitted,
-                        createdAt = record.get(GATHERING_MEMBERS.CREATED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
-                            ?.toInstant(),
-                        completedAt = record.get(GATHERING_MEMBERS.COMPLETED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
-                            ?.toInstant(),
-                        updatedAt = record.get(GATHERING_MEMBERS.UPDATED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
-                            ?.toInstant(),
-                        deletedAt = record.get(GATHERING_MEMBERS.DELETED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
-                            ?.toInstant(),
+                        createdAt =
+                            record.get(GATHERING_MEMBERS.CREATED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
+                                ?.toInstant(),
+                        completedAt =
+                            record.get(GATHERING_MEMBERS.COMPLETED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
+                                ?.toInstant(),
+                        updatedAt =
+                            record.get(GATHERING_MEMBERS.UPDATED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
+                                ?.toInstant(),
+                        deletedAt =
+                            record.get(GATHERING_MEMBERS.DELETED_AT)?.atZone(ZoneId.of("Asia/Seoul"))
+                                ?.toInstant(),
                     )
-                } else null
+                } else {
+                    null
+                }
             }
 }

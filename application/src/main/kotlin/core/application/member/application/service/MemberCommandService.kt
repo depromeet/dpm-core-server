@@ -1,6 +1,5 @@
 package core.application.member.application.service
 
-import core.domain.member.vo.MemberId
 import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.member.application.service.cohort.MemberCohortService
 import core.application.member.application.service.team.MemberTeamService
@@ -8,6 +7,7 @@ import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.authority.enums.AuthorityType
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.vo.MemberId
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames.REFRESH_TOKEN

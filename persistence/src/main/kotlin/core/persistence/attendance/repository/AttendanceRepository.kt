@@ -1,6 +1,5 @@
 package core.persistence.attendance.repository
 
-
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
@@ -167,6 +166,7 @@ class AttendanceRepository(
                 SESSIONS.DATE,
                 ATTENDANCES.STATUS,
                 ATTENDANCES.ATTENDED_AT,
+                ATTENDANCES.UPDATED_AT,
             ).from(ATTENDANCES)
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
@@ -188,6 +188,7 @@ class AttendanceRepository(
                 SESSIONS.DATE,
                 ATTENDANCES.STATUS,
                 ATTENDANCES.ATTENDED_AT,
+                ATTENDANCES.UPDATED_AT,
             ).fetchOne {
                 SessionDetailAttendanceQueryModel(
                     memberId = it[MEMBERS.MEMBER_ID]!!,
@@ -202,9 +203,14 @@ class AttendanceRepository(
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDED_AT]
-                        ?.atZone(ZoneId.of("Asia/Seoul"))
-                        ?.toInstant(),
+                    attendedAt =
+                        it[ATTENDANCES.ATTENDED_AT]
+                            ?.atZone(ZoneId.of("UTC"))
+                            ?.toInstant(),
+                    updatedAt =
+                        it[ATTENDANCES.UPDATED_AT]
+                            ?.atZone(ZoneId.of("UTC"))
+                            ?.toInstant(),
                 )
             }
 
@@ -320,9 +326,10 @@ class AttendanceRepository(
             .fetchOne {
                 MyDetailAttendanceQueryModel(
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDED_AT]
-                        ?.atZone(ZoneId.of("Asia/Seoul"))
-                        ?.toInstant(),
+                    attendedAt =
+                        it[ATTENDANCES.ATTENDED_AT]
+                            ?.atZone(ZoneId.of("Asia/Seoul"))
+                            ?.toInstant(),
                     sessionWeek = it[SESSIONS.WEEK]!!,
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
@@ -344,7 +351,25 @@ class AttendanceRepository(
         dsl.batchInsert(records).execute()
     }
 
-    override fun countSessionAttendancesByQuery(query: GetAttendancesBySessionWeekQuery, myTeamNumber: Int?): Int =
+    override fun updateInBatch(attendances: List<Attendance>) {
+        val records = attendances.map { attendance ->
+            dsl.newRecord(ATTENDANCES).apply {
+                attendanceId = attendance.id?.value  // ← PK 세팅
+                memberId = attendance.memberId.value
+                sessionId = attendance.sessionId.value
+                status = attendance.status.name
+                attendedAt = attendance.attendedAt
+                updatedAt = attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
+            }
+        }
+
+        dsl.batchUpdate(records).execute()
+    }
+
+    override fun countSessionAttendancesByQuery(
+        query: GetAttendancesBySessionWeekQuery,
+        myTeamNumber: Int?,
+    ): Int =
         dsl
             .selectCount()
             .from(ATTENDANCES)

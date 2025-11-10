@@ -40,8 +40,9 @@ class CustomOAuth2UserService(
             authorities = grantedAuthorities.toList(),
             attributes = oAuth2User.attributes,
             nameAttributeKey = clientRegistration.providerDetails.userInfoEndpoint.userNameAttributeName,
-            authAttributes = OAuthAttributes.of(clientRegistration.registrationId.uppercase(), oAuth2User.attributes)
-                ?: throw UnsupportedOAuthProviderException(),
+            authAttributes =
+                OAuthAttributes.of(clientRegistration.registrationId.uppercase(), oAuth2User.attributes)
+                    ?: throw UnsupportedOAuthProviderException(),
         )
     }
 }

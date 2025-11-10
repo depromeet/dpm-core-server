@@ -1,9 +1,9 @@
 package core.application.security.redirect.handler
 
+import core.application.common.constant.Profile
 import core.application.security.redirect.model.LoginIntent
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.strategy.CompositeRedirectStrategy
-import core.application.common.constant.Profile
 import core.domain.authority.enums.AuthorityType
 import org.springframework.stereotype.Component
 

@@ -15,6 +15,7 @@ import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.vo.AttendanceResult
+import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -60,6 +61,21 @@ class AttendanceCommandService(
 
         attendance.updateStatus(command.attendanceStatus)
         attendancePersistencePort.save(attendance)
+    }
+
+    fun updateAttendanceStatusBulk(
+        sessionId: SessionId,
+        attendanceStatus: AttendanceStatus,
+        memberIds: List<MemberId>,
+    ) {
+        val attendances =
+            memberIds.map { memberId ->
+                attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value)
+                    ?.apply { updateStatus(attendanceStatus) }
+                    ?: throw AttendanceNotFoundException()
+            }
+
+        attendancePersistencePort.updateInBatch(attendances)
     }
 
     fun createAttendances(sessionId: SessionId) {

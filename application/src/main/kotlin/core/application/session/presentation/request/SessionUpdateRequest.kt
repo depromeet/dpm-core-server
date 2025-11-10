@@ -2,7 +2,8 @@ package core.application.session.presentation.request
 
 import java.time.LocalDateTime
 
-data class SessionCreateRequest(
+data class SessionUpdateRequest(
+    val sessionId: Long,
     val name: String,
     val date: LocalDateTime,
     val isOnline: Boolean? = false,

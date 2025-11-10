@@ -1,9 +1,9 @@
 package core.application.security.oauth.handler
 
+import core.application.security.oauth.exception.OAuthExceptionCode
 import core.application.security.redirect.model.LoginIntent
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.strategy.CompositeRedirectStrategy
-import core.application.security.oauth.exception.OAuthExceptionCode
 import core.domain.authority.enums.AuthorityType
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

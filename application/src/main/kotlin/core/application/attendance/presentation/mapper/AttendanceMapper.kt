@@ -12,6 +12,7 @@ import core.application.attendance.presentation.response.MemberDetailSessionInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceSessionInfo
+import core.application.attendance.presentation.response.MyTeamFilterResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import core.domain.attendance.enums.AttendanceStatus
@@ -37,6 +38,8 @@ object AttendanceMapper {
 
     fun toSessionAttendancesResponse(
         members: List<SessionAttendanceQueryModel>,
+        onlyMyTeam: Boolean,
+        myTeamNumber: Int?,
         hasNext: Boolean,
         nextCursorId: Long?,
         totalElements: Int,
@@ -52,6 +55,7 @@ object AttendanceMapper {
                         attendanceStatus = member.attendanceStatus,
                     )
                 },
+            filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
             hasNext = hasNext,
             nextCursorId = nextCursorId,
             totalElements = totalElements,
@@ -59,12 +63,15 @@ object AttendanceMapper {
 
     fun toMemberAttendancesResponse(
         members: List<MemberAttendanceResponse>,
+        onlyMyTeam: Boolean,
+        myTeamNumber: Int?,
         hasNext: Boolean,
         nextCursorId: Long?,
         totalElements: Int,
     ): MemberAttendancesResponse =
         MemberAttendancesResponse(
             members = members,
+            filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
             hasNext = hasNext,
             nextCursorId = nextCursorId,
             totalElements = totalElements,
@@ -105,6 +112,7 @@ object AttendanceMapper {
                 DetailAttendancesBySessionResponse.DetailAttendance(
                     status = model.attendanceStatus,
                     attendedAt = model.attendedAt?.let { instantToLocalDateTime(it) },
+                    updatedAt = model.updatedAt?.let { instantToLocalDateTime(it) },
                 ),
         )
 

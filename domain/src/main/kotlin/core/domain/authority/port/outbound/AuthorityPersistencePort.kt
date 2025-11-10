@@ -1,6 +1,5 @@
 package core.domain.authority.port.outbound
 
-
 import core.domain.authority.aggregate.Authority
 import core.domain.authority.vo.AuthorityId
 import core.domain.member.vo.MemberId

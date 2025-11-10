@@ -3,6 +3,7 @@ package core.application.session.presentation.mapper
 import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import core.application.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import core.application.session.presentation.request.SessionCreateRequest
+import core.application.session.presentation.request.SessionUpdateRequest
 import core.application.session.presentation.response.AttendanceTimeResponse
 import core.application.session.presentation.response.NextSessionResponse
 import core.application.session.presentation.response.SessionDetailResponse
@@ -12,7 +13,9 @@ import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionCreateCommand
+import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
+import core.domain.session.vo.SessionId
 import java.time.Instant
 
 object SessionMapper {
@@ -69,16 +72,31 @@ object SessionMapper {
 
     fun toSessionCreateCommand(
         request: SessionCreateRequest,
-        startHour: Long,
+        cohortId: Long,
     ) = SessionCreateCommand(
-        cohortId = request.cohortId,
+        eventName = request.name,
         date = localDateTimeToInstant(request.date),
-        week = request.week,
-        place = request.place,
-        eventName = request.eventName,
         isOnline = request.isOnline,
-        startHour = startHour,
+        place = request.place,
+        week = request.week,
+        attendanceStart = localDateTimeToInstant(request.attendanceStart),
+        lateStart = localDateTimeToInstant(request.lateStart),
+        absentStart = localDateTimeToInstant(request.absentStart),
+        cohortId = cohortId,
     )
+
+    fun toSessionUpdateCommand(request: SessionUpdateRequest) =
+        SessionUpdateCommand(
+            sessionId = SessionId(request.sessionId),
+            eventName = request.name,
+            date = localDateTimeToInstant(request.date),
+            isOnline = request.isOnline,
+            place = request.place,
+            week = request.week,
+            attendanceStart = localDateTimeToInstant(request.attendanceStart),
+            lateStart = localDateTimeToInstant(request.lateStart),
+            absentStart = localDateTimeToInstant(request.absentStart),
+        )
 
     fun toSessionWeeksResponse(model: List<SessionWeekQueryModel>): SessionWeeksResponse {
         if (model.isEmpty()) {
@@ -88,7 +106,14 @@ object SessionMapper {
         }
 
         return SessionWeeksResponse(
-            sessions = model.map { SessionWeekResponse(id = it.sessionId, week = it.week) },
+            sessions =
+                model.map {
+                    SessionWeekResponse(
+                        id = it.sessionId,
+                        week = it.week,
+                        date = instantToLocalDateTime(it.date),
+                    )
+                },
         )
     }
 }
