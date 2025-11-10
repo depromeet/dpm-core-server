@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController
 class AttendanceQueryController(
     private val attendanceQueryService: AttendanceQueryService,
 ) : AttendanceQueryApi {
-
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @GetMapping("/v1/sessions/{sessionId}/attendances")
     override fun getAttendancesBySessionId(

@@ -72,7 +72,7 @@ object SessionMapper {
 
     fun toSessionCreateCommand(
         request: SessionCreateRequest,
-        cohortId: Long
+        cohortId: Long,
     ) = SessionCreateCommand(
         eventName = request.name,
         date = localDateTimeToInstant(request.date),
@@ -85,19 +85,18 @@ object SessionMapper {
         cohortId = cohortId,
     )
 
-    fun toSessionUpdateCommand(
-        request: SessionUpdateRequest,
-    ) = SessionUpdateCommand(
-        sessionId = SessionId(request.sessionId),
-        eventName = request.name,
-        date = localDateTimeToInstant(request.date),
-        isOnline = request.isOnline,
-        place = request.place,
-        week = request.week,
-        attendanceStart = localDateTimeToInstant(request.attendanceStart),
-        lateStart = localDateTimeToInstant(request.lateStart),
-        absentStart = localDateTimeToInstant(request.absentStart),
-    )
+    fun toSessionUpdateCommand(request: SessionUpdateRequest) =
+        SessionUpdateCommand(
+            sessionId = SessionId(request.sessionId),
+            eventName = request.name,
+            date = localDateTimeToInstant(request.date),
+            isOnline = request.isOnline,
+            place = request.place,
+            week = request.week,
+            attendanceStart = localDateTimeToInstant(request.attendanceStart),
+            lateStart = localDateTimeToInstant(request.lateStart),
+            absentStart = localDateTimeToInstant(request.absentStart),
+        )
 
     fun toSessionWeeksResponse(model: List<SessionWeekQueryModel>): SessionWeeksResponse {
         if (model.isEmpty()) {
@@ -107,13 +106,14 @@ object SessionMapper {
         }
 
         return SessionWeeksResponse(
-            sessions = model.map {
-                SessionWeekResponse(
-                    id = it.sessionId,
-                    week = it.week,
-                    date = instantToLocalDateTime(it.date),
-                )
-            },
+            sessions =
+                model.map {
+                    SessionWeekResponse(
+                        id = it.sessionId,
+                        week = it.week,
+                        date = instantToLocalDateTime(it.date),
+                    )
+                },
         )
     }
 }

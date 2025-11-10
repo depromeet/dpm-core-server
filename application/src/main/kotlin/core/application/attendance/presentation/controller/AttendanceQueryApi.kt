@@ -377,5 +377,4 @@ interface AttendanceQueryApi {
         ],
     )
     fun getMyDetailAttendances(memberId: MemberId): CustomResponse<DetailMemberAttendancesResponse>
-
 }

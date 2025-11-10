@@ -156,5 +156,4 @@ interface AttendanceCommandApi {
         sessionId: SessionId,
         request: AttendanceStatusBulkUpdateRequest,
     ): CustomResponse<Void>
-
 }

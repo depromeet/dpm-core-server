@@ -10,5 +10,5 @@ data class SessionWeeksResponse(
 data class SessionWeekResponse(
     val id: SessionId,
     val week: Int,
-    val date: LocalDateTime
+    val date: LocalDateTime,
 )

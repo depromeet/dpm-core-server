@@ -68,11 +68,12 @@ class AttendanceCommandService(
         attendanceStatus: AttendanceStatus,
         memberIds: List<MemberId>,
     ) {
-        val attendances = memberIds.map { memberId ->
-            attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value)
-                ?.apply { updateStatus(attendanceStatus) }
-                ?: throw AttendanceNotFoundException()
-        }
+        val attendances =
+            memberIds.map { memberId ->
+                attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value)
+                    ?.apply { updateStatus(attendanceStatus) }
+                    ?: throw AttendanceNotFoundException()
+            }
 
         attendancePersistencePort.updateInBatch(attendances)
     }

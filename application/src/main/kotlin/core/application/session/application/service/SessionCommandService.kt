@@ -68,29 +68,35 @@ class SessionCommandService(
 
         val sessionId = session.id ?: throw InvalidSessionIdException()
 
-        val event = SessionUpdateEvent(
-            sessionId = sessionId,
-            attendanceStart = SessionUpdateEvent.UpdateTime(
-                from = previous.attendanceStart,
-                to = command.attendanceStart,
-            ),
-            lateStart = SessionUpdateEvent.UpdateTime(
-                from = previous.lateStart,
-                to = command.lateStart,
-            ),
-            absentStart = SessionUpdateEvent.UpdateTime(
-                from = previous.absentStart,
-                to = command.absentStart,
-            ),
-        )
+        val event =
+            SessionUpdateEvent(
+                sessionId = sessionId,
+                attendanceStart =
+                    SessionUpdateEvent.UpdateTime(
+                        from = previous.attendanceStart,
+                        to = command.attendanceStart,
+                    ),
+                lateStart =
+                    SessionUpdateEvent.UpdateTime(
+                        from = previous.lateStart,
+                        to = command.lateStart,
+                    ),
+                absentStart =
+                    SessionUpdateEvent.UpdateTime(
+                        from = previous.absentStart,
+                        to = command.absentStart,
+                    ),
+            )
 
         eventPublisher.publishEvent(event)
     }
 
-    private fun hasPolicyChanged(previous: AttendancePolicy, command: SessionUpdateCommand): Boolean {
+    private fun hasPolicyChanged(
+        previous: AttendancePolicy,
+        command: SessionUpdateCommand,
+    ): Boolean {
         return previous.attendanceStart != command.attendanceStart ||
-                previous.lateStart != command.lateStart ||
-                previous.absentStart != command.absentStart
+            previous.lateStart != command.lateStart ||
+            previous.absentStart != command.absentStart
     }
-
 }

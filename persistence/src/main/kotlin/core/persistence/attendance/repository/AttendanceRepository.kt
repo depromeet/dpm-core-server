@@ -1,6 +1,5 @@
 package core.persistence.attendance.repository
 
-
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
@@ -204,12 +203,14 @@ class AttendanceRepository(
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDED_AT]
-                        ?.atZone(ZoneId.of("UTC"))
-                        ?.toInstant(),
-                    updatedAt = it[ATTENDANCES.UPDATED_AT]
-                        ?.atZone(ZoneId.of("UTC"))
-                        ?.toInstant(),
+                    attendedAt =
+                        it[ATTENDANCES.ATTENDED_AT]
+                            ?.atZone(ZoneId.of("UTC"))
+                            ?.toInstant(),
+                    updatedAt =
+                        it[ATTENDANCES.UPDATED_AT]
+                            ?.atZone(ZoneId.of("UTC"))
+                            ?.toInstant(),
                 )
             }
 
@@ -325,9 +326,10 @@ class AttendanceRepository(
             .fetchOne {
                 MyDetailAttendanceQueryModel(
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[ATTENDANCES.ATTENDED_AT]
-                        ?.atZone(ZoneId.of("Asia/Seoul"))
-                        ?.toInstant(),
+                    attendedAt =
+                        it[ATTENDANCES.ATTENDED_AT]
+                            ?.atZone(ZoneId.of("Asia/Seoul"))
+                            ?.toInstant(),
                     sessionWeek = it[SESSIONS.WEEK]!!,
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
@@ -367,7 +369,10 @@ class AttendanceRepository(
         }
     }
 
-    override fun countSessionAttendancesByQuery(query: GetAttendancesBySessionWeekQuery, myTeamNumber: Int?): Int =
+    override fun countSessionAttendancesByQuery(
+        query: GetAttendancesBySessionWeekQuery,
+        myTeamNumber: Int?,
+    ): Int =
         dsl
             .selectCount()
             .from(ATTENDANCES)

@@ -1,9 +1,9 @@
 package core.application.security.redirect.strategy
 
+import core.application.common.constant.Profile
 import core.application.security.properties.SecurityProperties
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.validator.RedirectValidator
-import core.application.common.constant.Profile
 import core.domain.authority.enums.AuthorityType
 
 /**
