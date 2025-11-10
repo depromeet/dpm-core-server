@@ -47,6 +47,10 @@ class Attendance(
         this.updatedAt = Instant.now()
     }
 
+    fun delete(deletedAt: Instant?) {
+        this.deletedAt = deletedAt
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Attendance) return false

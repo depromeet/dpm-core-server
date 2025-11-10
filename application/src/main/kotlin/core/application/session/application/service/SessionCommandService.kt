@@ -5,6 +5,7 @@ import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.validator.SessionValidator
 import core.domain.session.aggregate.Session
 import core.domain.session.event.SessionCreateEvent
+import core.domain.session.event.SessionDeleteEvent
 import core.domain.session.event.SessionUpdateEvent
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
@@ -56,6 +57,19 @@ class SessionCommandService(
         sessionPersistencePort.save(session)
 
         publishIfAttendancePolicyChanged(previousAttendancePolicy, command, session)
+    }
+
+    fun softDeleteSession(sessionId: SessionId) {
+        val session =
+            sessionPersistencePort.findSessionById(sessionId.value)
+                ?: throw SessionNotFoundException()
+
+        val now = Instant.now()
+
+        session.delete(now)
+        sessionPersistencePort.save(session)
+
+        eventPublisher.publishEvent(SessionDeleteEvent(sessionId, now))
     }
 
     private fun publishIfAttendancePolicyChanged(

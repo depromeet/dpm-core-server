@@ -45,6 +45,9 @@ class AttendanceRepository(
         memberId: Long,
     ): Attendance? = attendanceJpaRepository.findBySessionIdAndMemberId(sessionId, memberId)?.toDomain()
 
+    override fun findAllBySessionId(sessionId: Long): List<Attendance> =
+        attendanceJpaRepository.findAllBySessionIdAndDeletedAtIsNull(sessionId).map { it.toDomain() }
+
     override fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
         myTeamNumber: Int?,
@@ -360,6 +363,7 @@ class AttendanceRepository(
                 status = attendance.status.name
                 attendedAt = attendance.attendedAt
                 updatedAt = attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
+                deletedAt = attendance.deletedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
             }
         }
 

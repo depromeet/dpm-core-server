@@ -19,6 +19,7 @@ import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 @Transactional
@@ -93,5 +94,12 @@ class AttendanceCommandService(
                 }
 
         attendancePersistencePort.saveInBatch(attendances)
+    }
+
+    fun deleteAttendancesBySessionId(sessionId: SessionId, deletedAt: Instant) {
+        val attendances = attendancePersistencePort.findAllBySessionId(sessionId.value)
+            .onEach { it.delete(deletedAt) }
+
+        attendancePersistencePort.updateInBatch(attendances)
     }
 }

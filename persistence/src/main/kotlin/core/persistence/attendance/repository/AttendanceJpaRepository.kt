@@ -8,4 +8,6 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         sessionId: Long,
         memberId: Long,
     ): AttendanceEntity?
+
+    fun findAllBySessionIdAndDeletedAtIsNull(sessionId: Long): List<AttendanceEntity>
 }

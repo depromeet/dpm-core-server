@@ -112,6 +112,10 @@ class Session(
             )
     }
 
+    fun delete(deletedAt: Instant) {
+        this.deletedAt = deletedAt
+    }
+
     companion object {
         fun create(command: SessionCreateCommand): Session {
             fun generateAttendanceCode(): String = Random.nextInt(1000, 10000).toString()
