@@ -18,6 +18,7 @@ class Attendance(
     status: AttendanceStatus,
     attendedAt: Instant? = null,
     updatedAt: Instant? = null,
+    deletedAt: Instant? = null,
 ) {
     var status: AttendanceStatus = status
         private set
@@ -26,6 +27,9 @@ class Attendance(
         private set
 
     var updatedAt: Instant? = updatedAt
+        private set
+
+    var deletedAt: Instant? = deletedAt
         private set
 
     fun isAttended() = this.status != AttendanceStatus.PENDING
