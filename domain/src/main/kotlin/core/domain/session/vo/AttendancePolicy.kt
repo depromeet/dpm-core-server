@@ -17,7 +17,6 @@ data class AttendancePolicy(
     val attendanceStart: Instant,
     val lateStart: Instant,
     val absentStart: Instant,
-
     /**
      * 출석 코드를 나타냅니다.
      *
