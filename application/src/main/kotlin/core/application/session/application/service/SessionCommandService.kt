@@ -57,7 +57,13 @@ class SessionCommandService(
         session.updateSession(command)
         sessionPersistencePort.save(session)
 
-        publishIfAttendancePolicyChanged(previousAttendancePolicy, command, session)
+        publishIfAttendancePolicyChanged(
+            previousAttendancePolicy,
+            command.attendanceStart,
+            command.lateStart,
+            command.absentStart,
+            session,
+        )
     }
 
     fun softDeleteSession(sessionId: SessionId) {
@@ -75,18 +81,20 @@ class SessionCommandService(
 
     private fun publishIfAttendancePolicyChanged(
         previous: AttendancePolicy,
-        command: SessionUpdateCommand,
+        attendanceStart: Instant,
+        lateStart: Instant,
+        absentStart: Instant,
         session: Session,
     ) {
-        if (!previous.hasChangedComparedTo(command)) return
+        if (!previous.hasChangedComparedTo(attendanceStart, lateStart, absentStart)) return
 
         val sessionId = session.id ?: throw InvalidSessionIdException()
 
         val event =
             SessionUpdateEvent(
                 sessionId = sessionId,
-                lateStart = command.lateStart,
-                absentStart = command.absentStart,
+                lateStart = lateStart,
+                absentStart = absentStart,
             )
 
         eventPublisher.publishEvent(event)

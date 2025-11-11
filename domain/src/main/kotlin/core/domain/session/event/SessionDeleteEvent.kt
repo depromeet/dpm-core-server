@@ -5,6 +5,5 @@ import java.time.Instant
 
 data class SessionDeleteEvent(
     val sessionId: SessionId,
-    val deletedAt: Instant
+    val deletedAt: Instant,
 )
-

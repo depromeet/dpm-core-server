@@ -12,11 +12,13 @@ import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.domain.session.aggregate.Session
+import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.vo.SessionId
 import java.time.Instant
+import java.time.LocalDateTime
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
@@ -116,4 +118,16 @@ object SessionMapper {
                 },
         )
     }
+
+    fun toSessionAttendancePolicyChangedCommand(
+        sessionId: SessionId,
+        attendanceStart: LocalDateTime,
+        lateStart: LocalDateTime,
+        absentStart: LocalDateTime,
+    ) = SessionAttendancePolicyCommand(
+        sessionId = sessionId,
+        attendanceStart = localDateTimeToInstant(attendanceStart),
+        lateStart = localDateTimeToInstant(lateStart),
+        absentStart = localDateTimeToInstant(absentStart),
+    )
 }

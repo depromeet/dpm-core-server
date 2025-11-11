@@ -10,12 +10,14 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.extension.paginate
 import core.application.member.application.service.MemberQueryService
+import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
+import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -135,4 +137,7 @@ class AttendanceQueryService(
 
         return AttendanceMapper.toMyDetailAttendanceBySessionResponse(myAttendanceQueryResult)
     }
+
+    fun getAttendancesBySessionId(sessionId: SessionId): List<Attendance> =
+        attendancePersistencePort.findAllBySessionId(sessionId.value)
 }

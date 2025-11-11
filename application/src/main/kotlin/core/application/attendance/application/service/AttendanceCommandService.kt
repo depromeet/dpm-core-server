@@ -108,9 +108,13 @@ class AttendanceCommandService(
         attendancePersistencePort.saveInBatch(attendances)
     }
 
-    fun deleteAttendancesBySessionId(sessionId: SessionId, deletedAt: Instant) {
-        val attendances = attendancePersistencePort.findAllBySessionId(sessionId.value)
-            .onEach { it.delete(deletedAt) }
+    fun deleteAttendancesBySessionId(
+        sessionId: SessionId,
+        deletedAt: Instant,
+    ) {
+        val attendances =
+            attendancePersistencePort.findAllBySessionId(sessionId.value)
+                .onEach { it.delete(deletedAt) }
 
         attendancePersistencePort.updateInBatch(attendances)
     }
