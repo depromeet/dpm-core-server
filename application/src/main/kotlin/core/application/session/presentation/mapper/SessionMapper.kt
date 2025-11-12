@@ -24,9 +24,9 @@ object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
         with(session) {
             NextSessionResponse(
-                sessionId = id?.value ?: throw IllegalStateException("Session ID cannot be null"),
+                id = id?.value ?: throw IllegalStateException("Session ID cannot be null"),
                 week = week,
-                eventName = eventName,
+                name = eventName,
                 place = place,
                 isOnline = isOnline,
                 date = instantToLocalDateTime(date),
@@ -44,7 +44,7 @@ object SessionMapper {
                         SessionListDetailResponse(
                             id = it.id!!.value,
                             week = it.week,
-                            eventName = it.eventName,
+                            name = it.eventName,
                             date = instantToLocalDateTime(it.date),
                             place = it.place,
                             isOnline = it.isOnline,
@@ -56,9 +56,9 @@ object SessionMapper {
     fun toSessionDetailResponse(session: Session): SessionDetailResponse =
         with(session) {
             SessionDetailResponse(
-                sessionId = id!!.value,
+                id = id!!.value,
                 week = week,
-                eventName = eventName,
+                name = eventName,
                 place = place,
                 isOnline = isOnline,
                 date = instantToLocalDateTime(date),

@@ -43,7 +43,7 @@ interface SessionQueryApi {
                                         "data": {
                                             "sessionId": 1,
                                             "week": 1,
-                                            "eventName": "디프만 17기 OT",
+                                            "name": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
                                             "date": "2025-08-02T14:00:00.000000",
@@ -86,7 +86,7 @@ interface SessionQueryApi {
                                                 {
                                                     "id": 1,
                                                     "week": 1,
-                                                    "eventName": "디프만 17기 OT",
+                                                    "name": "디프만 17기 OT",
                                                     "date": "2025-08-02T14:00:00.000000",
                                                     "place": "공덕 프론트원",
                                                     "isOnline": false
@@ -94,7 +94,7 @@ interface SessionQueryApi {
                                                 {
                                                     "id": 2,
                                                     "week": 2,
-                                                    "eventName": "미니 디프콘",
+                                                    "name": "미니 디프콘",
                                                     "date": "2025-08-09T14:00:00.000000",
                                                     "place": null,
                                                     "isOnline": true
@@ -134,9 +134,9 @@ interface SessionQueryApi {
                                         "message": "요청에 성공했습니다",
                                         "code": "G000",
                                         "data": {
-                                            "sessionId": 1,
+                                            "id": 1,
                                             "week": 1,
-                                            "eventName": "디프만 17기 OT",
+                                            "name": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
                                             "date": "2025-08-02T14:00:00.000000",
