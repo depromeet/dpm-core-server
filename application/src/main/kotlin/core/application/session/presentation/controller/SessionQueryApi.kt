@@ -140,7 +140,9 @@ interface SessionQueryApi {
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
                                             "date": "2025-08-02T14:00:00.000000",
-                                            "attendanceStartTime": "2025-08-02T14:00:00.000000",
+                                            "attendanceStart": "2025-08-02T14:00:00.000000",
+                                            "lateStart": "2025-08-02T14:10:00.000000",
+                                            "absentStart": "2025-08-02T14:20:00.000000",
                                             "attendanceCode": "3821"
                                         }
                                     }
