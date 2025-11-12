@@ -46,6 +46,8 @@ object SessionMapper {
                             week = it.week,
                             eventName = it.eventName,
                             date = instantToLocalDateTime(it.date),
+                            place = it.place,
+                            isOnline = it.isOnline,
                         )
                     },
             )
@@ -60,8 +62,10 @@ object SessionMapper {
                 place = place,
                 isOnline = isOnline,
                 date = instantToLocalDateTime(date),
-                attendanceStartTime =
+                attendanceStart =
                     instantToLocalDateTime(session.attendancePolicy.attendanceStart),
+                lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
+                absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
                 attendanceCode = session.attendancePolicy.attendanceCode,
             )
         }

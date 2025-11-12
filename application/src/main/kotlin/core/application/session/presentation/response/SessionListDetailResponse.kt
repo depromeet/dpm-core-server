@@ -7,4 +7,6 @@ data class SessionListDetailResponse(
     val week: Int,
     val eventName: String,
     val date: LocalDateTime,
+    val place: String?,
+    val isOnline: Boolean,
 )

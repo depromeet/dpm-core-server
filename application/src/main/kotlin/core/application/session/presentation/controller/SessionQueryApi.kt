@@ -87,13 +87,17 @@ interface SessionQueryApi {
                                                     "id": 1,
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
-                                                    "date": "2025-08-02T14:00:00.000000"
+                                                    "date": "2025-08-02T14:00:00.000000",
+                                                    "place": "공덕 프론트원",
+                                                    "isOnline": false
                                                 },
                                                 {
                                                     "id": 2,
                                                     "week": 2,
                                                     "eventName": "미니 디프콘",
-                                                    "date": "2025-08-09T14:00:00.000000"
+                                                    "date": "2025-08-09T14:00:00.000000",
+                                                    "place": null,
+                                                    "isOnline": true
                                                 }
                                             ]
                                         }
