@@ -8,8 +8,8 @@ data class SessionPolicyUpdateTargetResponse(
 ) {
     data class TargetedResponse(
         val name: String,
-        val from: String,
-        val to: String,
+        val currentStatus: String,
+        val targetStatus: String,
         val attendedAt: LocalDateTime?,
     )
 

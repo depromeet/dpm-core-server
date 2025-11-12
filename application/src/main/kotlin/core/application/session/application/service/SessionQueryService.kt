@@ -112,8 +112,8 @@ class SessionQueryService(
     ): SessionPolicyUpdateTargetResponse.TargetedResponse {
         return SessionPolicyUpdateTargetResponse.TargetedResponse(
             name = memberQueryService.getMemberById(attendance.memberId).name,
-            from = attendance.status.name,
-            to = attendance.simulateStatusChange(command.lateStart, command.absentStart).name,
+            currentStatus = attendance.status.name,
+            targetStatus = attendance.simulateStatusChange(command.lateStart, command.absentStart).name,
             attendedAt = instantToLocalDateTime(attendance.attendedAt),
         )
     }

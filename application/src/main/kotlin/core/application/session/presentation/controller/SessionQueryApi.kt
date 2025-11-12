@@ -256,8 +256,8 @@ interface SessionQueryApi {
                                             "targeted": [
                                                 {
                                                     "name": "이정호",
-                                                    "from": "ABSENT",
-                                                    "to": "LATE",
+                                                    "currentStatus": "ABSENT",
+                                                    "targetStatus": "LATE",
                                                     "attendedAt": "2025-08-02T14:10:00"
                                                 }
                                             ],
