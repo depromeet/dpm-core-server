@@ -62,7 +62,7 @@ class SessionQueryService(
     }
 
     fun getTargetIfPolicyChanged(command: SessionAttendancePolicyCommand): SessionPolicyUpdateTargetResponse {
-        val currentPolicy = getCurrentPolicyOrThrow(command.sessionId.value)
+        val currentPolicy = getCurrentPolicy(command.sessionId.value)
 
         if (!isPolicyChanged(currentPolicy, command)) {
             return SessionPolicyUpdateTargetResponse(emptyList(), emptyList())
@@ -72,7 +72,7 @@ class SessionQueryService(
         return classifyAttendancesByPolicyChange(attendances, command)
     }
 
-    private fun getCurrentPolicyOrThrow(sessionId: Long): AttendancePolicy =
+    private fun getCurrentPolicy(sessionId: Long): AttendancePolicy =
         sessionPersistencePort.findSessionById(sessionId)
             ?.attendancePolicy
             ?: throw SessionNotFoundException()
