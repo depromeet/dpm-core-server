@@ -30,6 +30,7 @@ class MemberQueryService(
         MemberDetailsResponse.of(
             getMemberById(memberId),
             memberAuthorityService.getAuthorityNamesByMemberId(memberId),
+            getMemberTeamNumber(memberId),
         )
 
     /**

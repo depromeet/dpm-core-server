@@ -30,6 +30,13 @@ data class MemberDetailsResponse(
     )
     val cohort: String?,
     @field:Schema(
+        description = "팀 번호",
+        example = "3",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true,
+    )
+    val teamNumber: Int? = null,
+    @field:Schema(
         description = "어드민 여부",
         example = "false",
         requiredMode = Schema.RequiredMode.REQUIRED,
@@ -40,12 +47,14 @@ data class MemberDetailsResponse(
         fun of(
             member: Member,
             roles: List<String>,
+            teamNumber: Int?
         ): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = member.email,
                 name = member.name,
                 part = member.part?.name,
                 cohort = "17",
+                teamNumber = teamNumber,
                 isAdmin = roles.contains(ADMIN_ROLE),
             )
 
