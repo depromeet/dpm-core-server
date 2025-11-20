@@ -146,7 +146,8 @@ interface AttendanceQueryApi {
         teams: List<Int>?,
         name: String?,
         onlyMyTeam: Boolean?,
-        cursorId: Long?,
+        page: Int,
+        size: Int,
     ): CustomResponse<MemberAttendancesResponse>
 
     @Operation(

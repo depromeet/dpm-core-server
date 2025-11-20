@@ -57,10 +57,6 @@ fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
         conditions += MEMBERS.NAME.containsIgnoreCase(it)
     }
 
-    this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
-    }
-
     return conditions
 }
 

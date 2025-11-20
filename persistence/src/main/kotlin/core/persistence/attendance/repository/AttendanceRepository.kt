@@ -29,8 +29,6 @@ import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.ZoneId
 
-private const val PAGE_SIZE = 20
-
 @Repository
 class AttendanceRepository(
     private val attendanceJpaRepository: AttendanceJpaRepository,
@@ -130,7 +128,8 @@ class AttendanceRepository(
                 TEAMS.NUMBER,
                 MEMBERS.PART,
             ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
-            .limit(PAGE_SIZE + 1)
+            .limit(query.size)
+            .offset((query.page - 1) * query.size)
             .fetch { record ->
                 MemberAttendanceQueryModel(
                     id = record[ATTENDANCES.MEMBER_ID]!!,

@@ -8,7 +8,6 @@ import core.application.attendance.presentation.response.MemberAttendanceRespons
 import core.application.attendance.presentation.response.MemberAttendancesResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
-import core.application.common.extension.paginate
 import core.application.member.application.service.MemberQueryService
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
@@ -65,13 +64,18 @@ class AttendanceQueryService(
             attendancePersistencePort
                 .findMemberAttendancesByQuery(query, myTeamNumber)
                 .sortedBy { it.teamNumber }
-        val paginatedResult = queryResult.paginate { it.id }
+
         val totalElements =
             attendancePersistencePort.countMemberAttendancesByQuery(query, myTeamNumber)
 
+        val totalPages =
+            ceil(totalElements / query.size.toDouble()).toInt()
+
+        val hasNext = query.page < totalPages
+
         return AttendanceMapper.toMemberAttendancesResponse(
             members =
-                paginatedResult.content
+                queryResult
                     .map { member ->
                         MemberAttendanceResponse(
                             id = member.id,
@@ -88,18 +92,17 @@ class AttendanceQueryService(
                     }.toList(),
             onlyMyTeam = (query.teams?.contains(myTeamNumber) == true) || (query.onlyMyTeam ?: false),
             myTeamNumber = myTeamNumber,
-            hasNext = paginatedResult.hasNext,
-            nextCursorId = paginatedResult.nextCursorId,
+            hasNext = hasNext,
             totalElements = totalElements,
         )
     }
 
     fun getDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): DetailAttendancesBySessionResponse {
         val queryResult = (
-            attendancePersistencePort
-                .findDetailAttendanceBySession(query)
-                ?: throw AttendanceNotFoundException()
-        )
+                attendancePersistencePort
+                    .findDetailAttendanceBySession(query)
+                    ?: throw AttendanceNotFoundException()
+                )
 
         return AttendanceMapper.toDetailAttendanceBySessionResponse(
             queryResult,
