@@ -35,7 +35,8 @@ class AttendanceQueryController(
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
         @RequestParam(name = "name", required = false) name: String?,
         @RequestParam(name = "onlyMyTeam", required = false) onlyMyTeam: Boolean?,
-        @RequestParam(name = "cursorId", required = false) cursorId: Long?,
+        @RequestParam(name = "page", required = false, defaultValue = "1") page: Int,
+        @RequestParam(name = "size", required = false, defaultValue = "20") size: Int,
     ): CustomResponse<SessionAttendancesResponse> {
         val response =
             attendanceQueryService.getAttendancesBySession(
@@ -46,7 +47,8 @@ class AttendanceQueryController(
                     teams = teams,
                     name = name,
                     onlyMyTeam = onlyMyTeam,
-                    cursorId = cursorId,
+                    page = page,
+                    size = size,
                 ),
             )
 

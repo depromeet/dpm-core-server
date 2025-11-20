@@ -20,6 +20,7 @@ import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import kotlin.math.ceil
 
 @Service
 @Transactional(readOnly = true)
@@ -36,20 +37,24 @@ class AttendanceQueryService(
         val queryResult =
             attendancePersistencePort
                 .findSessionAttendancesByQuery(query, myTeamNumber)
-                .sortedBy { it.teamNumber }
-        val paginatedResult = queryResult.paginate { it.id }
+
         val totalElements =
             attendancePersistencePort.countSessionAttendancesByQuery(query, myTeamNumber)
 
+        val totalPages =
+            ceil(totalElements / query.size.toDouble()).toInt()
+
+        val hasNext = query.page < totalPages
+
         return AttendanceMapper.toSessionAttendancesResponse(
-            members = paginatedResult.content,
+            members = queryResult,
             onlyMyTeam = query.onlyMyTeam ?: false,
             myTeamNumber = myTeamNumber,
-            hasNext = paginatedResult.hasNext,
-            nextCursorId = paginatedResult.nextCursorId,
+            hasNext = hasNext,
             totalElements = totalElements,
         )
     }
+
 
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
         val myTeamNumber =

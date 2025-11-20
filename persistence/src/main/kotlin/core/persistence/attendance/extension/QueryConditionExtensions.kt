@@ -33,10 +33,6 @@ fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condi
         conditions += MEMBERS.NAME.containsIgnoreCase(it)
     }
 
-    this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
-    }
-
     return conditions
 }
 

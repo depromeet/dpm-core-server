@@ -75,7 +75,8 @@ class AttendanceRepository(
             .where(
                 query.toCondition(myTeamNumber),
             ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
-            .limit(PAGE_SIZE + 1)
+            .limit(query.size)
+            .offset((query.page - 1) * query.size)
             .fetch { record ->
                 SessionAttendanceQueryModel(
                     id = record[ATTENDANCES.MEMBER_ID]!!,
