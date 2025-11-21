@@ -84,14 +84,14 @@ class SessionQueryController(
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @GetMapping("/{sessionId}/update-policy")
-    override fun getTargetIfPolicyChanged(
+    override fun queryTargetAttendancesByPolicyChange(
         @PathVariable("sessionId") sessionId: SessionId,
         @RequestParam(value = "attendanceStart", required = true) attendanceStart: LocalDateTime,
         @RequestParam(value = "lateStart", required = true) lateStart: LocalDateTime,
         @RequestParam(value = "absentStart", required = true) absentStart: LocalDateTime,
     ): CustomResponse<SessionPolicyUpdateTargetResponse> {
         val response =
-            sessionQueryService.getTargetIfPolicyChanged(
+            sessionQueryService.queryTargetAttendancesByPolicyChange(
                 SessionMapper.toSessionAttendancePolicyChangedCommand(
                     sessionId,
                     attendanceStart,

@@ -284,7 +284,7 @@ interface SessionQueryApi {
             ),
         ],
     )
-    fun getTargetIfPolicyChanged(
+    fun queryTargetAttendancesByPolicyChange(
         sessionId: SessionId,
         attendanceStart: LocalDateTime,
         lateStart: LocalDateTime,

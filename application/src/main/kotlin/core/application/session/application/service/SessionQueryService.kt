@@ -63,7 +63,7 @@ class SessionQueryService(
             .map { SessionWeekQueryModel(sessionId = it.id!!, week = it.week, date = it.date) }
     }
 
-    fun getTargetIfPolicyChanged(command: SessionAttendancePolicyCommand): SessionPolicyUpdateTargetResponse {
+    fun queryTargetAttendancesByPolicyChange(command: SessionAttendancePolicyCommand): SessionPolicyUpdateTargetResponse {
         val currentPolicy = getCurrentPolicy(command.sessionId.value)
 
         if (!isPolicyChanged(currentPolicy, command)) {
