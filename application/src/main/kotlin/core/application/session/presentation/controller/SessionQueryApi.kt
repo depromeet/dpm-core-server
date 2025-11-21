@@ -39,7 +39,7 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "sessionId": 1,
                                             "week": 1,
@@ -80,7 +80,7 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "sessions": [
                                                 {
@@ -132,7 +132,7 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "id": 1,
                                             "week": 1,
@@ -176,7 +176,7 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "attendanceStartTime": "2025-08-02T14:00:00.000000"
                                         }
@@ -211,7 +211,7 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "sessions": [
                                               {
