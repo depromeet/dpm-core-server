@@ -96,12 +96,17 @@ class SessionQueryService(
         command: SessionAttendancePolicyCommand,
     ): SessionPolicyUpdateTargetResponse {
         val memberIds = attendances.map { it.memberId }.distinct()
-        val membersById = memberQueryUseCase.getMembersByIds(memberIds).associateBy { it.id }
+
+        val members = memberQueryUseCase.getMembersByIds(memberIds)
+        val activeMemberIds = members.map { it.id }.toSet()
+        val membersById = members.associateBy { it.id }
+
+        val validAttendances = attendances.filter { it.memberId in activeMemberIds }
 
         val targeted = mutableListOf<SessionPolicyUpdateTargetResponse.TargetedResponse>()
         val untargeted = mutableListOf<SessionPolicyUpdateTargetResponse.UntargetedResponse>()
 
-        attendances.forEach { attendance ->
+        validAttendances.forEach { attendance ->
             if (attendance.isStatusChangedByPolicy(command.lateStart, command.absentStart)) {
                 targeted += createTargetedResponse(attendance, command, membersById)
             } else if (attendance.isAlreadyUpdated()) {
@@ -111,6 +116,7 @@ class SessionQueryService(
 
         return SessionPolicyUpdateTargetResponse(targeted, untargeted)
     }
+
 
     private fun createTargetedResponse(
         attendance: Attendance,
