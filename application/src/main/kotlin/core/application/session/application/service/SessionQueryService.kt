@@ -1,6 +1,7 @@
 package core.application.session.application.service
 
 import core.application.attendance.application.service.AttendanceQueryService
+import core.application.member.application.exception.MemberNotFoundException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
@@ -117,7 +118,7 @@ class SessionQueryService(
         membersById: Map<MemberId?, Member>,
     ): SessionPolicyUpdateTargetResponse.TargetedResponse {
         return SessionPolicyUpdateTargetResponse.TargetedResponse(
-            name = membersById[attendance.memberId]?.name ?: "",
+            name = membersById[attendance.memberId]?.name ?: throw MemberNotFoundException(),
             currentStatus = attendance.status.name,
             targetStatus = attendance.simulateStatusChange(command.lateStart, command.absentStart).name,
             attendedAt = instantToLocalDateTime(attendance.attendedAt),
@@ -129,7 +130,7 @@ class SessionQueryService(
         membersById: Map<MemberId?, Member>,
     ): SessionPolicyUpdateTargetResponse.UntargetedResponse {
         return SessionPolicyUpdateTargetResponse.UntargetedResponse(
-            name = membersById[attendance.memberId]?.name ?: "",
+            name = membersById[attendance.memberId]?.name ?: throw MemberNotFoundException(),
             status = attendance.status.name,
             updatedAt = instantToLocalDateTime(attendance.updatedAt),
         )
