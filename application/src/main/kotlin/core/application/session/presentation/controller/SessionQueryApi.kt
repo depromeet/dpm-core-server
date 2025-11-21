@@ -41,7 +41,7 @@ interface SessionQueryApi {
                                         "message": "요청에 성공했습니다",
                                         "code": "GLOBAL-200-1",
                                         "data": {
-                                            "sessionId": 1,
+                                            "id": 1,
                                             "week": 1,
                                             "name": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
