@@ -54,7 +54,6 @@ class AttendanceQueryService(
         )
     }
 
-
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
         val myTeamNumber =
             query.onlyMyTeam
@@ -99,10 +98,10 @@ class AttendanceQueryService(
 
     fun getDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): DetailAttendancesBySessionResponse {
         val queryResult = (
-                attendancePersistencePort
-                    .findDetailAttendanceBySession(query)
-                    ?: throw AttendanceNotFoundException()
-                )
+            attendancePersistencePort
+                .findDetailAttendanceBySession(query)
+                ?: throw AttendanceNotFoundException()
+        )
 
         return AttendanceMapper.toDetailAttendanceBySessionResponse(
             queryResult,

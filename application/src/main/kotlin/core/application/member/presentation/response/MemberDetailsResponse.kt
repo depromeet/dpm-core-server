@@ -47,7 +47,7 @@ data class MemberDetailsResponse(
         fun of(
             member: Member,
             roles: List<String>,
-            teamNumber: Int?
+            teamNumber: Int?,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = member.email,
