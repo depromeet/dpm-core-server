@@ -52,4 +52,6 @@ interface AttendancePersistencePort {
         query: GetMemberAttendancesQuery,
         myTeamNumber: Int?,
     ): Int
+
+    fun findAllBySessionId(sessionId: Long): List<Attendance>
 }

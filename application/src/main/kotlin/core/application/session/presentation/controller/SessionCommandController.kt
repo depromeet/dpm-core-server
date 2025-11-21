@@ -60,4 +60,13 @@ class SessionCommandController(
 
         return CustomResponse.noContent()
     }
+
+    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PatchMapping("/{sessionId}/delete")
+    override fun softDeleteSession(
+        @PathVariable("sessionId") sessionId: SessionId,
+    ): CustomResponse<Void> {
+        sessionCommandService.softDeleteSession(sessionId)
+        return CustomResponse.noContent()
+    }
 }

@@ -12,6 +12,8 @@ interface MemberPersistencePort {
 
     fun findById(memberId: Long): Member?
 
+    fun findAllByIds(ids: List<MemberId>): List<Member>
+
     fun existsById(memberId: Long): Boolean
 
     fun existsDeletedMemberById(memberId: Long): Boolean

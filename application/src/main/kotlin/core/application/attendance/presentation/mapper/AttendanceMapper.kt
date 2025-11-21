@@ -41,7 +41,6 @@ object AttendanceMapper {
         onlyMyTeam: Boolean,
         myTeamNumber: Int?,
         hasNext: Boolean,
-        nextCursorId: Long?,
         totalElements: Int,
     ): SessionAttendancesResponse =
         SessionAttendancesResponse(
@@ -57,7 +56,6 @@ object AttendanceMapper {
                 },
             filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
             hasNext = hasNext,
-            nextCursorId = nextCursorId,
             totalElements = totalElements,
         )
 
@@ -66,14 +64,12 @@ object AttendanceMapper {
         onlyMyTeam: Boolean,
         myTeamNumber: Int?,
         hasNext: Boolean,
-        nextCursorId: Long?,
         totalElements: Int,
     ): MemberAttendancesResponse =
         MemberAttendancesResponse(
             members = members,
             filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
             hasNext = hasNext,
-            nextCursorId = nextCursorId,
             totalElements = totalElements,
         )
 
