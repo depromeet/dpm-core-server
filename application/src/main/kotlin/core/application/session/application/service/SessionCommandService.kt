@@ -5,7 +5,9 @@ import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.validator.SessionValidator
 import core.domain.session.aggregate.Session
 import core.domain.session.event.SessionCreateEvent
+import core.domain.session.event.SessionDeleteEvent
 import core.domain.session.event.SessionUpdateEvent
+import core.domain.session.extension.hasChangedComparedTo
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.outbound.SessionPersistencePort
@@ -55,48 +57,46 @@ class SessionCommandService(
         session.updateSession(command)
         sessionPersistencePort.save(session)
 
-        publishIfAttendancePolicyChanged(previousAttendancePolicy, command, session)
+        publishIfAttendancePolicyChanged(
+            previousAttendancePolicy,
+            command.attendanceStart,
+            command.lateStart,
+            command.absentStart,
+            session,
+        )
+    }
+
+    fun softDeleteSession(sessionId: SessionId) {
+        val session =
+            sessionPersistencePort.findSessionById(sessionId.value)
+                ?: throw SessionNotFoundException()
+
+        val now = Instant.now()
+
+        session.delete(now)
+        sessionPersistencePort.save(session)
+
+        eventPublisher.publishEvent(SessionDeleteEvent(sessionId, now))
     }
 
     private fun publishIfAttendancePolicyChanged(
         previous: AttendancePolicy,
-        command: SessionUpdateCommand,
+        attendanceStart: Instant,
+        lateStart: Instant,
+        absentStart: Instant,
         session: Session,
     ) {
-        val changed = hasPolicyChanged(previous, command)
-        if (!changed) return
+        if (!previous.hasChangedComparedTo(attendanceStart, lateStart, absentStart)) return
 
         val sessionId = session.id ?: throw InvalidSessionIdException()
 
         val event =
             SessionUpdateEvent(
                 sessionId = sessionId,
-                attendanceStart =
-                    SessionUpdateEvent.UpdateTime(
-                        from = previous.attendanceStart,
-                        to = command.attendanceStart,
-                    ),
-                lateStart =
-                    SessionUpdateEvent.UpdateTime(
-                        from = previous.lateStart,
-                        to = command.lateStart,
-                    ),
-                absentStart =
-                    SessionUpdateEvent.UpdateTime(
-                        from = previous.absentStart,
-                        to = command.absentStart,
-                    ),
+                lateStart = lateStart,
+                absentStart = absentStart,
             )
 
         eventPublisher.publishEvent(event)
-    }
-
-    private fun hasPolicyChanged(
-        previous: AttendancePolicy,
-        command: SessionUpdateCommand,
-    ): Boolean {
-        return previous.attendanceStart != command.attendanceStart ||
-            previous.lateStart != command.lateStart ||
-            previous.absentStart != command.absentStart
     }
 }

@@ -11,5 +11,6 @@ data class GetAttendancesBySessionWeekQuery(
     val teams: List<Int>?,
     val name: String?,
     val onlyMyTeam: Boolean?,
-    val cursorId: Long?,
+    val page: Int,
+    val size: Int,
 )

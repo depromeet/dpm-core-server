@@ -9,7 +9,7 @@ data class PaginatedResult<T>(
 )
 
 inline fun <T> List<T>.paginate(
-    pageSize: Int = PAGE_SIZE,
+    pageSize: Int = size,
     crossinline idSelector: (T) -> Long,
 ): PaginatedResult<T> {
     val content = if (this.size > pageSize) this.take(pageSize) else this

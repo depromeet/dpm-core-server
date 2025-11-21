@@ -9,6 +9,5 @@ data class SessionAttendancesResponse(
     val members: List<MemberAttendanceResponse>,
     val filter: MyTeamFilterResponse?,
     val hasNext: Boolean,
-    val nextCursorId: Long?,
     val totalElements: Int,
 )

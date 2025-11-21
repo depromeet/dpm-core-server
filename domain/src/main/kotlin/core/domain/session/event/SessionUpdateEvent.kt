@@ -5,12 +5,6 @@ import java.time.Instant
 
 data class SessionUpdateEvent(
     val sessionId: SessionId,
-    val attendanceStart: UpdateTime,
-    val lateStart: UpdateTime,
-    val absentStart: UpdateTime,
-) {
-    data class UpdateTime(
-        val from: Instant,
-        val to: Instant,
-    )
-}
+    val lateStart: Instant,
+    val absentStart: Instant,
+)

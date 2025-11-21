@@ -15,6 +15,7 @@ fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condi
     val conditions = mutableListOf<Condition>()
 
     conditions += SESSIONS.SESSION_ID.eq(this.sessionId.value)
+    conditions += ATTENDANCES.DELETED_AT.isNull
 
     this.statuses?.takeIf { it.isNotEmpty() }?.let {
         conditions += ATTENDANCES.STATUS.`in`(it)
@@ -32,15 +33,13 @@ fun GetAttendancesBySessionWeekQuery.toCondition(myTeamNumber: Int?): List<Condi
         conditions += MEMBERS.NAME.containsIgnoreCase(it)
     }
 
-    this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
-    }
-
     return conditions
 }
 
 fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
     val conditions = mutableListOf<Condition>()
+
+    conditions += ATTENDANCES.DELETED_AT.isNull
 
     this.statuses?.takeIf { it.isNotEmpty() }?.let {
         conditions += ATTENDANCES.STATUS.`in`(it)
@@ -58,10 +57,6 @@ fun GetMemberAttendancesQuery.toCondition(myTeamNumber: Int?): List<Condition> {
         conditions += MEMBERS.NAME.containsIgnoreCase(it)
     }
 
-    this.cursorId?.let {
-        conditions += ATTENDANCES.MEMBER_ID.greaterOrEqual(it)
-    }
-
     return conditions
 }
 
@@ -70,6 +65,7 @@ fun GetDetailAttendanceBySessionQuery.toCondition(): List<Condition> {
 
     conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
     conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
+    conditions += ATTENDANCES.DELETED_AT.isNull
     return conditions
 }
 
@@ -77,6 +73,7 @@ fun GetDetailMemberAttendancesQuery.toCondition(): List<Condition> {
     val conditions = mutableListOf<Condition>()
 
     conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
+    conditions += ATTENDANCES.DELETED_AT.isNull
 
     return conditions
 }
@@ -86,6 +83,7 @@ fun GetMyAttendanceBySessionQuery.toCondition(): List<Condition> {
 
     conditions += ATTENDANCES.SESSION_ID.eq(this.sessionId.value)
     conditions += ATTENDANCES.MEMBER_ID.eq(this.memberId.value)
+    conditions += ATTENDANCES.DELETED_AT.isNull
 
     return conditions
 }

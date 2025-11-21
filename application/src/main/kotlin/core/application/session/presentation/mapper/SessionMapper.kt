@@ -12,19 +12,21 @@ import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.domain.session.aggregate.Session
+import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.vo.SessionId
 import java.time.Instant
+import java.time.LocalDateTime
 
 object SessionMapper {
     fun toNextSessionResponse(session: Session): NextSessionResponse =
         with(session) {
             NextSessionResponse(
-                sessionId = id?.value ?: throw IllegalStateException("Session ID cannot be null"),
+                id = id?.value ?: throw IllegalStateException("Session ID cannot be null"),
                 week = week,
-                eventName = eventName,
+                name = eventName,
                 place = place,
                 isOnline = isOnline,
                 date = instantToLocalDateTime(date),
@@ -42,8 +44,10 @@ object SessionMapper {
                         SessionListDetailResponse(
                             id = it.id!!.value,
                             week = it.week,
-                            eventName = it.eventName,
+                            name = it.eventName,
                             date = instantToLocalDateTime(it.date),
+                            place = it.place,
+                            isOnline = it.isOnline,
                         )
                     },
             )
@@ -52,14 +56,16 @@ object SessionMapper {
     fun toSessionDetailResponse(session: Session): SessionDetailResponse =
         with(session) {
             SessionDetailResponse(
-                sessionId = id!!.value,
+                id = id!!.value,
                 week = week,
-                eventName = eventName,
+                name = eventName,
                 place = place,
                 isOnline = isOnline,
                 date = instantToLocalDateTime(date),
-                attendanceStartTime =
+                attendanceStart =
                     instantToLocalDateTime(session.attendancePolicy.attendanceStart),
+                lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
+                absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
                 attendanceCode = session.attendancePolicy.attendanceCode,
             )
         }
@@ -116,4 +122,16 @@ object SessionMapper {
                 },
         )
     }
+
+    fun toSessionAttendancePolicyChangedCommand(
+        sessionId: SessionId,
+        attendanceStart: LocalDateTime,
+        lateStart: LocalDateTime,
+        absentStart: LocalDateTime,
+    ) = SessionAttendancePolicyCommand(
+        sessionId = sessionId,
+        attendanceStart = localDateTimeToInstant(attendanceStart),
+        lateStart = localDateTimeToInstant(lateStart),
+        absentStart = localDateTimeToInstant(absentStart),
+    )
 }

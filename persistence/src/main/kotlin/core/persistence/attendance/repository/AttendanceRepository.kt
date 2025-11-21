@@ -29,8 +29,6 @@ import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.ZoneId
 
-private const val PAGE_SIZE = 20
-
 @Repository
 class AttendanceRepository(
     private val attendanceJpaRepository: AttendanceJpaRepository,
@@ -43,7 +41,14 @@ class AttendanceRepository(
     override fun findAttendanceBy(
         sessionId: Long,
         memberId: Long,
-    ): Attendance? = attendanceJpaRepository.findBySessionIdAndMemberId(sessionId, memberId)?.toDomain()
+    ): Attendance? =
+        attendanceJpaRepository.findBySessionIdAndMemberIdAndDeletedAtIsNull(
+            sessionId,
+            memberId,
+        )?.toDomain()
+
+    override fun findAllBySessionId(sessionId: Long): List<Attendance> =
+        attendanceJpaRepository.findAllBySessionIdAndDeletedAtIsNull(sessionId).map { it.toDomain() }
 
     override fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
@@ -68,7 +73,8 @@ class AttendanceRepository(
             .where(
                 query.toCondition(myTeamNumber),
             ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
-            .limit(PAGE_SIZE + 1)
+            .limit(query.size)
+            .offset((query.page - 1) * query.size)
             .fetch { record ->
                 SessionAttendanceQueryModel(
                     id = record[ATTENDANCES.MEMBER_ID]!!,
@@ -122,7 +128,8 @@ class AttendanceRepository(
                 TEAMS.NUMBER,
                 MEMBERS.PART,
             ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
-            .limit(PAGE_SIZE + 1)
+            .limit(query.size)
+            .offset((query.page - 1) * query.size)
             .fetch { record ->
                 MemberAttendanceQueryModel(
                     id = record[ATTENDANCES.MEMBER_ID]!!,
@@ -352,16 +359,18 @@ class AttendanceRepository(
     }
 
     override fun updateInBatch(attendances: List<Attendance>) {
-        val records = attendances.map { attendance ->
-            dsl.newRecord(ATTENDANCES).apply {
-                attendanceId = attendance.id?.value  // ← PK 세팅
-                memberId = attendance.memberId.value
-                sessionId = attendance.sessionId.value
-                status = attendance.status.name
-                attendedAt = attendance.attendedAt
-                updatedAt = attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
+        val records =
+            attendances.map { attendance ->
+                dsl.newRecord(ATTENDANCES).apply {
+                    attendanceId = attendance.id?.value // ← PK 세팅
+                    memberId = attendance.memberId.value
+                    sessionId = attendance.sessionId.value
+                    status = attendance.status.name
+                    attendedAt = attendance.attendedAt
+                    updatedAt = attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
+                    deletedAt = attendance.deletedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
+                }
             }
-        }
 
         dsl.batchUpdate(records).execute()
     }

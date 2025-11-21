@@ -154,4 +154,24 @@ interface SessionCommandApi {
         ],
     )
     fun updateSession(request: SessionUpdateRequest): CustomResponse<Void>
+
+    @Operation(
+        summary = "세션 삭제",
+        description = "세션 ID를 통해 해당 세션을 삭제합니다. 세션이 삭제되면 연관된 출석 정보도 함께 소프트 딜리트 처리 됩니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "세션 삭제 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun softDeleteSession(sessionId: SessionId): CustomResponse<Void>
 }

@@ -5,6 +5,7 @@ import core.application.session.presentation.response.AttendanceTimeResponse
 import core.application.session.presentation.response.NextSessionResponse
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
+import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import java.time.LocalDateTime
 
 @Tag(name = "Session Query", description = "세션 조회 API")
 interface SessionQueryApi {
@@ -37,11 +39,11 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
-                                            "sessionId": 1,
+                                            "id": 1,
                                             "week": 1,
-                                            "eventName": "디프만 17기 OT",
+                                            "name": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
                                             "date": "2025-08-02T14:00:00.000000",
@@ -78,20 +80,24 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "sessions": [
                                                 {
                                                     "id": 1,
                                                     "week": 1,
-                                                    "eventName": "디프만 17기 OT",
-                                                    "date": "2025-08-02T14:00:00.000000"
+                                                    "name": "디프만 17기 OT",
+                                                    "date": "2025-08-02T14:00:00.000000",
+                                                    "place": "공덕 프론트원",
+                                                    "isOnline": false
                                                 },
                                                 {
                                                     "id": 2,
                                                     "week": 2,
-                                                    "eventName": "미니 디프콘",
-                                                    "date": "2025-08-09T14:00:00.000000"
+                                                    "name": "미니 디프콘",
+                                                    "date": "2025-08-09T14:00:00.000000",
+                                                    "place": null,
+                                                    "isOnline": true
                                                 }
                                             ]
                                         }
@@ -126,15 +132,17 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
-                                            "sessionId": 1,
+                                            "id": 1,
                                             "week": 1,
-                                            "eventName": "디프만 17기 OT",
+                                            "name": "디프만 17기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
                                             "date": "2025-08-02T14:00:00.000000",
-                                            "attendanceStartTime": "2025-08-02T14:00:00.000000",
+                                            "attendanceStart": "2025-08-02T14:00:00.000000",
+                                            "lateStart": "2025-08-02T14:10:00.000000",
+                                            "absentStart": "2025-08-02T14:20:00.000000",
                                             "attendanceCode": "3821"
                                         }
                                     }
@@ -168,7 +176,7 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "attendanceStartTime": "2025-08-02T14:00:00.000000"
                                         }
@@ -203,7 +211,7 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-1",
                                         "data": {
                                             "sessions": [
                                               {
@@ -228,4 +236,58 @@ interface SessionQueryApi {
         ],
     )
     fun getSessionWeeks(): CustomResponse<SessionWeeksResponse>
+
+    @Operation(
+        summary = "세션 시간 수정 시 출석 상태 변경 대상 조회",
+        description = "세션의 시간이 수정되었을 때 호출하며, 출석 상태가 변경되는 대상을 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션 시간 수정 시 출석 상태 변경 대상 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "세션 시간 수정 시 출석 상태 변경 대상 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "GLOBAL-200-1",
+                                        "data": {
+                                            "targeted": [
+                                                {
+                                                    "name": "이정호",
+                                                    "currentStatus": "ABSENT",
+                                                    "targetStatus": "LATE",
+                                                    "attendedAt": "2025-08-02T14:10:00"
+                                                }
+                                            ],
+                                            "untargeted": [
+                                                {
+                                                    "name": "이한음",
+                                                    "status": "PRESENT",
+                                                    "updatedAt": "2025-08-02T14:05:00"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun queryTargetAttendancesByPolicyChange(
+        sessionId: SessionId,
+        attendanceStart: LocalDateTime,
+        lateStart: LocalDateTime,
+        absentStart: LocalDateTime,
+    ): CustomResponse<SessionPolicyUpdateTargetResponse>
 }
