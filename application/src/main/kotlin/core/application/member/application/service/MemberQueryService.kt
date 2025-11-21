@@ -67,6 +67,9 @@ class MemberQueryService(
         memberPersistencePort.findMemberTeamByMemberId(memberId)
             ?: throw MemberTeamNotFoundException()
 
+    override fun getMembersByIds(memberIds: List<MemberId>) =
+        memberPersistencePort.findAllByIds(memberIds)
+
     override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
         memberPersistencePort
             .findAllMemberIdByAuthorityIds(authorityIds)

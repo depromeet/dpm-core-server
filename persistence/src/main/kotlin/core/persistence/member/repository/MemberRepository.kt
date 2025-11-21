@@ -29,6 +29,10 @@ class MemberRepository(
 
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
+    override fun findAllByIds(ids: List<MemberId>): List<Member> {
+        return memberJpaRepository.findAllByIdIn(ids.map { it.value }).map { it.toDomain() }
+    }
+
     override fun existsDeletedMemberById(memberId: Long): Boolean =
         memberJpaRepository.existsByIdAndDeletedAtIsNotNull(memberId)
 
