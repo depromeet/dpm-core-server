@@ -1,5 +1,6 @@
 package core.application.session.application.service
 
+import core.application.cohort.application.service.CohortQueryService
 import core.application.session.application.exception.InvalidSessionIdException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.validator.SessionValidator
@@ -24,6 +25,7 @@ class SessionCommandService(
     private val sessionPersistencePort: SessionPersistencePort,
     private val eventPublisher: ApplicationEventPublisher,
     private val sessionValidator: SessionValidator,
+    private val cohortQueryService: CohortQueryService
 ) {
     fun updateSessionStartTime(
         sessionId: SessionId,
@@ -40,7 +42,8 @@ class SessionCommandService(
     }
 
     fun createSession(command: SessionCreateCommand) {
-        val newSession = Session.create(command)
+        val latestCohortId = cohortQueryService.getLatestCohortId()
+        val newSession = Session.create(command, latestCohortId)
 
         val savedSession = sessionPersistencePort.save(newSession)
 
