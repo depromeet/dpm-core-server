@@ -34,7 +34,7 @@ class MemberController(
         response: HttpServletResponse,
     ): CustomResponse<Void> {
         memberCommandService.withdraw(memberId, response)
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")

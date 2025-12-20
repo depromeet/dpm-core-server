@@ -58,7 +58,7 @@ class AttendanceCommandController(
             toAttendanceStatusUpdateCommand(sessionId, memberId, request),
         )
 
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
@@ -73,6 +73,6 @@ class AttendanceCommandController(
             request.toMemberIds(),
         )
 
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 }

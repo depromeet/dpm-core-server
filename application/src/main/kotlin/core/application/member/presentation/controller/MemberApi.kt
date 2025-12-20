@@ -113,7 +113,7 @@ interface MemberApi {
             ),
     )
     @ApiResponse(
-        responseCode = "204",
+        responseCode = "200",
         description = "멤버 데이터 주입 및 승인 성공",
         content = [
             Content(

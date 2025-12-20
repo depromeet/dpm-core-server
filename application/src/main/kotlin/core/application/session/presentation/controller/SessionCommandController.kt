@@ -44,7 +44,7 @@ class SessionCommandController(
             attendanceStartTime = TimeMapper.localDateTimeToInstant(request.attendanceStartTime),
         )
 
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
@@ -56,7 +56,7 @@ class SessionCommandController(
             SessionMapper.toSessionUpdateCommand(request),
         )
 
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
@@ -65,6 +65,6 @@ class SessionCommandController(
         @PathVariable("sessionId") sessionId: SessionId,
     ): CustomResponse<Void> {
         sessionCommandService.softDeleteSession(sessionId)
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 }
