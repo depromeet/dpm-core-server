@@ -43,6 +43,6 @@ class MemberController(
         @Valid @RequestBody request: InitMemberDataRequest,
     ): CustomResponse<Void> {
         memberCommandService.initMemberDataAndApprove(request)
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 }
