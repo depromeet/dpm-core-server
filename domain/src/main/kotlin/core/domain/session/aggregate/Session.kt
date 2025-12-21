@@ -117,11 +117,11 @@ class Session(
     }
 
     companion object {
-        fun create(command: SessionCreateCommand): Session {
+        fun create(command: SessionCreateCommand, cohortId: CohortId): Session {
             fun generateAttendanceCode(): String = Random.nextInt(1000, 10000).toString()
 
             return Session(
-                cohortId = CohortId(command.cohortId),
+                cohortId = cohortId,
                 date = command.date,
                 week = command.week,
                 place = command.place ?: "온라인",

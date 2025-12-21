@@ -107,7 +107,7 @@ interface AttendanceCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "204",
+                responseCode = "200",
                 description = "출석 상태 갱신 성공",
             ),
         ],
@@ -147,7 +147,7 @@ interface AttendanceCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "204",
+                responseCode = "200",
                 description = "출석 상태 일괄 갱신 성공",
             ),
         ],

@@ -1,7 +1,6 @@
 package core.application.session.presentation.controller
 
 import core.application.attendance.presentation.request.UpdateAttendanceTimeRequest
-import core.application.cohort.application.properties.CohortProperties
 import core.application.common.exception.CustomResponse
 import core.application.session.application.service.SessionCommandService
 import core.application.session.presentation.mapper.SessionMapper
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/sessions")
 class SessionCommandController(
     private val sessionCommandService: SessionCommandService,
-    private val cohortProperties: CohortProperties,
 ) : SessionCommandApi {
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
     @PostMapping
@@ -29,10 +27,10 @@ class SessionCommandController(
         @RequestBody request: SessionCreateRequest,
     ): CustomResponse<Void> {
         sessionCommandService.createSession(
-            SessionMapper.toSessionCreateCommand(request, cohortProperties.value.toLong()),
+            SessionMapper.toSessionCreateCommand(request),
         )
 
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
@@ -46,7 +44,7 @@ class SessionCommandController(
             attendanceStartTime = TimeMapper.localDateTimeToInstant(request.attendanceStartTime),
         )
 
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
@@ -58,7 +56,7 @@ class SessionCommandController(
             SessionMapper.toSessionUpdateCommand(request),
         )
 
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
@@ -67,6 +65,6 @@ class SessionCommandController(
         @PathVariable("sessionId") sessionId: SessionId,
     ): CustomResponse<Void> {
         sessionCommandService.softDeleteSession(sessionId)
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 }

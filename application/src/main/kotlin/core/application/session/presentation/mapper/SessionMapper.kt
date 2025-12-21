@@ -78,7 +78,6 @@ object SessionMapper {
 
     fun toSessionCreateCommand(
         request: SessionCreateRequest,
-        cohortId: Long,
     ) = SessionCreateCommand(
         eventName = request.name,
         date = localDateTimeToInstant(request.date),
@@ -88,7 +87,6 @@ object SessionMapper {
         attendanceStart = localDateTimeToInstant(request.attendanceStart),
         lateStart = localDateTimeToInstant(request.lateStart),
         absentStart = localDateTimeToInstant(request.absentStart),
-        cohortId = cohortId,
     )
 
     fun toSessionUpdateCommand(request: SessionUpdateRequest) =
