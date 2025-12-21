@@ -43,7 +43,7 @@ interface SessionCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "204",
+                responseCode = "200",
                 description = "세션 출석시간 갱신 성공",
                 content = [
                     Content(
@@ -94,7 +94,7 @@ interface SessionCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "204",
+                responseCode = "200",
                 description = "세션 추가 성공",
                 content = [
                     Content(
@@ -142,7 +142,7 @@ interface SessionCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "204",
+                responseCode = "200",
                 description = "세션 수정 성공",
                 content = [
                     Content(
@@ -162,7 +162,7 @@ interface SessionCommandApi {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "204",
+                responseCode = "200",
                 description = "세션 삭제 성공",
                 content = [
                     Content(

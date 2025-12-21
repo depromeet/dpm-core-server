@@ -34,7 +34,7 @@ class MemberController(
         response: HttpServletResponse,
     ): CustomResponse<Void> {
         memberCommandService.withdraw(memberId, response)
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 
     @PreAuthorize("hasRole('ROLE_ORGANIZER')")
@@ -43,6 +43,6 @@ class MemberController(
         @Valid @RequestBody request: InitMemberDataRequest,
     ): CustomResponse<Void> {
         memberCommandService.initMemberDataAndApprove(request)
-        return CustomResponse.noContent()
+        return CustomResponse.ok()
     }
 }
