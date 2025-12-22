@@ -22,7 +22,7 @@
 
 ## 🏗️System Architecture
 <p align="center">
-  <img src="./.github/image/core_architecture.png" alt="core_architecture" width="`00%" />
+  <img src="./.github/image/core_architecture.png" alt="core_architecture" width="100%" />
 </p>
 
 ---
