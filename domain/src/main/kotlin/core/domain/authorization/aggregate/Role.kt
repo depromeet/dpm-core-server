@@ -10,5 +10,19 @@ import core.domain.authorization.vo.RoleId
 class Role (
     val id: RoleId? = null,
     val name: String,
+    rolePermissions: MutableSet<RolePermission> = mutableSetOf(),
+    inheritedRoles: MutableSet<RoleHierarchy> = mutableSetOf(),
 ) {
+    private val _rolePermissions: MutableSet<RolePermission> = rolePermissions
+    private val _inheritedRoles: MutableSet<RoleHierarchy> = inheritedRoles
+
+    val rolePermissions: Set<RolePermission>
+        get() = _rolePermissions.toSet()
+
+    val inheritedRoles: Set<RoleHierarchy>
+        get() = _inheritedRoles.toSet()
+
+    fun addRolePermission(rolePermission: RolePermission) {
+        _rolePermissions.add(rolePermission)
+    }
 }
