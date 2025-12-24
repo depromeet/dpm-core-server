@@ -30,6 +30,8 @@ class Member(
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
     val memberAuthorities: List<MemberAuthority> = emptyList(),
+    val memberRoles: List<MemberRole> = emptyList(),
+    val memberPermissions: List<MemberPermission> = emptyList(),
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),
     val memberOAuths: List<MemberOAuth> = emptyList(),

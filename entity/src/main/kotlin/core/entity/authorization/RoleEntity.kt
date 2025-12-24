@@ -32,11 +32,4 @@ class RoleEntity(
         orphanRemoval = true,
     )
     private val rolePermissions: MutableSet<RolePermissionEntity> = mutableSetOf(),
-
-    @OneToMany(
-        mappedBy = "childRole",
-        cascade = [CascadeType.PERSIST, CascadeType.REMOVE],
-        orphanRemoval = true,
-    )
-    private val inheritedRoles: MutableSet<RoleHierarchyEntity> = mutableSetOf(),
 )
