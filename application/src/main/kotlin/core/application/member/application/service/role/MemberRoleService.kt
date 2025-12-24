@@ -17,7 +17,7 @@ class MemberRoleService(
      */
     fun getRoleNamesByMemberId(memberId: MemberId): List<String> =
         memberRolePersistencePort
-            .findAuthorityNamesByMemberId(memberId.value)
+            .findRoleNamesByMemberId(memberId.value)
 
     /**
      * 멤버 탈퇴 시에, 멤버가 소유한 모든 권한을 Soft Delete 처리하여, 권한을 회수함.
@@ -38,25 +38,25 @@ class MemberRoleService(
      * @since 2025.9.15
      */
     fun resolvePrimaryAuthorityType(memberId: MemberId): RoleType {
-        val authorities =
+        val roles =
             memberRolePersistencePort
-                .findAuthorityNamesByMemberId(memberId.value)
+                .findRoleNamesByMemberId(memberId.value)
 
-        if (authorities.isEmpty()) {
+        if (roles.isEmpty()) {
             return RoleType.Guest
         }
 
-        val priority = listOf(
+        val roleTypes = roles.map { RoleType.from(it) }
+        return ROLE_PRIORITY.firstOrNull { it in roleTypes }
+            ?: RoleType.Guest
+    }
+
+    companion object {
+        private val ROLE_PRIORITY: List<RoleType> = listOf(
             RoleType.Core,
             RoleType.Organizer,
             RoleType.Deeper,
         )
-
-        return priority.firstOrNull { roleType ->
-            authorities.any { authority ->
-                roleType.matches(authority)
-            }
-        } ?: RoleType.Guest
     }
 
 }

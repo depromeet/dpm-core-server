@@ -50,7 +50,7 @@ class MemberRoleRepository(
             ).execute()
     }
 
-    override fun findAuthorityNamesByMemberId(memberId: Long): List<String> =
+    override fun findRoleNamesByMemberId(memberId: Long): List<String> =
         dsl
             .select(ROLES.NAME)
             .from(MEMBER_ROLES)
