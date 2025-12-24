@@ -11,9 +11,9 @@ import java.time.Instant
  * @property revokedAt 권한이 Role에서 회수된 시각입니다.
  */
 class RolePermission (
-    private val roleId: RoleId,
-    private val permissionId: PermissionId,
-    private val grantedAt: Instant,
-    private val revokedAt: Instant? = null,
+    val roleId: RoleId,
+    val permissionId: PermissionId,
+    val grantedAt: Instant,
+    val revokedAt: Instant? = null,
 ) {
 }

@@ -19,7 +19,7 @@ import core.domain.gathering.port.inbound.command.GatheringCreateCommand
 import core.domain.gathering.port.inbound.command.JoinGatheringCommand
 import core.domain.gathering.port.outbound.GatheringPersistencePort
 import core.domain.gathering.vo.GatheringId
-import core.domain.member.port.inbound.MemberQueryByAuthorityUseCase
+import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,7 +31,7 @@ class GatheringCommandService(
     private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val gatheringMemberCommandService: GatheringMemberCommandService,
     private val gatheringMemberQueryService: GatheringMemberQueryService,
-    private val memberQueryByAuthorityUseCase: MemberQueryByAuthorityUseCase,
+    private val memberQueryByRoleUseCase: MemberQueryByRoleUseCase,
     private val billQueryUseCase: BillQueryUseCase,
 ) : GatheringCommandUseCase {
     override fun saveAllGatherings(
@@ -41,7 +41,7 @@ class GatheringCommandService(
     ) {
         val bill = billQueryUseCase.getById(billId)
         val memberIds =
-            memberQueryByAuthorityUseCase.findAllMemberIdByRoleIds(invitedRoles)
+            memberQueryByRoleUseCase.findAllMemberIdByRoleIds(invitedRoles)
         commands.forEach {
             val gatheringObject = saveGatheringObject(bill, it)
             saveEachGatheringReceiptAndAttachPhoto(it, gatheringObject)

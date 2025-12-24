@@ -5,7 +5,7 @@ import core.application.member.application.exception.MemberTeamNotFoundException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
-import core.domain.member.port.inbound.MemberQueryByAuthorityUseCase
+import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberRoleService: MemberRoleService,
-) : MemberQueryByAuthorityUseCase,
+) : MemberQueryByRoleUseCase,
     MemberQueryUseCase {
     /**
      * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
@@ -74,5 +74,5 @@ class MemberQueryService(
             .findAllMemberIdByRoleIds(roleIds)
 
     override fun getMemberNameRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
-        memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
+        memberPersistencePort.findMemberNameAndRoleByMemberId(memberId)
 }

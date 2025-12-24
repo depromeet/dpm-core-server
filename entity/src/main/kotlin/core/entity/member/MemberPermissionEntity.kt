@@ -32,7 +32,7 @@ class MemberPermissionEntity(
     @JoinColumn(name = "permission_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val permission: PermissionEntity,
     @Column(name = "granted_at", nullable = false, updatable = false)
-    val grantedAt: Instant? = null,
+    val grantedAt: Instant,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
 ) {

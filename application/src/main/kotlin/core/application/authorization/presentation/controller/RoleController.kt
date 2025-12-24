@@ -1,6 +1,6 @@
 package core.application.authorization.presentation.controller
 
-import core.application.authorization.presentation.resposne.RoleListResponse
+import core.application.authorization.presentation.response.RoleListResponse
 import core.application.common.exception.CustomResponse
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import org.springframework.security.access.prepost.PreAuthorize

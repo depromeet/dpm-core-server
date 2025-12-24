@@ -1,4 +1,4 @@
-package core.application.authorization.presentation.resposne
+package core.application.authorization.presentation.response
 
 import core.domain.authorization.aggregate.Role
 import io.swagger.v3.oas.annotations.media.Schema

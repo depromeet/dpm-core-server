@@ -63,7 +63,7 @@ class MemberRepository(
                 MemberId(it)
             }
 
-    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
+    override fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         dsl
             .select(MEMBERS.NAME, ROLES.NAME)
             .from(MEMBERS)

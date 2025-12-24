@@ -32,7 +32,7 @@ class MemberRoleService(
     /**
      * 멤버 식별자로 해당 멤버의 최우선 권한 타입을 조회합니다.
      *
-     * 권한 타입의 위계는 ORGANIZER > DEEPER > GUEST 순입니다.
+     * 권한 타입의 위계는 CORE > ORGANIZER > DEEPER > GUEST 순입니다.
      *
      * @author LeeHanEum
      * @since 2025.9.15

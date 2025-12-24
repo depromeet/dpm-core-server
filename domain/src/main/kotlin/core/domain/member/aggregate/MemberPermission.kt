@@ -9,7 +9,7 @@ class MemberPermission(
     val id: MemberPermissionId? = null,
     val memberId: MemberId,
     val permissionId: PermissionId,
-    grantedAt: Instant? = null,
+    grantedAt: Instant,
     deletedAt: Instant? = null,
 ) {
     var grantedAt: Instant? = grantedAt

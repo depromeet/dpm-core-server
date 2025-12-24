@@ -88,7 +88,7 @@ class Member(
 
     override fun toString(): String =
         "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
-            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberRoles=$memberRoles, memberPermissions=$memberPermissions " +
+            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberRoles=$memberRoles, memberPermissions=$memberPermissions, " +
             "memberCohorts=$memberCohorts, memberTeams=$memberTeams, memberOAuths=$memberOAuths)"
 
     companion object {

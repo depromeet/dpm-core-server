@@ -1,6 +1,6 @@
 package core.application.authorization.presentation.controller
 
-import core.application.authorization.presentation.resposne.RoleListResponse
+import core.application.authorization.presentation.response.RoleListResponse
 import core.application.common.exception.CustomResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
