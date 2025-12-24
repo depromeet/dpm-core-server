@@ -21,7 +21,7 @@ class RoleQueryService(
             .findAllByMemberExternalId(externalId)
             .ifEmpty { listOf("GUEST") }
 
-    override fun getPermissions(memberId: MemberId): List<String> =
+    override fun getPermissionsByMemberId(memberId: MemberId): List<String> =
         rolePersistencePort.findAllPermissionsByMemberId(memberId)
 
     override fun getRoleIdByRoleName(roleName: String): RoleId {

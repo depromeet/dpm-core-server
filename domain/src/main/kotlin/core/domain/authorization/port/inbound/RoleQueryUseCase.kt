@@ -9,7 +9,7 @@ interface RoleQueryUseCase {
 
     fun getRolesByExternalId(externalId: String): List<String>
 
-    fun getPermissions(memberId: MemberId): List<String>
+    fun getPermissionsByMemberId(memberId: MemberId): List<String>
 
     fun getRoleIdByRoleName(roleName: String): RoleId
 }

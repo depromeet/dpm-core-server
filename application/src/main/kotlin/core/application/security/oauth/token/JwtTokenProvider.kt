@@ -48,7 +48,7 @@ class JwtTokenProvider(
         val claims = getClaims(token)
         val permissions =
             roleQueryUseCase
-                .getPermissions(MemberId(claims.subject.toLong()))
+                .getPermissionsByMemberId(MemberId(claims.subject.toLong()))
                 .map {  SimpleGrantedAuthority(it) }
 
         return UsernamePasswordAuthenticationToken(
