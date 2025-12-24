@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 class BillQueryController(
     private val billQueryService: BillQueryService,
 ) : BillQueryApi {
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @GetMapping("/{billId}")
     override fun getBillDetails(
         @Positive @PathVariable billId: BillId,
@@ -32,7 +32,7 @@ class BillQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @GetMapping
     override fun getBillListByMemberId(
         @CurrentMemberId memberId: MemberId,
@@ -43,7 +43,7 @@ class BillQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @GetMapping("/{billId}/members")
     override fun getMemberBillSummaries(
         @Positive @PathVariable billId: BillId,
@@ -52,7 +52,7 @@ class BillQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @GetMapping("/{billId}/members/submitted-participant")
     override fun getSubmittedParticipantEachGathering(
         @Positive @PathVariable billId: BillId,
@@ -62,7 +62,7 @@ class BillQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @GetMapping("/{billId}/members/submitted-members")
     override fun getBillMemberSubmittedList(
         @Positive @PathVariable billId: BillId,

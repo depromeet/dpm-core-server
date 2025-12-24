@@ -55,7 +55,7 @@ class RoleRepository (
                     .where(MEMBER_ROLES.MEMBER_ID.eq(memberId.value))
             )
             .fetch()
-            .map { "${it.get(PERMISSIONS.RESOURCE)}:${it.get(PERMISSIONS.ACTION)}" }
+            .map { "${it.get(PERMISSIONS.ACTION)}:${it.get(PERMISSIONS.RESOURCE)}".lowercase() }
 
     override fun findRoleIdByName(roleName: String): RoleId? {
         TODO("Not yet implemented")

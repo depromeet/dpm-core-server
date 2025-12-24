@@ -29,7 +29,7 @@ class BillCommandController(
 //    TODO : 도메인끼리 의존성을 어떻게 하면 좋을지 논의해보고 싶음.
 //    매퍼에서 port를 사용하게 되면 매퍼도 bean이되고, 물흐르듯 정방향으로 가던게 갑자기 역방향이 돼서 맘에 안듦.
 ) : BillCommandApi {
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:bill')")
     @PostMapping
     override fun createBill(
         @CurrentMemberId hostUserId: MemberId,
@@ -39,7 +39,7 @@ class BillCommandController(
         return CustomResponse.created(BillPersistenceResponse(billId))
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:bill')")
     @PatchMapping("/{billId}/close-participation")
     override fun closeBillParticipation(
         @PathVariable("billId") billId: Long,
@@ -48,7 +48,7 @@ class BillCommandController(
         return CustomResponse.ok(BillPersistenceResponse(updatedBillId))
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @PatchMapping("/{billId}/check")
     override fun markBillAsChecked(
         @Positive @PathVariable billId: BillId,
@@ -58,7 +58,7 @@ class BillCommandController(
         return CustomResponse.noContent()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:bill')")
     @PatchMapping("/{billId}/participation-confirm")
     override fun submitBillParticipationConfirm(
         @Positive @PathVariable billId: BillId,
@@ -71,7 +71,7 @@ class BillCommandController(
         return CustomResponse.noContent()
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @PatchMapping("/{billId}/join")
     override fun markAsGatheringJoined(
         @Positive @PathVariable billId: BillId,
@@ -82,7 +82,7 @@ class BillCommandController(
         return CustomResponse.noContent()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:bill')")
     @PatchMapping("/{billId}/members/{memberId}/deposit")
     override fun updateMemberDeposit(
         @Positive @PathVariable billId: BillId,
@@ -93,7 +93,7 @@ class BillCommandController(
         return CustomResponse.noContent()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:bill')")
     @PatchMapping("/{billId}/members/deposit")
     override fun updateMemberListDeposit(
         @Positive @PathVariable billId: BillId,

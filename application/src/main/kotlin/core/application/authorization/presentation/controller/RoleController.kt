@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 class RoleController(
     private val roleQueryUseCase: RoleQueryUseCase,
 ) : RoleApi {
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('read:authorization')")
     @GetMapping
     override fun getAllRoles(): CustomResponse<RoleListResponse> {
         val response = roleQueryUseCase.getAllRoles()

@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 class AttendanceQueryController(
     private val attendanceQueryService: AttendanceQueryService,
 ) : AttendanceQueryApi {
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:attendance')")
     @GetMapping("/v1/sessions/{sessionId}/attendances")
     override fun getAttendancesBySessionId(
         @PathVariable sessionId: SessionId,
@@ -55,7 +55,7 @@ class AttendanceQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:attendance')")
     @GetMapping("/v1/members/attendances")
     override fun getMemberAttendances(
         @CurrentMemberId memberId: MemberId,
@@ -82,7 +82,7 @@ class AttendanceQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:attendance')")
     @GetMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
     override fun getAttendanceBySessionIdAndMemberId(
         @PathVariable sessionId: SessionId,
@@ -99,7 +99,7 @@ class AttendanceQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:attendance')")
     @GetMapping("/v1/sessions/{sessionId}/attendances/me")
     override fun getMyAttendanceBySessionId(
         @PathVariable sessionId: SessionId,
@@ -116,7 +116,7 @@ class AttendanceQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:member')")
     @GetMapping("/v1/members/{memberId}/attendances")
     override fun getDetailMemberAttendances(
         @PathVariable memberId: MemberId,
@@ -131,7 +131,7 @@ class AttendanceQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:attendance')")
     @GetMapping("/v1/members/me/attendances")
     override fun getMyDetailAttendances(
         @CurrentMemberId memberId: MemberId,

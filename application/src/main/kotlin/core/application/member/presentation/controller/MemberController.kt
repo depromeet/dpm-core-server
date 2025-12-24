@@ -21,13 +21,14 @@ class MemberController(
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
 ) : MemberApi {
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:member')")
     @GetMapping("/me")
     override fun me(memberId: MemberId): CustomResponse<MemberDetailsResponse> {
         val response: MemberDetailsResponse = memberQueryService.memberMe(memberId)
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasAuthority('delete:member')")
     @PatchMapping("/withdraw")
     override fun withdraw(
         memberId: MemberId,
@@ -37,7 +38,7 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:member')")
     @PatchMapping("/init")
     override fun initMemberDataAndApprove(
         @Valid @RequestBody request: InitMemberDataRequest,

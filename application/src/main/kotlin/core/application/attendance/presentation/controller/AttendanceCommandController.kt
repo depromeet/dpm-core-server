@@ -26,7 +26,7 @@ import java.time.Instant
 class AttendanceCommandController(
     private val attendanceCommandService: AttendanceCommandService,
 ) : AttendanceCommandApi {
-    @PreAuthorize("hasRole('ROLE_DEEPER')")
+    @PreAuthorize("hasAuthority('create:attendance')")
     @PostMapping("/v1/sessions/{sessionId}/attendances")
     override fun createAttendance(
         @PathVariable sessionId: SessionId,
@@ -47,7 +47,7 @@ class AttendanceCommandController(
         return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:attendance')")
     @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
     override fun updateAttendance(
         @PathVariable sessionId: SessionId,
@@ -61,7 +61,7 @@ class AttendanceCommandController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:attendance')")
     @PatchMapping("/v1/sessions/{sessionId}/attendances/bulk")
     override fun updateAttendanceBulk(
         @PathVariable sessionId: SessionId,

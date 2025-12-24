@@ -2,7 +2,12 @@ package core.domain.authorization.enums
 
 enum class Resource {
     ATTENDANCE,
-    SESSION,
+    AUTHORIZATION,
+    BILL,
+    COHORT,
+    GATHERING,
     MEMBER,
+    SESSION,
+    TEAM
     ;
 }
