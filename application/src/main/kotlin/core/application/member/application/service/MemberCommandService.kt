@@ -67,6 +67,6 @@ class MemberCommandService(
 
         memberTeamService.deleteMemberFromTeam(memberId)
         memberCohortService.deleteMemberFromCohort(memberId)
-        memberRoleService.revokeAllAuthorities(memberId)
+        memberRoleService.revokeAllRoles(memberId)
     }
 }

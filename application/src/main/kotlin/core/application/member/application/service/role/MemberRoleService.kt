@@ -26,7 +26,7 @@ class MemberRoleService(
      * @author LeeHanEum
      * @since 2025.09.01
      */
-    fun revokeAllAuthorities(memberId: MemberId) =
+    fun revokeAllRoles(memberId: MemberId) =
         memberRolePersistencePort.softDeleteAllByMemberId(memberId.value)
 
     /**
