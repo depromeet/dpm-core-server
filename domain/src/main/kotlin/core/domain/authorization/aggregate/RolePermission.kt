@@ -15,5 +15,4 @@ class RolePermission (
     val permissionId: PermissionId,
     val grantedAt: Instant,
     val revokedAt: Instant? = null,
-) {
-}
+)
