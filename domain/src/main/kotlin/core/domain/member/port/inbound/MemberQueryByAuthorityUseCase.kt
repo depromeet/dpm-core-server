@@ -1,6 +1,6 @@
 package core.domain.member.port.inbound
 
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import core.domain.member.vo.MemberId
 
 interface MemberQueryByAuthorityUseCase {
@@ -10,5 +10,5 @@ interface MemberQueryByAuthorityUseCase {
      * @author leehaneum
      * @since 2025.07.22
      */
-    fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId>
+    fun findAllMemberIdByRoleIds(roleIds: List<RoleId>): List<MemberId>
 }

@@ -6,7 +6,7 @@ import core.application.gathering.application.exception.member.GatheringMemberNo
 import core.application.gathering.application.service.member.GatheringMemberCommandService
 import core.application.gathering.application.service.member.GatheringMemberQueryService
 import core.application.gathering.application.service.receipt.GatheringReceiptCommandService
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import core.domain.bill.aggregate.Bill
 import core.domain.bill.port.inbound.BillQueryUseCase
 import core.domain.bill.port.inbound.command.UpdateMemberDepositCommand
@@ -36,12 +36,12 @@ class GatheringCommandService(
 ) : GatheringCommandUseCase {
     override fun saveAllGatherings(
         commands: List<GatheringCreateCommand>,
-        invitedAuthorityIds: List<AuthorityId>,
+        invitedRoles: List<RoleId>,
         billId: BillId,
     ) {
         val bill = billQueryUseCase.getById(billId)
         val memberIds =
-            memberQueryByAuthorityUseCase.findAllMemberIdByAuthorityIds(invitedAuthorityIds)
+            memberQueryByAuthorityUseCase.findAllMemberIdByRoleIds(invitedRoles)
         commands.forEach {
             val gatheringObject = saveGatheringObject(bill, it)
             saveEachGatheringReceiptAndAttachPhoto(it, gatheringObject)

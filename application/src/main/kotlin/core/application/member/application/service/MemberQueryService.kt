@@ -2,20 +2,20 @@ package core.application.member.application.service
 
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
-import core.application.member.application.service.authority.MemberAuthorityService
+import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import core.domain.member.port.inbound.MemberQueryByAuthorityUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.port.outbound.query.MemberNameAuthorityQueryModel
+import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 
 @Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
-    private val memberAuthorityService: MemberAuthorityService,
+    private val memberRoleService: MemberRoleService,
 ) : MemberQueryByAuthorityUseCase,
     MemberQueryUseCase {
     /**
@@ -29,7 +29,7 @@ class MemberQueryService(
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.of(
             getMemberById(memberId),
-            memberAuthorityService.getAuthorityNamesByMemberId(memberId),
+            memberRoleService.getRoleNamesByMemberId(memberId),
             getMemberTeamNumber(memberId),
         )
 
@@ -69,10 +69,10 @@ class MemberQueryService(
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 
-    override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
+    override fun findAllMemberIdByRoleIds(roleIds: List<RoleId>): List<MemberId> =
         memberPersistencePort
-            .findAllMemberIdByAuthorityIds(authorityIds)
+            .findAllMemberIdByRoleIds(roleIds)
 
-    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel> =
+    override fun getMemberNameRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
 }

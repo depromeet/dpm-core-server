@@ -37,7 +37,9 @@ class MemberEntity(
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
+    val memberRoles: MutableList<MemberRoleEntity> = mutableListOf(),
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    val memberPermissions: MutableList<MemberPermissionEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
@@ -55,7 +57,8 @@ class MemberEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            memberAuthorities = memberAuthorities.map { it.toDomain() }.toMutableList(),
+            memberRoles = memberRoles.map { it.toDomain() }.toMutableList(),
+            memberPermissions = memberPermissions.map { it.toDomain() }.toMutableList(),
             memberCohorts = memberCohorts.map { it.toDomain() }.toMutableList(),
             memberTeams = memberTeams.map { it.toDomain() }.toMutableList(),
         )

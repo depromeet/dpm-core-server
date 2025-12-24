@@ -1,11 +1,10 @@
 package core.application.member.application.service
 
-import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.member.application.service.cohort.MemberCohortService
+import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.security.oauth.token.JwtTokenInjector
-import core.domain.authority.enums.AuthorityType
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
@@ -19,11 +18,11 @@ import org.springframework.transaction.annotation.Transactional
 class MemberCommandService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberQueryService: MemberQueryService,
-    private val memberAuthorityService: MemberAuthorityService,
     private val memberTeamService: MemberTeamService,
     private val memberCohortService: MemberCohortService,
     private val tokenInjector: JwtTokenInjector,
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
+    private val memberRoleService: MemberRoleService,
 ) {
     /**
      * 회원 가입 시 팀 정보 및 파트 정보를 주입하고, 멤버를 ACTIVE 상태로 변경함. (DEV)
@@ -42,7 +41,6 @@ class MemberCommandService(
                     activate()
                 },
             )
-            memberAuthorityService.setMemberAuthorityByMemberId(it.memberId, AuthorityType.DEEPER)
             memberTeamService.addMemberToTeam(it.memberId, request.teamId)
             memberCohortService.addMemberToCohort(it.memberId)
         }
@@ -69,6 +67,6 @@ class MemberCommandService(
 
         memberTeamService.deleteMemberFromTeam(memberId)
         memberCohortService.deleteMemberFromCohort(memberId)
-        memberAuthorityService.revokeAllAuthorities(memberId)
+        memberRoleService.revokeAllAuthorities(memberId)
     }
 }

@@ -1,6 +1,6 @@
 package core.application.bill.presentation.request
 
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
@@ -32,7 +32,7 @@ data class CreateBillRequest(
     )
     @field:NotEmpty
     @field:Size(min = 1)
-    val invitedAuthorityIds: MutableList<AuthorityId>,
+    val invitedRoles: MutableList<RoleId>,
     @field:NotEmpty
     @field:Size(min = 1)
     val gatherings: MutableList<GatheringForBillCreateRequest>,

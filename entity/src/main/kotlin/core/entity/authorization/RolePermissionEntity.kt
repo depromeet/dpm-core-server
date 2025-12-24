@@ -1,5 +1,8 @@
 package core.entity.authorization
 
+import core.domain.authorization.aggregate.RolePermission
+import core.domain.authorization.vo.PermissionId
+import core.domain.authorization.vo.RoleId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -32,4 +35,12 @@ class RolePermissionEntity(
 
     @Column(name = "revoked_at")
     var revokedAt: Instant? = null,
-)
+) {
+    fun toDomain() =
+        RolePermission(
+            roleId = RoleId(role.id),
+            permissionId = PermissionId(permission.id),
+            grantedAt = grantedAt,
+            revokedAt = revokedAt,
+        )
+}

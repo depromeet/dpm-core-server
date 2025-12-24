@@ -10,11 +10,11 @@ import core.domain.gathering.vo.GatheringMemberId
 import core.domain.member.vo.MemberId
 import core.entity.gathering.GatheringMemberEntity
 import org.jooq.DSLContext
-import org.jooq.dsl.tables.references.AUTHORITIES
 import org.jooq.dsl.tables.references.GATHERING_MEMBERS
 import org.jooq.dsl.tables.references.MEMBERS
-import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
+import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
+import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.TEAMS
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -116,13 +116,13 @@ class GatheringMemberRepository(
             MEMBERS.NAME,
             TEAMS.NUMBER,
             MEMBERS.PART,
-            AUTHORITIES.NAME,
+            ROLES.NAME,
             GATHERING_MEMBERS.IS_JOINED,
         )
             .from(GATHERING_MEMBERS)
             .join(MEMBERS).on(GATHERING_MEMBERS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .join(MEMBER_AUTHORITIES).on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
-            .join(AUTHORITIES).on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+            .join(MEMBER_ROLES).on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
+            .join(ROLES).on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
             .leftJoin(MEMBER_TEAMS).on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .leftJoin(TEAMS).on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
@@ -132,7 +132,7 @@ class GatheringMemberRepository(
             .fetch()
             .mapNotNull { record ->
                 val name = record.get(MEMBERS.NAME)
-                val authority = record.get(AUTHORITIES.NAME)
+                val authority = record.get(ROLES.NAME)
                 val isJoined = record.get(GATHERING_MEMBERS.IS_JOINED)
 
                 if (name != null && authority != null && isJoined != null) {
@@ -173,13 +173,13 @@ class GatheringMemberRepository(
             MEMBERS.NAME,
             TEAMS.NUMBER,
             MEMBERS.PART,
-            AUTHORITIES.NAME,
+            ROLES.NAME,
             GATHERING_MEMBERS.IS_INVITATION_SUBMITTED,
         )
             .from(GATHERING_MEMBERS)
             .join(MEMBERS).on(GATHERING_MEMBERS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .join(MEMBER_AUTHORITIES).on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
-            .join(AUTHORITIES).on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+            .join(MEMBER_ROLES).on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
+            .join(ROLES).on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
             .leftJoin(MEMBER_TEAMS).on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .leftJoin(TEAMS).on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
@@ -189,7 +189,7 @@ class GatheringMemberRepository(
             .fetch()
             .mapNotNull { record ->
                 val name = record.get(MEMBERS.NAME)
-                val authority = record.get(AUTHORITIES.NAME)
+                val authority = record.get(ROLES.NAME)
                 val isSubmitted = record.get(GATHERING_MEMBERS.IS_INVITATION_SUBMITTED)
 
                 if (name != null && authority != null && isSubmitted != null) {

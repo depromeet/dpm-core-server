@@ -1,18 +1,18 @@
 package core.persistence.member.repository
 
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.port.outbound.query.MemberNameAuthorityQueryModel
+import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
 import core.entity.member.MemberEntity
 import org.jooq.DSLContext
-import org.jooq.dsl.tables.references.AUTHORITIES
 import org.jooq.dsl.tables.references.COHORTS
 import org.jooq.dsl.tables.references.MEMBERS
-import org.jooq.dsl.tables.references.MEMBER_AUTHORITIES
 import org.jooq.dsl.tables.references.MEMBER_COHORTS
+import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
+import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.TEAMS
 import org.springframework.stereotype.Repository
 
@@ -36,15 +36,15 @@ class MemberRepository(
     override fun existsDeletedMemberById(memberId: Long): Boolean =
         memberJpaRepository.existsByIdAndDeletedAtIsNotNull(memberId)
 
-    override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
+    override fun findAllMemberIdByRoleIds(roleIds: List<RoleId>): List<MemberId> =
         dsl
             .selectDistinct(MEMBERS.MEMBER_ID)
             .from(MEMBERS)
-            .join(MEMBER_AUTHORITIES)
-            .on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
-            .join(AUTHORITIES)
-            .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
-            .where(AUTHORITIES.AUTHORITY_ID.`in`(authorityIds.map { it.value }))
+            .join(MEMBER_ROLES)
+            .on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
+            .join(ROLES)
+            .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
+            .where(ROLES.ROLE_ID.`in`(roleIds.map { it.value }))
             .fetch(MEMBERS.MEMBER_ID)
             .map { MemberId(it ?: 0L) }
 
@@ -63,20 +63,20 @@ class MemberRepository(
                 MemberId(it)
             }
 
-    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel> =
+    override fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         dsl
-            .select(MEMBERS.NAME, AUTHORITIES.NAME)
+            .select(MEMBERS.NAME, ROLES.NAME)
             .from(MEMBERS)
-            .join(MEMBER_AUTHORITIES)
-            .on(MEMBERS.MEMBER_ID.eq(MEMBER_AUTHORITIES.MEMBER_ID))
-            .join(AUTHORITIES)
-            .on(MEMBER_AUTHORITIES.AUTHORITY_ID.eq(AUTHORITIES.AUTHORITY_ID))
+            .join(MEMBER_ROLES)
+            .on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
+            .join(ROLES)
+            .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
             .where(MEMBERS.MEMBER_ID.eq(memberId.value))
             .fetch()
-            .mapNotNull { (memberName, authorityName) ->
+            .mapNotNull { (memberName, roleName) ->
                 memberName?.let { name ->
-                    authorityName?.let { authority ->
-                        MemberNameAuthorityQueryModel(name, authority)
+                    roleName?.let { role ->
+                        MemberNameRoleQueryModel(name, role)
                     }
                 }
             }

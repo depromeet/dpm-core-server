@@ -1,5 +1,7 @@
 package core.entity.authorization
 
+import core.domain.authorization.aggregate.Role
+import core.domain.authorization.vo.RoleId
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -32,4 +34,13 @@ class RoleEntity(
         orphanRemoval = true,
     )
     private val rolePermissions: MutableSet<RolePermissionEntity> = mutableSetOf(),
-)
+
+) {
+    fun toDomain(): Role =
+        Role(
+            id = RoleId(id),
+            name = name,
+            rolePermissions = rolePermissions.map { it.toDomain() }.toMutableSet()
+        )
+
+}

@@ -1,7 +1,7 @@
 package core.application.security.oauth.token
 
 import core.application.security.properties.TokenProperties
-import core.domain.authority.port.inbound.AuthorityQueryUseCase
+import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.member.vo.MemberId
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
@@ -18,7 +18,7 @@ import javax.crypto.SecretKey
 @Component
 class JwtTokenProvider(
     private val tokenProperties: TokenProperties,
-    private val authorityQueryUseCase: AuthorityQueryUseCase,
+    private val roleQueryUseCase: RoleQueryUseCase,
 ) {
     fun generateAccessToken(memberId: String): String =
         generateToken(memberId, tokenProperties.expirationTime.accessToken)
@@ -46,15 +46,15 @@ class JwtTokenProvider(
 
     fun getAuthentication(token: String?): Authentication {
         val claims = getClaims(token)
-        val authorities =
-            authorityQueryUseCase
-                .getAuthoritiesByMemberId(MemberId(claims.subject.toLong()))
-                .map { SimpleGrantedAuthority("ROLE_$it") }
+        val permissions =
+            roleQueryUseCase
+                .getPermissions(MemberId(claims.subject.toLong()))
+                .map {  SimpleGrantedAuthority(it) }
 
         return UsernamePasswordAuthenticationToken(
-            User(claims.subject, "", authorities),
+            User(claims.subject, "", permissions),
             token,
-            authorities,
+            permissions,
         )
     }
 

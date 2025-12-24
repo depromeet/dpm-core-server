@@ -29,7 +29,6 @@ class Member(
     createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
-    val memberAuthorities: List<MemberAuthority> = emptyList(),
     val memberRoles: List<MemberRole> = emptyList(),
     val memberPermissions: List<MemberPermission> = emptyList(),
     val memberCohorts: List<MemberCohort> = emptyList(),
@@ -89,7 +88,7 @@ class Member(
 
     override fun toString(): String =
         "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
-            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
+            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberRoles=$memberRoles, memberPermissions=$memberPermissions " +
             "memberCohorts=$memberCohorts, memberTeams=$memberTeams, memberOAuths=$memberOAuths)"
 
     companion object {
