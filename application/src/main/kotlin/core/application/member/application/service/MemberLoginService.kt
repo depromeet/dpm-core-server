@@ -69,7 +69,7 @@ class MemberLoginService(
             memberId,
             redirectHandler.determineRedirectUrl(
                 requestUrl,
-                memberRoleService.resolvePrimaryAuthorityType(memberId),
+                memberRoleService.resolvePrimaryRoleType(memberId),
                 Profile.get(environment),
             ),
         )

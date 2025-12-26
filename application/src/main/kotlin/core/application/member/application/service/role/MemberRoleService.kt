@@ -37,7 +37,7 @@ class MemberRoleService(
      * @author LeeHanEum
      * @since 2025.9.15
      */
-    fun resolvePrimaryAuthorityType(memberId: MemberId): RoleType {
+    fun resolvePrimaryRoleType(memberId: MemberId): RoleType {
         val roles =
             memberRolePersistencePort
                 .findRoleNamesByMemberId(memberId.value)
