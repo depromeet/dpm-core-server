@@ -24,6 +24,7 @@ class Member(
     val id: MemberId? = null,
     val name: String,
     val email: String,
+    val signupEmail: String,
     part: MemberPart? = null,
     status: MemberStatus,
     createdAt: Instant? = null,
@@ -85,11 +86,6 @@ class Member(
         result = 31 * result + part.hashCode()
         return result
     }
-
-    override fun toString(): String =
-        "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
-            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberRoles=$memberRoles, memberPermissions=$memberPermissions, " +
-            "memberCohorts=$memberCohorts, memberTeams=$memberTeams, memberOAuths=$memberOAuths)"
 
     companion object {
         fun create(

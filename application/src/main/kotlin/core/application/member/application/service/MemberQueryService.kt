@@ -5,6 +5,7 @@ import core.application.member.application.exception.MemberTeamNotFoundException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
+import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -66,6 +67,11 @@ class MemberQueryService(
     fun getMemberTeamNumber(memberId: MemberId): Int =
         memberPersistencePort.findMemberTeamByMemberId(memberId)
             ?: throw MemberTeamNotFoundException()
+
+    fun checkWhiteList(name: String, signupEmail: String): Member =
+        memberPersistencePort.findByNameAndSignupEmail(name, signupEmail)
+            ?: throw MemberNotFoundException()
+
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 

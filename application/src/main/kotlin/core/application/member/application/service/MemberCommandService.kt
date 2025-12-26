@@ -5,6 +5,7 @@ import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.security.oauth.token.JwtTokenInjector
+import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
@@ -68,5 +69,10 @@ class MemberCommandService(
         memberTeamService.deleteMemberFromTeam(memberId)
         memberCohortService.deleteMemberFromCohort(memberId)
         memberRoleService.revokeAllRoles(memberId)
+    }
+
+    fun activate(member: Member) {
+        member.activate()
+        memberPersistencePort.save(member)
     }
 }

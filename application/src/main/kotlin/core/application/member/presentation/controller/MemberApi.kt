@@ -2,6 +2,7 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
@@ -123,4 +124,11 @@ interface MemberApi {
         ],
     )
     fun initMemberDataAndApprove(request: InitMemberDataRequest): CustomResponse<Void>
+
+    @Operation(
+        summary = "가입된 이메일인지 체크하는 화이트리스트 API",
+        description = "주어진 이메일이 화이트리스트에 포함되어 있으면 가입 승인 합니다.",
+    )
+    @ApiResponse(responseCode = "200", description = "화이트리스트 체크 및 승인 성공")
+    fun checkWhiteList(request: WhiteListCheckRequest): CustomResponse<Void>
 }

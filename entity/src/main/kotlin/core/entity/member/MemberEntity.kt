@@ -26,6 +26,8 @@ class MemberEntity(
     val name: String,
     @Column(nullable = false, unique = true)
     val email: String,
+    @Column(name = "signup_email", nullable = false, unique = true)
+    val signupEmail: String,
     @Column
     val part: String? = null,
     @Column(nullable = false)
@@ -52,6 +54,7 @@ class MemberEntity(
             id = MemberId(this.id),
             name = name,
             email = email,
+            signupEmail = signupEmail,
             part = this.part?.let { MemberPart.valueOf(it) },
             status = MemberStatus.valueOf(this.status),
             createdAt = createdAt,
@@ -69,6 +72,7 @@ class MemberEntity(
                 id = domain.id?.value ?: 0L,
                 name = domain.name,
                 email = domain.email,
+                signupEmail = domain.signupEmail,
                 part = domain.part?.name,
                 status = domain.status.name,
                 createdAt = domain.createdAt,
