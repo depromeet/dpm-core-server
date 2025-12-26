@@ -105,6 +105,7 @@ class Member(
             val now = Instant.now()
             return Member(
                 email = email,
+                signupEmail = email,
                 name = name,
                 status = matchedStatus,
                 createdAt = now,
