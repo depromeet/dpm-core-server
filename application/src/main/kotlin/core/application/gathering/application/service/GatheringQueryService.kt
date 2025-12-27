@@ -51,7 +51,7 @@ class GatheringQueryService(
         val mappedIds = mappingMemberIdsByGatheringIds(gatheringIds)
 
         return mappedIds.map { (memberId, gatheringIds) ->
-            val (memberName, authority) = getMemberNameAuthority(memberId)
+            val (memberName, authority) = getMemberNameRole(memberId)
 //            TODO : 여기 멤버에 해당하는 gathering의 분할 금액을 넘겨야하지 않은가..?
             val totalSplitAmount = findTotalSplitAmount(gatheringIds)
 
@@ -86,7 +86,7 @@ class GatheringQueryService(
                     .map { memberId -> memberId to gatheringId }
             }.groupBy({ it.first }, { it.second })
 
-    private fun getMemberNameAuthority(memberId: MemberId): Pair<String, String> {
+    private fun getMemberNameRole(memberId: MemberId): Pair<String, String> {
         val queryResults =
             memberQueryUseCase
                 .getMemberNameRoleByMemberId(memberId)
