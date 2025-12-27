@@ -40,38 +40,39 @@ INSERT INTO permissions (permission_id, action, resource) VALUES (31, 'READ', 'T
 INSERT INTO permissions (permission_id, action, resource) VALUES (32, 'UPDATE', 'TEAM');
 
 -- 17기 운영진
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-                                                          (3,1),(3,2),(3,3),(3,4),(3,5),(3,6),(3,7),(3,8),
-                                                          (3,9),(3,10),(3,11),(3,12),(3,13),(3,14),(3,15),(3,16),
-                                                          (3,17),(3,18),(3,19),(3,20),(3,21),(3,22),(3,23),(3,24),
-                                                          (3,25),(3,26),(3,27),(3,28),(3,29),(3,30),(3,31),(3,32);
+INSERT INTO role_permissions (role_id, permission_id, granted_at) VALUES
+                                                                      (3,1,NOW(6)),(3,2,NOW(6)),(3,3,NOW(6)),(3,4,NOW(6)),(3,5,NOW(6)),(3,6,NOW(6)),(3,7,NOW(6)),(3,8,NOW(6)),
+                                                                      (3,9,NOW(6)),(3,10,NOW(6)),(3,11,NOW(6)),(3,12,NOW(6)),(3,13,NOW(6)),(3,14,NOW(6)),(3,15,NOW(6)),(3,16,NOW(6)),
+                                                                      (3,17,NOW(6)),(3,18,NOW(6)),(3,19,NOW(6)),(3,20,NOW(6)),(3,21,NOW(6)),(3,22,NOW(6)),(3,23,NOW(6)),(3,24,NOW(6)),
+                                                                      (3,25,NOW(6)),(3,26,NOW(6)),(3,27,NOW(6)),(3,28,NOW(6)),(3,29,NOW(6)),(3,30,NOW(6)),(3,31,NOW(6)),(3,32,NOW(6));
+
 -- 18기 운영진
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-                                                          (4,1),(4,2),(4,3),(4,4),(4,5),(4,6),(4,7),(4,8),
-                                                          (4,9),(4,10),(4,11),(4,12),(4,13),(4,14),(4,15),(4,16),
-                                                          (4,17),(4,18),(4,19),(4,20),(4,21),(4,22),(4,23),(4,24),
-                                                          (4,25),(4,26),(4,27),(4,28),(4,29),(4,30),(4,31),(4,32);
+INSERT INTO role_permissions (role_id, permission_id, granted_at) VALUES
+                                                                      (4,1,NOW(6)),(4,2,NOW(6)),(4,3,NOW(6)),(4,4,NOW(6)),(4,5,NOW(6)),(4,6,NOW(6)),(4,7,NOW(6)),(4,8,NOW(6)),
+                                                                      (4,9,NOW(6)),(4,10,NOW(6)),(4,11,NOW(6)),(4,12,NOW(6)),(4,13,NOW(6)),(4,14,NOW(6)),(4,15,NOW(6)),(4,16,NOW(6)),
+                                                                      (4,17,NOW(6)),(4,18,NOW(6)),(4,19,NOW(6)),(4,20,NOW(6)),(4,21,NOW(6)),(4,22,NOW(6)),(4,23,NOW(6)),(4,24,NOW(6)),
+                                                                      (4,25,NOW(6)),(4,26,NOW(6)),(4,27,NOW(6)),(4,28,NOW(6)),(4,29,NOW(6)),(4,30,NOW(6)),(4,31,NOW(6)),(4,32,NOW(6));
 
 -- 코어 1기
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-                                                          (6,1),(6,2),(6,3),(6,4),(6,5),(6,6),(6,7),(6,8),
-                                                          (6,9),(6,10),(6,11),(6,12),(6,13),(6,14),(6,15),(6,16),
-                                                          (6,17),(6,18),(6,19),(6,20),(6,21),(6,22),(6,23),(6,24),
-                                                          (6,25),(6,26),(6,27),(6,28),(6,29),(6,30),(6,31),(6,32);
+INSERT INTO role_permissions (role_id, permission_id, granted_at) VALUES
+                                                                      (6,1,NOW(6)),(6,2,NOW(6)),(6,3,NOW(6)),(6,4,NOW(6)),(6,5,NOW(6)),(6,6,NOW(6)),(6,7,NOW(6)),(6,8,NOW(6)),
+                                                                      (6,9,NOW(6)),(6,10,NOW(6)),(6,11,NOW(6)),(6,12,NOW(6)),(6,13,NOW(6)),(6,14,NOW(6)),(6,15,NOW(6)),(6,16,NOW(6)),
+                                                                      (6,17,NOW(6)),(6,18,NOW(6)),(6,19,NOW(6)),(6,20,NOW(6)),(6,21,NOW(6)),(6,22,NOW(6)),(6,23,NOW(6)),(6,24,NOW(6)),
+                                                                      (6,25,NOW(6)),(6,26,NOW(6)),(6,27,NOW(6)),(6,28,NOW(6)),(6,29,NOW(6)),(6,30,NOW(6)),(6,31,NOW(6)),(6,32,NOW(6));
 
 -- 코어 2기
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-                                                          (7,1),(7,2),(7,3),(7,4),(7,5),(7,6),(7,7),(7,8),
-                                                          (7,9),(7,10),(7,11),(7,12),(7,13),(7,14),(7,15),(7,16),
-                                                          (7,17),(7,18),(7,19),(7,20),(7,21),(7,22),(7,23),(7,24),
-                                                          (7,25),(7,26),(7,27),(7,28),(7,29),(7,30),(7,31),(7,32);
+INSERT INTO role_permissions (role_id, permission_id, granted_at) VALUES
+                                                                      (7,1,NOW(6)),(7,2,NOW(6)),(7,3,NOW(6)),(7,4,NOW(6)),(7,5,NOW(6)),(7,6,NOW(6)),(7,7,NOW(6)),(7,8,NOW(6)),
+                                                                      (7,9,NOW(6)),(7,10,NOW(6)),(7,11,NOW(6)),(7,12,NOW(6)),(7,13,NOW(6)),(7,14,NOW(6)),(7,15,NOW(6)),(7,16,NOW(6)),
+                                                                      (7,17,NOW(6)),(7,18,NOW(6)),(7,19,NOW(6)),(7,20,NOW(6)),(7,21,NOW(6)),(7,22,NOW(6)),(7,23,NOW(6)),(7,24,NOW(6)),
+                                                                      (7,25,NOW(6)),(7,26,NOW(6)),(7,27,NOW(6)),(7,28,NOW(6)),(7,29,NOW(6)),(7,30,NOW(6)),(7,31,NOW(6)),(7,32,NOW(6));
 
 -- 17기 디퍼
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-                                                          (1,3),(1,7),(1,11),(1,15),
-                                                          (1,19),(1,23),(1,27),(1,31);
+INSERT INTO role_permissions (role_id, permission_id, granted_at) VALUES
+                                                                      (1,3,NOW(6)),(1,7,NOW(6)),(1,11,NOW(6)),(1,15,NOW(6)),
+                                                                      (1,19,NOW(6)),(1,23,NOW(6)),(1,27,NOW(6)),(1,31,NOW(6));
 
 -- 18기 디퍼
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-                                                          (2,3),(2,7),(2,11),(2,15),
-                                                          (2,19),(2,23),(2,27),(2,31);
+INSERT INTO role_permissions (role_id, permission_id, granted_at) VALUES
+                                                                      (2,3,NOW(6)),(2,7,NOW(6)),(2,11,NOW(6)),(2,15,NOW(6)),
+                                                                      (2,19,NOW(6)),(2,23,NOW(6)),(2,27,NOW(6)),(2,31,NOW(6));
