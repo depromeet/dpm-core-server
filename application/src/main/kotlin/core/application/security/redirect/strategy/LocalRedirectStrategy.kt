@@ -36,6 +36,7 @@ class LocalRedirectStrategy(
             when (context.role) {
                 RoleType.Deeper -> resolveDeeperRedirect(requestUrl)
                 RoleType.Organizer -> resolveOrganizerRedirect(requestUrl)
+                RoleType.Core -> resolveOrganizerRedirect(requestUrl)
                 else -> null
             } ?: context.copy(error = "Unsupported Redirect URL").let { errorStrategy.resolve(it) }
 

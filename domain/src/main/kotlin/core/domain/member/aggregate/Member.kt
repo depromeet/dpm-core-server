@@ -69,6 +69,8 @@ class Member(
         updatedAt = Instant.now()
     }
 
+    fun whitelistCheckedYet(): Boolean = email == null && status == MemberStatus.PENDING
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Member) return false
