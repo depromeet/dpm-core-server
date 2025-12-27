@@ -12,6 +12,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.CreationTimestamp
 import java.time.Instant
 
 @Entity
@@ -30,8 +31,9 @@ class RolePermissionEntity(
     @JoinColumn(name = "permission_id", nullable = false)
     val permission: PermissionEntity,
 
+    @CreationTimestamp
     @Column(name = "granted_at", nullable = false)
-    val grantedAt: Instant = Instant.now(),
+    val grantedAt: Instant,
 
     @Column(name = "revoked_at")
     var revokedAt: Instant? = null,

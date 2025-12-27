@@ -13,7 +13,7 @@ class MemberRoleService(
      * 멤버 식별자로 해당 멤버가 소유한 권한 이름 목록을 조회함.
      *
      * @author LeeHanEum
-     * @since 2025.07.24
+     * @since 2025.12.27
      */
     fun getRoleNamesByMemberId(memberId: MemberId): List<String> =
         memberRolePersistencePort
@@ -24,7 +24,7 @@ class MemberRoleService(
      *
      *
      * @author LeeHanEum
-     * @since 2025.09.01
+     * @since 2025.12.27
      */
     fun revokeAllRoles(memberId: MemberId) =
         memberRolePersistencePort.softDeleteAllByMemberId(memberId.value)
@@ -35,7 +35,7 @@ class MemberRoleService(
      * 권한 타입의 위계는 CORE > ORGANIZER > DEEPER > GUEST 순입니다.
      *
      * @author LeeHanEum
-     * @since 2025.9.15
+     * @since 2025.12.27
      */
     fun resolvePrimaryRoleType(memberId: MemberId): RoleType {
         val roles =

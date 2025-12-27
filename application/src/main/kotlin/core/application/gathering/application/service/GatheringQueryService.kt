@@ -5,6 +5,7 @@ import core.application.gathering.application.service.member.GatheringMemberQuer
 import core.application.gathering.application.service.receipt.GatheringReceiptQueryService
 import core.application.gathering.application.validator.GatheringValidator
 import core.application.gathering.presentation.response.GatheringMemberJoinListResponse
+import core.domain.authorization.vo.RoleType
 import core.domain.bill.port.outbound.query.BillMemberIsInvitationSubmittedQueryModel
 import core.domain.bill.vo.BillId
 import core.domain.gathering.aggregate.Gathering
@@ -94,7 +95,7 @@ class GatheringQueryService(
                     if (queryResults.size > 1) {
                         queryResults.sortedWith(
                             compareBy {
-                                if (it.role.contains("운영진")) 0 else 1
+                                if (RoleType.from(it.role) == RoleType.Organizer) 0 else 1
                             },
                         )
                     } else {
