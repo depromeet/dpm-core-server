@@ -2,8 +2,8 @@ package core.application.member.application.service
 
 import core.application.common.constant.Profile
 import core.application.member.application.exception.MemberIdRequiredException
-import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.member.application.service.oauth.MemberOAuthService
+import core.application.member.application.service.role.MemberRoleService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.properties.SecurityProperties
 import core.application.security.redirect.handler.LoginRedirectHandler
@@ -22,13 +22,13 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class MemberLoginService(
     private val memberPersistencePort: MemberPersistencePort,
-    private val memberAuthorityService: MemberAuthorityService,
     private val memberOAuthService: MemberOAuthService,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val securityProperties: SecurityProperties,
     private val tokenProvider: JwtTokenProvider,
     private val environment: Environment,
     private val redirectHandler: LoginRedirectHandler,
+    private val memberRoleService: MemberRoleService,
 ) : HandleMemberLoginUseCase {
     @Transactional
     override fun handleLoginSuccess(
@@ -36,7 +36,7 @@ class MemberLoginService(
         authAttributes: OAuthAttributes,
     ): LoginResult =
         memberPersistencePort
-            .findByEmail(authAttributes.getEmail())
+            .findBySignupEmail(authAttributes.getEmail())
             ?.let { member -> handleExistingMemberLogin(requestUrl, member) }
             ?: handleUnregisteredMember(authAttributes)
 
@@ -69,7 +69,7 @@ class MemberLoginService(
             memberId,
             redirectHandler.determineRedirectUrl(
                 requestUrl,
-                memberAuthorityService.resolvePrimaryAuthorityType(memberId),
+                memberRoleService.resolvePrimaryRoleType(memberId),
                 Profile.get(environment),
             ),
         )

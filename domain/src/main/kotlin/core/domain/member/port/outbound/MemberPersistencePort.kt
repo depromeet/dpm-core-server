@@ -1,14 +1,14 @@
 package core.domain.member.port.outbound
 
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import core.domain.member.aggregate.Member
-import core.domain.member.port.outbound.query.MemberNameAuthorityQueryModel
+import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
 
 interface MemberPersistencePort {
     fun save(member: Member): Member
 
-    fun findByEmail(email: String): Member?
+    fun findBySignupEmail(email: String): Member?
 
     fun findById(memberId: Long): Member?
 
@@ -18,11 +18,13 @@ interface MemberPersistencePort {
 
     fun existsDeletedMemberById(memberId: Long): Boolean
 
-    fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId>
+    fun findByNameAndSignupEmail(name: String, signupEmail: String): Member?
+
+    fun findAllMemberIdByRoleIds(roleIds: List<RoleId>): List<MemberId>
 
     fun findAllByCohort(value: String): List<MemberId>
 
-    fun findMemberNameAndAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel>
+    fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel>
 
     fun findMemberTeamByMemberId(memberId: MemberId): Int?
 }

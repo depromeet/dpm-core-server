@@ -4,7 +4,7 @@ import core.application.common.constant.Profile
 import core.application.security.redirect.model.LoginIntent
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.strategy.CompositeRedirectStrategy
-import core.domain.authority.enums.AuthorityType
+import core.domain.authorization.vo.RoleType
 import org.springframework.stereotype.Component
 
 @Component
@@ -13,12 +13,12 @@ class LoginRedirectHandler(
 ) {
     fun determineRedirectUrl(
         requestUrl: String,
-        authority: AuthorityType,
+        role: RoleType,
         profile: Profile,
     ): String {
         val context =
             RedirectContext(
-                authority = authority,
+                role = role,
                 profile = profile,
                 requestUrl = requestUrl,
                 intent = LoginIntent.DIRECT,

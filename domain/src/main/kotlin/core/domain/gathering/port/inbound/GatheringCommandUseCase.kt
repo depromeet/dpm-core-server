@@ -1,6 +1,6 @@
 package core.domain.gathering.port.inbound
 
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import core.domain.bill.port.inbound.command.UpdateMemberDepositCommand
 import core.domain.bill.port.inbound.command.UpdateMemberListDepositCommand
 import core.domain.bill.vo.BillId
@@ -13,7 +13,7 @@ import core.domain.member.vo.MemberId
 interface GatheringCommandUseCase {
     fun saveAllGatherings(
         commands: List<GatheringCreateCommand>,
-        invitedAuthorityIds: List<AuthorityId>,
+        invitedRoles: List<RoleId>,
         billId: BillId,
     )
 

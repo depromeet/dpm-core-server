@@ -61,7 +61,7 @@ class BillCommandService(
                 )
             }
 
-        gatheringCommandUseCase.saveAllGatherings(gatheringCommands, request.invitedAuthorityIds, billId)
+        gatheringCommandUseCase.saveAllGatherings(gatheringCommands, request.invitedRoles, billId)
     }
 
     private fun verifyAccountThenCreateBill(
