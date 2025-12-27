@@ -24,6 +24,10 @@ class LoginRedirectHandler(
                 intent = LoginIntent.DIRECT,
             )
 
+        println(
+            "LoginRedirectHandler.determineRedirectUrl: role=$role, profile=$profile, requestUrl=$requestUrl",
+        )
+
         return strategy.resolve(context)
     }
 }
