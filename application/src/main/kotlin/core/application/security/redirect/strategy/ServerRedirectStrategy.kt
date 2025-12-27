@@ -4,7 +4,7 @@ import core.application.common.constant.Profile
 import core.application.security.properties.SecurityProperties
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.validator.RedirectValidator
-import core.domain.authority.enums.AuthorityType
+import core.domain.authorization.vo.RoleType
 
 /**
  * `PROD` 및 `DEV` 환경에서의 리다이렉트 URL을 결정하는 전략 클래스입니다.
@@ -26,9 +26,9 @@ class ServerRedirectStrategy(
             }
 
         val redirectUrl =
-            when (context.authority) {
-                AuthorityType.DEEPER -> resolveDeeperRedirect(requestUrl)
-                AuthorityType.ORGANIZER -> resolveOrganizerRedirect(requestUrl)
+            when (context.role) {
+                RoleType.Deeper -> resolveDeeperRedirect(requestUrl)
+                RoleType.Organizer -> resolveOrganizerRedirect(requestUrl)
                 else -> null
             } ?: context.copy(error = "Unsupported Redirect URL").let { errorStrategy.resolve(it) }
 

@@ -2,7 +2,7 @@ package core.application.security.oauth.service
 
 import core.application.security.oauth.domain.CustomOAuth2User
 import core.application.security.oauth.exception.UnsupportedOAuthProviderException
-import core.domain.authority.port.inbound.AuthorityQueryUseCase
+import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.security.oauth.dto.OAuthAttributes
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class CustomOAuth2UserService(
-    private val authorityQueryUseCase: AuthorityQueryUseCase,
+    private val roleQueryUseCase: RoleQueryUseCase
 ) : DefaultOAuth2UserService() {
     /**
      * OAuth2UserRequest 객체에서 OAuth2User를 로드하고, 해당 사용자가 소유한 권한을 조회하여 CustomOAuth2User 객체로 반환함.
@@ -27,7 +27,7 @@ class CustomOAuth2UserService(
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
         val oAuth2User = super.loadUser(userRequest)
         val clientRegistration = userRequest.clientRegistration
-        val roleNames = authorityQueryUseCase.getAuthoritiesByExternalId(clientRegistration.registrationId)
+        val roleNames = roleQueryUseCase.getRolesByExternalId(clientRegistration.registrationId)
 
         val grantedAuthorities = mutableSetOf<GrantedAuthority>()
 

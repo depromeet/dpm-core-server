@@ -2,7 +2,6 @@ package core.application.gathering.application.service.member
 
 import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.application.validator.GatheringMemberValidator
-import core.domain.authority.enums.AuthorityType
 import core.domain.bill.port.outbound.query.BillMemberIsInvitationSubmittedQueryModel
 import core.domain.gathering.aggregate.GatheringMember
 import core.domain.gathering.port.inbound.GatheringMemberQueryUseCase
@@ -47,7 +46,7 @@ class GatheringMemberQueryService(
                         if (queryResults.size > 1) {
                             queryResults.sortedWith(
                                 compareBy {
-                                    if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
+                                    if (it.authority.contains("운영진")) 0 else 1
                                 },
                             )
                         } else {
@@ -71,7 +70,7 @@ class GatheringMemberQueryService(
                         if (queryResults.size > 1) {
                             queryResults.sortedWith(
                                 compareBy {
-                                    if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
+                                    if (it.authority.contains("운영진")) 0 else 1
                                 },
                             )
                         } else {

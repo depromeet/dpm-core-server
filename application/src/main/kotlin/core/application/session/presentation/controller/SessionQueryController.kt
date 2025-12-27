@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 class SessionQueryController(
     private val sessionQueryService: SessionQueryService,
 ) : SessionQueryApi {
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:session')")
     @GetMapping("/next")
     override fun getNextSession(): CustomResponse<NextSessionResponse> {
         val response =
@@ -34,7 +34,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:session')")
     @GetMapping
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
         val response =
@@ -45,7 +45,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:session')")
     @GetMapping("/{sessionId}")
     override fun getSessionById(
         @PathVariable(name = "sessionId") sessionId: SessionId,
@@ -58,7 +58,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('update:session')")
     @GetMapping("/{sessionId}/attendance-time")
     override fun getAttendanceTime(
         @PathVariable(name = "sessionId") sessionId: SessionId,
@@ -71,7 +71,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:session')")
     @GetMapping("/weeks")
     override fun getSessionWeeks(): CustomResponse<SessionWeeksResponse> {
         val response =
@@ -82,7 +82,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:session')")
     @GetMapping("/{sessionId}/update-policy")
     override fun queryTargetAttendancesByPolicyChange(
         @PathVariable("sessionId") sessionId: SessionId,

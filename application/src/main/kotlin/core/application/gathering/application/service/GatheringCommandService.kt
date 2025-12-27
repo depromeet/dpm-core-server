@@ -6,7 +6,7 @@ import core.application.gathering.application.exception.member.GatheringMemberNo
 import core.application.gathering.application.service.member.GatheringMemberCommandService
 import core.application.gathering.application.service.member.GatheringMemberQueryService
 import core.application.gathering.application.service.receipt.GatheringReceiptCommandService
-import core.domain.authority.vo.AuthorityId
+import core.domain.authorization.vo.RoleId
 import core.domain.bill.aggregate.Bill
 import core.domain.bill.port.inbound.BillQueryUseCase
 import core.domain.bill.port.inbound.command.UpdateMemberDepositCommand
@@ -19,7 +19,7 @@ import core.domain.gathering.port.inbound.command.GatheringCreateCommand
 import core.domain.gathering.port.inbound.command.JoinGatheringCommand
 import core.domain.gathering.port.outbound.GatheringPersistencePort
 import core.domain.gathering.vo.GatheringId
-import core.domain.member.port.inbound.MemberQueryByAuthorityUseCase
+import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,17 +31,17 @@ class GatheringCommandService(
     private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val gatheringMemberCommandService: GatheringMemberCommandService,
     private val gatheringMemberQueryService: GatheringMemberQueryService,
-    private val memberQueryByAuthorityUseCase: MemberQueryByAuthorityUseCase,
+    private val memberQueryByRoleUseCase: MemberQueryByRoleUseCase,
     private val billQueryUseCase: BillQueryUseCase,
 ) : GatheringCommandUseCase {
     override fun saveAllGatherings(
         commands: List<GatheringCreateCommand>,
-        invitedAuthorityIds: List<AuthorityId>,
+        invitedRoles: List<RoleId>,
         billId: BillId,
     ) {
         val bill = billQueryUseCase.getById(billId)
         val memberIds =
-            memberQueryByAuthorityUseCase.findAllMemberIdByAuthorityIds(invitedAuthorityIds)
+            memberQueryByRoleUseCase.findAllMemberIdByRoleIds(invitedRoles)
         commands.forEach {
             val gatheringObject = saveGatheringObject(bill, it)
             saveEachGatheringReceiptAndAttachPhoto(it, gatheringObject)

@@ -4,7 +4,7 @@ import core.application.common.constant.Profile
 import core.application.security.properties.SecurityProperties
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.validator.RedirectValidator
-import core.domain.authority.enums.AuthorityType
+import core.domain.authorization.vo.RoleType
 
 /**
  * `DEV` 환경에서 프론트엔드가 로컬(`local-core`, `local-admin`)에서 구동될 때 사용하는 리다이렉트 전략입니다.
@@ -33,9 +33,9 @@ class LocalRedirectStrategy(
             }
 
         val redirectUrl =
-            when (context.authority) {
-                AuthorityType.DEEPER -> resolveDeeperRedirect(requestUrl)
-                AuthorityType.ORGANIZER -> resolveOrganizerRedirect(requestUrl)
+            when (context.role) {
+                RoleType.Deeper -> resolveDeeperRedirect(requestUrl)
+                RoleType.Organizer -> resolveOrganizerRedirect(requestUrl)
                 else -> null
             } ?: context.copy(error = "Unsupported Redirect URL").let { errorStrategy.resolve(it) }
 

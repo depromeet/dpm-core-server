@@ -23,13 +23,15 @@ import java.time.Instant
 class Member(
     val id: MemberId? = null,
     val name: String,
-    val email: String,
+    val email: String? = null,
+    val signupEmail: String,
     part: MemberPart? = null,
     status: MemberStatus,
     createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
-    val memberAuthorities: List<MemberAuthority> = emptyList(),
+    val memberRoles: List<MemberRole> = emptyList(),
+    val memberPermissions: List<MemberPermission> = emptyList(),
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),
     val memberOAuths: List<MemberOAuth> = emptyList(),
@@ -85,11 +87,6 @@ class Member(
         return result
     }
 
-    override fun toString(): String =
-        "Member(id=$id, name='$name', email='$email', part=$part, status=$status, createdAt=$createdAt, " +
-            "updatedAt=$updatedAt, deletedAt=$deletedAt, memberAuthorities=$memberAuthorities, " +
-            "memberCohorts=$memberCohorts, memberTeams=$memberTeams, memberOAuths=$memberOAuths)"
-
     companion object {
         fun create(
             email: String,
@@ -108,6 +105,7 @@ class Member(
             val now = Instant.now()
             return Member(
                 email = email,
+                signupEmail = email,
                 name = name,
                 status = matchedStatus,
                 createdAt = now,

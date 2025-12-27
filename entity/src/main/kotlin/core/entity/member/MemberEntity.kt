@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.annotations.CreationTimestamp
 import java.time.Instant
 
 @Entity
@@ -24,20 +25,25 @@ class MemberEntity(
     val id: Long,
     @Column(nullable = false)
     val name: String,
-    @Column(nullable = false, unique = true)
-    val email: String,
+    @Column(unique = true)
+    val email: String? = null,
+    @Column(name = "signup_email", nullable = false, unique = true)
+    val signupEmail: String,
     @Column
     val part: String? = null,
     @Column(nullable = false)
     val status: String,
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant? = null,
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     val updatedAt: Instant? = null,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    val memberAuthorities: MutableList<MemberAuthorityEntity> = mutableListOf(),
+    val memberRoles: MutableList<MemberRoleEntity> = mutableListOf(),
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    val memberPermissions: MutableList<MemberPermissionEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberCohorts: MutableList<MemberCohortEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
@@ -50,12 +56,14 @@ class MemberEntity(
             id = MemberId(this.id),
             name = name,
             email = email,
+            signupEmail = signupEmail,
             part = this.part?.let { MemberPart.valueOf(it) },
             status = MemberStatus.valueOf(this.status),
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
-            memberAuthorities = memberAuthorities.map { it.toDomain() }.toMutableList(),
+            memberRoles = memberRoles.map { it.toDomain() }.toMutableList(),
+            memberPermissions = memberPermissions.map { it.toDomain() }.toMutableList(),
             memberCohorts = memberCohorts.map { it.toDomain() }.toMutableList(),
             memberTeams = memberTeams.map { it.toDomain() }.toMutableList(),
         )
@@ -66,6 +74,7 @@ class MemberEntity(
                 id = domain.id?.value ?: 0L,
                 name = domain.name,
                 email = domain.email,
+                signupEmail = domain.signupEmail,
                 part = domain.part?.name,
                 status = domain.status.name,
                 createdAt = domain.createdAt,

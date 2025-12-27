@@ -4,7 +4,7 @@ import core.application.security.oauth.exception.OAuthExceptionCode
 import core.application.security.redirect.model.LoginIntent
 import core.application.security.redirect.model.RedirectContext
 import core.application.security.redirect.strategy.CompositeRedirectStrategy
-import core.domain.authority.enums.AuthorityType
+import core.domain.authorization.vo.RoleType
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.AuthenticationException
@@ -28,7 +28,7 @@ class CustomAuthenticationFailureHandler(
     ) {
         val context =
             RedirectContext(
-                authority = AuthorityType.GUEST,
+                role = RoleType.Guest,
                 intent = LoginIntent.DIRECT,
                 error = OAuthExceptionCode.AUTHENTICATION_FAILED.name,
             )

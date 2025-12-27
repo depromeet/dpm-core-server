@@ -5,7 +5,7 @@ import core.application.gathering.application.service.member.GatheringMemberQuer
 import core.application.gathering.application.service.receipt.GatheringReceiptQueryService
 import core.application.gathering.application.validator.GatheringValidator
 import core.application.gathering.presentation.response.GatheringMemberJoinListResponse
-import core.domain.authority.enums.AuthorityType
+import core.domain.authorization.vo.RoleType
 import core.domain.bill.port.outbound.query.BillMemberIsInvitationSubmittedQueryModel
 import core.domain.bill.vo.BillId
 import core.domain.gathering.aggregate.Gathering
@@ -51,7 +51,7 @@ class GatheringQueryService(
         val mappedIds = mappingMemberIdsByGatheringIds(gatheringIds)
 
         return mappedIds.map { (memberId, gatheringIds) ->
-            val (memberName, authority) = getMemberNameAuthority(memberId)
+            val (memberName, authority) = getMemberNameRole(memberId)
 //            TODO : 여기 멤버에 해당하는 gathering의 분할 금액을 넘겨야하지 않은가..?
             val totalSplitAmount = findTotalSplitAmount(gatheringIds)
 
@@ -86,16 +86,16 @@ class GatheringQueryService(
                     .map { memberId -> memberId to gatheringId }
             }.groupBy({ it.first }, { it.second })
 
-    private fun getMemberNameAuthority(memberId: MemberId): Pair<String, String> {
+    private fun getMemberNameRole(memberId: MemberId): Pair<String, String> {
         val queryResults =
             memberQueryUseCase
-                .getMemberNameAuthorityByMemberId(memberId)
+                .getMemberNameRoleByMemberId(memberId)
                 .let { queryResults ->
                     // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
                     if (queryResults.size > 1) {
                         queryResults.sortedWith(
                             compareBy {
-                                if (it.authority == AuthorityType.ORGANIZER.name) 0 else 1
+                                if (RoleType.from(it.role) == RoleType.Organizer) 0 else 1
                             },
                         )
                     } else {
@@ -103,7 +103,7 @@ class GatheringQueryService(
                     }
                 }
 
-        return queryResults.first().let { it.name to it.authority }
+        return queryResults.first().let { it.name to it.role }
     }
 
     override fun findTotalSplitAmount(gatheringIds: List<GatheringId>): Int? {

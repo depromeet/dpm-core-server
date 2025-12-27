@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 class SessionCommandController(
     private val sessionCommandService: SessionCommandService,
 ) : SessionCommandApi {
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('create:session')")
     @PostMapping
     override fun createSession(
         @RequestBody request: SessionCreateRequest,
@@ -33,7 +33,7 @@ class SessionCommandController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:session')")
     @PatchMapping("/{sessionId}/attendance-time")
     override fun updateAttendanceTime(
         @PathVariable(name = "sessionId") sessionId: SessionId,
@@ -47,7 +47,7 @@ class SessionCommandController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('update:session')")
     @PatchMapping
     override fun updateSession(
         @RequestBody request: SessionUpdateRequest,
@@ -59,7 +59,7 @@ class SessionCommandController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasRole('ROLE_ORGANIZER')")
+    @PreAuthorize("hasAuthority('delete:session')")
     @PatchMapping("/{sessionId}/delete")
     override fun softDeleteSession(
         @PathVariable("sessionId") sessionId: SessionId,

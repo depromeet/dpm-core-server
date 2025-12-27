@@ -2,21 +2,22 @@ package core.application.member.application.service
 
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
-import core.application.member.application.service.authority.MemberAuthorityService
+import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
-import core.domain.authority.vo.AuthorityId
-import core.domain.member.port.inbound.MemberQueryByAuthorityUseCase
+import core.domain.authorization.vo.RoleId
+import core.domain.member.aggregate.Member
+import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.port.outbound.query.MemberNameAuthorityQueryModel
+import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 
 @Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
-    private val memberAuthorityService: MemberAuthorityService,
-) : MemberQueryByAuthorityUseCase,
+    private val memberRoleService: MemberRoleService,
+) : MemberQueryByRoleUseCase,
     MemberQueryUseCase {
     /**
      * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
@@ -29,7 +30,7 @@ class MemberQueryService(
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.of(
             getMemberById(memberId),
-            memberAuthorityService.getAuthorityNamesByMemberId(memberId),
+            memberRoleService.getRoleNamesByMemberId(memberId),
             getMemberTeamNumber(memberId),
         )
 
@@ -67,12 +68,17 @@ class MemberQueryService(
         memberPersistencePort.findMemberTeamByMemberId(memberId)
             ?: throw MemberTeamNotFoundException()
 
+    fun checkWhiteList(name: String, signupEmail: String): Member =
+        memberPersistencePort.findByNameAndSignupEmail(name, signupEmail)
+            ?: throw MemberNotFoundException()
+
+
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 
-    override fun findAllMemberIdByAuthorityIds(authorityIds: List<AuthorityId>): List<MemberId> =
+    override fun findAllMemberIdByRoleIds(roleIds: List<RoleId>): List<MemberId> =
         memberPersistencePort
-            .findAllMemberIdByAuthorityIds(authorityIds)
+            .findAllMemberIdByRoleIds(roleIds)
 
-    override fun getMemberNameAuthorityByMemberId(memberId: MemberId): List<MemberNameAuthorityQueryModel> =
-        memberPersistencePort.findMemberNameAndAuthorityByMemberId(memberId)
+    override fun getMemberNameRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
+        memberPersistencePort.findMemberNameAndRoleByMemberId(memberId)
 }
