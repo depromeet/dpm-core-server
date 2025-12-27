@@ -50,7 +50,7 @@ data class MemberDetailsResponse(
             teamNumber: Int?,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
-                email = member.email,
+                email = member.signupEmail,
                 name = member.name,
                 part = member.part?.name,
                 cohort = "17",

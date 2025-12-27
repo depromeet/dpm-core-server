@@ -36,7 +36,7 @@ class MemberLoginService(
         authAttributes: OAuthAttributes,
     ): LoginResult =
         memberPersistencePort
-            .findByEmail(authAttributes.getEmail())
+            .findBySignupEmail(authAttributes.getEmail())
             ?.let { member -> handleExistingMemberLogin(requestUrl, member) }
             ?: handleUnregisteredMember(authAttributes)
 

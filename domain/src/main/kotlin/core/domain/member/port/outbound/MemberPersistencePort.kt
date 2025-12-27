@@ -8,7 +8,7 @@ import core.domain.member.vo.MemberId
 interface MemberPersistencePort {
     fun save(member: Member): Member
 
-    fun findByEmail(email: String): Member?
+    fun findBySignupEmail(email: String): Member?
 
     fun findById(memberId: Long): Member?
 

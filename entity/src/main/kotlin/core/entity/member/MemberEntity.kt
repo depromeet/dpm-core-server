@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.annotations.CreationTimestamp
 import java.time.Instant
 
 @Entity
@@ -24,17 +25,18 @@ class MemberEntity(
     val id: Long,
     @Column(nullable = false)
     val name: String,
-    @Column(nullable = false, unique = true)
-    val email: String,
+    @Column(unique = true)
+    val email: String? = null,
     @Column(name = "signup_email", nullable = false, unique = true)
     val signupEmail: String,
     @Column
     val part: String? = null,
     @Column(nullable = false)
     val status: String,
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant? = null,
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     val updatedAt: Instant? = null,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,

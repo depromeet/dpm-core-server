@@ -26,18 +26,28 @@ sealed class RoleType(
     )
 
     companion object {
-        private val values = listOf(Core, Organizer, Deeper)
+        private val values: List<RoleType> by lazy {
+            RoleType::class.sealedSubclasses
+                .mapNotNull { it.objectInstance }
+                .filter { it != Guest }
+        }
 
         fun from(raw: String?): RoleType {
             if (raw.isNullOrBlank()) return Guest
 
-            val normalized = raw.trim().lowercase()
+            val tokens = raw
+                .lowercase()
+                .split(Regex("[^가-힣a-z]+"))
+                .filter { it.isNotBlank() }
 
             return values.firstOrNull { role ->
                 role.aliases.any { alias ->
-                    alias.lowercase() == normalized
+                    tokens.any { token ->
+                        token == alias.lowercase()
+                    }
                 }
             } ?: Guest
         }
     }
+
 }

@@ -21,7 +21,7 @@ class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val dsl: DSLContext,
 ) : MemberPersistencePort {
-    override fun findByEmail(email: String): Member? = memberJpaRepository.findByEmail(email)?.toDomain()
+    override fun findBySignupEmail(email: String): Member? = memberJpaRepository.findBySignupEmail(email)?.toDomain()
 
     override fun save(member: Member): Member = memberJpaRepository.save(MemberEntity.from(member)).toDomain()
 

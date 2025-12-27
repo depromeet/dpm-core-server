@@ -23,7 +23,7 @@ import java.time.Instant
 class Member(
     val id: MemberId? = null,
     val name: String,
-    val email: String,
+    val email: String? = null,
     val signupEmail: String,
     part: MemberPart? = null,
     status: MemberStatus,
