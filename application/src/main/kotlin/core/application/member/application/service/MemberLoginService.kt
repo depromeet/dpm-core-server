@@ -37,7 +37,7 @@ class MemberLoginService(
     ): LoginResult =
         memberPersistencePort
             .findBySignupEmail(authAttributes.getEmail())
-            ?.let { member -> handleExistingMemberLogin(requestUrl, member) }
+            ?.let { member -> handleExistingMemberLogin(authAttributes, requestUrl, member) }
             ?: handleUnregisteredMember(authAttributes)
 
     private fun generateLoginResult(
@@ -56,6 +56,7 @@ class MemberLoginService(
     }
 
     private fun handleExistingMemberLogin(
+        authAttributes: OAuthAttributes,
         requestUrl: String,
         member: Member,
     ): LoginResult {
@@ -66,6 +67,7 @@ class MemberLoginService(
         }
 
         if (member.whitelistCheckedYet()) {
+            member.updateEmail(authAttributes.getEmail())
             return generateLoginResult(memberId, securityProperties.redirect.restrictedRedirectUrl)
         }
 

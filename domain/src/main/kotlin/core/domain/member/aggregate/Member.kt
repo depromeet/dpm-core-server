@@ -23,7 +23,7 @@ import java.time.Instant
 class Member(
     val id: MemberId? = null,
     val name: String,
-    val email: String? = null,
+    email: String? = null,
     val signupEmail: String,
     part: MemberPart? = null,
     status: MemberStatus,
@@ -36,6 +36,9 @@ class Member(
     val memberTeams: List<MemberTeam> = emptyList(),
     val memberOAuths: List<MemberOAuth> = emptyList(),
 ) {
+    var email: String? = email
+        private set
+
     var part: MemberPart? = part
         private set
 
@@ -69,7 +72,12 @@ class Member(
         updatedAt = Instant.now()
     }
 
-    fun whitelistCheckedYet(): Boolean = email == null && status == MemberStatus.PENDING
+    fun whitelistCheckedYet(): Boolean = status == MemberStatus.PENDING
+
+    fun updateEmail(newEmail: String) {
+        email = newEmail
+        updatedAt = Instant.now()
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
