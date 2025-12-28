@@ -73,11 +73,11 @@ foo-domain
 |                      **정준원**                      | **이한음** |                   **신민철**                    |
 
 ---
-## 팀 문화
+## 📐 Team Rules
 - 팀 내부 결정 사항은 Issue, Suggestion 등의 형태로 내부 논의 후 결정
-  - ![특정 정책에 대한 하드 코딩 관리(feat. 세션 시작 시간 14시)](https://github.com/depromeet/dpm-core-server/issues/33)
-  - ![멀티 모듈 아키텍처에 대한 질문입니다.(각 모듈에 대한 의문 제기)](https://github.com/depromeet/dpm-core-server/issues/172)
+  - [특정 정책에 대한 하드 코딩 관리(feat. 세션 시작 시간 14시)](https://github.com/depromeet/dpm-core-server/issues/33)
+  - [멀티 모듈 아키텍처에 대한 질문입니다.(각 모듈에 대한 의문 제기)](https://github.com/depromeet/dpm-core-server/issues/172)
 - 이유가 있고, 모두가 동의하는 방식의 의사결정
-  - ![JPA Entity와 schema.sql의 불일치로 인한 잠재적 위험 (jOOQ DSL codegen으로 인한 순환 참조 문제)](https://github.com/depromeet/dpm-core-server/issues/164)
-  - ![커스텀 에러 코드 관련 논의입니다.](https://github.com/depromeet/dpm-core-server/issues/60)
-  - ![Response 에서 시각(datetime)데이터 타입 논의](https://github.com/depromeet/dpm-core-server/issues/63)
+  - [JPA Entity와 schema.sql의 불일치로 인한 잠재적 위험 (jOOQ DSL codegen으로 인한 순환 참조 문제)](https://github.com/depromeet/dpm-core-server/issues/164)
+  - [커스텀 에러 코드 관련 논의입니다.](https://github.com/depromeet/dpm-core-server/issues/60)
+  - [Response 에서 시각(datetime)데이터 타입 논의](https://github.com/depromeet/dpm-core-server/issues/63)
