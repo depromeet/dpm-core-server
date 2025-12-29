@@ -2,6 +2,7 @@ package core.application.cohort.application.service
 
 import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.cohort.application.properties.CohortProperties
+import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
@@ -21,7 +22,7 @@ class CohortQueryService(
     fun getLatestCohortValue(): String =
         getCohort(cohortProperties.value).value
 
-    private fun getCohort(value: String) = cohortPersistencePort.findByValue(value)
+    private fun getCohort(value: String): Cohort = cohortPersistencePort.findByValue(value)
         ?: throw CohortNotFoundException()
 
 }
