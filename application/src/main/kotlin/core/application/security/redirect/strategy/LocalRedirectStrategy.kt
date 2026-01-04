@@ -45,7 +45,9 @@ class LocalRedirectStrategy(
     private fun resolveDeeperRedirect(requestUrl: String): String? =
         when {
             requestUrl.startsWith("local-core.") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
-            requestUrl.startsWith("local-admin.") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
+            requestUrl.startsWith(
+                "local-admin.",
+            ) -> "https://local-admin.${properties.cookie.domain}:3020?isAdmin=false"
             else -> null
         }
 
