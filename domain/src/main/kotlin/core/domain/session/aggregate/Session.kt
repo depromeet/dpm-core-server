@@ -117,7 +117,10 @@ class Session(
     }
 
     companion object {
-        fun create(command: SessionCreateCommand, cohortId: CohortId): Session {
+        fun create(
+            command: SessionCreateCommand,
+            cohortId: CohortId,
+        ): Session {
             fun generateAttendanceCode(): String = Random.nextInt(1000, 10000).toString()
 
             return Session(
