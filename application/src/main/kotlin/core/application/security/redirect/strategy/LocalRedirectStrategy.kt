@@ -34,8 +34,8 @@ class LocalRedirectStrategy(
 
         val redirectUrl =
             when (context.role) {
-                RoleType.Deeper -> resolveDeeperRedirect(requestUrl)
                 RoleType.Organizer -> resolveOrganizerRedirect(requestUrl)
+                RoleType.Deeper -> resolveDeeperRedirect(requestUrl)
                 else -> null
             } ?: context.copy(error = "Unsupported Redirect URL").let { errorStrategy.resolve(it) }
 
@@ -45,9 +45,7 @@ class LocalRedirectStrategy(
     private fun resolveDeeperRedirect(requestUrl: String): String? =
         when {
             requestUrl.startsWith("local-core.") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
-            requestUrl.startsWith(
-                "local-admin.",
-            ) -> "https://local-admin.${properties.cookie.domain}:3020?isAdmin=false"
+            requestUrl.startsWith("local-admin.") -> "https://local-core.${properties.cookie.domain}:3010?isAdmin=false"
             else -> null
         }
 
