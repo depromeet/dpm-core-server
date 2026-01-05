@@ -42,6 +42,12 @@ data class MemberDetailsResponse(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val isAdmin: Boolean,
+    @field:Schema(
+        description = "멤버 상태",
+        example = "ACTIVE",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+    )
+    val status: String,
 ) {
     companion object {
         fun of(
@@ -56,6 +62,7 @@ data class MemberDetailsResponse(
                 cohort = "17",
                 teamNumber = teamNumber,
                 isAdmin = roles.contains(ADMIN_ROLE),
+                status = member.status.name,
             )
 
         private const val ADMIN_ROLE = "ORGANIZER"

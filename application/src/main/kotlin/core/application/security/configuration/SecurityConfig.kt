@@ -115,6 +115,7 @@ class SecurityConfig(
                 "/v1/reissue",
                 "/login/kakao",
                 "/error",
+                "/v1/cohort",
             )
     }
 }

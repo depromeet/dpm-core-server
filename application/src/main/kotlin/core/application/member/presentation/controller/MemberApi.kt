@@ -35,7 +35,12 @@ interface MemberApi {
                                 "message": "요청에 성공했습니다",
                                 "data": {
                                     "email": "depromeetcore@gmail.com",
-                                    "name": "디프만"
+                                    "name": "디프만",
+                                    "part": "WEB",
+                                    "cohort": "17",
+                                    "teamNumber": 3,
+                                    "isAdmin": false,
+                                    "status": "ACTIVE"
                                 }
                             }
                         """,
