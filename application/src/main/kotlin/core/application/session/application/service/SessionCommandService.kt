@@ -25,7 +25,7 @@ class SessionCommandService(
     private val sessionPersistencePort: SessionPersistencePort,
     private val eventPublisher: ApplicationEventPublisher,
     private val sessionValidator: SessionValidator,
-    private val cohortQueryService: CohortQueryService
+    private val cohortQueryService: CohortQueryService,
 ) {
     fun updateSessionStartTime(
         sessionId: SessionId,

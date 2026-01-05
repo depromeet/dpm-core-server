@@ -13,7 +13,7 @@ interface RoleApi {
         summary = "역할 목록 조회 API",
         description =
             "모든 역할 목록을 조회 합니다. " +
-                    "정산서 생성 시 역할 별로 회식 인원을 초대하기 위해 사용 됩니다.",
+                "정산서 생성 시 역할 별로 회식 인원을 초대하기 위해 사용 됩니다.",
     )
     fun getAllRoles(): CustomResponse<RoleListResponse>
 }

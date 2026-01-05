@@ -24,23 +24,19 @@ class RoleEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_id", nullable = false, updatable = false)
     val id: Long,
-
     @Column(nullable = false)
     val name: String,
-
     @OneToMany(
         mappedBy = "role",
         cascade = [CascadeType.PERSIST, CascadeType.REMOVE],
         orphanRemoval = true,
     )
     private val rolePermissions: MutableSet<RolePermissionEntity> = mutableSetOf(),
-
 ) {
     fun toDomain(): Role =
         Role(
             id = RoleId(id),
             name = name,
-            rolePermissions = rolePermissions.map { it.toDomain() }.toMutableSet()
+            rolePermissions = rolePermissions.map { it.toDomain() }.toMutableSet(),
         )
-
 }

@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service
 class RoleQueryService(
     private val rolePersistencePort: RolePersistencePort,
 ) : RoleQueryUseCase {
-
     override fun getAllRoles(): List<Role> {
         return rolePersistencePort.findAll()
     }

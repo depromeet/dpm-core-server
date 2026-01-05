@@ -27,8 +27,8 @@ class ServerRedirectStrategy(
 
         val redirectUrl =
             when (context.role) {
-                RoleType.Deeper -> resolveDeeperRedirect(requestUrl)
                 RoleType.Organizer -> resolveOrganizerRedirect(requestUrl)
+                RoleType.Deeper -> resolveDeeperRedirect(requestUrl)
                 else -> null
             } ?: context.copy(error = "Unsupported Redirect URL").let { errorStrategy.resolve(it) }
 

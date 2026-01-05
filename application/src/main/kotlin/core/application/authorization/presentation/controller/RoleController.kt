@@ -19,7 +19,7 @@ class RoleController(
         val response = roleQueryUseCase.getAllRoles()
 
         return CustomResponse.ok(
-            RoleListResponse.from(response)
+            RoleListResponse.from(response),
         )
     }
 }
