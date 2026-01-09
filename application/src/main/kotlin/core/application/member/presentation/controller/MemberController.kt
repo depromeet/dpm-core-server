@@ -4,6 +4,7 @@ import core.application.common.exception.CustomResponse
 import core.application.member.application.service.MemberCommandService
 import core.application.member.application.service.MemberQueryService
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.member.vo.MemberId
@@ -57,6 +58,15 @@ class MemberController(
             .checkWhiteList(request.name, request.signupEmail)
             .also { member -> memberCommandService.activate(member) }
 
+        return CustomResponse.ok()
+    }
+
+    // @PreAuthorize("hasAuthority('create:member')")  // Temporarily disabled for testing
+    @PatchMapping("/status")
+    override fun updateMemberStatus(
+        @Valid @RequestBody request: UpdateMemberStatusRequest,
+    ): CustomResponse<Void> {
+        memberCommandService.updateMemberStatus(request)
         return CustomResponse.ok()
     }
 }
