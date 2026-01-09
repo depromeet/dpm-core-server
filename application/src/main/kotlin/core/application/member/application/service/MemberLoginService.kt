@@ -81,8 +81,10 @@ class MemberLoginService(
         )
     }
 
-    private fun isInactiveOrDeletedMember(member: Member, memberId: MemberId) =
-        !member.isAllowed() || memberPersistencePort.existsDeletedMemberById(memberId.value)
+    private fun isInactiveOrDeletedMember(
+        member: Member,
+        memberId: MemberId,
+    ) = !member.isAllowed() || memberPersistencePort.existsDeletedMemberById(memberId.value)
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
         val member =
