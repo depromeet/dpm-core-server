@@ -1,9 +1,12 @@
 package core.application.member.application.service
 
+import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
 import core.application.member.application.service.cohort.MemberCohortService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -74,5 +77,29 @@ class MemberCommandService(
     fun activate(member: Member) {
         member.activate()
         memberPersistencePort.save(member)
+    }
+
+    /**
+     * 멤버의 상태(status)를 변경함.
+     * 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE)
+     *
+     * @throws MemberNotFoundException
+     * @throws MemberStatusAlreadyUpdatedException
+     *
+     * @author junwon
+     * @since 2026.01.09
+     */
+    fun updateMemberStatus(request: UpdateMemberStatusRequest) {
+        val existMember = memberQueryService.getMemberById(request.memberId)
+
+        if (existMember.status != request.memberStatus) {
+            memberPersistencePort.save(
+                existMember.apply {
+                    updateStatus(request.memberStatus)
+                },
+            )
+        } else {
+            throw MemberStatusAlreadyUpdatedException()
+        }
     }
 }
