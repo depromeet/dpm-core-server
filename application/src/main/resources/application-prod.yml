@@ -11,3 +11,9 @@ spring:
 logging:
   level:
     org.springframework.orm.jpa: INFO
+apple:
+  client-id: ${PROD_APPLE_CLIENT_ID}
+  key-id: ${PROD_APPLE_KEY_ID}
+  team-id: ${PROD_APPLE_TEAM_ID}
+  private-key-path: ${PROD_APPLE_PRIVATE_KEY_PATH}
+  redirect-uri: ${PROD_APPLE_REDIRECT_URL}

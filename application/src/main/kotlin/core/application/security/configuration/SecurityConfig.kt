@@ -17,6 +17,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 
+import core.application.security.oauth.apple.AppleOAuth2AccessTokenResponseClient
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -28,6 +30,7 @@ class SecurityConfig(
     private val authenticationSuccessHandler: AuthenticationSuccessHandler,
     private val authenticationFailureHandler: AuthenticationFailureHandler,
     private val logoutSuccessHandler: LogoutSuccessHandler,
+    private val appleOAuth2AccessTokenResponseClient: AppleOAuth2AccessTokenResponseClient,
 ) {
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
@@ -80,6 +83,9 @@ class SecurityConfig(
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login { oauth2 ->
                 oauth2
+                    .tokenEndpoint {
+                        it.accessTokenResponseClient(appleOAuth2AccessTokenResponseClient)
+                    }
                     .authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {
@@ -114,6 +120,10 @@ class SecurityConfig(
             arrayOf(
                 "/v1/reissue",
                 "/login/kakao",
+                "/login/apple",
+                "/auth",
+                "/oauth2/**",
+                "/login",
                 "/error",
                 "/v1/cohort",
             )
