@@ -10,6 +10,7 @@ package core.domain.member.enums
  */
 enum class OAuthProvider {
     KAKAO,
+    APPLE,
     ;
 
     fun isProviderOf(provider: String): Boolean = this.name == provider

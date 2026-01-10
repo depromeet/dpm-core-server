@@ -2,6 +2,9 @@ package core.entity.member
 
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberOAuth
+import core.domain.member.enums.OAuthProvider
+import core.domain.member.vo.MemberId
+import core.domain.member.vo.MemberOAuthId
 import jakarta.persistence.Column
 import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity
@@ -29,6 +32,14 @@ class MemberOAuthEntity(
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
 ) {
+    fun toDomain(): MemberOAuth =
+        MemberOAuth(
+            id = MemberOAuthId(id),
+            externalId = externalId,
+            provider = OAuthProvider.valueOf(provider),
+            memberId = MemberId(member.id),
+        )
+
     companion object {
         fun of(
             memberOAuth: MemberOAuth,
