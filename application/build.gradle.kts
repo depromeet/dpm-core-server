@@ -50,6 +50,17 @@ jib {
     container {
         ports = listOf("8080")
         jvmFlags = listOf("-Xms512m", "-Xmx512m", "-Duser.timezone=Asia/Seoul")
+        environment = mapOf(
+            "APPLE_PRIVATE_KEY_PATH" to "/app/secrets/AuthKey.p8"
+        )
+    }
+    extraDirectories {
+        paths {
+            path {
+                setFrom("secrets")
+                setInto("/app/secrets")
+            }
+        }
     }
 }
 
@@ -59,6 +70,10 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 
 springBoot {
     mainClass.set("core.application.CoreApplication")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 kotlin {
