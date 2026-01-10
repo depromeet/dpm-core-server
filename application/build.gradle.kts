@@ -57,7 +57,7 @@ jib {
     extraDirectories {
         paths {
             path {
-                setFrom("application/secrets")
+                setFrom("secrets")
                 setInto("/app/secrets")
             }
         }
