@@ -125,6 +125,7 @@ class SecurityConfig(
                 "/oauth2/**",
                 "/login",
                 "/error",
+                "/v1/cohort",
             )
     }
 }
