@@ -8,6 +8,5 @@ enum class Resource {
     GATHERING,
     MEMBER,
     SESSION,
-    TEAM
-    ;
+    TEAM,
 }

@@ -7,7 +7,7 @@ import core.domain.authorization.vo.RoleId
  *
  * @property name 역할의 고유한 이름 입니다. (ex: "17기 운영진", "코어" 등)
  */
-class Role (
+class Role(
     val id: RoleId? = null,
     val name: String,
     rolePermissions: MutableSet<RolePermission> = mutableSetOf(),
