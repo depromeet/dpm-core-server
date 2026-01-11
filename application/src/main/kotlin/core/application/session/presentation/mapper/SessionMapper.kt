@@ -76,18 +76,17 @@ object SessionMapper {
                 instantToLocalDateTime(attendanceStartTime),
         )
 
-    fun toSessionCreateCommand(
-        request: SessionCreateRequest,
-    ) = SessionCreateCommand(
-        eventName = request.name,
-        date = localDateTimeToInstant(request.date),
-        isOnline = request.isOnline,
-        place = request.place,
-        week = request.week,
-        attendanceStart = localDateTimeToInstant(request.attendanceStart),
-        lateStart = localDateTimeToInstant(request.lateStart),
-        absentStart = localDateTimeToInstant(request.absentStart),
-    )
+    fun toSessionCreateCommand(request: SessionCreateRequest) =
+        SessionCreateCommand(
+            eventName = request.name,
+            date = localDateTimeToInstant(request.date),
+            isOnline = request.isOnline,
+            place = request.place,
+            week = request.week,
+            attendanceStart = localDateTimeToInstant(request.attendanceStart),
+            lateStart = localDateTimeToInstant(request.lateStart),
+            absentStart = localDateTimeToInstant(request.absentStart),
+        )
 
     fun toSessionUpdateCommand(request: SessionUpdateRequest) =
         SessionUpdateCommand(

@@ -14,7 +14,6 @@ class ReissueController(
     private val refreshTokenService: RefreshTokenService,
     private val tokenProperties: TokenProperties,
 ) : ReissueApi {
-
     @PostMapping("/v1/reissue")
     override fun reissue(
         request: HttpServletRequest,
