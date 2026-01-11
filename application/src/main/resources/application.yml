@@ -47,7 +47,7 @@ spring:
               - account_email
               - profile_nickname
           apple:
-            client-authentication-method: post
+            client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
             scope:
               - name
