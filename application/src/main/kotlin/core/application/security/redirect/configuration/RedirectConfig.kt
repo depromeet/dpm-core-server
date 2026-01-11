@@ -14,16 +14,18 @@ import org.springframework.context.annotation.Configuration
 class RedirectConfig(
     private val properties: SecurityProperties,
     private val validator: RedirectValidator,
-    private val errorStrategy: ErrorRedirectStrategy,
+    private val errorRedirectStrategy: ErrorRedirectStrategy,
 ) {
+
     @Bean
     fun redirectStrategy(): CompositeRedirectStrategy =
         CompositeRedirectStrategy(
-            listOf(
-                ServerRedirectStrategy(properties, validator, errorStrategy),
-                LocalRedirectStrategy(properties, validator, errorStrategy),
-                SwaggerRedirectStrategy(properties),
-                // TODO: 보호된 자원 접근 시 리다이렉트 전략 추가
-            ),
+            strategies =
+                listOf(
+                    ServerRedirectStrategy(properties, validator, errorRedirectStrategy),
+                    LocalRedirectStrategy(properties, validator, errorRedirectStrategy),
+                    SwaggerRedirectStrategy(properties),
+                ),
+            errorRedirectStrategy = errorRedirectStrategy,
         )
 }
