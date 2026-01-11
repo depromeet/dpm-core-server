@@ -21,4 +21,4 @@ apple:
   key-id: ${LOCAL_APPLE_KEY_ID}
   team-id: ${LOCAL_APPLE_TEAM_ID}
   private-key: ${LOCAL_APPLE_PRIVATE_KEY}
-  redirect-uri: ${LOCAL_APPLE_REDIRECT_URL}
+  redirect-uri: ${LOCAL_APPLE_REDIRECT_URI}
