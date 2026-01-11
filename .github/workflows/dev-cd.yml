@@ -71,6 +71,11 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_PASSWORD }}
 
+      - name: "Apple p8 key 파일 생성"
+        run: |
+          mkdir -p application/secrets
+          echo "${{ secrets.APPLE_P8_KEY }}" > application/secrets/AuthKey.p8
+
       - name: "Jib을 사용하여 Docker 이미지를 빌드 후 Dockerhub에 푸시한다."
         run: |
           ./gradlew jib \

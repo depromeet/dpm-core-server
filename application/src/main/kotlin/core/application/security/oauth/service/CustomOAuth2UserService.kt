@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class CustomOAuth2UserService(
-    private val roleQueryUseCase: RoleQueryUseCase
+    private val roleQueryUseCase: RoleQueryUseCase,
 ) : DefaultOAuth2UserService() {
     /**
      * OAuth2UserRequest 객체에서 OAuth2User를 로드하고, 해당 사용자가 소유한 권한을 조회하여 CustomOAuth2User 객체로 반환함.
