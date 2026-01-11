@@ -59,7 +59,7 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
           apple:
-            authorization-uri: https://appleid.apple.com/auth/authorize
+            authorization-uri: https://appleid.apple.com/auth/authorize?response_mode=form_post
             token-uri: https://appleid.apple.com/auth/token
             jwk-set-uri: https://appleid.apple.com/auth/keys
             user-name-attribute: sub
