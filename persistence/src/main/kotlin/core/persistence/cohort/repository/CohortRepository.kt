@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository
 class CohortRepository(
     private val cohortJpaRepository: CohortJpaRepository,
 ) : CohortPersistencePort {
-    override fun findByValue(value: String): Cohort {
+    override fun findByValue(value: String): Cohort? {
         return cohortJpaRepository.findByValue(value).toDomain()
     }
 }
