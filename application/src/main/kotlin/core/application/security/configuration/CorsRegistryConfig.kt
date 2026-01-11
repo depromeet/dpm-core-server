@@ -24,7 +24,7 @@ class CorsRegistryConfig(
             }
 
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration)
+        source.registerCorsConfiguration("/api/**", configuration)
         return source
     }
 }
