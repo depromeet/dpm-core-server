@@ -36,8 +36,10 @@ class MemberRepository(
     override fun existsDeletedMemberById(memberId: Long): Boolean =
         memberJpaRepository.existsByIdAndDeletedAtIsNotNull(memberId)
 
-    override fun findByNameAndSignupEmail(name: String, signupEmail: String): Member? =
-        memberJpaRepository.findByNameAndSignupEmail(name, signupEmail)?.toDomain()
+    override fun findByNameAndSignupEmail(
+        name: String,
+        signupEmail: String,
+    ): Member? = memberJpaRepository.findByNameAndSignupEmail(name, signupEmail)?.toDomain()
 
     override fun findAllMemberIdByRoleIds(roleIds: List<RoleId>): List<MemberId> =
         dsl

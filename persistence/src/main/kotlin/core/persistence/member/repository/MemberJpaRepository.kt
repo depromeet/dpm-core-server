@@ -10,5 +10,8 @@ interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {
 
     fun existsByIdAndDeletedAtIsNotNull(memberId: Long): Boolean
 
-    fun findByNameAndSignupEmail(name: String, signupEmail: String): MemberEntity?
+    fun findByNameAndSignupEmail(
+        name: String,
+        signupEmail: String,
+    ): MemberEntity?
 }

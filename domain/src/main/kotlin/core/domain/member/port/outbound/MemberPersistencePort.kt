@@ -18,7 +18,10 @@ interface MemberPersistencePort {
 
     fun existsDeletedMemberById(memberId: Long): Boolean
 
-    fun findByNameAndSignupEmail(name: String, signupEmail: String): Member?
+    fun findByNameAndSignupEmail(
+        name: String,
+        signupEmail: String,
+    ): Member?
 
     fun findAllMemberIdByRoleIds(roleIds: List<RoleId>): List<MemberId>
 
