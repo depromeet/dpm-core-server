@@ -47,10 +47,10 @@ spring:
               - account_email
               - profile_nickname
           apple:
-            client-id: ${apple.client-id}
-            client-secret: ${apple.client-secret}
+            client-id: ${APPLE_CLIENT_ID}
+            client-authentication-method: post
             authorization-grant-type: authorization_code
-            redirect-uri: ${APPLE_REDIRECT_URL}
+            redirect-uri: ${APPLE_REDIRECT_URI}
             scope:
               - name
               - email
