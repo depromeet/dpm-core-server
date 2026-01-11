@@ -4,15 +4,19 @@ import core.application.security.redirect.model.RedirectContext
 
 class CompositeRedirectStrategy(
     private val strategies: List<RedirectStrategy>,
+    private val errorRedirectStrategy: ErrorRedirectStrategy, // 🔥 핵심
 ) : RedirectStrategy {
-    class NoMatchingStrategyException : RuntimeException()
 
     override fun supports(context: RedirectContext): Boolean = true
 
     override fun resolve(context: RedirectContext): String {
         val strategy =
             strategies.firstOrNull { it.supports(context) }
-                ?: throw NoMatchingStrategyException()
+                ?: return errorRedirectStrategy.resolve(
+                    context.copy(
+                        error = context.error ?: "No matching redirect strategy",
+                    ),
+                )
 
         return strategy.resolve(context)
     }
