@@ -1,7 +1,5 @@
 package core.application.member.application.service.auth
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.security.oauth.apple.AppleTokenExchangeService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.enums.OAuthProvider
@@ -10,7 +8,6 @@ import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
-import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,10 +16,8 @@ class AppleAuthService(
     private val appleTokenExchangeService: AppleTokenExchangeService,
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
-    private val memberOAuthService: MemberOAuthService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
-    private val environment: Environment,
     private val appleIdTokenValidator: core.application.security.oauth.apple.AppleIdTokenValidator,
 ) {
 
@@ -34,7 +29,6 @@ class AppleAuthService(
         // 2. Verify ID Token
         val claims = appleIdTokenValidator.verify(tokenResponse.id_token)
         val externalId = claims.subject ?: throw IllegalArgumentException("Invalid ID Token: sub missing")
-        val email = claims["email"] as? String
 
         // 3. Find check existing Member
         val memberOAuth = memberOAuthPersistencePort.findByProviderAndExternalId(OAuthProvider.APPLE, externalId)
@@ -55,8 +49,6 @@ class AppleAuthService(
 
         return AuthTokenResponse(accessToken, refreshToken)
     }
-
-
 }
 
 data class AuthTokenResponse(
