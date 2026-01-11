@@ -26,7 +26,7 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
         response: HttpServletResponse,
     ) {
         if (authorizationRequest == null) {
-            deleteCookie(request, response)
+            deleteCookie(response)
             return
         }
 
@@ -41,7 +41,7 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
         response: HttpServletResponse,
     ): OAuth2AuthorizationRequest? {
         val authRequest = loadAuthorizationRequest(request)
-        deleteCookie(request, response)
+        deleteCookie(response)
         return authRequest
     }
 
@@ -49,27 +49,21 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
         response: HttpServletResponse,
         value: String,
     ) {
-        val cookie =
-            Cookie(REQUEST_COOKIE_NAME, value).apply {
-                path = "/"
-                isHttpOnly = true
-                maxAge = REQUEST_COOKIE_MAX_AGE
-            }
-        response.addCookie(cookie)
-    }
+        val cookieValue =
+            "$REQUEST_COOKIE_NAME=$value; " +
+                    "Path=/; " +
+                    "HttpOnly; " +
+                    "Secure; " +
+                    "SameSite=None; " +
+                    "Max-Age=$REQUEST_COOKIE_MAX_AGE"
 
-    private fun deleteCookie(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-    ) {
-        request.cookies?.firstOrNull { it.name == REQUEST_COOKIE_NAME }?.let {
-            val cookie =
-                Cookie(REQUEST_COOKIE_NAME, "").apply {
-                    path = "/"
-                    maxAge = 0
-                }
-            response.addCookie(cookie)
-        }
+        response.addHeader("Set-Cookie", cookieValue)
+    }
+    private fun deleteCookie(response: HttpServletResponse) {
+        val cookieValue =
+            "$REQUEST_COOKIE_NAME=; Path=/; Max-Age=0; Secure; SameSite=None"
+
+        response.addHeader("Set-Cookie", cookieValue)
     }
 
     private fun getAuthorizationRequestCookie(request: HttpServletRequest): Cookie? =

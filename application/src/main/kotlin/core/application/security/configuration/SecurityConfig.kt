@@ -121,11 +121,11 @@ class SecurityConfig(
                 "/v1/reissue",
                 "/login/kakao",
                 "/login/apple",
-                "/auth",
+                "/login/oauth2/**",
+                "oauth2/**",
                 "/oauth2/**",
                 "/login",
                 "/error",
-                "/v1/cohort",
             )
     }
 }
