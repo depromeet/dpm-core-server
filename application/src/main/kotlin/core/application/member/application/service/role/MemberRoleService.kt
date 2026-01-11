@@ -26,8 +26,7 @@ class MemberRoleService(
      * @author LeeHanEum
      * @since 2025.12.27
      */
-    fun revokeAllRoles(memberId: MemberId) =
-        memberRolePersistencePort.softDeleteAllByMemberId(memberId.value)
+    fun revokeAllRoles(memberId: MemberId) = memberRolePersistencePort.softDeleteAllByMemberId(memberId.value)
 
     /**
      * 멤버 식별자로 해당 멤버의 최우선 권한 타입을 조회합니다.
@@ -52,11 +51,11 @@ class MemberRoleService(
     }
 
     companion object {
-        private val ROLE_PRIORITY: List<RoleType> = listOf(
-            RoleType.Core,
-            RoleType.Organizer,
-            RoleType.Deeper,
-        )
+        private val ROLE_PRIORITY: List<RoleType> =
+            listOf(
+                RoleType.Core,
+                RoleType.Organizer,
+                RoleType.Deeper,
+            )
     }
-
 }

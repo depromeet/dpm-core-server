@@ -14,11 +14,10 @@ import org.jooq.dsl.tables.references.ROLE_PERMISSIONS
 import org.springframework.stereotype.Repository
 
 @Repository
-class RoleRepository (
+class RoleRepository(
     private val roleJpaRepository: RoleJpaRepository,
     private val dsl: DSLContext,
 ) : RolePersistencePort {
-
     override fun findAll(): List<Role> {
         return roleJpaRepository.findAll().mapNotNull { it.toDomain() }
     }
@@ -51,9 +50,8 @@ class RoleRepository (
                     .on(PERMISSIONS.PERMISSION_ID.eq(ROLE_PERMISSIONS.PERMISSION_ID))
                     .join(MEMBER_ROLES)
                     .on(ROLE_PERMISSIONS.ROLE_ID.eq(MEMBER_ROLES.ROLE_ID))
-                    .where(MEMBER_ROLES.MEMBER_ID.eq(memberId.value))
+                    .where(MEMBER_ROLES.MEMBER_ID.eq(memberId.value)),
             )
             .fetch()
             .map { "${it.get(PERMISSIONS.ACTION)}:${it.get(PERMISSIONS.RESOURCE)}".lowercase() }
-
 }
