@@ -10,7 +10,7 @@ import java.time.Instant
  * @property grantedAt 권한이 Role에 부여된 시각입니다.
  * @property revokedAt 권한이 Role에서 회수된 시각입니다.
  */
-class RolePermission (
+class RolePermission(
     val roleId: RoleId,
     val permissionId: PermissionId,
     val grantedAt: Instant,
