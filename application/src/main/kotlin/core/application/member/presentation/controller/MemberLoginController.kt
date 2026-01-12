@@ -8,13 +8,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
+import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 
 @Tag(name = "Member-Login", description = "Member Login API")
-@RestController
+@Controller
 class MemberLoginController(
     private val appleAuthService: AppleAuthService,
 ) {
