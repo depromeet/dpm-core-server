@@ -1,5 +1,6 @@
-package core.application.security.oauth.apple
+package core.application.security.oauth.client
 
+import core.application.security.oauth.apple.AppleClientSecretGenerator
 import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest
@@ -8,7 +9,7 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenRespon
 import org.springframework.stereotype.Component
 
 @Component
-class AppleOAuth2AccessTokenResponseClient(
+class CustomOAuth2AccessTokenResponseClient(
     private val appleClientSecretGenerator: AppleClientSecretGenerator
 ) : OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
 
@@ -17,25 +18,33 @@ class AppleOAuth2AccessTokenResponseClient(
     override fun getTokenResponse(authorizationGrantRequest: OAuth2AuthorizationCodeGrantRequest): OAuth2AccessTokenResponse {
         val clientRegistration = authorizationGrantRequest.clientRegistration
 
-        // Only intercept Apple requests to inject dynamic client_secret
+        // Route logic based on Provider
         if (clientRegistration.registrationId.equals("apple", ignoreCase = true)) {
-            val secret = appleClientSecretGenerator.generateClientSecret()
-
-            // Create a new ClientRegistration with the dynamic secret
-            val newClientRegistration = ClientRegistration
-                .withClientRegistration(clientRegistration)
-                .clientSecret(secret)
-                .build()
-
-            // Create a new request with the updated registration
-            val newRequest = OAuth2AuthorizationCodeGrantRequest(
-                newClientRegistration,
-                authorizationGrantRequest.authorizationExchange
-            )
-
-            return defaultClient.getTokenResponse(newRequest)
+            return getAppleTokenResponse(authorizationGrantRequest, clientRegistration)
         }
 
+        // Default behavior for others (e.g. Kakao)
         return defaultClient.getTokenResponse(authorizationGrantRequest)
+    }
+
+    private fun getAppleTokenResponse(
+        request: OAuth2AuthorizationCodeGrantRequest,
+        registration: ClientRegistration
+    ): OAuth2AccessTokenResponse {
+        val secret = appleClientSecretGenerator.generateClientSecret()
+
+        // Create a new ClientRegistration with the dynamic secret
+        val newClientRegistration = ClientRegistration
+            .withClientRegistration(registration)
+            .clientSecret(secret)
+            .build()
+
+        // Create a new request with the updated registration
+        val newRequest = OAuth2AuthorizationCodeGrantRequest(
+            newClientRegistration,
+            request.authorizationExchange
+        )
+
+        return defaultClient.getTokenResponse(newRequest)
     }
 }
