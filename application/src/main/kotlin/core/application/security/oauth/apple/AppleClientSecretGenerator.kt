@@ -51,6 +51,8 @@ class AppleClientSecretGenerator(
         try {
             val replacedKey = privateKey.replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
+                .replace("\\s".toRegex(), "")
+            
             // 1. Base64 디코딩
             val privateKeyBytes = Decoders.BASE64.decode(replacedKey)
 

@@ -36,7 +36,7 @@ class JwtTokenInjector(
                 path = "/"
                 this.maxAge = maxAge
                 isHttpOnly = securityProperties.cookie.httpOnly
-                domain = securityProperties.cookie.domain
+                domain = null // Host Only
                 secure = securityProperties.cookie.secure
                 setAttribute("SameSite", "None")
             }
@@ -52,7 +52,7 @@ class JwtTokenInjector(
                 path = "/"
                 this.maxAge = 0
                 isHttpOnly = securityProperties.cookie.httpOnly
-                domain = securityProperties.cookie.domain
+                domain = null // Host Only
                 secure = securityProperties.cookie.secure
                 setAttribute("SameSite", "None")
             }

@@ -1,5 +1,6 @@
 package core.application.security.configuration
 
+import core.application.security.oauth.client.CustomOAuth2AccessTokenResponseClient
 import core.application.security.oauth.token.JwtAuthenticationFilter
 import core.application.security.properties.SecurityProperties
 import org.springframework.context.annotation.Bean
@@ -17,8 +18,6 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 
-import core.application.security.oauth.apple.AppleOAuth2AccessTokenResponseClient
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -30,7 +29,7 @@ class SecurityConfig(
     private val authenticationSuccessHandler: AuthenticationSuccessHandler,
     private val authenticationFailureHandler: AuthenticationFailureHandler,
     private val logoutSuccessHandler: LogoutSuccessHandler,
-    private val appleOAuth2AccessTokenResponseClient: AppleOAuth2AccessTokenResponseClient,
+    private val customOAuth2AccessTokenResponseClient: CustomOAuth2AccessTokenResponseClient,
 ) {
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
@@ -84,7 +83,7 @@ class SecurityConfig(
             .oauth2Login { oauth2 ->
                 oauth2
                     .tokenEndpoint {
-                        it.accessTokenResponseClient(appleOAuth2AccessTokenResponseClient)
+                        it.accessTokenResponseClient(customOAuth2AccessTokenResponseClient)
                     }
                     .authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
@@ -122,6 +121,7 @@ class SecurityConfig(
                 "/login/kakao",
                 "/login/apple",
                 "/login/oauth2/**",
+                "/login/**",
                 "oauth2/**",
                 "/oauth2/**",
                 "/login",
