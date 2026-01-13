@@ -9,7 +9,7 @@ class AppleAuthAttributes(
 
     override fun getProvider(): OAuthProvider = OAuthProvider.APPLE
 
-    override fun getEmail(): String = attributes["email"] as String
+    override fun getEmail(): String = attributes["email"] as? String ?: ""
 
     override fun getName(): String = "Apple User" // Apple ID Token usually doesn't have name unless requested specifically in first login scope
 
