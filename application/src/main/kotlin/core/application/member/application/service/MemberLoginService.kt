@@ -34,11 +34,26 @@ class MemberLoginService(
     override fun handleLoginSuccess(
         requestUrl: String,
         authAttributes: OAuthAttributes,
-    ): LoginResult =
-        memberPersistencePort
-            .findBySignupEmail(authAttributes.getEmail())
-            ?.let { member -> handleExistingMemberLogin(authAttributes, requestUrl, member) }
+    ): LoginResult {
+        val memberOAuth =
+            memberOAuthService.findByProviderAndExternalId(
+                authAttributes.getProvider(),
+                authAttributes.getExternalId(),
+            )
+
+        return memberOAuth
+            ?.let {
+                val member =
+                    memberPersistencePort.findById(it.memberId.value)
+                        ?: throw
+                        IllegalStateException("MemberOAuth exists but Member not found")
+                handleExistingMemberLogin(requestUrl, member)
+            }
+            ?: memberPersistencePort
+                .findBySignupEmail(authAttributes.getEmail())
+                ?.let { member -> handleExistingMemberLogin(requestUrl, member) }
             ?: handleUnregisteredMember(authAttributes)
+    }
 
     private fun generateLoginResult(
         memberId: MemberId,
