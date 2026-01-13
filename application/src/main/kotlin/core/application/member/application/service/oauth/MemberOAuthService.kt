@@ -10,10 +10,6 @@ import org.springframework.stereotype.Service
 class MemberOAuthService(
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
 ) {
-    fun findByProviderAndExternalId(
-        provider: core.domain.member.enums.OAuthProvider,
-        externalId: String,
-    ): MemberOAuth? = memberOAuthPersistencePort.findByProviderAndExternalId(provider, externalId)
     /**
      * 멤버 가입 시, OAuth 클라이언트로부터 전달받은 제공자 정보를 저장함.
      *
