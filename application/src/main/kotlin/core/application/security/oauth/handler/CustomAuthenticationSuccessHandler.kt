@@ -4,7 +4,6 @@ import core.application.security.oauth.domain.CustomOAuth2User
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
 import core.domain.security.oauth.dto.LoginResult
-import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.Authentication
@@ -33,11 +32,9 @@ class CustomAuthenticationSuccessHandler(
         val oAuth2User = authentication.principal as CustomOAuth2User
 
         val redirectDomain =
-            authentication
-                .details
-                ?.let { it as? Map<*, *> }
-                ?.get("redirect_domain")
-                ?.toString()
+            request.cookies
+                ?.firstOrNull { it.name == "REQUEST_DOMAIN" }
+                ?.value
                 ?: request.serverName
 
         val loginResult =
