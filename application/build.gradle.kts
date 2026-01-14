@@ -54,14 +54,6 @@ jib {
             "APPLE_PRIVATE_KEY_PATH" to "/app/secrets/AuthKey.p8"
         )
     }
-    extraDirectories {
-        paths {
-            path {
-                setFrom("secrets")
-                setInto("/app/secrets")
-            }
-        }
-    }
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
