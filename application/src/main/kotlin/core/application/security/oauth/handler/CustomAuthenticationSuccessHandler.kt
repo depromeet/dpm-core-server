@@ -47,7 +47,7 @@ class CustomAuthenticationSuccessHandler(
             )
 
         loginResult.refreshToken?.let {
-            tokenInjector.injectRefreshToken(it.token, response)
+            tokenInjector.injectRefreshToken(it, response)
         }
 
         response.sendRedirect(loginResult.redirectUrl)
