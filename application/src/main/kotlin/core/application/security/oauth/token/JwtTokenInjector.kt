@@ -5,6 +5,7 @@ import core.application.security.properties.TokenProperties
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Component
+import kotlin.math.log
 
 @Component
 class JwtTokenInjector(
@@ -12,20 +13,20 @@ class JwtTokenInjector(
     private val securityProperties: SecurityProperties,
 ) {
     fun injectRefreshToken(
-            refreshToken: String,
-            response: HttpServletResponse,
-        ) {
-            val cookie = Cookie("refresh_token", refreshToken).apply {
-                isHttpOnly = true
-                secure = true
-                path = "/"
-                domain = securityProperties.cookie.domain
-                maxAge = 60 * 60 * 24 * 14
-                setSameSite(this, "None")
-            }
-
-            response.addCookie(cookie)
-        }
+        refreshToken: String,
+        response: HttpServletResponse,
+    ) {
+        val domain = securityProperties.cookie.domain
+        System.out.println("$domain //////////// $refreshToken")
+        response.addHeader(
+            "Set-Cookie",
+            "refresh_token=$refreshToken; " +
+                    "Path=/; " +
+                    "Domain=$domain; " +
+                    "Max-Age=${60 * 60 * 24 * 14}; " +
+                    "Secure; HttpOnly; SameSite=None"
+        )
+    }
 
     private fun setSameSite(cookie: Cookie, sameSite: String) {
         // Servlet API는 SameSite 직접 지원 안 함 → 헤더로 강제
