@@ -79,6 +79,7 @@ management:
 logging:
   level:
     org.jooq.tools.LoggerListener: DEBUG
+    org.springframework.security: ${SECURITY_LOGGING_LEVEL:DEBUG}
 
 cohort:
   value: ${COHORT_VALUE:17}
@@ -104,3 +105,5 @@ cors:
     - https://core.depromeet.com
     - https://admin.depromeet.com
     - https://api.depromeet.com
+server:
+  forward-headers-strategy: framework
