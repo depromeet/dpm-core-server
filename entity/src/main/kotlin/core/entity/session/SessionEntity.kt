@@ -1,0 +1,80 @@
+package core.entity.session
+
+import core.domain.cohort.vo.CohortId
+import core.domain.session.aggregate.Session
+import core.domain.session.vo.SessionId
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Embedded
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
+import jakarta.persistence.Table
+import java.time.Instant
+
+@Entity
+@Table(name = "sessions")
+class SessionEntity(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "session_id", nullable = false, updatable = false)
+    val id: Long,
+    @Column(name = "cohort_id", nullable = false)
+    val cohortId: Long,
+    @Column(nullable = false)
+    val date: Instant,
+    @Column(nullable = false)
+    val week: Int,
+    @Embedded
+    val attendancePolicy: EmbeddedAttendancePolicy,
+    @Column(name = "is_online", nullable = false)
+    val isOnline: Boolean,
+    val place: String,
+    @Column(name = "event_name")
+    val eventName: String,
+    @Column(name = "deleted_at", nullable = true)
+    val deletedAt: Instant? = null,
+    @OneToMany(mappedBy = "session", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+    val attachments: MutableList<SessionAttachmentEntity> = mutableListOf(),
+) {
+    fun toDomain(): Session =
+        Session(
+            id = SessionId(this.id),
+            cohortId = CohortId(this.cohortId),
+            date = this.date,
+            week = this.week,
+            attendancePolicy = this.attendancePolicy.toDomain(),
+            isOnline = this.isOnline,
+            place = this.place,
+            eventName = this.eventName,
+            deletedAt = this.deletedAt,
+            attachments = this.attachments.map { it.toDomain() }.toMutableList(),
+        )
+
+    companion object {
+        fun from(domainModel: Session): SessionEntity {
+            val sessionEntity =
+                SessionEntity(
+                    id = domainModel.id?.value ?: 0L,
+                    cohortId = domainModel.cohortId.value,
+                    date = domainModel.date,
+                    week = domainModel.week,
+                    attendancePolicy = EmbeddedAttendancePolicy.from(domainModel.attendancePolicy),
+                    isOnline = domainModel.isOnline,
+                    place = domainModel.place,
+                    eventName = domainModel.eventName,
+                    deletedAt = domainModel.deletedAt,
+                )
+            val attachmentEntities =
+                domainModel.getAttachments().map {
+                    SessionAttachmentEntity.from(sessionEntity, it)
+                }
+            sessionEntity.attachments.addAll(attachmentEntities)
+
+            return sessionEntity
+        }
+    }
+}
