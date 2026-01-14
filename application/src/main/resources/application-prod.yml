@@ -1,0 +1,25 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:mysql://${PROD_DB_HOST:localhost}:${PROD_DB_PORT:3306}/${PROD_DB_SCHEMA:dpm_core}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${PROD_DB_USERNAME}
+    password: ${PROD_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  security:
+    oauth2:
+      client:
+        registration:
+          apple:
+            client-id: ${PROD_APPLE_CLIENT_ID}
+            redirect-uri: ${PROD_APPLE_REDIRECT_URI}
+logging:
+  level:
+    org.springframework.orm.jpa: INFO
+apple:
+  client-id: ${PROD_APPLE_CLIENT_ID}
+  key-id: ${PROD_APPLE_KEY_ID}
+  team-id: ${PROD_APPLE_TEAM_ID}
+  private-key: ${PROD_APPLE_PRIVATE_KEY}
+  redirect-uri: ${PROD_APPLE_REDIRECT_URI}

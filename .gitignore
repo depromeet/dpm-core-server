@@ -47,3 +47,6 @@ out/
 **/*.properties
 **/*.env
 
+
+# Secrets
+secrets/

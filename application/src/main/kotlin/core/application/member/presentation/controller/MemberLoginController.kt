@@ -1,0 +1,102 @@
+package core.application.member.presentation.controller
+
+import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.web.bind.annotation.GetMapping
+import core.application.member.application.service.auth.AppleAuthService
+import core.application.member.application.service.auth.AuthTokenResponse
+import org.springframework.stereotype.Controller
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import java.net.URI
+
+@Tag(name = "Member-Login", description = "Member Login API")
+@Controller
+class MemberLoginController(
+    private val appleAuthService: AppleAuthService,
+) {
+    companion object {
+        private const val KAKAO_REDIRECT_URL = "redirect:/oauth2/authorization/kakao"
+        private const val APPLE_REDIRECT_URL = "redirect:/oauth2/authorization/apple"
+        private const val REQUEST_DOMAIN = "REQUEST_DOMAIN"
+        private const val ORIGIN = "Origin"
+        private const val REFERER = "Referer"
+    }
+
+    private val logger = KotlinLogging.logger { MemberLoginController::class.java }
+
+    @GetMapping("/login/kakao")
+    fun login(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ): String {
+        setCookie(request, response)
+        return KAKAO_REDIRECT_URL
+    }
+
+    @GetMapping("/login/apple")
+    fun appleLogin(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ): String {
+        setCookie(request, response)
+        return APPLE_REDIRECT_URL
+    }
+
+
+    /**
+     * apple login to support third-party login
+     * */
+    @PostMapping("/v1/auth/login/apple")
+    fun appleLoginV1(
+        @RequestBody body: AppleLoginRequest,
+        response: HttpServletResponse,
+    ): AuthTokenResponse {
+        val tokens = appleAuthService.login(body.authorizationCode)
+
+        addTokenCookies(response, tokens)
+
+        return tokens
+    }
+
+    data class AppleLoginRequest(
+        val authorizationCode: String,
+    )
+
+    private fun setCookie(request: HttpServletRequest, response: HttpServletResponse) {
+        try {
+            val requestDomain =
+                URI(request.getHeader(ORIGIN) ?: request.getHeader(REFERER) ?: request.requestURL.toString()).host
+
+            Cookie(REQUEST_DOMAIN, requestDomain).apply {
+                path = "/"
+                maxAge = 60
+                isHttpOnly = true
+                secure = true
+                response.addCookie(this)
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to set REQUEST_DOMAIN cookie : ${e.message}" }
+        }
+    }
+
+    private fun addTokenCookies(response: HttpServletResponse, tokens: AuthTokenResponse) {
+        val accessTokenCookie = createCookie("accessToken", tokens.accessToken, 60 * 60 * 24) // 1 day
+        val refreshTokenCookie = createCookie("refreshToken", tokens.refreshToken, 60 * 60 * 24 * 30) // 30 days
+
+        response.addCookie(accessTokenCookie)
+        response.addCookie(refreshTokenCookie)
+    }
+
+    private fun createCookie(name: String, value: String, maxAgeSeconds: Int): Cookie {
+        return Cookie(name, value).apply {
+            path = "/"
+            maxAge = maxAgeSeconds
+            isHttpOnly = true
+            // secure = true // Enable in prod
+        }
+    }
+}
