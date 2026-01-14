@@ -29,20 +29,26 @@ class AppleClientSecretGenerator(
         val now = Date()
         val expiration = Date.from(
             LocalDateTime.now()
-                .plusDays(180)
+                .plusDays(180) // Apple 최대 6개월
                 .atZone(ZoneId.systemDefault())
-                .toInstant(),
+                .toInstant()
         )
 
         return Jwts.builder()
-            .header()
-            .add("kid", appleProperties.keyId)
-            .and()
-            .issuer(appleProperties.teamId)
-            .subject(appleProperties.clientId)
-            .audience().add("https://appleid.apple.com").and()
-            .issuedAt(now)
-            .expiration(expiration)
+            // ===== Header =====
+            .setHeaderParams(
+                mapOf(
+                    "kid" to appleProperties.keyId,
+                    "alg" to "ES256",
+                )
+            )
+            // ===== Payload =====
+            .setIssuer(appleProperties.teamId)              // iss
+            .setSubject(appleProperties.clientId)           // sub
+            .setAudience("https://appleid.apple.com")       // aud
+            .setIssuedAt(now)                               // iat
+            .setExpiration(expiration)                      // exp
+            // ===== Signature =====
             .signWith(privateKey)
             .compact()
     }
@@ -52,7 +58,7 @@ class AppleClientSecretGenerator(
             val replacedKey = privateKey.replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replace("\\s".toRegex(), "")
-            
+
             // 1. Base64 디코딩
             val privateKeyBytes = Decoders.BASE64.decode(replacedKey)
 
