@@ -30,20 +30,27 @@ class CustomAuthenticationSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        resolveLoginResultFromAuthentication(
-            request,
-            authentication,
-        ).let { loginResult ->
-            loginResult.refreshToken?.let {
-                tokenInjector.injectRefreshToken(it, response)
-            }
-            Cookie(REQUEST_DOMAIN, request.serverName)
-                .apply {
-                    path = "/"
-                    maxAge = 0
-                }.also { response.addCookie(it) }
-            response.sendRedirect(loginResult.redirectUrl)
+        val oAuth2User = authentication.principal as CustomOAuth2User
+
+        val redirectDomain =
+            authentication
+                .details
+                ?.let { it as? Map<*, *> }
+                ?.get("redirect_domain")
+                ?.toString()
+                ?: request.serverName
+
+        val loginResult =
+            handleMemberLoginUseCase.handleLoginSuccess(
+                redirectDomain,
+                oAuth2User.authAttributes,
+            )
+
+        loginResult.refreshToken?.let {
+            tokenInjector.injectRefreshToken(it.token, response)
         }
+
+        response.sendRedirect(loginResult.redirectUrl)
     }
 
     private fun resolveLoginResultFromAuthentication(

@@ -40,7 +40,7 @@ class RefreshTokenService(
                 ?: throw TokenInvalidException()
 
         val refreshToken: RefreshToken = getByTokenString(token)
-        tokenInjector.injectRefreshToken(rotate(refreshToken), response)
+        tokenInjector.injectRefreshToken(rotate(refreshToken).token, response)
         return tokenProvider.generateAccessToken(refreshToken.memberId.toString())
     }
 
