@@ -35,7 +35,6 @@ class MemberLoginService(
         requestUrl: String,
         authAttributes: OAuthAttributes,
     ): LoginResult {
-
         val provider = authAttributes.getProvider()
         val externalId = authAttributes.getExternalId()
 
