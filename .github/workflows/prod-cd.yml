@@ -113,6 +113,13 @@ jobs:
             REDIRECT_URL=${{ secrets.PROD_REDIRECT_URL }}
             ADMIN_REDIRECT_URL=${{ secrets.PROD_ADMIN_REDIRECT_URL }}
             RESTRICTED_REDIRECT_URL=${{ secrets.PROD_RESTRICTED_REDIRECT_URL }}
+            PROD_APPLE_REDIRECT_URI=${{ secrets.PROD_APPLE_REDIRECT_URI }}
+            PROD_APPLE_REDIRECT_URL=${{ secrets.PROD_APPLE_REDIRECT_URL }}
+            PROD_APPLE_PRIVATE_KEY=${{ secrets.PROD_APPLE_PRIVATE_KEY }}
+            PROD_APPLE_TEAM_ID=${{ secrets.PROD_APPLE_TEAM_ID }}
+            PROD_APPLE_KEY_ID=${{ secrets.PROD_APPLE_KEY_ID }}
+            PROD_APPLE_CLIENT_ID=${{ secrets.PROD_APPLE_CLIENT_ID }}
+            SECURITY_LOGGING_LEVEL=${{ secrets.SECURITY_LOGGING_LEVEL }}
             EOF
 
             echo "${{ env.DOCKER_PASSWORD }}" | docker login --username "${{ env.DOCKER_USERNAME }}" --password-stdin
