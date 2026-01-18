@@ -84,6 +84,7 @@ attendance:
 
 cors:
   allowed-origins:
+    # Frontend origins
     - https://localhost:3000
     - https://local.depromeet.shop
     - https://local-core.depromeet.shop:3010
@@ -94,5 +95,8 @@ cors:
     - https://core.depromeet.com
     - https://admin.depromeet.com
     - https://api.depromeet.com
+    # OAuth2 provider origins (required for OAuth2 callbacks)
+    - https://appleid.apple.com
+    - https://kauth.kakao.com
 server:
   forward-headers-strategy: framework

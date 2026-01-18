@@ -60,8 +60,6 @@ class MemberLoginController(
         setCookie(request, response)
         return RedirectView("/oauth2/authorization/apple")
     }
-
-
     /**
      * apple login to support third-party login
      * */
