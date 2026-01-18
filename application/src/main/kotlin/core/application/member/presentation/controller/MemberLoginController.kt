@@ -123,9 +123,22 @@ class MemberLoginController(
     private fun createCookie(name: String, value: String, maxAgeSeconds: Int): Cookie {
         return Cookie(name, value).apply {
             path = "/"
+
+            // Set domain from configuration (except for localhost)
+            // This enables cookies to be shared across subdomains (e.g., core.depromeet.shop, api.depromeet.shop)
+            domain = if (securityProperties.cookie.domain != "localhost") {
+                securityProperties.cookie.domain
+            } else {
+                null  // Don't set domain for localhost
+            }
+
             maxAge = maxAgeSeconds
             isHttpOnly = true
-            // secure = true // Enable in prod
+            secure = securityProperties.cookie.secure  // Use config value (true for dev/prod, false for local)
+
+            // Set SameSite=None for cross-subdomain cookie access
+            // Note: SameSite=None requires Secure=true
+            setAttribute("SameSite", "None")
         }
     }
 }

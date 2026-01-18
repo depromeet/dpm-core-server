@@ -187,6 +187,49 @@ spring:
     import: optional:file:.env[.properties]
 ```
 
+### Cookie Domain Configuration (CRITICAL)
+
+**RFC6265 Compliance**: Cookie domains MUST NOT start with a dot (.)
+
+**Correct Format**:
+
+| Environment | COOKIE_DOMAIN Value |
+|-------------|---------------------|
+| **LOCAL** | `localhost` |
+| **DEV** | `depromeet.shop` (no leading dot) |
+| **PROD** | `depromeet.com` (no leading dot) |
+
+**Incorrect Format** (will cause validation error):
+
+| Environment | Wrong Value | Error |
+|-------------|-------------|-------|
+| **DEV** | `.depromeet.shop` | ❌ `IllegalArgumentException: An invalid domain [.depromeet.shop]` |
+| **PROD** | `.depromeet.com` | ❌ `IllegalArgumentException: An invalid domain [.depromeet.com]` |
+
+**Why No Leading Dot?**
+- RFC6265 prohibits cookie domains starting with dots
+- Tomcat's `Rfc6265CookieProcessor` validates and rejects leading dots
+- Modern browsers (Chrome, Firefox, Safari) automatically share cookies across subdomains even without the leading dot
+
+**Example .env Configuration**:
+
+```bash
+# Local Development
+COOKIE_DOMAIN=localhost
+COOKIE_SECURE=false
+COOKIE_HTTP_ONLY=true
+
+# Development Environment (CI/CD)
+COOKIE_DOMAIN=depromeet.shop
+COOKIE_SECURE=true
+COOKIE_HTTP_ONLY=false
+
+# Production Environment (CI/CD)
+COOKIE_DOMAIN=depromeet.com
+COOKIE_SECURE=true
+COOKIE_HTTP_ONLY=false
+```
+
 ---
 
 ## Testing Checklist Before PR
@@ -206,7 +249,26 @@ curl http://localhost:8080/actuator/health
 # 4. Check Swagger UI
 open http://localhost:8080/swagger-ui/index.html
 
-# 5. Run tests (if applicable)
+# 5. Test Cookie Configuration (CRITICAL for OAuth2)
+curl -i http://localhost:8080/login/apple \
+  -H "Origin: http://localhost:3000" \
+  2>&1 | grep -E "(Set-Cookie|Location|HTTP)"
+# Expected:
+#   HTTP/1.1 302
+#   Location: /oauth2/authorization/apple
+#   Set-Cookie: REQUEST_DOMAIN=localhost; Path=/; HttpOnly; SameSite=None
+
+# 6. Verify CORS headers
+curl -i http://localhost:8080/login/apple \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: GET" \
+  -X OPTIONS \
+  2>&1 | grep -E "(Access-Control|HTTP)"
+# Expected:
+#   Access-Control-Allow-Origin: http://localhost:3000
+#   Access-Control-Allow-Credentials: true
+
+# 7. Run tests (if applicable)
 ./gradlew :application:test --tests SpecificTest
 ```
 
@@ -283,6 +345,21 @@ fun login(): RedirectView {
 - `application.yml` → Kakao only
 - `application-{profile}.yml` → Apple config per environment
 
+### Issue: Cookie Domain Validation Error
+
+**Error**: `An invalid domain [.depromeet.shop] was specified for this cookie`
+
+**Solution**: Remove leading dot from `COOKIE_DOMAIN` environment variable:
+```bash
+# Incorrect (will fail):
+COOKIE_DOMAIN=.depromeet.shop  ❌
+
+# Correct (RFC6265 compliant):
+COOKIE_DOMAIN=depromeet.shop   ✅
+```
+
+**Why**: RFC6265 prohibits cookie domains starting with dots. Tomcat's `Rfc6265CookieProcessor` enforces this validation.
+
 ### Issue: Gradle takes 15+ minutes
 
 **Solution**: Use optimized commands:
@@ -303,6 +380,8 @@ fun login(): RedirectView {
 - **Research**: `thoughts/shared/research/2025-01-18-controller-swagger-visibility-research.md`
 - **Plan**: `thoughts/shared/plans/2025-01-18-swagger-controller-visibility-fix-plan.md`
 - **Apple OAuth Plan**: `thoughts/shared/plans/2026-01-18-apple-oauth2-fix-implementation-plan.md`
+- **Cookie/CORS Research**: `thoughts/shared/research/2025-01-18-cookie-domain-validation-error-research.md`
+- **Cookie/CORS Plan**: `thoughts/shared/plans/2025-01-18-cookie-cors-oauth-fix-implementation-plan.md`
 
 ---
 
