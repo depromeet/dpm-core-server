@@ -46,23 +46,12 @@ spring:
             scope:
               - account_email
               - profile_nickname
-          apple:
-            client-authentication-method: client_secret_post
-            authorization-grant-type: authorization_code
-            scope:
-              - name
-              - email
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
-          apple:
-            authorization-uri: https://appleid.apple.com/auth/authorize?response_mode=form_post
-            token-uri: https://appleid.apple.com/auth/token
-            jwk-set-uri: https://appleid.apple.com/auth/keys
-            user-name-attribute: sub
 
 
 management:
