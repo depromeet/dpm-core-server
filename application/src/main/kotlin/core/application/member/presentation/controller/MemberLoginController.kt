@@ -26,6 +26,8 @@ class MemberLoginController(
     private val securityProperties: SecurityProperties,
 ) {
     companion object {
+        private const val KAKAO_REDIRECT_URL = "redirect:/oauth2/authorization/kakao"
+        private const val APPLE_REDIRECT_URL = "redirect:/oauth2/authorization/apple"
         private const val REQUEST_DOMAIN = "REQUEST_DOMAIN"
         private const val ORIGIN = "Origin"
         private const val REFERER = "Referer"
@@ -42,9 +44,9 @@ class MemberLoginController(
     fun login(
         request: HttpServletRequest,
         response: HttpServletResponse,
-    ): RedirectView {
+    ): String {
         setCookie(request, response)
-        return RedirectView("/oauth2/authorization/kakao")
+        return KAKAO_REDIRECT_URL
     }
 
     @GetMapping("/login/apple")
@@ -56,12 +58,10 @@ class MemberLoginController(
     fun appleLogin(
         request: HttpServletRequest,
         response: HttpServletResponse,
-    ): RedirectView {
+    ): String {
         setCookie(request, response)
-        return RedirectView("/oauth2/authorization/apple")
+        return APPLE_REDIRECT_URL
     }
-
-
     /**
      * apple login to support third-party login
      * */
@@ -100,11 +100,9 @@ class MemberLoginController(
 
             Cookie(REQUEST_DOMAIN, requestDomain).apply {
                 path = "/"
-                domain = securityProperties.cookie.domain
                 maxAge = 60
                 isHttpOnly = true
                 secure = true
-                setAttribute("SameSite", "None")
                 response.addCookie(this)
             }
         } catch (e: Exception) {
@@ -123,22 +121,9 @@ class MemberLoginController(
     private fun createCookie(name: String, value: String, maxAgeSeconds: Int): Cookie {
         return Cookie(name, value).apply {
             path = "/"
-
-            // Set domain from configuration (except for localhost)
-            // This enables cookies to be shared across subdomains (e.g., core.depromeet.shop, api.depromeet.shop)
-            domain = if (securityProperties.cookie.domain != "localhost") {
-                securityProperties.cookie.domain
-            } else {
-                null  // Don't set domain for localhost
-            }
-
             maxAge = maxAgeSeconds
             isHttpOnly = true
-            secure = securityProperties.cookie.secure  // Use config value (true for dev/prod, false for local)
-
-            // Set SameSite=None for cross-subdomain cookie access
-            // Note: SameSite=None requires Secure=true
-            setAttribute("SameSite", "None")
+            // secure = true // Enable in prod
         }
     }
 }
