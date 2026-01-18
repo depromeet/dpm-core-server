@@ -32,6 +32,16 @@ class SwaggerConfig(
             .servers(initializeServers())
             .components(components())
 
+    // Note: All MemberLoginController endpoints are now visible in Swagger.
+    //
+    // Implementation (2025-01-18):
+    // - GET endpoints (/login/kakao, /login/apple) use @ResponseBody + RedirectView
+    // - POST endpoint (/v1/auth/login/apple) uses @ResponseBody + JSON response
+    // - All endpoints have @Operation annotations for proper Swagger documentation
+    // - Springdoc OpenAPI automatically scans and documents them
+    //
+    // See implementation plan: /thoughts/shared/plans/2025-01-18-swagger-controller-visibility-fix-plan.md
+
     private fun swaggerInfo(): Info =
         Info()
             .version("v0.0.1")

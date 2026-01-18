@@ -11,9 +11,21 @@ spring:
     oauth2:
       client:
         registration:
-           apple:
-             client-id: ${DEV_APPLE_CLIENT_ID}
-             redirect-uri: ${DEV_APPLE_REDIRECT_URI}
+          apple:
+            client-id: ${DEV_APPLE_CLIENT_ID}
+            client-secret: ${DEV_APPLE_CLIENT_SECRET}
+            redirect-uri: ${DEV_APPLE_REDIRECT_URI}
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            scope:
+              - name
+              - email
+        provider:
+          apple:
+            authorization-uri: https://appleid.apple.com/auth/authorize?response_mode=form_post
+            token-uri: https://appleid.apple.com/auth/token
+            jwk-set-uri: https://appleid.apple.com/auth/keys
+            user-name-attribute: sub
 
 logging:
   level:
