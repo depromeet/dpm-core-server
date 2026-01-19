@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.GetMapping
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.security.properties.SecurityProperties
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -31,6 +34,10 @@ class MemberLoginController(
     private val logger = KotlinLogging.logger { MemberLoginController::class.java }
 
     @GetMapping("/login/kakao")
+    @Operation(
+        summary = "Kakao OAuth2 Login Redirect",
+        description = "Initiates Kakao OAuth2 authorization flow. Sets REQUEST_DOMAIN cookie and redirects to Kakao authorization page.",
+    )
     fun login(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -38,7 +45,10 @@ class MemberLoginController(
         setCookie(request, response)
         return KAKAO_REDIRECT_URL
     }
-
+    @Operation(
+        summary = "Apple OAuth2 Login Redirect",
+        description = "Initiates Apple OAuth2 authorization flow. Sets REQUEST_DOMAIN cookie and redirects to Apple authorization page.",
+    )
     @GetMapping("/login/apple")
     fun appleLogin(
         request: HttpServletRequest,
@@ -50,15 +60,24 @@ class MemberLoginController(
     /**
      * apple login to support third-party login
      * */
-    @PostMapping("/v1/auth/login/apple")
+    @Operation(
+        summary = "Apple OAuth2 Login V1",
+        description = "Login with Apple authorization code to receive JWT tokens"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Login successful - returns JWT tokens"),
+            ApiResponse(responseCode = "401", description = "Invalid authorization code"),
+            ApiResponse(responseCode = "500", description = "Internal server error")
+        ]
+    )
+    @PostMapping("/login/auth/apple")
     fun appleLoginV1(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
         val tokens = appleAuthService.login(body.authorizationCode)
-
         addTokenCookies(response, tokens)
-
         return tokens
     }
 
