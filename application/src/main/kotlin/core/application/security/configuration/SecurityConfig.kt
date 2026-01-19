@@ -121,6 +121,7 @@ class SecurityConfig(
                 "/login/kakao",
                 "/login/apple",
                 "/login/oauth2/**",
+                "/v1/login/auth/**",
                 "/login/**",
                 "oauth2/**",
                 "/oauth2/**",
