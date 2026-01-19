@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.ResponseBody
 import java.net.URI
 
 @Tag(name = "Member-Login", description = "Member Login API")
@@ -72,6 +73,7 @@ class MemberLoginController(
         ]
     )
     @PostMapping("/login/auth/apple")
+    @ResponseBody
     fun appleLoginV1(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,
