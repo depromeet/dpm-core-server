@@ -47,10 +47,16 @@ class CustomOAuth2UserService(
             .map { SimpleGrantedAuthority("ROLE_$it") }
             .toSet()
 
+        val nameAttributeKey = when (registrationId) {
+            "apple" -> "sub"
+            "kakao" -> "id"
+            else -> userRequest.clientRegistration
+                .providerDetails.userInfoEndpoint.userNameAttributeName
+        }
         return CustomOAuth2User(
             authorities = authorities.toList(),
             attributes = oAuth2User.attributes,
-            nameAttributeKey = "sub",
+            nameAttributeKey = nameAttributeKey,
             authAttributes = OAuthAttributes.of(
                 registrationId.uppercase(),
                 oAuth2User.attributes
