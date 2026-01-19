@@ -2,6 +2,7 @@ package core.persistence.authorization.repository
 
 import core.domain.authorization.aggregate.Role
 import core.domain.authorization.port.outbound.RolePersistencePort
+import core.domain.authorization.vo.RoleId
 import core.domain.member.vo.MemberId
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.MEMBERS
@@ -54,4 +55,9 @@ class RoleRepository(
             )
             .fetch()
             .map { "${it.get(PERMISSIONS.ACTION)}:${it.get(PERMISSIONS.RESOURCE)}".lowercase() }
+
+    override fun getRoleIdByCode(code: String): RoleId =
+        roleJpaRepository.findByName(code)
+            .map { RoleId(it.id) }
+            .orElseThrow { IllegalArgumentException("Role not found with code: $code") }
 }
