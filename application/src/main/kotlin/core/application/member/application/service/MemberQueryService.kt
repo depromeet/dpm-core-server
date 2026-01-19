@@ -19,6 +19,9 @@ class MemberQueryService(
     private val memberRoleService: MemberRoleService,
 ) : MemberQueryByRoleUseCase,
     MemberQueryUseCase {
+        companion object{
+            val DEFAULT_TEAM_ID = 8
+        }
     /**
      * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
      *
@@ -66,7 +69,8 @@ class MemberQueryService(
      */
     fun getMemberTeamNumber(memberId: MemberId): Int =
         memberPersistencePort.findMemberTeamByMemberId(memberId)
-            ?: throw MemberTeamNotFoundException()
+            ?: DEFAULT_TEAM_ID
+//            ?: throw MemberTeamNotFoundException()
 
     fun checkWhiteList(
         name: String,
