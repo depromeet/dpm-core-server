@@ -74,9 +74,8 @@ class MemberQueryService(
     fun checkWhiteList(
         name: String,
         signupEmail: String,
-    ): Member =
+    ): Member? =
         memberPersistencePort.findByNameAndSignupEmail(name, signupEmail)
-            ?: throw MemberNotFoundException()
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 
