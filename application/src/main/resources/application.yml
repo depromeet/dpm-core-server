@@ -81,7 +81,8 @@ attendance:
   graduation:
     impossible-threshold: ${ATTENDANCE_GRADUATION_IMPOSSIBLE_THRESHOLD:4}
     at-risk-threshold: ${ATTENDANCE_GRADUATION_AT_RISK_THRESHOLD:3}
-
+member:
+  default-team-id: ${DEFAULT_TEAM_ID:8}
 cors:
   allowed-origins:
     # Frontend origins

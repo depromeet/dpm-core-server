@@ -23,14 +23,16 @@ class MemberController(
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
 ) : MemberApi {
-    @PreAuthorize("hasAuthority('read:member')")
+//    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("permitAll()")
     @GetMapping("/me")
     override fun me(memberId: MemberId): CustomResponse<MemberDetailsResponse> {
         val response: MemberDetailsResponse = memberQueryService.memberMe(memberId)
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasAuthority('delete:member')")
+//    @PreAuthorize("hasAuthority('delete:member')")
+    @PreAuthorize("permitAll()")
     @PatchMapping("/withdraw")
     override fun withdraw(
         memberId: MemberId,
@@ -40,7 +42,8 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasAuthority('create:member')")
+//    @PreAuthorize("hasAuthority('create:member')")
+    @PreAuthorize("permitAll()")
     @PatchMapping("/init")
     override fun initMemberDataAndApprove(
         @Valid @RequestBody request: InitMemberDataRequest,
@@ -49,7 +52,8 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasAuthority('create:member')")
+//    @PreAuthorize("hasAuthority('create:member')")
+    @PreAuthorize("permitAll()")
     @PatchMapping("/whitelist")
     override fun checkWhiteList(
         @Valid @RequestBody request: WhiteListCheckRequest,
