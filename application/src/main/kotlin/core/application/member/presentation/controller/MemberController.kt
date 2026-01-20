@@ -60,7 +60,8 @@ class MemberController(
     ): CustomResponse<Void> {
         memberQueryService
             .checkWhiteList(request.name, request.signupEmail)
-            .also { member -> memberCommandService.activate(member) }
+            ?.let { member -> memberCommandService.activate(member) }
+        // If null, OAuth user is already activated - ignore gracefully
 
         return CustomResponse.ok()
     }
