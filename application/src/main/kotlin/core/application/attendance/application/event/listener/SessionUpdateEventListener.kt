@@ -27,7 +27,8 @@ class SessionUpdateEventListener(
             )
         } catch (e: Exception) {
             logger.error(e) {
-                "Error occurred while handling SessionUpdateEvent for sessionId: ${event.sessionId}. Caused By: ${e.cause}"
+                "Error occurred while handling SessionUpdateEvent " +
+                    "for sessionId: ${event.sessionId}. Caused By: ${e.cause}"
             }
         } finally {
             logger.info { "Completed handling SessionUpdateEvent for sessionId: ${event.sessionId}" }

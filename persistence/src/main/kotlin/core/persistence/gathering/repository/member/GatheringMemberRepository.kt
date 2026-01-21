@@ -233,7 +233,9 @@ class GatheringMemberRepository(
                 val isJoined = record.get(GATHERING_MEMBERS.IS_JOINED)
                 val isInvitationSubmitted = record.get(GATHERING_MEMBERS.IS_INVITATION_SUBMITTED)
 
-                if (id != null && memberId != null && gatheringId != null && isViewed != null && isInvitationSubmitted != null) {
+                if (id != null && memberId != null && gatheringId != null &&
+                    isViewed != null && isInvitationSubmitted != null
+                ) {
                     GatheringMember(
                         id = GatheringMemberId(id),
                         memberId = MemberId(memberId),
