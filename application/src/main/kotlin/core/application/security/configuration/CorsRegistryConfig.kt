@@ -24,7 +24,12 @@ class CorsRegistryConfig(
             }
 
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration)
+        // Apply CORS to API endpoints
+        source.registerCorsConfiguration("/api/**", configuration)
+        // Apply CORS to OAuth2 login endpoints (critical for cookie-based authentication)
+        source.registerCorsConfiguration("/login/**", configuration)
+        source.registerCorsConfiguration("/v1/**", configuration)
+        source.registerCorsConfiguration("/oauth2/**", configuration)
         return source
     }
 }

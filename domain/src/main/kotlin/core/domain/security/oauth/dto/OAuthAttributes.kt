@@ -18,6 +18,7 @@ interface OAuthAttributes {
         ): OAuthAttributes? =
             when {
                 OAuthProvider.KAKAO.isProviderOf(providerId) -> KakaoAuthAttributes.of(attributes)
+                OAuthProvider.APPLE.isProviderOf(providerId) -> AppleAuthAttributes.of(attributes)
                 else -> null
             }
     }

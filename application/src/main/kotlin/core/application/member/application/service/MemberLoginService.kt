@@ -34,11 +34,24 @@ class MemberLoginService(
     override fun handleLoginSuccess(
         requestUrl: String,
         authAttributes: OAuthAttributes,
-    ): LoginResult =
-        memberPersistencePort
-            .findBySignupEmail(authAttributes.getEmail())
-            ?.let { member -> handleExistingMemberLogin(authAttributes, requestUrl, member) }
-            ?: handleUnregisteredMember(authAttributes)
+    ): LoginResult {
+        val provider = authAttributes.getProvider()
+        val externalId = authAttributes.getExternalId()
+
+        // 1. OAuth 연동 계정 존재 여부 확인
+        val memberOAuth =
+            memberOAuthService.findByProviderAndExternalId(provider, externalId)
+
+        if (memberOAuth != null) {
+            val member =
+                memberPersistencePort.findById(memberOAuth.memberId.value)
+                    ?: throw IllegalStateException("MemberOAuth exists but Member not found")
+            return handleExistingMemberLogin(requestUrl, member)
+        }
+
+        // 2. OAuth 연동 없음 → 신규 회원 플로우
+        return handleUnregisteredMember(authAttributes)
+    }
 
     private fun generateLoginResult(
         memberId: MemberId,
@@ -56,19 +69,13 @@ class MemberLoginService(
     }
 
     private fun handleExistingMemberLogin(
-        authAttributes: OAuthAttributes,
         requestUrl: String,
         member: Member,
     ): LoginResult {
         val memberId = member.id ?: return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
 
-        if (isInactiveOrDeletedMember(member, memberId)) {
-            return generateLoginResult(memberId, securityProperties.redirect.restrictedRedirectUrl)
-        }
-
-        if (member.whitelistCheckedYet()) {
-            member.updateEmail(authAttributes.getEmail())
-            return generateLoginResult(memberId, securityProperties.redirect.restrictedRedirectUrl)
+        if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(memberId.value)) {
+            return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
         }
 
         return generateLoginResult(
@@ -81,11 +88,6 @@ class MemberLoginService(
         )
     }
 
-    private fun isInactiveOrDeletedMember(
-        member: Member,
-        memberId: MemberId,
-    ) = !member.isAllowed() || memberPersistencePort.existsDeletedMemberById(memberId.value)
-
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
         val member =
             memberPersistencePort.save(
@@ -96,7 +98,7 @@ class MemberLoginService(
                 ),
             )
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
-
+        memberRoleService.saveByMemberId(member, authAttributes)
         return generateLoginResult(
             member.id ?: throw MemberIdRequiredException(),
             securityProperties.redirect.restrictedRedirectUrl,

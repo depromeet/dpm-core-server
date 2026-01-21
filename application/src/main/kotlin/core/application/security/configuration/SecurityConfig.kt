@@ -1,5 +1,6 @@
 package core.application.security.configuration
 
+import core.application.security.oauth.client.CustomOAuth2AccessTokenResponseClient
 import core.application.security.oauth.token.JwtAuthenticationFilter
 import core.application.security.properties.SecurityProperties
 import org.springframework.context.annotation.Bean
@@ -28,6 +29,7 @@ class SecurityConfig(
     private val authenticationSuccessHandler: AuthenticationSuccessHandler,
     private val authenticationFailureHandler: AuthenticationFailureHandler,
     private val logoutSuccessHandler: LogoutSuccessHandler,
+    private val customOAuth2AccessTokenResponseClient: CustomOAuth2AccessTokenResponseClient,
 ) {
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
@@ -80,6 +82,9 @@ class SecurityConfig(
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login { oauth2 ->
                 oauth2
+                    .tokenEndpoint {
+                        it.accessTokenResponseClient(customOAuth2AccessTokenResponseClient)
+                    }
                     .authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {
@@ -114,8 +119,14 @@ class SecurityConfig(
             arrayOf(
                 "/v1/reissue",
                 "/login/kakao",
+                "/login/apple",
+                "/login/oauth2/**",
+                "/v1/login/auth/**",
+                "/login/**",
+                "oauth2/**",
+                "/oauth2/**",
+                "/login",
                 "/error",
-                "/v1/cohort",
             )
     }
 }

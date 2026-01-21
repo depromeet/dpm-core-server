@@ -13,7 +13,6 @@ import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames.REFRESH_TOKEN
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -62,7 +61,7 @@ class MemberCommandService(
         memberId: MemberId,
         response: HttpServletResponse,
     ) {
-        tokenInjector.invalidateCookie(REFRESH_TOKEN, response)
+        tokenInjector.invalidateRefreshToken(response)
         refreshTokenInvalidator.destroyRefreshToken(memberId)
 
         memberQueryService.getMemberById(memberId)

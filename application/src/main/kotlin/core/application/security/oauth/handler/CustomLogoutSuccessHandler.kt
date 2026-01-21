@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.MediaType
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames.REFRESH_TOKEN
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 import org.springframework.stereotype.Component
 
@@ -40,7 +39,7 @@ class CustomLogoutSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication?,
     ) {
-        tokenInjector.invalidateCookie(REFRESH_TOKEN, response)
+        tokenInjector.invalidateRefreshToken(response)
 
         val token =
             request

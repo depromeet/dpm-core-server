@@ -4,7 +4,6 @@ import core.application.security.oauth.domain.CustomOAuth2User
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
 import core.domain.security.oauth.dto.LoginResult
-import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.Authentication
@@ -30,20 +29,25 @@ class CustomAuthenticationSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication,
     ) {
-        resolveLoginResultFromAuthentication(
-            request,
-            authentication,
-        ).let { loginResult ->
-            loginResult.refreshToken?.let {
-                tokenInjector.injectRefreshToken(it, response)
-            }
-            Cookie(REQUEST_DOMAIN, request.serverName)
-                .apply {
-                    path = "/"
-                    maxAge = 0
-                }.also { response.addCookie(it) }
-            response.sendRedirect(loginResult.redirectUrl)
+        val oAuth2User = authentication.principal as CustomOAuth2User
+
+        val redirectDomain =
+            request.cookies
+                ?.firstOrNull { it.name == "REQUEST_DOMAIN" }
+                ?.value
+                ?: request.serverName
+
+        val loginResult =
+            handleMemberLoginUseCase.handleLoginSuccess(
+                redirectDomain,
+                oAuth2User.authAttributes,
+            )
+
+        loginResult.refreshToken?.let {
+            tokenInjector.injectRefreshToken(it, response)
         }
+
+        response.sendRedirect(loginResult.redirectUrl)
     }
 
     private fun resolveLoginResultFromAuthentication(
