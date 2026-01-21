@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class CohortController(
-    private val cohortQueryService: CohortQueryService
+    private val cohortQueryService: CohortQueryService,
 ) : CohortApi {
     @GetMapping("/v1/cohort")
     override fun latestCohort(): CustomResponse<CohortNumberResponse> {

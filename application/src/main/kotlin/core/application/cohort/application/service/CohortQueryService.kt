@@ -19,10 +19,9 @@ class CohortQueryService(
         getCohort(cohortProperties.value).id
             ?: throw CohortNotFoundException()
 
-    fun getLatestCohortValue(): String =
-        getCohort(cohortProperties.value).value
+    fun getLatestCohortValue(): String = getCohort(cohortProperties.value).value
 
-    private fun getCohort(value: String): Cohort = cohortPersistencePort.findByValue(value)
-        ?: throw CohortNotFoundException()
-
+    private fun getCohort(value: String): Cohort =
+        cohortPersistencePort.findByValue(value)
+            ?: throw CohortNotFoundException()
 }
