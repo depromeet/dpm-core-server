@@ -49,21 +49,23 @@ class AppleIdTokenValidator(
 
     private fun getPublicKey(kid: String): PublicKey {
         return applePublicKeys[kid] ?: fetchAndCachePublicKeys()[kid]
-        ?: throw IllegalArgumentException("Matching key not found for kid: $kid")
+            ?: throw IllegalArgumentException("Matching key not found for kid: $kid")
     }
 
     private fun fetchAndCachePublicKeys(): Map<String, PublicKey> {
-        val response = restClient.get()
-            .uri("https://appleid.apple.com/auth/keys")
-            .retrieve()
-            .body(String::class.java)
-            ?: throw RuntimeException("Failed to fetch Apple public keys")
+        val response =
+            restClient.get()
+                .uri("https://appleid.apple.com/auth/keys")
+                .retrieve()
+                .body(String::class.java)
+                ?: throw RuntimeException("Failed to fetch Apple public keys")
 
         val keysDef = objectMapper.readValue<AppleKeysResponse>(response)
-        val newKeys = keysDef.keys.associate { key ->
-            key.kid to generatePublicKey(key)
-        }
-        
+        val newKeys =
+            keysDef.keys.associate { key ->
+                key.kid to generatePublicKey(key)
+            }
+
         applePublicKeys.putAll(newKeys)
         return newKeys
     }
@@ -80,7 +82,7 @@ class AppleIdTokenValidator(
     }
 
     data class AppleKeysResponse(
-        val keys: List<AppleKey>
+        val keys: List<AppleKey>,
     )
 
     data class AppleKey(
@@ -89,6 +91,6 @@ class AppleIdTokenValidator(
         val use: String,
         val alg: String,
         val n: String,
-        val e: String
+        val e: String,
     )
 }

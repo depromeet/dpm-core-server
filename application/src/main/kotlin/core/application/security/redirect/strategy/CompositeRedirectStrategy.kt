@@ -4,9 +4,8 @@ import core.application.security.redirect.model.RedirectContext
 
 class CompositeRedirectStrategy(
     private val strategies: List<RedirectStrategy>,
-    private val errorRedirectStrategy: ErrorRedirectStrategy, // 🔥 핵심
+    private val errorRedirectStrategy: ErrorRedirectStrategy,
 ) : RedirectStrategy {
-
     override fun supports(context: RedirectContext): Boolean = true
 
     override fun resolve(context: RedirectContext): String {

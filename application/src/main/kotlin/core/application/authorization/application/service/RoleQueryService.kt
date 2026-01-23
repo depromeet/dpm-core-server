@@ -23,6 +23,5 @@ class RoleQueryService(
     override fun getPermissionsByMemberId(memberId: MemberId): List<String> =
         rolePersistencePort.findAllPermissionsByMemberId(memberId)
 
-    override fun getRoleIdByCode(code: String): RoleId =
-        rolePersistencePort.getRoleIdByCode(code)
+    override fun getRoleIdByCode(code: String): RoleId = rolePersistencePort.getRoleIdByCode(code)
 }

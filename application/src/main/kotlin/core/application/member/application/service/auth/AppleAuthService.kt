@@ -1,9 +1,9 @@
 package core.application.member.application.service.auth
 
+import core.application.member.application.exception.MemberNotFoundException
 import core.application.security.oauth.apple.AppleTokenExchangeService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.enums.OAuthProvider
-import core.application.member.application.exception.MemberNotFoundException
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.refreshToken.aggregate.RefreshToken
@@ -20,7 +20,6 @@ class AppleAuthService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val appleIdTokenValidator: core.application.security.oauth.apple.AppleIdTokenValidator,
 ) {
-
     @Transactional
     fun login(authorizationCode: String): AuthTokenResponse {
         // 1. Exchange Code for Tokens
@@ -31,10 +30,12 @@ class AppleAuthService(
         val externalId = claims.subject ?: throw IllegalArgumentException("Invalid ID Token: sub missing")
 
         // 3. Find check existing Member
-        val memberOAuth = memberOAuthPersistencePort.findByProviderAndExternalId(OAuthProvider.APPLE, externalId)
-            ?: throw MemberNotFoundException()
+        val memberOAuth =
+            memberOAuthPersistencePort.findByProviderAndExternalId(OAuthProvider.APPLE, externalId)
+                ?: throw MemberNotFoundException()
 
-        val member = memberPersistencePort.findById(memberOAuth.memberId.value)
+        val member =
+            memberPersistencePort.findById(memberOAuth.memberId.value)
                 ?: throw IllegalStateException("MemberOAuth exists but Member not found")
 
         // 4. Issue App Tokens
@@ -42,9 +43,10 @@ class AppleAuthService(
         val refreshToken = jwtTokenProvider.generateRefreshToken(member.id!!.toString())
 
         // 5. Save Refresh Token
-        val refreshTokenEntity = refreshTokenPersistencePort.findByMemberId(member.id!!.value)
-            ?.apply { rotate(refreshToken) }
-            ?: RefreshToken.create(member.id!!, refreshToken)
+        val refreshTokenEntity =
+            refreshTokenPersistencePort.findByMemberId(member.id!!.value)
+                ?.apply { rotate(refreshToken) }
+                ?: RefreshToken.create(member.id!!, refreshToken)
         refreshTokenPersistencePort.save(refreshTokenEntity)
 
         return AuthTokenResponse(accessToken, refreshToken)

@@ -51,14 +51,15 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
     ) {
         val cookieValue =
             "$REQUEST_COOKIE_NAME=$value; " +
-                    "Path=/; " +
-                    "HttpOnly; " +
-                    "Secure; " +
-                    "SameSite=None; " +
-                    "Max-Age=$REQUEST_COOKIE_MAX_AGE"
+                "Path=/; " +
+                "HttpOnly; " +
+                "Secure; " +
+                "SameSite=None; " +
+                "Max-Age=$REQUEST_COOKIE_MAX_AGE"
 
         response.addHeader("Set-Cookie", cookieValue)
     }
+
     private fun deleteCookie(response: HttpServletResponse) {
         val cookieValue =
             "$REQUEST_COOKIE_NAME=; Path=/; Max-Age=0; Secure; SameSite=None"

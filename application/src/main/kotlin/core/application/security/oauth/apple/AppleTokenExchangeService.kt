@@ -16,13 +16,14 @@ class AppleTokenExchangeService(
     fun getTokens(authorizationCode: String): AppleTokenResponse {
         val clientSecret = appleClientSecretGenerator.generateClientSecret()
 
-        val formData = LinkedMultiValueMap<String, String>().apply {
-            add("client_id", appleProperties.clientId)
-            add("client_secret", clientSecret)
-            add("code", authorizationCode)
-            add("grant_type", "authorization_code")
-            add("redirect_uri", appleProperties.redirectUri)
-        }
+        val formData =
+            LinkedMultiValueMap<String, String>().apply {
+                add("client_id", appleProperties.clientId)
+                add("client_secret", clientSecret)
+                add("code", authorizationCode)
+                add("grant_type", "authorization_code")
+                add("redirect_uri", appleProperties.redirectUri)
+            }
 
         return restClient.post()
             .uri("https://appleid.apple.com/auth/token")
@@ -38,6 +39,6 @@ class AppleTokenExchangeService(
         val token_type: String,
         val expires_in: Int,
         val refresh_token: String?,
-        val id_token: String
+        val id_token: String,
     )
 }

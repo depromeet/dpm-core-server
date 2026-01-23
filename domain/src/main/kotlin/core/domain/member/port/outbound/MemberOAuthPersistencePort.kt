@@ -9,6 +9,7 @@ interface MemberOAuthPersistencePort {
         memberOAuth: MemberOAuth,
         member: Member,
     )
+
     fun findByProviderAndExternalId(
         provider: OAuthProvider,
         externalId: String,
