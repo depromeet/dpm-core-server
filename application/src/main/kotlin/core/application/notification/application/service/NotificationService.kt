@@ -1,5 +1,6 @@
 package core.application.notification.application.service
 
+import core.application.notification.application.exception.NotificationFailedException
 import core.persistence.firebase.FirebaseNotificationManager
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -13,5 +14,15 @@ class NotificationService(
         token: String,
         title: String,
         messageContent: String,
-    ): Boolean = firebaseNotificationManager.sendPushNotification(token, title, messageContent)
+    ) {
+        val isNotificationSuccess: Boolean =
+            firebaseNotificationManager.sendPushNotification(
+                token,
+                title,
+                messageContent,
+            )
+        if (!isNotificationSuccess) {
+            throw NotificationFailedException()
+        }
+    }
 }
