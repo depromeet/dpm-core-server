@@ -11,7 +11,8 @@ class AppleAuthAttributes(
 
     override fun getEmail(): String = attributes["email"] as? String ?: ""
 
-    override fun getName(): String = "Apple User" // Apple ID Token usually doesn't have name unless requested specifically in first login scope
+    override fun getName(): String =
+        "Apple User" // Apple ID Token usually doesn't have name unless requested specifically in first login scope
 
     companion object {
         fun of(attributes: Map<String, Any>): AppleAuthAttributes = AppleAuthAttributes(attributes)
