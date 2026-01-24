@@ -11,13 +11,16 @@ class JwtTokenInjector(
     private val tokenProperties: TokenProperties,
     private val securityProperties: SecurityProperties,
 ) {
-    fun injectRefreshToken(refreshToken: RefreshToken, response: HttpServletResponse) {
+    fun injectRefreshToken(
+        refreshToken: RefreshToken,
+        response: HttpServletResponse,
+    ) {
         val cookie =
             "refresh_token=${refreshToken.token}; " +
-                    "Path=/; " +
-                    "Domain=${securityProperties.cookie.domain}; " +
-                    "Max-Age=${tokenProperties.expirationTime.refreshToken}; " +
-                    "HttpOnly; Secure; SameSite=None"
+                "Path=/; " +
+                "Domain=${securityProperties.cookie.domain}; " +
+                "Max-Age=${tokenProperties.expirationTime.refreshToken}; " +
+                "HttpOnly; Secure; SameSite=None"
 
         response.addHeader("Set-Cookie", cookie)
     }
@@ -25,10 +28,10 @@ class JwtTokenInjector(
     fun invalidateRefreshToken(response: HttpServletResponse) {
         val cookie =
             "refresh_token=; " +
-                    "Path=/; " +
-                    "Domain=${securityProperties.cookie.domain}; " +
-                    "Max-Age=0; " +
-                    "HttpOnly; Secure; SameSite=None"
+                "Path=/; " +
+                "Domain=${securityProperties.cookie.domain}; " +
+                "Max-Age=0; " +
+                "HttpOnly; Secure; SameSite=None"
 
         response.addHeader("Set-Cookie", cookie)
     }

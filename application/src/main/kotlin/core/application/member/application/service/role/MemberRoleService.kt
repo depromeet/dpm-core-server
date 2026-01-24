@@ -1,7 +1,6 @@
 package core.application.member.application.service.role
 
 import core.domain.authorization.port.inbound.RoleQueryUseCase
-import core.domain.authorization.vo.RoleId
 import core.domain.authorization.vo.RoleType
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberRole
@@ -56,12 +55,16 @@ class MemberRoleService(
             ?: RoleType.Guest
     }
 
-    fun saveByMemberId(member: Member, authAttributes: OAuthAttributes) {
+    fun saveByMemberId(
+        member: Member,
+        authAttributes: OAuthAttributes,
+    ) {
         val guestRoleId = roleQueryUseCase.getRoleIdByCode(RoleType.Guest.code)
-        val memberRole = MemberRole.of(
-            memberId = member.id!!,
-            roleId = guestRoleId,
-        )
+        val memberRole =
+            MemberRole.of(
+                memberId = member.id!!,
+                roleId = guestRoleId,
+            )
         memberRolePersistencePort.save(memberRole)
     }
 

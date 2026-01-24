@@ -12,12 +12,10 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Date
 
-
 @Component
 class AppleClientSecretGenerator(
     private val appleProperties: AppleProperties,
 ) {
-
     private lateinit var privateKey: PrivateKey
 
     @PostConstruct
@@ -27,12 +25,13 @@ class AppleClientSecretGenerator(
 
     fun generateClientSecret(): String {
         val now = Date()
-        val expiration = Date.from(
-            LocalDateTime.now()
-                .plusDays(180) // Apple 최대 6개월
-                .atZone(ZoneId.systemDefault())
-                .toInstant()
-        )
+        val expiration =
+            Date.from(
+                LocalDateTime.now()
+                    .plusDays(180) // Apple 최대 6개월
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant(),
+            )
 
         return Jwts.builder()
             // ===== Header =====
@@ -40,14 +39,14 @@ class AppleClientSecretGenerator(
                 mapOf(
                     "kid" to appleProperties.keyId,
                     "alg" to "ES256",
-                )
+                ),
             )
             // ===== Payload =====
-            .setIssuer(appleProperties.teamId)              // iss
-            .setSubject(appleProperties.clientId)           // sub
-            .setAudience("https://appleid.apple.com")       // aud
-            .setIssuedAt(now)                               // iat
-            .setExpiration(expiration)                      // exp
+            .setIssuer(appleProperties.teamId) // iss
+            .setSubject(appleProperties.clientId) // sub
+            .setAudience("https://appleid.apple.com") // aud
+            .setIssuedAt(now) // iat
+            .setExpiration(expiration) // exp
             // ===== Signature =====
             .signWith(privateKey)
             .compact()
@@ -55,9 +54,10 @@ class AppleClientSecretGenerator(
 
     private fun getPrivateKey(privateKey: String): PrivateKey? {
         try {
-            val replacedKey = privateKey.replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replace("\\s".toRegex(), "")
+            val replacedKey =
+                privateKey.replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replace("\\s".toRegex(), "")
 
             // 1. Base64 디코딩
             val privateKeyBytes = Decoders.BASE64.decode(replacedKey)
@@ -73,6 +73,4 @@ class AppleClientSecretGenerator(
             throw RuntimeException("Base64 decoding failed", e)
         }
     }
-
-
 }

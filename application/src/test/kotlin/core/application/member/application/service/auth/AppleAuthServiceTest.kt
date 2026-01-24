@@ -1,5 +1,6 @@
 package core.application.member.application.service.auth
 
+import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.security.oauth.apple.AppleTokenExchangeService
 import core.application.security.oauth.token.JwtTokenProvider
@@ -14,17 +15,14 @@ import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import core.application.member.application.exception.MemberNotFoundException
-
-import org.mockito.Mockito
 import org.springframework.core.env.Environment
 
 class AppleAuthServiceTest {
-
     private val appleTokenExchangeService: AppleTokenExchangeService = mock(AppleTokenExchangeService::class.java)
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort = mock(MemberOAuthPersistencePort::class.java)
     private val memberPersistencePort: MemberPersistencePort = mock(MemberPersistencePort::class.java)
@@ -35,29 +33,31 @@ class AppleAuthServiceTest {
 
     private val appleIdTokenValidator: core.application.security.oauth.apple.AppleIdTokenValidator = mock(core.application.security.oauth.apple.AppleIdTokenValidator::class.java)
 
-    private val appleAuthService = AppleAuthService(
-        appleTokenExchangeService,
-        memberOAuthPersistencePort,
-        memberPersistencePort,
-        memberOAuthService,
-        jwtTokenProvider,
-        refreshTokenPersistencePort,
-        environment,
-        appleIdTokenValidator
-    )
+    private val appleAuthService =
+        AppleAuthService(
+            appleTokenExchangeService,
+            memberOAuthPersistencePort,
+            memberPersistencePort,
+            memberOAuthService,
+            jwtTokenProvider,
+            refreshTokenPersistencePort,
+            environment,
+            appleIdTokenValidator,
+        )
 
     @Test
     fun `login should throw MemberNotFoundException if member not exists`() {
         // Arrange
         val authCode = "valid-code"
         val idToken = "id-token"
-        val tokenResponse = AppleTokenExchangeService.AppleTokenResponse(
-            access_token = "access",
-            token_type = "Bearer",
-            expires_in = 3600,
-            refresh_token = "refresh",
-            id_token = idToken
-        )
+        val tokenResponse =
+            AppleTokenExchangeService.AppleTokenResponse(
+                access_token = "access",
+                token_type = "Bearer",
+                expires_in = 3600,
+                refresh_token = "refresh",
+                id_token = idToken,
+            )
 
         `when`(appleTokenExchangeService.getTokens(authCode)).thenReturn(tokenResponse)
 
@@ -80,13 +80,14 @@ class AppleAuthServiceTest {
         // Arrange
         val authCode = "valid-code"
         val idToken = "id-token"
-         val tokenResponse = AppleTokenExchangeService.AppleTokenResponse(
-            access_token = "access",
-            token_type = "Bearer",
-            expires_in = 3600,
-            refresh_token = "refresh",
-            id_token = idToken
-        )
+        val tokenResponse =
+            AppleTokenExchangeService.AppleTokenResponse(
+                access_token = "access",
+                token_type = "Bearer",
+                expires_in = 3600,
+                refresh_token = "refresh",
+                id_token = idToken,
+            )
 
         `when`(appleTokenExchangeService.getTokens(authCode)).thenReturn(tokenResponse)
 
@@ -95,22 +96,24 @@ class AppleAuthServiceTest {
         `when`(appleIdTokenValidator.verify(idToken)).thenReturn(claims) // No email needed
 
         val existingMemberId = MemberId(1L)
-        val memberOAuth = MemberOAuth(
-            id = MemberOAuthId(10L),
-            externalId = "user-123",
-            provider = OAuthProvider.APPLE,
-            memberId = existingMemberId
-        )
+        val memberOAuth =
+            MemberOAuth(
+                id = MemberOAuthId(10L),
+                externalId = "user-123",
+                provider = OAuthProvider.APPLE,
+                memberId = existingMemberId,
+            )
         `when`(memberOAuthPersistencePort.findByProviderAndExternalId(OAuthProvider.APPLE, "user-123")).thenReturn(memberOAuth)
 
-        val existingMember = Member(
-            id = existingMemberId,
-            email = "test@apple.com",
-            signupEmail = "test@apple.com",
-            name = "Apple User",
-            status = core.domain.member.enums.MemberStatus.ACTIVE,
-            part = core.domain.member.enums.MemberPart.SERVER
-        )
+        val existingMember =
+            Member(
+                id = existingMemberId,
+                email = "test@apple.com",
+                signupEmail = "test@apple.com",
+                name = "Apple User",
+                status = core.domain.member.enums.MemberStatus.ACTIVE,
+                part = core.domain.member.enums.MemberPart.SERVER,
+            )
         `when`(memberPersistencePort.findById(1L)).thenReturn(existingMember)
 
         `when`(jwtTokenProvider.generateAccessToken("1")).thenReturn("app-access")
@@ -129,6 +132,7 @@ class AppleAuthServiceTest {
         Mockito.any<T>()
         return uninitialized()
     }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> uninitialized(): T = null as T
 }
