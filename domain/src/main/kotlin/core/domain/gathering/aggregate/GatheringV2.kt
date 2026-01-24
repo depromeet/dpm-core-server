@@ -46,7 +46,7 @@ class GatheringV2(
 
     override fun toString(): String =
         "GatheringV2(id=$id, date=$date, title='$title', description=$description, " +
-                "category=$category, createdAt=$createdAt, updatedAt=$updatedAt)"
+            "category=$category, createdAt=$createdAt, updatedAt=$updatedAt)"
 
     companion object {
         fun create(

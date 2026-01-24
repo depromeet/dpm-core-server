@@ -14,5 +14,4 @@ class GatheringV2Repository(val gatheringV2JpaRepository: GatheringV2JpaReposito
     override fun findById(gatheringV2Id: GatheringV2Id): List<GatheringV2> {
         TODO("Not yet implemented")
     }
-
 }

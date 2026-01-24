@@ -47,7 +47,7 @@ class GatheringV2Invitee(
 
     override fun toString(): String =
         "GatheringV2Invitee(id=$id, gatheringId=$gatheringId, memberId=$memberId, " +
-                "isParticipated=$isParticipated, invitedAt=$invitedAt, confirmedAt=$confirmedAt)"
+            "isParticipated=$isParticipated, invitedAt=$invitedAt, confirmedAt=$confirmedAt)"
 
     companion object {
         fun create(

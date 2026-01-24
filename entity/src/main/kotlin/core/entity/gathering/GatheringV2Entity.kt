@@ -32,23 +32,25 @@ class GatheringV2Entity(
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(gatheringV2: GatheringV2): GatheringV2Entity = GatheringV2Entity(
-            date = gatheringV2.date,
-            title = gatheringV2.title,
-            description = gatheringV2.description,
-            category = gatheringV2.category.name,
-            createdAt = gatheringV2.createdAt ?: Instant.now(),
-            updatedAt = gatheringV2.updatedAt ?: Instant.now(),
-        )
+        fun from(gatheringV2: GatheringV2): GatheringV2Entity =
+            GatheringV2Entity(
+                date = gatheringV2.date,
+                title = gatheringV2.title,
+                description = gatheringV2.description,
+                category = gatheringV2.category.name,
+                createdAt = gatheringV2.createdAt ?: Instant.now(),
+                updatedAt = gatheringV2.updatedAt ?: Instant.now(),
+            )
     }
 
-    fun toDomain(): GatheringV2 = GatheringV2(
-        id = GatheringV2Id(this.id),
-        date = this.date,
-        title = this.title,
-        description = this.description,
-        category = GatheringCategory.valueOf(this.category),
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt,
-    )
+    fun toDomain(): GatheringV2 =
+        GatheringV2(
+            id = GatheringV2Id(this.id),
+            date = this.date,
+            title = this.title,
+            description = this.description,
+            category = GatheringCategory.valueOf(this.category),
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt,
+        )
 }
