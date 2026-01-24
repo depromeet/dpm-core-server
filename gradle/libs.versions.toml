@@ -29,6 +29,9 @@ jjwt = "0.12.6"
 # MySQL
 mysql = "8.0.33"
 
+# FCM
+firebase_admin = "9.5.0"
+
 
 [plugins]
 
@@ -90,4 +93,5 @@ jooq_meta = { module = "org.jooq:jooq-meta", version.ref = "jooq_generator" }
 jooq_codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq_generator" }
 jooq_meta_extensions_hibernate = { module = "org.jooq:jooq-meta-extensions-hibernate", version.ref = "jooq_generator" }
 
-
+# FCM
+firebase_admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase_admin" }

@@ -22,6 +22,9 @@ dependencies {
     implementation(libs.kotlin.logging)
     implementation(libs.jsonwebtoken.jjwt)
 
+//    TODO : Firebase 의존성 제거 후 application 모듈과 presentation 모듈에서는 몰라도 되게 리팩토링
+    implementation(libs.firebase.admin)
+
     runtimeOnly(libs.mysql.connector)
 
     testImplementation(libs.spring.boot.starter.test)
