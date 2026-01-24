@@ -35,5 +35,5 @@ interface NotificationApi {
         ],
     )
     @Operation(summary = "FCM 알림 테스트 API", description = "FCM 알림을 테스트합니다.")
-    fun testSendNotification(notifiacationRequest: NotificationRequest): CustomResponse<Void>
+    fun testSendNotification(notificationRequest: NotificationRequest): CustomResponse<Void>
 }
