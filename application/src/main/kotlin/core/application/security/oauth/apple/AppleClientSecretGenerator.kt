@@ -4,6 +4,7 @@ import core.application.security.properties.AppleProperties
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import jakarta.annotation.PostConstruct
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.security.KeyFactory
 import java.security.PrivateKey
@@ -13,6 +14,7 @@ import java.time.ZoneId
 import java.util.Date
 
 @Component
+@Profile("!local")
 class AppleClientSecretGenerator(
     private val appleProperties: AppleProperties,
 ) {
@@ -27,13 +29,15 @@ class AppleClientSecretGenerator(
         val now = Date()
         val expiration =
             Date.from(
-                LocalDateTime.now()
+                LocalDateTime
+                    .now()
                     .plusDays(180) // Apple 최대 6개월
                     .atZone(ZoneId.systemDefault())
                     .toInstant(),
             )
 
-        return Jwts.builder()
+        return Jwts
+            .builder()
             // ===== Header =====
             .setHeaderParams(
                 mapOf(
@@ -55,12 +59,17 @@ class AppleClientSecretGenerator(
     private fun getPrivateKey(privateKey: String): PrivateKey? {
         try {
             val replacedKey =
-                privateKey.replace("-----BEGIN PRIVATE KEY-----", "")
+                privateKey
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace("-----END PRIVATE KEY-----", "")
                     .replace("\\s".toRegex(), "")
 
             // 1. Base64 디코딩
             val privateKeyBytes = Decoders.BASE64.decode(replacedKey)
+
+//            // 1. Base64 디코딩 (URL-safe 문자를 표준 Base64로 변환)
+//            val standardBase64Key = replacedKey.replace('-', '+').replace('_', '/')
+//            val privateKeyBytes = Decoders.BASE64.decode(standardBase64Key)
 
             // 2. PKCS#8 스펙으로 변환
             val keySpec =

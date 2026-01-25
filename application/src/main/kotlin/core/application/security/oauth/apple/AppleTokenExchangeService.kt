@@ -5,8 +5,10 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
+import org.springframework.context.annotation.Profile
 
 @Service
+@Profile("!local")
 class AppleTokenExchangeService(
     private val appleClientSecretGenerator: AppleClientSecretGenerator,
     private val appleProperties: AppleProperties,

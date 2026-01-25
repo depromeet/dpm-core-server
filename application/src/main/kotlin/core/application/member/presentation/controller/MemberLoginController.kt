@@ -21,7 +21,7 @@ import java.net.URI
 @Tag(name = "Member-Login", description = "Member Login API")
 @Controller
 class MemberLoginController(
-    private val appleAuthService: AppleAuthService,
+    private val appleAuthService: AppleAuthService?,
     private val securityProperties: SecurityProperties,
 ) {
     companion object {
@@ -84,7 +84,9 @@ class MemberLoginController(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
-        val tokens = appleAuthService.login(body.authorizationCode)
+        val service = appleAuthService
+            ?: throw IllegalStateException("Apple authentication is not available in this environment")
+        val tokens = service.login(body.authorizationCode)
         addTokenCookies(response, tokens)
         return tokens
     }

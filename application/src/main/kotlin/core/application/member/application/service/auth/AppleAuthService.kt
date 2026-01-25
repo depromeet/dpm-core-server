@@ -8,10 +8,12 @@ import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
+@Profile("!local")
 class AppleAuthService(
     private val appleTokenExchangeService: AppleTokenExchangeService,
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,

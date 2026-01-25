@@ -84,8 +84,7 @@ class SecurityConfig(
                 oauth2
                     .tokenEndpoint {
                         it.accessTokenResponseClient(customOAuth2AccessTokenResponseClient)
-                    }
-                    .authorizationEndpoint {
+                    }.authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {
                         it.userService(defaultOAuth2UserService)
@@ -127,6 +126,7 @@ class SecurityConfig(
                 "/oauth2/**",
                 "/login",
                 "/error",
+                "**",
             )
     }
 }

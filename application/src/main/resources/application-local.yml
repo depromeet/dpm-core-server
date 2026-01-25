@@ -8,6 +8,15 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   security:
+    jwt:
+      secret_key: ${JWT_SECRET_KEY:local-test-secret-key-for-development-only-32chars}
+      expiration-time:
+        access-token: ${ACCESS_TOKEN_EXPIRATION_TIME:3600000}
+        refresh-token: ${REFRESH_TOKEN_EXPIRATION_TIME:604800000}
+    redirect:
+      core-redirect-url: ${REDIRECT_URL:https://localhost:3000}
+      admin-redirect-url: ${ADMIN_REDIRECT_URL:https://localhost:3020}
+      restricted-redirect-url: ${RESTRICTED_REDIRECT_URL:https://localhost:3000/restricted}
     oauth2:
       client:
         registration:
