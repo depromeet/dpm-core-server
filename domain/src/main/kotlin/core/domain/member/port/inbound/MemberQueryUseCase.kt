@@ -15,4 +15,6 @@ interface MemberQueryUseCase {
     // TODO: Query Model 떼야함
 
     fun getMembersByIds(memberIds: List<MemberId>): List<Member>
+
+    fun getAll(): List<Member>
 }

@@ -84,4 +84,6 @@ class MemberQueryService(
 
     override fun getMemberNameRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         memberPersistencePort.findMemberNameAndRoleByMemberId(memberId)
+
+    override fun getAll(): List<Member> = memberPersistencePort.findAll()
 }
