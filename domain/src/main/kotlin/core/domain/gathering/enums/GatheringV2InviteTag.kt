@@ -2,7 +2,7 @@ package core.domain.gathering.enums
 
 import core.domain.cohort.vo.CohortId
 
-enum class GatheringV2InviteTagName(
+enum class GatheringV2InviteTag(
     val cohortId: CohortId,
     val authorityId: Long,
     val tagName: String,
@@ -17,8 +17,8 @@ enum class GatheringV2InviteTagName(
         fun from(
             cohortId: CohortId,
             authorityId: Long,
-        ): GatheringV2InviteTagName =
-            GatheringV2InviteTagName.entries.find {
+        ): GatheringV2InviteTag =
+            GatheringV2InviteTag.entries.find {
                 it.cohortId == cohortId && it.authorityId == authorityId
             } ?: throw IllegalArgumentException(
                 "일치하는 태그를 찾을 수 없습니다: cohortId=${cohortId.value}, authorityId=$authorityId",
