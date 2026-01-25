@@ -2,14 +2,12 @@ package core.application.gathering.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
-import core.domain.gathering.vo.GatheringId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.validation.constraints.Positive
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "GatheringV2", description = "회식 참여 조사 API")
@@ -25,31 +23,25 @@ interface GatheringV2Api {
                     ExampleObject(
                         name = "회식 초대 태그 목록 조회 성공 응답",
                         value = """
-                        {
-                          "status": "OK",
-                          "message": "요청에 성공했습니다",
-                          "code": "GLOBAL-200-01",
-                          "data": {
-                              "members": [
-                              {
-                                "name": "이한음",
-                                "authority": "17_ORGANIZER",
-                                "isJoined": true
-                              },
-                              {
-                                "name": "신민철",
-                                "authority": "17_ORGANIZER",
-                                "isJoined": false
-                              },
-                              {
-                                "name": "정준원",
-                                "authority": "17_DEEPER",
-                                "part": "SERVER",
-                                "isJoined": true
+                            {
+                              "status": "OK",
+                              "message": "요청에 성공했습니다",
+                              "code": "GLOBAL-200-01",
+                              "data": {
+                                "inviteTags": [
+                                  {
+                                    "cohortId": 1,
+                                    "authorityId": 1,
+                                    "tagName": "17기 디퍼"
+                                  },
+                                  {
+                                    "cohortId": 1,
+                                    "authorityId": 2,
+                                    "tagName": "17기 운영진"
+                                  }
+                                ]
                               }
-                            ]
-                          }
-                        }
+                            }
                     """,
                     ),
                 ],
@@ -57,10 +49,8 @@ interface GatheringV2Api {
         ],
     )
     @Operation(
-        summary = "회식별 멤버 참여 여부 조회 API",
-        description = "정산서에서 회식 별로 초대된 멤버의 참여 여부를 목록 조회합니다",
+        summary = "회식 초대 멤버 태그 목록 조회 API",
+        description = "회식에 초대할 멤버 태그 목록을 조회합니다",
     )
-    fun getGatheringMemberJoinList(
-        @Positive gatheringId: GatheringId,
-    ): CustomResponse<GatheringV2InviteTagListResponse>
+    fun getGatheringV2InviteTagList(): CustomResponse<GatheringV2InviteTagListResponse>
 }

@@ -3,7 +3,6 @@ package core.application.gathering.presentation.controller
 import core.application.common.exception.CustomResponse
 import core.application.gathering.application.service.GatheringV2QueryService
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
-import core.domain.gathering.vo.GatheringId
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -14,9 +13,7 @@ class GatheringV2Controller(
     val gatheringV2QueryService: GatheringV2QueryService,
 ) : GatheringV2Api {
     @GetMapping("/invite-tags")
-    override fun getGatheringMemberJoinList(
-        gatheringId: GatheringId,
-    ): CustomResponse<GatheringV2InviteTagListResponse> =
+    override fun getGatheringV2InviteTagList(): CustomResponse<GatheringV2InviteTagListResponse> =
         CustomResponse.ok(
             GatheringV2InviteTagListResponse(),
         )
