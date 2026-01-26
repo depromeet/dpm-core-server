@@ -18,39 +18,48 @@ class GatheringV2Entity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "gathering_id", nullable = false, updatable = false)
     val id: Long = 0,
-    @Column(name = "date", nullable = false)
-    val date: Instant,
     @Column(name = "title", nullable = false, length = 200)
     val title: String,
     @Column(name = "description", columnDefinition = "TEXT")
     val description: String? = null,
     @Column(name = "category", nullable = false, length = 50)
     val category: String,
+    @Column(name = "scheduled_at", nullable = false)
+    val scheduledAt: Instant,
+    @Column(name = "closed_at", nullable = false)
+    val closedAt: Instant,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant,
+    @Column(name = "can_edit_after_approval", nullable = false)
+    val canEditAfterApproval: Boolean,
 ) {
     companion object {
         fun from(gatheringV2: GatheringV2): GatheringV2Entity =
             GatheringV2Entity(
-                date = gatheringV2.date,
+                id = gatheringV2.id?.value ?: 0,
                 title = gatheringV2.title,
                 description = gatheringV2.description,
                 category = gatheringV2.category.name,
+                scheduledAt = gatheringV2.scheduledAt,
+                closedAt = gatheringV2.closedAt,
                 createdAt = gatheringV2.createdAt ?: Instant.now(),
                 updatedAt = gatheringV2.updatedAt ?: Instant.now(),
+                canEditAfterApproval = gatheringV2.canEditAfterApproval,
             )
     }
 
     fun toDomain(): GatheringV2 =
         GatheringV2(
             id = GatheringV2Id(this.id),
-            date = this.date,
             title = this.title,
             description = this.description,
             category = GatheringCategory.valueOf(this.category),
+            scheduledAt = this.scheduledAt,
+            closedAt = this.closedAt,
             createdAt = this.createdAt,
             updatedAt = this.updatedAt,
+            canEditAfterApproval = this.canEditAfterApproval,
         )
 }
