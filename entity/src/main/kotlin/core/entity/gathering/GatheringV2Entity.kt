@@ -35,6 +35,8 @@ class GatheringV2Entity(
     val scheduledAt: Instant,
     @Column(name = "closed_at", nullable = false)
     val closedAt: Instant,
+    @Column(name = "is_approved", nullable = false)
+    val isApproved: Boolean,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
@@ -57,6 +59,7 @@ class GatheringV2Entity(
                 category = gatheringV2.category.name,
                 scheduledAt = gatheringV2.scheduledAt,
                 closedAt = gatheringV2.closedAt,
+                isApproved = gatheringV2.isApproved,
                 member = authorMember,
                 createdAt = gatheringV2.createdAt ?: Instant.now(),
                 updatedAt = gatheringV2.updatedAt ?: Instant.now(),
@@ -72,6 +75,7 @@ class GatheringV2Entity(
             category = GatheringCategory.valueOf(this.category),
             scheduledAt = this.scheduledAt,
             closedAt = this.closedAt,
+            isApproved = this.isApproved,
             authorMemberId = MemberId(this.member.id),
             createdAt = this.createdAt,
             updatedAt = this.updatedAt,

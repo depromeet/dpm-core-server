@@ -2,6 +2,8 @@ package core.application.gathering.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
+import core.application.gathering.presentation.response.GatheringV2ListResponse
+import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
@@ -53,4 +55,47 @@ interface GatheringV2QueryApi {
         description = "회식에 초대할 멤버 태그 목록을 조회합니다",
     )
     fun getGatheringV2InviteTagList(): CustomResponse<GatheringV2InviteTagListResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "회식 참여 조사 목록",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "회식 참여 조사 목록 조회 성공 응답",
+                        value = """
+                            {
+                              "status": "OK",
+                              "message": "요청에 성공했습니다",
+                              "code": "GLOBAL-200-01",
+                              "data": [
+                                {
+                                  "gatheringId": 2,
+                                  "title": "테스트용 회식 참여 조사 001",
+                                  "isOwner": true,
+                                  "isParticipated": null,
+                                  "isApproved": false,
+                                  "description": "테스트용 회식 참여 조사입니다 001",
+                                  "scheduledAt": "2026-01-26T05:31:48.588",
+                                  "closedAt": "2026-01-26T05:31:48.589",
+                                  "joinCount": 0,
+                                  "inviteeCount": 21,
+                                  "createdAt": "2026-01-26T14:45:19.504268"
+                                }
+                              ]
+                            }
+                    """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "회식 참여 조사 목록 조회 API",
+        description = "회식 참여 조사 목록을 조회합니다",
+    )
+    fun getGatheringV2List(memberId: MemberId): CustomResponse<List<GatheringV2ListResponse>>
 }

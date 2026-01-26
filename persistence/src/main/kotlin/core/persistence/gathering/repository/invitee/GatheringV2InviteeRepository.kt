@@ -3,6 +3,7 @@ package core.persistence.gathering.repository.invitee
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.aggregate.GatheringV2Invitee
 import core.domain.gathering.port.outbound.GatheringV2InviteePersistencePort
+import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.aggregate.Member
 import core.entity.gathering.GatheringV2Entity
 import core.entity.gathering.GatheringV2InviteeEntity
@@ -30,4 +31,11 @@ class GatheringV2InviteeRepository(
             ),
         )
     }
+
+    override fun findByGatheringV2Id(gatheringV2Id: GatheringV2Id): List<GatheringV2Invitee> =
+        gatheringV2InviteeJpaRepository.findByGatheringId(
+            gatheringV2Id,
+        ).map {
+            it.toDomain()
+        }
 }
