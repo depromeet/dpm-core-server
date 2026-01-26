@@ -1,5 +1,6 @@
 package core.application.security.oauth.token
 
+import core.application.security.oauth.token.JwtTokenConstant.REFRESH_TOKEN_CAMEL_CASE
 import core.application.security.properties.SecurityProperties
 import core.application.security.properties.TokenProperties
 import core.domain.refreshToken.aggregate.RefreshToken
@@ -16,7 +17,7 @@ class JwtTokenInjector(
         response: HttpServletResponse,
     ) {
         val cookie =
-            "refresh_token=${refreshToken.token}; " +
+            "${REFRESH_TOKEN_CAMEL_CASE}=${refreshToken.token}; " +
                 "Path=/; " +
                 "Domain=${securityProperties.cookie.domain}; " +
                 "Max-Age=${tokenProperties.expirationTime.refreshToken}; " +
@@ -27,7 +28,7 @@ class JwtTokenInjector(
 
     fun invalidateRefreshToken(response: HttpServletResponse) {
         val cookie =
-            "refresh_token=; " +
+            "${REFRESH_TOKEN_CAMEL_CASE}=; " +
                 "Path=/; " +
                 "Domain=${securityProperties.cookie.domain}; " +
                 "Max-Age=0; " +
