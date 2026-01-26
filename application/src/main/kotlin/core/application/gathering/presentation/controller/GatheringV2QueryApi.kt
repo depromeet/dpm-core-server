@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "GatheringV2", description = "회식 참여 조사 API")
-interface GatheringV2Api {
+interface GatheringV2QueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 초대 태그 목록",

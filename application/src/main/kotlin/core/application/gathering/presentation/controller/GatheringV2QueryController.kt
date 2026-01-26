@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/v2/gatherings")
-class GatheringV2Controller(
+class GatheringV2QueryController(
     val gatheringV2QueryService: GatheringV2QueryService,
-) : GatheringV2Api {
+) : GatheringV2QueryApi {
     @GetMapping("/invite-tags")
     override fun getGatheringV2InviteTagList(): CustomResponse<GatheringV2InviteTagListResponse> =
         CustomResponse.ok(
