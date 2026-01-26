@@ -17,4 +17,6 @@ interface MemberQueryUseCase {
     fun getMembersByIds(memberIds: List<MemberId>): List<Member>
 
     fun getAll(): List<Member>
+
+    fun getMemberById(memberId: MemberId): Member
 }

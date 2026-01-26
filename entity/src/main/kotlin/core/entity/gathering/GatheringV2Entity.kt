@@ -3,11 +3,18 @@ package core.entity.gathering
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.enums.GatheringCategory
 import core.domain.gathering.vo.GatheringV2Id
+import core.domain.member.vo.MemberId
+import core.entity.member.MemberEntity
 import jakarta.persistence.Column
+import jakarta.persistence.ConstraintMode
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.ForeignKey
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.Instant
 
@@ -28,6 +35,9 @@ class GatheringV2Entity(
     val scheduledAt: Instant,
     @Column(name = "closed_at", nullable = false)
     val closedAt: Instant,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    val member: MemberEntity,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
     @Column(name = "updated_at", nullable = false)
@@ -36,7 +46,10 @@ class GatheringV2Entity(
     val canEditAfterApproval: Boolean,
 ) {
     companion object {
-        fun from(gatheringV2: GatheringV2): GatheringV2Entity =
+        fun of(
+            gatheringV2: GatheringV2,
+            authorMember: MemberEntity,
+        ): GatheringV2Entity =
             GatheringV2Entity(
                 id = gatheringV2.id?.value ?: 0,
                 title = gatheringV2.title,
@@ -44,6 +57,7 @@ class GatheringV2Entity(
                 category = gatheringV2.category.name,
                 scheduledAt = gatheringV2.scheduledAt,
                 closedAt = gatheringV2.closedAt,
+                member = authorMember,
                 createdAt = gatheringV2.createdAt ?: Instant.now(),
                 updatedAt = gatheringV2.updatedAt ?: Instant.now(),
                 canEditAfterApproval = gatheringV2.canEditAfterApproval,
@@ -58,6 +72,7 @@ class GatheringV2Entity(
             category = GatheringCategory.valueOf(this.category),
             scheduledAt = this.scheduledAt,
             closedAt = this.closedAt,
+            authorMemberId = MemberId(this.member.id),
             createdAt = this.createdAt,
             updatedAt = this.updatedAt,
             canEditAfterApproval = this.canEditAfterApproval,

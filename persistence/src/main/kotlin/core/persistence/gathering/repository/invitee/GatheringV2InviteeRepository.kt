@@ -16,13 +16,17 @@ class GatheringV2InviteeRepository(
     override fun save(
         gatheringV2Invitee: GatheringV2Invitee,
         gatheringV2: GatheringV2,
-        member: Member,
+        authorMember: Member,
+        inviteeMember: Member,
     ) {
         gatheringV2InviteeJpaRepository.save(
             GatheringV2InviteeEntity.from(
                 gatheringV2Invitee,
-                GatheringV2Entity.from(gatheringV2),
-                MemberEntity.from(member),
+                GatheringV2Entity.of(
+                    gatheringV2 = gatheringV2,
+                    authorMember = MemberEntity.from(authorMember),
+                ),
+                MemberEntity.from(inviteeMember),
             ),
         )
     }

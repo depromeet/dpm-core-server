@@ -8,6 +8,7 @@ interface GatheringV2InviteePersistencePort {
     fun save(
         gatheringV2Invitee: GatheringV2Invitee,
         gatheringV2: GatheringV2,
-        member: Member,
+        authorMember: Member,
+        inviteeMember: Member,
     )
 }

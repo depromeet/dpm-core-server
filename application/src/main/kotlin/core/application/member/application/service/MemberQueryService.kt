@@ -44,8 +44,9 @@ class MemberQueryService(
      *
      * @author LeeHanEum
      * @since 2025.07.17
+     * @update 2026.01.16 junwon service에서 usecase로 이동
      */
-    fun getMemberById(memberId: MemberId) =
+    override fun getMemberById(memberId: MemberId) =
         memberPersistencePort.findById(memberId.value)
             ?: throw MemberNotFoundException()
 

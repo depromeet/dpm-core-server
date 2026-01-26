@@ -14,12 +14,14 @@ class GatheringV2InviteeCommandService(
     override fun createGatheringV2Invitee(
         gatheringV2Invitee: GatheringV2Invitee,
         gatheringV2: GatheringV2,
-        member: Member,
+        authorMember: Member,
+        inviteeMember: Member,
     ) {
         gatheringV2InviteePersistencePort.save(
             gatheringV2Invitee,
             gatheringV2,
-            member,
+            authorMember,
+            inviteeMember,
         )
     }
 }

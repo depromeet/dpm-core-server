@@ -8,6 +8,7 @@ interface GatheringV2InviteeCommandUseCase {
     fun createGatheringV2Invitee(
         gatheringV2Invitee: GatheringV2Invitee,
         gatheringV2: GatheringV2,
-        member: Member,
+        authorMember: Member,
+        inviteeMember: Member,
     )
 }

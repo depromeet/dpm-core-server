@@ -2,8 +2,8 @@ package core.domain.gathering.aggregate
 
 import core.domain.gathering.enums.GatheringCategory
 import core.domain.gathering.vo.GatheringV2Id
+import core.domain.member.vo.MemberId
 import java.time.Instant
-import java.time.LocalDateTime
 
 /**
  * 회식 참여 조사를 위해 사용하는 도메인 모델입니다.
@@ -18,6 +18,7 @@ class GatheringV2(
     val category: GatheringCategory,
     val scheduledAt: Instant,
     val closedAt: Instant,
+    val authorMemberId: MemberId,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     val canEditAfterApproval: Boolean,
@@ -40,6 +41,7 @@ class GatheringV2(
             category = category ?: this.category,
             scheduledAt = scheduledAt ?: this.scheduledAt,
             closedAt = closedAt ?: this.closedAt,
+            authorMemberId = this.authorMemberId,
             createdAt = this.createdAt,
             updatedAt = Instant.now(),
             canEditAfterApproval = canEditAfterApproval ?: this.canEditAfterApproval,
@@ -62,6 +64,7 @@ class GatheringV2(
             category: GatheringCategory,
             scheduledAt: Instant,
             closedAt: Instant,
+            authorMemberId: MemberId,
             canEditAfterApproval: Boolean,
         ): GatheringV2 =
             GatheringV2(
@@ -70,6 +73,7 @@ class GatheringV2(
                 category = category,
                 scheduledAt = scheduledAt,
                 closedAt = closedAt,
+                authorMemberId = authorMemberId,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
                 canEditAfterApproval = canEditAfterApproval,

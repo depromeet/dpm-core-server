@@ -10,6 +10,7 @@ import core.domain.gathering.port.inbound.GatheringV2InviteeCommandUseCase
 import core.domain.gathering.port.outbound.GatheringV2PersistencePort
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
+import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,9 +25,16 @@ class GatheringV2CommandService(
         gatheringV2: GatheringV2,
 //        TODO 준원 : 태그 사용해서 초대하는 기능 구현 필요
         gatheringV2InviteTags: List<GatheringV2InviteTag>,
+        authorMemberId: MemberId,
     ) {
+        val authorMember: Member = memberQueryUseCase.getMemberById(authorMemberId)
+
 //        회식 저장
-        val createdGatheringV2: GatheringV2 = gatheringV2PersistencePort.save(gatheringV2)
+        val createdGatheringV2: GatheringV2 =
+            gatheringV2PersistencePort.save(
+                gatheringV2 = gatheringV2,
+                authorMember = authorMember,
+            )
 
 //        멤버 전원 초대
         val inviteeMembers: List<Member> = memberQueryUseCase.getAll()
@@ -46,7 +54,8 @@ class GatheringV2CommandService(
             gatheringV2InviteeCommandUseCase.createGatheringV2Invitee(
                 gatheringV2Invitee = invitee,
                 gatheringV2 = createdGatheringV2,
-                member = inviteeMember,
+                authorMember = authorMember,
+                inviteeMember = inviteeMember,
             )
         }
     }
