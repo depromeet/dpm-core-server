@@ -40,14 +40,16 @@ class GatheringV2InviteeEntity(
 ) {
     companion object {
         fun from(
-            gatheringV2: GatheringV2Entity,
-            member: MemberEntity,
-            invitedAt: Instant,
+            gatheringV2Invitee: GatheringV2Invitee,
+            gatheringV2Entity: GatheringV2Entity,
+            memberEntity: MemberEntity,
         ): GatheringV2InviteeEntity =
             GatheringV2InviteeEntity(
-                gathering = gatheringV2,
-                member = member,
-                invitedAt = invitedAt,
+                id = gatheringV2Invitee.id?.value ?: 0,
+                gathering = gatheringV2Entity,
+                member = memberEntity,
+                isParticipated = gatheringV2Invitee.isParticipated,
+                invitedAt = gatheringV2Invitee.invitedAt,
             )
     }
 
@@ -59,5 +61,15 @@ class GatheringV2InviteeEntity(
             isParticipated = this.isParticipated,
             invitedAt = this.invitedAt,
             confirmedAt = this.confirmedAt,
+        )
+
+    fun from(gatheringV2Invitee: GatheringV2Invitee): GatheringV2InviteeEntity =
+        GatheringV2InviteeEntity(
+            id = gatheringV2Invitee.id?.value ?: this.id,
+            gathering = this.gathering,
+            member = this.member,
+            isParticipated = gatheringV2Invitee.isParticipated,
+            invitedAt = this.invitedAt,
+            confirmedAt = gatheringV2Invitee.confirmedAt,
         )
 }

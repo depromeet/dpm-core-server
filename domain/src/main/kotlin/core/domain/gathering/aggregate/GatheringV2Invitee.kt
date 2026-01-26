@@ -16,7 +16,7 @@ class GatheringV2Invitee(
     val gatheringId: GatheringV2Id,
     val memberId: MemberId,
     isParticipated: Boolean? = null,
-    val invitedAt: Instant? = null,
+    val invitedAt: Instant,
     confirmedAt: Instant? = null,
 ) {
     var isParticipated: Boolean? = isParticipated
@@ -50,14 +50,27 @@ class GatheringV2Invitee(
             "isParticipated=$isParticipated, invitedAt=$invitedAt, confirmedAt=$confirmedAt)"
 
     companion object {
+        /**
+         * GatheringV2Invitee를 생성합니다.
+         *
+         * @param gatheringV2Id 초대받은 회식의 ID, 회식 생성이 선행되어야 합니다
+         * @param memberId 초대할 멤버의 ID
+         * @param invitedAt 초대 시각, 기본적으로 GatheringV2 createdAt 시각과 동일하게 설정해줘야 합니다.
+         * @return 생성된 GatheringV2Invitee 인스턴스
+         *
+         * @since 2026-01-25
+         * @author junwon
+         */
         fun create(
-            gatheringId: GatheringV2Id,
+            gatheringV2Id: GatheringV2Id,
             memberId: MemberId,
+            /** 초대 시각, 기본적으로 GatheringV2 createdAt 시각과 동일하게 설정해줘야 합니다. */
+            invitedAt: Instant,
         ): GatheringV2Invitee =
             GatheringV2Invitee(
-                gatheringId = gatheringId,
+                gatheringId = gatheringV2Id,
                 memberId = memberId,
-                invitedAt = Instant.now(),
+                invitedAt = invitedAt,
             )
     }
 }

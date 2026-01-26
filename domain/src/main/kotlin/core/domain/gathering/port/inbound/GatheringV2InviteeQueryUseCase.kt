@@ -1,4 +1,3 @@
 package core.domain.gathering.port.inbound
 
-interface GatheringV2InviteeQueryUseCase {
-}
+interface GatheringV2InviteeQueryUseCase
