@@ -126,7 +126,7 @@ class SecurityConfig(
                 "/oauth2/**",
                 "/login",
                 "/error",
-                "**",
+                "/test/token/**",
             )
     }
 }
