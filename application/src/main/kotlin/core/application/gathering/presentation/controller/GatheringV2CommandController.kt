@@ -21,7 +21,8 @@ class GatheringV2CommandController(
     override fun createGatheringV2(
         @RequestBody createGatheringV2Request: CreateGatheringV2Request,
     ): CustomResponse<Void> {
-        val gatheringV2InviteTags: List<GatheringV2InviteTag> = createGatheringV2Request.inviteTags.map { it.toDomain() }
+        val gatheringV2InviteTags: List<GatheringV2InviteTag> =
+            createGatheringV2Request.inviteTags.map { it.toDomain() }
         val createGatheringV2: GatheringV2 =
             GatheringV2.create(
                 title = createGatheringV2Request.title,

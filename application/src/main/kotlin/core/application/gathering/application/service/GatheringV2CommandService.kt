@@ -40,7 +40,9 @@ class GatheringV2CommandService(
                 )
             }
         inviteeList.forEach { invitee ->
-            val inviteeMember: Member = inviteeMembers.find { it.id == invitee.memberId } ?: throw MemberNotFoundException()
+            val inviteeMember: Member =
+                inviteeMembers.find { it.id == invitee.memberId }
+                    ?: throw MemberNotFoundException()
             gatheringV2InviteeCommandUseCase.createGatheringV2Invitee(
                 gatheringV2Invitee = invitee,
                 gatheringV2 = createdGatheringV2,
