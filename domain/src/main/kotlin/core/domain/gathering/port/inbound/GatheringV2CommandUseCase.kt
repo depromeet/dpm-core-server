@@ -4,8 +4,8 @@ import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.enums.GatheringV2InviteTag
 
 interface GatheringV2CommandUseCase {
-    fun createGathering(
+    fun createGatheringV2(
         gatheringV2: GatheringV2,
-        gatheringV2InviteTag: GatheringV2InviteTag,
+        gatheringV2InviteTags: List<GatheringV2InviteTag>,
     )
 }
