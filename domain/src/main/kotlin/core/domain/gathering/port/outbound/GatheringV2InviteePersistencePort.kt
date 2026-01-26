@@ -14,6 +14,8 @@ interface GatheringV2InviteePersistencePort {
         inviteeMember: Member,
     )
 
+    fun update(gatheringV2Invitee: GatheringV2Invitee)
+
     fun findByGatheringV2Id(gatheringV2Id: GatheringV2Id): List<GatheringV2Invitee>
 
     fun findByMemberIdAndGatheringV2Id(

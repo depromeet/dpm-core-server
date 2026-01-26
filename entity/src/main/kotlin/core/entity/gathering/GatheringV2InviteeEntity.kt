@@ -65,7 +65,7 @@ class GatheringV2InviteeEntity(
 
     fun from(gatheringV2Invitee: GatheringV2Invitee): GatheringV2InviteeEntity =
         GatheringV2InviteeEntity(
-            id = gatheringV2Invitee.id?.value ?: this.id,
+            id = this.id,
             gathering = this.gathering,
             member = this.member,
             isParticipated = gatheringV2Invitee.isParticipated,
