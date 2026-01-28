@@ -1,12 +1,12 @@
 package core.application.gathering.presentation.response
 
+import core.domain.member.enums.MemberPart
 import core.domain.member.vo.MemberId
 
-data class GatheringV2ParticipantMemberDetailResponse(
+data class GatheringV2ParticipantMemberResponse(
     val memberId: MemberId,
     val name: String,
-    val profileUrl: String,
-    val part: String,
-    val team: String,
+    val part: MemberPart?,
+    val team: Int,
     val isJoined: Boolean,
 )
