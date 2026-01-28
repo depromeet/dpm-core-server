@@ -5,7 +5,7 @@ import core.application.gathering.application.service.GatheringV2QueryService
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
-import core.application.gathering.presentation.response.GatheringV2ParticipantMemberResponse
+import core.application.gathering.presentation.response.GatheringV2RsvpMemberResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
@@ -32,11 +32,11 @@ class GatheringV2QueryController(
         return CustomResponse.ok(gatheringV2QueryService.getAllGatherings(memberId))
     }
 
-    @GetMapping("/{gatheringId}/participant-members")
-    override fun getGatheringV2ParticipantMemberList(
+    @GetMapping("/{gatheringId}/rsvp-members")
+    override fun getGatheringV2RsvpMemberList(
         @PathVariable("gatheringId") gatheringV2Id: GatheringV2Id,
-    ): CustomResponse<List<GatheringV2ParticipantMemberResponse>> {
-        return CustomResponse.ok(gatheringV2QueryService.getParticipantMembers(gatheringV2Id))
+    ): CustomResponse<List<GatheringV2RsvpMemberResponse>> {
+        return CustomResponse.ok(gatheringV2QueryService.getRsvpMembers(gatheringV2Id))
     }
 
     @GetMapping("/v2/gatherings/{gatheringId}")

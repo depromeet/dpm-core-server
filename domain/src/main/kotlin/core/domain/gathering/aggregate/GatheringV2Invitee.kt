@@ -39,7 +39,7 @@ class GatheringV2Invitee(
             gatheringId = this.gatheringId,
             memberId = this.memberId,
             rsvpStatus = rsvpStatus,
-            isAttended = this.isAttended!!,
+            isAttended = this.isAttended,
             invitedAt = this.invitedAt,
             confirmedAt = Instant.now(),
         )

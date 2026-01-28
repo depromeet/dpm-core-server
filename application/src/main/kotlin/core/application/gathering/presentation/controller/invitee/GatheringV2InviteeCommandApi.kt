@@ -1,7 +1,7 @@
 package core.application.gathering.presentation.controller.invitee
 
 import core.application.common.exception.CustomResponse
-import core.application.gathering.presentation.request.SubmitGatheringV2ParticipantRequest
+import core.application.gathering.presentation.request.SubmitGatheringV2RsvpStatusRequest
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
@@ -18,9 +18,9 @@ interface GatheringV2InviteeCommandApi {
         summary = "회식 참여 여부 제출 API",
         description = "회식 참여 여부를 제출하는 API입니다",
     )
-    fun submitGatheringV2Participant(
+    fun submitGatheringV2RsvpStatus(
         memberId: MemberId,
         gatheringV2Id: GatheringV2Id,
-        submitGatheringV2ParticipantRequest: SubmitGatheringV2ParticipantRequest,
+        submitGatheringV2RsvpStatusRequest: SubmitGatheringV2RsvpStatusRequest,
     ): CustomResponse<Void>
 }

@@ -17,7 +17,7 @@ interface GatheringV2InviteeCommandUseCase {
     /**
      * 참가 여부 제출하는 메서드입니다
      *
-     * @param isParticipant 참가 여부
+     * @param isRsvpGoing 참가 여부
      * @param memberId 변경하는 멤버 아이디
      * @param gatheringV2Id 회식 아이디
      * @return Unit
@@ -25,8 +25,8 @@ interface GatheringV2InviteeCommandUseCase {
      * @since 2026-01-26
      * @author junwon
      */
-    fun submitGatheringV2Participant(
-        isParticipant: Boolean,
+    fun submitGatheringV2RsvpStatus(
+        isRsvpGoing: Boolean,
         memberId: MemberId,
         gatheringV2Id: GatheringV2Id,
     )

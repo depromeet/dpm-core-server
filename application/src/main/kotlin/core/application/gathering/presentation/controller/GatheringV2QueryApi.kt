@@ -4,7 +4,7 @@ import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
-import core.application.gathering.presentation.response.GatheringV2ParticipantMemberResponse
+import core.application.gathering.presentation.response.GatheringV2RsvpMemberResponse
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
@@ -79,12 +79,14 @@ interface GatheringV2QueryApi {
                                   "gatheringId": 2,
                                   "title": "테스트용 회식 참여 조사 001",
                                   "isOwner": true,
-                                  "rsvpStatus": null,
+                                  "rsvpStatus": true,
+                                  "isAttended": null,
                                   "isApproved": false,
                                   "description": "테스트용 회식 참여 조사입니다 001",
                                   "scheduledAt": "2026-01-26T05:31:48.588",
                                   "closedAt": "2026-01-26T05:31:48.589",
-                                  "joinCount": 0,
+                                  "isRsvpGoingCount": 1,
+                                  "isAttendedCount": 0,
                                   "inviteeCount": 21,
                                   "createdAt": "2026-01-26T14:45:19.504268"
                                 }
@@ -123,14 +125,14 @@ interface GatheringV2QueryApi {
                                   "name": "준원카카오",
                                   "part": "SERVER",
                                   "team": 1,
-                                  "isJoined": true
+                                  "isRsvpGoing": true
                                 },
                                 {
                                   "memberId": 2,
                                   "name": "신민철",
                                   "part": "SERVER",
                                   "team": 1,
-                                  "isJoined": false
+                                  "isRsvpGoing": false
                                 }
                               ]
                             }
@@ -144,9 +146,7 @@ interface GatheringV2QueryApi {
         summary = "회식 초대자 목록 조회 API",
         description = "회식 초대자 목록을 조회합니다",
     )
-    fun getGatheringV2ParticipantMemberList(
-        gatheringV2Id: GatheringV2Id,
-    ): CustomResponse<List<GatheringV2ParticipantMemberResponse>>
+    fun getGatheringV2RsvpMemberList(gatheringV2Id: GatheringV2Id): CustomResponse<List<GatheringV2RsvpMemberResponse>>
 
     @ApiResponse(
         responseCode = "200",
@@ -169,14 +169,14 @@ interface GatheringV2QueryApi {
                                   "name": "준원카카오",
                                   "part": "SERVER",
                                   "team": 1,
-                                  "isJoined": true
+                                  "isRsvpGoing": true
                                 },
                                 {
                                   "memberId": 2,
                                   "name": "신민철",
                                   "part": "SERVER",
                                   "team": 1,
-                                  "isJoined": false
+                                  "isRsvpGoing": false
                                 }
                               ]
                             }

@@ -29,8 +29,8 @@ class GatheringV2InviteeCommandService(
         )
     }
 
-    override fun submitGatheringV2Participant(
-        isParticipant: Boolean,
+    override fun submitGatheringV2RsvpStatus(
+        isRsvpGoing: Boolean,
         memberId: MemberId,
         gatheringV2Id: GatheringV2Id,
     ) {
@@ -39,7 +39,7 @@ class GatheringV2InviteeCommandService(
                 memberId = memberId,
                 gatheringV2Id = gatheringV2Id,
             )
-        val confirmedInvitee = targetInvitee.confirm(rsvpStatus = isParticipant)
+        val confirmedInvitee = targetInvitee.confirm(rsvpStatus = isRsvpGoing)
 
         gatheringV2InviteePersistencePort.update(confirmedInvitee)
     }

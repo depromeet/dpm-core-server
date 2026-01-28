@@ -4,7 +4,7 @@ import core.application.gathering.application.exception.GatheringNotFoundExcepti
 import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
-import core.application.gathering.presentation.response.GatheringV2ParticipantMemberResponse
+import core.application.gathering.presentation.response.GatheringV2RsvpMemberResponse
 import core.application.member.application.service.MemberQueryService
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.port.inbound.GatheringV2InviteeQueryUseCase
@@ -32,26 +32,30 @@ class GatheringV2QueryService(
                     gatheringV2.id ?: throw GatheringNotFoundException(),
                 )
             val rsvpStatus = invitees.find { it.memberId == memberId }?.rsvpStatus
+            val isAttended = invitees.find { it.memberId == memberId }?.isAttended
 
             GatheringV2ListResponse.of(
                 gatheringV2 = gatheringV2,
-                gatheringV2Invitees = invitees,
-                rsvpStatus = rsvpStatus,
                 memberId = memberId,
+                rsvpStatus = rsvpStatus,
+                isAttended = isAttended,
+                isRsvpGoingCount = invitees.count { it.isRsvpGoing() },
+                isAttendedCount = invitees.count { it.isAttended == true },
+                inviteeCount = invitees.count(),
             )
         }
     }
 
-    fun getParticipantMembers(gatheringV2Id: GatheringV2Id): List<GatheringV2ParticipantMemberResponse> =
+    fun getRsvpMembers(gatheringV2Id: GatheringV2Id): List<GatheringV2RsvpMemberResponse> =
         gatheringV2InviteeQueryUseCase.getInviteesByGatheringV2Id(gatheringV2Id).map { invitee ->
-            val participantMember: Member = memberQueryService.getMemberById(invitee.memberId)
-            val participantMemberTeamId: Int = memberQueryService.getMemberTeamNumber(invitee.memberId)
-            GatheringV2ParticipantMemberResponse(
-                memberId = participantMember.id ?: throw GatheringNotFoundException(),
-                name = participantMember.name,
-                part = participantMember.part,
-                team = participantMemberTeamId,
-                isJoined = invitee.isRsvpGoing(),
+            val rsvpMember: Member = memberQueryService.getMemberById(invitee.memberId)
+            val rsvpMemberTeamId: Int = memberQueryService.getMemberTeamNumber(invitee.memberId)
+            GatheringV2RsvpMemberResponse(
+                memberId = rsvpMember.id ?: throw GatheringNotFoundException(),
+                name = rsvpMember.name,
+                part = rsvpMember.part,
+                team = rsvpMemberTeamId,
+                isRsvpGoing = invitee.isRsvpGoing(),
             )
         }
 
@@ -68,13 +72,16 @@ class GatheringV2QueryService(
                 gatheringV2.id ?: throw GatheringNotFoundException(),
             )
 
+        val myInvitee =
+            invitees.find { it.memberId == memberId }
+                ?: throw GatheringMemberNotFoundException()
+
         return GatheringV2DetailResponse.of(
             gatheringV2 = gatheringV2,
             isOwner = gatheringV2.authorMemberId == memberId,
-            isRsvpGoing =
-                invitees.find { it.memberId == memberId }?.isRsvpGoing()
-                    ?: throw GatheringMemberNotFoundException(),
-            participantCount = invitees.count { it.isRsvpGoing() },
+            rsvpStatus = myInvitee.isRsvpGoing(),
+            isAttended = myInvitee.isAttended,
+            isRsvpGoingCount = invitees.count { it.isRsvpGoing() },
             inviteeCount = invitees.size,
             attendanceCount = invitees.count { it.isAttended == true },
         )
