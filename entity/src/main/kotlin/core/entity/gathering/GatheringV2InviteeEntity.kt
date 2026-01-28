@@ -31,8 +31,10 @@ class GatheringV2InviteeEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
-    @Column(name = "is_participated")
-    val isParticipated: Boolean? = null,
+    @Column(name = "rsvp_status")
+    val rsvpStatus: Boolean? = null,
+    @Column(name = "is_attended")
+    val isAttended: Boolean? = null,
     @Column(name = "invited_at", nullable = false)
     val invitedAt: Instant,
     @Column(name = "confirmed_at")
@@ -48,7 +50,7 @@ class GatheringV2InviteeEntity(
                 id = gatheringV2Invitee.id?.value ?: 0,
                 gathering = gatheringV2Entity,
                 member = memberEntity,
-                isParticipated = gatheringV2Invitee.isParticipated,
+                rsvpStatus = gatheringV2Invitee.rsvpStatus,
                 invitedAt = gatheringV2Invitee.invitedAt,
             )
     }
@@ -58,7 +60,8 @@ class GatheringV2InviteeEntity(
             id = GatheringV2InviteeId(this.id),
             gatheringId = GatheringV2Id(this.gathering.id),
             memberId = MemberId(this.member.id),
-            isParticipated = this.isParticipated,
+            rsvpStatus = this.rsvpStatus,
+            isAttended = this.isAttended,
             invitedAt = this.invitedAt,
             confirmedAt = this.confirmedAt,
         )
@@ -68,7 +71,8 @@ class GatheringV2InviteeEntity(
             id = this.id,
             gathering = this.gathering,
             member = this.member,
-            isParticipated = gatheringV2Invitee.isParticipated,
+            rsvpStatus = gatheringV2Invitee.rsvpStatus,
+            isAttended = gatheringV2Invitee.isAttended,
             invitedAt = this.invitedAt,
             confirmedAt = gatheringV2Invitee.confirmedAt,
         )

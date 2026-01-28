@@ -39,7 +39,7 @@ class GatheringV2InviteeCommandService(
                 memberId = memberId,
                 gatheringV2Id = gatheringV2Id,
             )
-        val confirmedInvitee = targetInvitee.confirm(isParticipated = isParticipant)
+        val confirmedInvitee = targetInvitee.confirm(rsvpStatus = isParticipant)
 
         gatheringV2InviteePersistencePort.update(confirmedInvitee)
     }

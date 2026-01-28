@@ -15,11 +15,15 @@ class GatheringV2Invitee(
     val id: GatheringV2InviteeId? = null,
     val gatheringId: GatheringV2Id,
     val memberId: MemberId,
-    isParticipated: Boolean? = null,
+    rsvpStatus: Boolean? = null,
+    isAttended: Boolean? = null,
     val invitedAt: Instant,
     confirmedAt: Instant? = null,
 ) {
-    var isParticipated: Boolean? = isParticipated
+    var rsvpStatus: Boolean? = rsvpStatus
+        private set
+
+    var isAttended: Boolean? = isAttended
         private set
 
     var confirmedAt: Instant? = confirmedAt
@@ -27,14 +31,15 @@ class GatheringV2Invitee(
 
     fun isConfirmed(): Boolean = confirmedAt != null
 
-    fun isParticipating(): Boolean = isParticipated == true
+    fun isRsvpGoing(): Boolean = rsvpStatus == true
 
-    fun confirm(isParticipated: Boolean): GatheringV2Invitee =
+    fun confirm(rsvpStatus: Boolean): GatheringV2Invitee =
         GatheringV2Invitee(
             id = this.id,
             gatheringId = this.gatheringId,
             memberId = this.memberId,
-            isParticipated = isParticipated,
+            rsvpStatus = rsvpStatus,
+            isAttended = this.isAttended!!,
             invitedAt = this.invitedAt,
             confirmedAt = Instant.now(),
         )
@@ -47,7 +52,7 @@ class GatheringV2Invitee(
 
     override fun toString(): String =
         "GatheringV2Invitee(id=$id, gatheringId=$gatheringId, memberId=$memberId, " +
-            "isParticipated=$isParticipated, invitedAt=$invitedAt, confirmedAt=$confirmedAt)"
+            "rsvpStatus=$rsvpStatus, invitedAt=$invitedAt, confirmedAt=$confirmedAt)"
 
     companion object {
         /**
