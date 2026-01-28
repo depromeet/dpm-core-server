@@ -7,6 +7,7 @@ import core.domain.member.aggregate.Member
 import core.entity.gathering.GatheringV2Entity
 import core.entity.member.MemberEntity
 import org.springframework.stereotype.Repository
+import kotlin.jvm.optionals.getOrNull
 
 @Repository
 class GatheringV2Repository(
@@ -23,9 +24,10 @@ class GatheringV2Repository(
             ),
         ).toDomain()
 
-    override fun findById(gatheringV2Id: GatheringV2Id): List<GatheringV2> {
-        TODO("Not yet implemented")
-    }
+    override fun findById(gatheringV2Id: GatheringV2Id): GatheringV2? =
+        gatheringV2JpaRepository.findById(
+            gatheringV2Id.value,
+        ).getOrNull()?.toDomain()
 
     override fun findAll(): List<GatheringV2> = gatheringV2JpaRepository.findAll().map { it.toDomain() }
 }
