@@ -2,6 +2,7 @@ package core.application.gathering.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.gathering.application.service.GatheringV2QueryService
+import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
 import core.application.gathering.presentation.response.GatheringV2ParticipantMemberResponse
@@ -37,4 +38,11 @@ class GatheringV2QueryController(
     ): CustomResponse<List<GatheringV2ParticipantMemberResponse>> {
         return CustomResponse.ok(gatheringV2QueryService.getParticipantMembers(gatheringV2Id))
     }
+
+    @GetMapping("/v2/gatherings/{gatheringId}")
+    override fun getGatheringV2Detail(
+        @PathVariable("gatheringId") gatheringV2Id: GatheringV2Id,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<GatheringV2DetailResponse> =
+        CustomResponse.ok(gatheringV2QueryService.getGatheringV2Detail(gatheringV2Id, memberId))
 }
