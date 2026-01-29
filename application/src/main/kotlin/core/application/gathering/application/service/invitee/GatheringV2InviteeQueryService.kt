@@ -1,6 +1,5 @@
 package core.application.gathering.application.service.invitee
 
-import core.application.gathering.application.exception.GatheringNotFoundException
 import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.presentation.response.GatheringV2RsvpMemberResponse
 import core.application.member.application.service.MemberQueryService
