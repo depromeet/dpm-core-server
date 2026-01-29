@@ -1,0 +1,3 @@
+package core.application.announcement.presentation.controller
+
+interface AnnouncementCommandApi
