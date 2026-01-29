@@ -32,14 +32,7 @@ class GatheringV2QueryController(
         return CustomResponse.ok(gatheringV2QueryService.getAllGatherings(memberId))
     }
 
-    @GetMapping("/{gatheringId}/rsvp-members")
-    override fun getGatheringV2RsvpMemberList(
-        @PathVariable("gatheringId") gatheringV2Id: GatheringV2Id,
-    ): CustomResponse<List<GatheringV2RsvpMemberResponse>> {
-        return CustomResponse.ok(gatheringV2QueryService.getRsvpMembers(gatheringV2Id))
-    }
-
-    @GetMapping("/v2/gatherings/{gatheringId}")
+    @GetMapping("/{gatheringId}")
     override fun getGatheringV2Detail(
         @PathVariable("gatheringId") gatheringV2Id: GatheringV2Id,
         @CurrentMemberId memberId: MemberId,

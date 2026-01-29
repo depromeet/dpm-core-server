@@ -106,50 +106,6 @@ interface GatheringV2QueryApi {
 
     @ApiResponse(
         responseCode = "200",
-        description = "회식 초대자 목록 조회",
-        content = [
-            Content(
-                mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
-                examples = [
-                    ExampleObject(
-                        name = "회식 초대자 목록 조회 성공 응답",
-                        value = """
-                            {
-                              "status": "OK",
-                              "message": "요청에 성공했습니다",
-                              "code": "GLOBAL-200-01",
-                              "data": [
-                                {
-                                  "memberId": 1,
-                                  "name": "준원카카오",
-                                  "part": "SERVER",
-                                  "team": 1,
-                                  "isRsvpGoing": true
-                                },
-                                {
-                                  "memberId": 2,
-                                  "name": "신민철",
-                                  "part": "SERVER",
-                                  "team": 1,
-                                  "isRsvpGoing": false
-                                }
-                              ]
-                            }
-                    """,
-                    ),
-                ],
-            ),
-        ],
-    )
-    @Operation(
-        summary = "회식 초대자 목록 조회 API",
-        description = "회식 초대자 목록을 조회합니다",
-    )
-    fun getGatheringV2RsvpMemberList(gatheringV2Id: GatheringV2Id): CustomResponse<List<GatheringV2RsvpMemberResponse>>
-
-    @ApiResponse(
-        responseCode = "200",
         description = "회식 참여 조사 상세 조회",
         content = [
             Content(
@@ -163,22 +119,34 @@ interface GatheringV2QueryApi {
                               "status": "OK",
                               "message": "요청에 성공했습니다",
                               "code": "GLOBAL-200-01",
-                              "data": [
-                                {
-                                  "memberId": 1,
-                                  "name": "준원카카오",
-                                  "part": "SERVER",
-                                  "team": 1,
-                                  "isRsvpGoing": true
-                                },
-                                {
-                                  "memberId": 2,
-                                  "name": "신민철",
-                                  "part": "SERVER",
-                                  "team": 1,
-                                  "isRsvpGoing": false
+                              "data": {
+                                "gatheringId": 2,
+                                "title": "테스트용 회식 참여 조사 001",
+                                "isOwner": true,
+                                "rsvpStatus": true,
+                                "isAttended": null,
+                                "description": "테스트용 회식 참여 조사입니다 001",
+                                "scheduledAt": "2026-01-26T05:31:48.588",
+                                "isRsvpGoingCount": 1,
+                                "inviteeCount": 21,
+                                "attendanceCount": 0,
+                                "createdAt": "2026-01-26T14:45:19.504268",
+                                "closedAt": "2026-01-26T05:31:48.589",
+                                "inviteTags": {
+                                  "inviteTags": [
+                                    {
+                                      "cohortId": 1,
+                                      "authorityId": 1,
+                                      "tagName": "17기 디퍼"
+                                    },
+                                    {
+                                      "cohortId": 1,
+                                      "authorityId": 2,
+                                      "tagName": "17기 운영진"
+                                    }
+                                  ]
                                 }
-                              ]
+                              }
                             }
                     """,
                     ),
