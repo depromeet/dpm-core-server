@@ -4,14 +4,11 @@ import core.application.gathering.application.exception.GatheringNotFoundExcepti
 import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
-import core.application.gathering.presentation.response.GatheringV2RsvpMemberResponse
-import core.application.member.application.service.MemberQueryService
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.port.inbound.GatheringV2InviteeQueryUseCase
 import core.domain.gathering.port.inbound.GatheringV2QueryUseCase
 import core.domain.gathering.port.outbound.GatheringV2PersistencePort
 import core.domain.gathering.vo.GatheringV2Id
-import core.domain.member.aggregate.Member
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional
 class GatheringV2QueryService(
     val gatheringV2PersistencePort: GatheringV2PersistencePort,
     val gatheringV2InviteeQueryUseCase: GatheringV2InviteeQueryUseCase,
-    val memberQueryService: MemberQueryService,
 ) : GatheringV2QueryUseCase {
     fun getAllGatherings(memberId: MemberId): List<GatheringV2ListResponse> {
         val gatheringV2s: List<GatheringV2> = gatheringV2PersistencePort.findAll()
@@ -45,19 +41,6 @@ class GatheringV2QueryService(
             )
         }
     }
-
-    fun getRsvpMembers(gatheringV2Id: GatheringV2Id): List<GatheringV2RsvpMemberResponse> =
-        gatheringV2InviteeQueryUseCase.getInviteesByGatheringV2Id(gatheringV2Id).map { invitee ->
-            val rsvpMember: Member = memberQueryService.getMemberById(invitee.memberId)
-            val rsvpMemberTeamId: Int = memberQueryService.getMemberTeamNumber(invitee.memberId)
-            GatheringV2RsvpMemberResponse(
-                memberId = rsvpMember.id ?: throw GatheringNotFoundException(),
-                name = rsvpMember.name,
-                part = rsvpMember.part,
-                team = rsvpMemberTeamId,
-                isRsvpGoing = invitee.isRsvpGoing(),
-            )
-        }
 
     fun getGatheringV2Detail(
         gatheringV2Id: GatheringV2Id,

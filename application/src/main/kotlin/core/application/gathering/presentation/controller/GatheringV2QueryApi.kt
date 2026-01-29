@@ -4,7 +4,6 @@ import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
-import core.application.gathering.presentation.response.GatheringV2RsvpMemberResponse
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
