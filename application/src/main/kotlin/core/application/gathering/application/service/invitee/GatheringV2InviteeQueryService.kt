@@ -35,7 +35,7 @@ class GatheringV2InviteeQueryService(
             val rsvpMember: Member = memberQueryService.getMemberById(invitee.memberId)
             val rsvpMemberTeamId: Int = memberQueryService.getMemberTeamNumber(invitee.memberId)
             GatheringV2RsvpMemberResponse(
-                memberId = rsvpMember.id ?: throw GatheringNotFoundException(),
+                memberId = rsvpMember.id ?: throw GatheringMemberNotFoundException(),
                 name = rsvpMember.name,
                 part = rsvpMember.part,
                 team = rsvpMemberTeamId,
