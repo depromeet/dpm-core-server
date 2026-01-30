@@ -20,10 +20,12 @@ class AssignmentEntity(
     val id: Long,
     @Column(name = "submit_type", nullable = false)
     val submitType: Int,
-    @Column(name = "start_at", nullable = false)
-    val startAt: Instant,
-    @Column(name = "due_at", nullable = false)
-    val dueAt: Instant,
+    @Column(name = "start_at")
+    val startAt: Instant?,
+    @Column(name = "due_at")
+    val dueAt: Instant?,
+    @Column(name = "submitLink")
+    val submitLink: String?,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
     @Column(name = "updated_at", nullable = false)
@@ -38,6 +40,7 @@ class AssignmentEntity(
                 submitType = assignment.submitType.value,
                 startAt = assignment.startAt,
                 dueAt = assignment.dueAt,
+                submitLink = assignment.submitLink,
                 createdAt = assignment.createdAt ?: Instant.now(),
                 updatedAt = assignment.updatedAt ?: Instant.now(),
                 deletedAt = assignment.deletedAt,
@@ -50,6 +53,7 @@ class AssignmentEntity(
             submitType = SubmitType.fromValue(submitType),
             startAt = startAt,
             dueAt = dueAt,
+            submitLink = submitLink,
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,

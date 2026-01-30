@@ -23,8 +23,8 @@ class AnnouncementEntity(
     val announcementType: Int,
     @Column(name = "title", nullable = false)
     val title: String,
-    @Column(name = "content", nullable = false, columnDefinition = "longtext")
-    val content: String,
+    @Column(name = "content", columnDefinition = "longtext")
+    val content: String?,
     @Column(name = "author_id", nullable = false)
     val authorId: Long,
     @Column(name = "created_at", nullable = false, updatable = false)
