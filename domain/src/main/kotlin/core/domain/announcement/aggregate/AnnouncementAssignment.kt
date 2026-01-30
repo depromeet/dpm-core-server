@@ -8,4 +8,16 @@ class AnnouncementAssignment(
     val id: AnnouncementAssignmentId? = null,
     val assignmentId: AssignmentId,
     val announcementId: AnnouncementId,
-)
+) {
+    companion object {
+        fun create(
+            assignmentId: AssignmentId,
+            announcementId: AnnouncementId,
+        ): AnnouncementAssignment {
+            return AnnouncementAssignment(
+                assignmentId = assignmentId,
+                announcementId = announcementId,
+            )
+        }
+    }
+}

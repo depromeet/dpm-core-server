@@ -1,3 +1,7 @@
 package core.domain.announcement.port.outbound
 
-interface AnnouncementPersistencePort
+import core.domain.announcement.aggregate.Announcement
+
+interface AnnouncementPersistencePort {
+    fun save(announcement: Announcement): Announcement
+}
