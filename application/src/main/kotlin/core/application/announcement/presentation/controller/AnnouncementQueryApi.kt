@@ -55,5 +55,5 @@ interface AnnouncementQueryApi {
         summary = "공지/과제 목록 조회 API",
         description = "공지/과제 목록을 조회합니다",
     )
-    fun getAnnouncementList(): CustomResponse<List<AnnouncementListResponse>>
+    fun getAnnouncementList(): CustomResponse<AnnouncementListResponse>
 }

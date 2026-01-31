@@ -10,10 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/announcements")
 class AnnouncementQueryController(
     val announcementQueryService: AnnouncementQueryService,
-): AnnouncementQueryApi {
-    override fun getAnnouncementList(): CustomResponse<List<AnnouncementListResponse>> {
-        TODO()
-    }
-
-
+) : AnnouncementQueryApi {
+    override fun getAnnouncementList(): CustomResponse<AnnouncementListResponse> =
+        CustomResponse.ok(announcementQueryService.getAllAnnouncements())
 }
