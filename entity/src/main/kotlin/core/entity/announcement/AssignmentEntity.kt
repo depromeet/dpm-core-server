@@ -24,7 +24,7 @@ class AssignmentEntity(
     val startAt: Instant?,
     @Column(name = "due_at")
     val dueAt: Instant?,
-    @Column(name = "submitLink")
+    @Column(name = "submit_link")
     val submitLink: String?,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,

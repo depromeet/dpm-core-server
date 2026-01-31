@@ -3,12 +3,17 @@ package core.application.announcement.application.service
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.Assignment
+import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.enums.AnnouncementType
+import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
+import core.domain.announcement.port.inbound.AssignmentQueryUseCase
+import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
+import core.domain.announcement.port.inbound.AssignmentSubmissionQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementAssignmentPersistencePort
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
@@ -27,6 +32,9 @@ class AnnouncementCommandService(
     val announcementReadCommandUseCase: AnnouncementReadCommandUseCase,
     val announcementQueryUseCase: AnnouncementQueryUseCase,
     val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
+    val assignmentQueryUseCase: AssignmentQueryUseCase,
+    val assignmentSubmissionQueryUseCase: AssignmentSubmissionQueryUseCase,
+    val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
 ) : AnnouncementCommandUseCase {
     override fun create(
         authorId: MemberId,
@@ -57,6 +65,7 @@ class AnnouncementCommandService(
         when (announcementType) {
             AnnouncementType.GENERAL -> {}
             AnnouncementType.ASSIGNMENT -> {
+//                TODO : Assignment_submission에 디퍼들 초대하는 로직 추가
                 val assignment: Assignment =
                     Assignment.create(
                         submitType = submitType,
@@ -89,6 +98,26 @@ class AnnouncementCommandService(
             )
         if (!isExistedAnnouncementRead) {
             announcementReadCommandUseCase.markAsRead(memberId, announcementId)
+        }
+    }
+
+    override fun updateSubmitStatus(
+        announcementId: AnnouncementId,
+        memberIds: List<MemberId>,
+        submitStatus: SubmitStatus,
+    ) {
+        val retrievedAssignment: Assignment =
+            assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
+
+        memberIds.forEach { memberId ->
+            val memberAssignmentSubmission: AssignmentSubmission =
+                assignmentSubmissionQueryUseCase.getByAssignmentIdAndMemberId(
+                    assignmentId = retrievedAssignment.id!!,
+                    memberId = memberId,
+                )
+            val updatedAssignmentSubmission: AssignmentSubmission =
+                memberAssignmentSubmission.updateSubmitStatus(submitStatus)
+            assignmentSubmissionCommandUseCase.updateAssignmentSubmission(updatedAssignmentSubmission)
         }
     }
 }
