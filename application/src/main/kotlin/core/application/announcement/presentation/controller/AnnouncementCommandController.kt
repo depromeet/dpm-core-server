@@ -2,10 +2,12 @@ package core.application.announcement.presentation.controller
 
 import core.application.announcement.application.service.AnnouncementCommandService
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
+import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -47,6 +49,20 @@ class AnnouncementCommandController(
         announcementCommandService.markAsRead(
             memberId = memberId,
             announcementId = announcementId,
+        )
+        return CustomResponse.ok()
+    }
+
+    @PatchMapping("/{announcementId}/assignment-status")
+    override fun updateSubmitStatus(
+        announcementId: AnnouncementId,
+        @RequestBody
+        updateSubmitStatusRequest: UpdateSubmitStatusRequest,
+    ): CustomResponse<Void> {
+        announcementCommandService.updateSubmitStatus(
+            announcementId = announcementId,
+            memberIds = updateSubmitStatusRequest.memberIds,
+            submitStatus = updateSubmitStatusRequest.submitStatus,
         )
         return CustomResponse.ok()
     }

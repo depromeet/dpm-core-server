@@ -1,6 +1,7 @@
 package core.application.announcement.presentation.controller
 
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
+import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.exception.CustomResponse
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
@@ -34,5 +35,18 @@ interface AnnouncementCommandApi {
     fun markAsRead(
         memberId: MemberId,
         announcementId: AnnouncementId,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "과제 제출 상태 변경 성공",
+    )
+    @Operation(
+        summary = "과제 제출 상태 변경 API",
+        description = "과제 제출 상태를 변경하는 API입니다",
+    )
+    fun updateSubmitStatus(
+        announcementId: AnnouncementId,
+        updateSubmitStatusRequest: UpdateSubmitStatusRequest,
     ): CustomResponse<Void>
 }
