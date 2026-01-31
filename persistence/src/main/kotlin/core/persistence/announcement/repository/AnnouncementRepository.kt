@@ -12,7 +12,6 @@ import org.jooq.dsl.tables.references.ANNOUNCEMENTS
 import org.jooq.dsl.tables.references.ANNOUNCEMENT_ASSIGNMENTS
 import org.jooq.dsl.tables.references.ANNOUNCEMENT_READS
 import org.jooq.dsl.tables.references.ASSIGNMENTS
-import org.jooq.dsl.tables.references.SESSIONS
 import org.jooq.impl.DSL
 import org.springframework.stereotype.Repository
 import java.time.ZoneId
@@ -50,16 +49,16 @@ class AnnouncementRepository(
                 ASSIGNMENTS.SUBMIT_TYPE,
                 ANNOUNCEMENTS.CREATED_AT,
             )
-
             .fetch { record ->
                 AnnouncementListItemQueryModel(
                     announcementId = AnnouncementId(record.get(ANNOUNCEMENTS.ANNOUNCEMENT_ID)!!),
                     title = record.get(ANNOUNCEMENTS.TITLE)!!,
                     announcementType = AnnouncementType.entries[record.get(ANNOUNCEMENTS.ANNOUNCEMENT_TYPE)!!],
                     submitType = record.get(ASSIGNMENTS.SUBMIT_TYPE)?.let { SubmitType.entries[it] },
-                    createdAt = record.get(ANNOUNCEMENTS.CREATED_AT)!!
-                        .atZone(ZoneId.of("Asia/Seoul"))
-                        .toInstant(),
+                    createdAt =
+                        record.get(ANNOUNCEMENTS.CREATED_AT)!!
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toInstant(),
                     readMemberCount = record.get("readMemberCount", Int::class.java),
                 )
             }
