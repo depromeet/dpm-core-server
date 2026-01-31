@@ -26,23 +26,5 @@ data class AnnouncementListItemResponse(
                 readMemberCount = queryModel.readMemberCount ?: 0,
             )
         }
-
-        fun of(
-            announcementId: AnnouncementId,
-            title: String,
-            announcementType: AnnouncementType,
-            submitType: SubmitType,
-            createdAt: LocalDateTime,
-            readMemberCount: Int,
-        ): AnnouncementListItemResponse {
-            return AnnouncementListItemResponse(
-                announcementId = announcementId,
-                title = title,
-                announcementType = announcementType,
-                assignmentType = submitType,
-                createdAt = createdAt,
-                readMemberCount = readMemberCount,
-            )
-        }
     }
 }

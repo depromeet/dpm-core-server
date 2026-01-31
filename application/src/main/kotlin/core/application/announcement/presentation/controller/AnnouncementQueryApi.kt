@@ -27,23 +27,19 @@ interface AnnouncementQueryApi {
                               "status": "OK",
                               "message": "요청에 성공했습니다",
                               "code": "GLOBAL-200-01",
-                              "data": [
-                                {
-                                  "gatheringId": 2,
-                                  "title": "테스트용 공지/과제 001",
-                                  "isOwner": true,
-                                  "rsvpStatus": true,
-                                  "isAttended": null,
-                                  "isApproved": false,
-                                  "description": "테스트용 공지/과제입니다 001",
-                                  "scheduledAt": "2026-01-26T05:31:48.588",
-                                  "closedAt": "2026-01-26T05:31:48.589",
-                                  "isRsvpGoingCount": 1,
-                                  "isAttendedCount": 0,
-                                  "inviteeCount": 21,
-                                  "createdAt": "2026-01-26T14:45:19.504268"
-                                }
-                              ]
+                              "data": {
+                                "announcementCount": 1,
+                                "announcements": [
+                                  {
+                                    "announcementId": 3,
+                                    "title": "공지/과제 테스트용 제목 001",
+                                    "announcementType": "ASSIGNMENT",
+                                    "assignmentType": "INDIVIDUAL",
+                                    "createdAt": "2026-01-30T07:15:36.977721",
+                                    "readMemberCount": 0
+                                  }
+                                ]
+                              }
                             }
                     """,
                     ),
