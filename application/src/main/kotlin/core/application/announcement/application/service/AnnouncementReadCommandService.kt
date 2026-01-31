@@ -10,8 +10,7 @@ import org.springframework.stereotype.Service
 @Service
 class AnnouncementReadCommandService(
     val announcementReadPersistencePort: AnnouncementReadPersistencePort,
-) :
-    AnnouncementReadCommandUseCase {
+) : AnnouncementReadCommandUseCase {
     override fun markAsRead(
         memberId: MemberId,
         announcementId: AnnouncementId,

@@ -28,7 +28,7 @@ interface AnnouncementCommandApi {
         description = "공지/과제 읽음 처리 성공",
     )
     @Operation(
-        summary = "공지/과제 추가 API",
+        summary = "공지/과제 읽음 처리 API",
         description = "공지나 과제를 읽음 처리하는 API입니다",
     )
     fun markAsRead(

@@ -8,6 +8,7 @@ import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
+import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementAssignmentPersistencePort
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
@@ -25,6 +26,7 @@ class AnnouncementCommandService(
     val assignmentPersistencePort: AssignmentPersistencePort,
     val announcementReadCommandUseCase: AnnouncementReadCommandUseCase,
     val announcementQueryUseCase: AnnouncementQueryUseCase,
+    val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
 ) : AnnouncementCommandUseCase {
     override fun create(
         authorId: MemberId,
@@ -79,8 +81,14 @@ class AnnouncementCommandService(
         announcementId: AnnouncementId,
     ) {
         announcementQueryUseCase.getAnnouncementById(announcementId)
-//        TODO : 읽음 처리 확인해서 중복 처리 막기
 
-        announcementReadCommandUseCase.markAsRead(memberId, announcementId)
+        val isExistedAnnouncementRead: Boolean =
+            announcementReadQueryUseCase.existsByAnnouncementIdAndMemberId(
+                memberId = memberId,
+                announcementId = announcementId,
+            )
+        if (!isExistedAnnouncementRead) {
+            announcementReadCommandUseCase.markAsRead(memberId, announcementId)
+        }
     }
 }
