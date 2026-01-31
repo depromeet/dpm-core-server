@@ -1,6 +1,7 @@
 package core.entity.announcement
 
 import core.domain.announcement.aggregate.AssignmentSubmission
+import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.vo.AssignmentId
 import core.domain.announcement.vo.AssignmentSubmissionId
@@ -29,6 +30,10 @@ class AssignmentSubmissionEntity(
     val teamId: Long,
     @Column(name = "submit_type", nullable = false)
     val submitType: Int,
+    @Column(name = "submit_status", nullable = false)
+    val submitStatus: Int,
+    @Column(name = "score", nullable = false)
+    val score: Int,
     @Column(name = "due_at", nullable = false)
     val dueAt: Instant,
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -46,6 +51,8 @@ class AssignmentSubmissionEntity(
                 memberId = submission.memberId.value,
                 teamId = submission.teamId.value,
                 submitType = submission.submitType.value,
+                submitStatus = submission.submitStatus.value,
+                score = submission.score,
                 dueAt = submission.dueAt,
                 createdAt = submission.createdAt ?: Instant.now(),
                 updatedAt = submission.updatedAt ?: Instant.now(),
@@ -60,6 +67,8 @@ class AssignmentSubmissionEntity(
             memberId = MemberId(memberId),
             teamId = TeamId(teamId),
             submitType = SubmitType.fromValue(submitType),
+            submitStatus = SubmitStatus.fromValue(submitStatus),
+            score = score,
             dueAt = dueAt,
             createdAt = createdAt,
             updatedAt = updatedAt,
