@@ -4,4 +4,6 @@ import core.domain.announcement.aggregate.AnnouncementAssignment
 
 interface AnnouncementAssignmentPersistencePort {
     fun save(announcementAssignment: AnnouncementAssignment): AnnouncementAssignment
+
+    fun findAll(): List<AnnouncementAssignment>
 }

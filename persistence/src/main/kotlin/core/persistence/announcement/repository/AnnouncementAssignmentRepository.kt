@@ -11,4 +11,7 @@ class AnnouncementAssignmentRepository(
 ) : AnnouncementAssignmentPersistencePort {
     override fun save(announcementAssignment: AnnouncementAssignment): AnnouncementAssignment =
         announcementAssignmentJpaRepository.save(AnnouncementAssignmentEntity.from(announcementAssignment)).toDomain()
+
+    override fun findAll(): List<AnnouncementAssignment> =
+        announcementAssignmentJpaRepository.findAll().map { it.toDomain() }
 }

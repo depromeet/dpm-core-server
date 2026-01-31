@@ -2,7 +2,6 @@ package core.application.announcement.application.service
 
 import core.application.announcement.presentation.response.AnnouncementListResponse
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
-import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
 import org.springframework.stereotype.Service

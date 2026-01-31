@@ -11,4 +11,6 @@ class AssignmentRepository(
 ) : AssignmentPersistencePort {
     override fun save(assignment: Assignment): Assignment =
         assignmentJpaRepository.save(AssignmentEntity.from(assignment)).toDomain()
+
+    override fun findAll(): List<Assignment> = assignmentJpaRepository.findAll().map { it.toDomain() }
 }
