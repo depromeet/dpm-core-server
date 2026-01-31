@@ -84,8 +84,9 @@ class MemberLoginController(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
-        val service = appleAuthService
-            ?: throw IllegalStateException("Apple authentication is not available in this environment")
+        val service =
+            appleAuthService
+                ?: throw IllegalStateException("Apple authentication is not available in this environment")
         val tokens = service.login(body.authorizationCode)
         addTokenCookies(response, tokens)
         return tokens

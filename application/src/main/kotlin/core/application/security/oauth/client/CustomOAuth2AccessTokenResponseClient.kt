@@ -32,8 +32,9 @@ class CustomOAuth2AccessTokenResponseClient(
         request: OAuth2AuthorizationCodeGrantRequest,
         registration: ClientRegistration,
     ): OAuth2AccessTokenResponse {
-        val generator = appleClientSecretGenerator
-            ?: throw IllegalStateException("Apple OAuth is not configured in this environment")
+        val generator =
+            appleClientSecretGenerator
+                ?: throw IllegalStateException("Apple OAuth is not configured in this environment")
         val secret = generator.generateClientSecret()
 
         // Create a new ClientRegistration with the dynamic secret

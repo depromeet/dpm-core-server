@@ -1,11 +1,11 @@
 package core.application.security.oauth.apple
 
 import core.application.security.properties.AppleProperties
+import org.springframework.context.annotation.Profile
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
-import org.springframework.context.annotation.Profile
 
 @Service
 @Profile("!local")
@@ -27,7 +27,8 @@ class AppleTokenExchangeService(
                 add("redirect_uri", appleProperties.redirectUri)
             }
 
-        return restClient.post()
+        return restClient
+            .post()
             .uri("https://appleid.apple.com/auth/token")
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .body(formData)
