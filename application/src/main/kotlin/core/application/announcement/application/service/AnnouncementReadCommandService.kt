@@ -1,0 +1,24 @@
+package core.application.announcement.application.service
+
+import core.domain.announcement.aggregate.AnnouncementRead
+import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
+import core.domain.announcement.port.outbound.AnnouncementReadPersistencePort
+import core.domain.announcement.vo.AnnouncementId
+import core.domain.member.vo.MemberId
+import org.springframework.stereotype.Service
+
+@Service
+class AnnouncementReadCommandService(
+    val announcementReadPersistencePort: AnnouncementReadPersistencePort,
+) :
+    AnnouncementReadCommandUseCase {
+    override fun markAsRead(
+        memberId: MemberId,
+        announcementId: AnnouncementId,
+    ) = announcementReadPersistencePort.save(
+        AnnouncementRead.create(
+            announcementId = announcementId,
+            memberId = memberId,
+        ),
+    )
+}

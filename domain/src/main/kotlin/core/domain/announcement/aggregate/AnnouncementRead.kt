@@ -10,4 +10,17 @@ class AnnouncementRead(
     val announcementId: AnnouncementId,
     val memberId: MemberId,
     val readAt: Instant,
-)
+) {
+    companion object {
+        fun create(
+            announcementId: AnnouncementId,
+            memberId: MemberId,
+        ): AnnouncementRead {
+            return AnnouncementRead(
+                announcementId = announcementId,
+                memberId = memberId,
+                readAt = Instant.now(),
+            )
+        }
+    }
+}
