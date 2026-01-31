@@ -13,6 +13,7 @@ import org.jooq.dsl.tables.references.ANNOUNCEMENT_ASSIGNMENTS
 import org.jooq.dsl.tables.references.ANNOUNCEMENT_READS
 import org.jooq.dsl.tables.references.ASSIGNMENTS
 import org.jooq.impl.DSL
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import java.time.ZoneId
 
@@ -62,4 +63,8 @@ class AnnouncementRepository(
                     readMemberCount = record.get("readMemberCount", Int::class.java),
                 )
             }
+
+    override fun findAnnouncementById(announcementId: AnnouncementId): Announcement? =
+        announcementJpaRepository.findByIdOrNull(announcementId.value)
+            ?.toDomain()
 }
