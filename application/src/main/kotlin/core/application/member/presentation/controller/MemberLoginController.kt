@@ -4,12 +4,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.GetMapping
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.security.properties.SecurityProperties
 import org.springframework.stereotype.Controller
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import java.net.URI
@@ -31,6 +32,7 @@ class MemberLoginController(
     private val logger = KotlinLogging.logger { MemberLoginController::class.java }
 
     @GetMapping("/login/kakao")
+    @Operation(summary = "Kakao login redirect", description = "Redirects to Kakao OAuth2 authorization page")
     fun login(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -40,6 +42,7 @@ class MemberLoginController(
     }
 
     @GetMapping("/login/apple")
+    @Operation(summary = "Apple login redirect", description = "Redirects to Apple OAuth2 authorization page")
     fun appleLogin(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -47,10 +50,9 @@ class MemberLoginController(
         setCookie(request, response)
         return APPLE_REDIRECT_URL
     }
-    /**
-     * apple login to support third-party login
-     * */
+
     @PostMapping("/v1/auth/login/apple")
+    @Operation(summary = "Apple login (v1)", description = "Login with Apple authorization code and returns auth tokens")
     fun appleLoginV1(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,

@@ -1,13 +1,19 @@
 package core.application.member.application.service.role
 
+import core.application.authorization.application.service.RoleQueryService
+import core.domain.authorization.port.inbound.RoleQueryUseCase
+import core.domain.authorization.vo.RoleId
 import core.domain.authorization.vo.RoleType
+import core.domain.member.aggregate.MemberRole
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
+import java.time.Instant
 
 @Service
 class MemberRoleService(
     private val memberRolePersistencePort: MemberRolePersistencePort,
+    private val roleQueryUseCase: RoleQueryUseCase,
 ) {
     /**
      * 멤버 식별자로 해당 멤버가 소유한 권한 이름 목록을 조회함.
@@ -57,5 +63,15 @@ class MemberRoleService(
                 RoleType.Organizer,
                 RoleType.Deeper,
             )
+    }
+
+    fun assignGuestRole(memberId: MemberId) {
+        val guestRoleId = roleQueryUseCase.findIdByName(RoleType.Guest.code)
+        val memberRole = MemberRole(
+            memberId = memberId,
+            roleId = RoleId(guestRoleId),
+            grantedAt = Instant.now(),
+        )
+        memberRolePersistencePort.save(memberRole)
     }
 }

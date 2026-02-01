@@ -79,8 +79,10 @@ class SecurityConfig(
                     .permitAll()
                     .requestMatchers(*PERMIT_ALL_PATTERNS)
                     .permitAll()
-                    .requestMatchers("/logout", "/v1/members/withdraw")
-                    .hasAnyRole("GUEST", "DEEPER", "ORGANIZER")
+                    .requestMatchers("/logout")
+                    .permitAll()
+                    .requestMatchers("/v1/members/withdraw")
+                    .permitAll()
                     .anyRequest()
                     .authenticated()
             }
