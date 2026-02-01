@@ -63,7 +63,7 @@ class MemberLoginController(
         return APPLE_REDIRECT_URL
     }
 
-    @PostMapping("/v1/auth/login/apple")
+    @PostMapping("/login/auth/apple")
     @Operation(
         summary = "Apple OAuth2 Login V1",
         description = "Login with Apple authorization code to receive JWT tokens",
