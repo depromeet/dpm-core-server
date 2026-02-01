@@ -56,6 +56,19 @@ class MemberRoleService(
             ?: RoleType.Guest
     }
 
+    fun saveByMemberId(
+        member: Member,
+        authAttributes: OAuthAttributes,
+    ) {
+        val guestRoleId = roleQueryUseCase.getRoleIdByCode(RoleType.Guest.code)
+        val memberRole =
+            MemberRole.of(
+                memberId = member.id!!,
+                roleId = guestRoleId,
+            )
+        memberRolePersistencePort.save(memberRole)
+    }
+
     companion object {
         private val ROLE_PRIORITY: List<RoleType> =
             listOf(

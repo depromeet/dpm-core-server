@@ -22,6 +22,9 @@ dependencies {
     implementation(libs.kotlin.logging)
     implementation(libs.jsonwebtoken.jjwt)
 
+//    TODO : Firebase 의존성 제거 후 application 모듈과 presentation 모듈에서는 몰라도 되게 리팩토링
+    implementation(libs.firebase.admin)
+
     runtimeOnly(libs.mysql.connector)
 
     testImplementation(libs.spring.boot.starter.test)
@@ -50,9 +53,10 @@ jib {
     container {
         ports = listOf("8080")
         jvmFlags = listOf("-Xms512m", "-Xmx512m", "-Duser.timezone=Asia/Seoul")
-        environment = mapOf(
-            "APPLE_PRIVATE_KEY_PATH" to "/app/secrets/AuthKey.p8"
-        )
+        environment =
+            mapOf(
+                "APPLE_PRIVATE_KEY_PATH" to "/app/secrets/AuthKey.p8",
+            )
     }
 }
 

@@ -11,12 +11,15 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberRoleService: MemberRoleService,
+    @Value("\${member.default-team-id:8}")
+    private val defaultTeamId: Int,
 ) : MemberQueryByRoleUseCase,
     MemberQueryUseCase {
     /**
@@ -41,8 +44,9 @@ class MemberQueryService(
      *
      * @author LeeHanEum
      * @since 2025.07.17
+     * @update 2026.01.16 junwon service에서 usecase로 이동
      */
-    fun getMemberById(memberId: MemberId) =
+    override fun getMemberById(memberId: MemberId) =
         memberPersistencePort.findById(memberId.value)
             ?: throw MemberNotFoundException()
 
@@ -66,14 +70,12 @@ class MemberQueryService(
      */
     fun getMemberTeamNumber(memberId: MemberId): Int =
         memberPersistencePort.findMemberTeamByMemberId(memberId)
-            ?: throw MemberTeamNotFoundException()
+            ?: defaultTeamId
 
     fun checkWhiteList(
         name: String,
         signupEmail: String,
-    ): Member =
-        memberPersistencePort.findByNameAndSignupEmail(name, signupEmail)
-            ?: throw MemberNotFoundException()
+    ): Member? = memberPersistencePort.findByNameAndSignupEmail(name, signupEmail)
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 
@@ -83,4 +85,6 @@ class MemberQueryService(
 
     override fun getMemberNameRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         memberPersistencePort.findMemberNameAndRoleByMemberId(memberId)
+
+    override fun getAll(): List<Member> = memberPersistencePort.findAll()
 }

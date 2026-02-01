@@ -1,11 +1,11 @@
 package core.application.security.oauth.service
 
+import core.application.security.oauth.apple.AppleIdTokenValidator
 import core.application.security.oauth.domain.CustomOAuth2User
 import core.application.security.oauth.exception.UnsupportedOAuthProviderException
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.security.oauth.dto.OAuthAttributes
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import core.application.security.oauth.apple.AppleIdTokenValidator
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException
@@ -30,45 +30,59 @@ class CustomOAuth2UserService(
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
         val registrationId = userRequest.clientRegistration.registrationId.lowercase()
 
-        val oAuth2User: OAuth2User = when (registrationId) {
-            "apple" -> loadAppleUser(userRequest)
-            else -> super.loadUser(userRequest)
-        }
+        val oAuth2User: OAuth2User =
+            when (registrationId) {
+                "apple" -> loadAppleUser(userRequest)
+                else -> super.loadUser(userRequest)
+            }
 
-        val externalId = when (registrationId) {
-            "apple" -> oAuth2User.attributes["sub"] as String
-            else -> oAuth2User.name
-        }
+        val externalId =
+            when (registrationId) {
+                "apple" -> oAuth2User.attributes["sub"] as String
+                else -> oAuth2User.name
+            }
 
-        val roles = roleQueryUseCase.getRolesByExternalId(externalId)
-            .ifEmpty { listOf("GUEST") }
+        val roles =
+            roleQueryUseCase.getRolesByExternalId(externalId)
+                .ifEmpty { listOf("GUEST") }
 
-        val authorities = roles
-            .map { SimpleGrantedAuthority("ROLE_$it") }
-            .toSet()
+        val authorities =
+            roles
+                .map { SimpleGrantedAuthority("ROLE_$it") }
+                .toSet()
 
+        val nameAttributeKey =
+            when (registrationId) {
+                "apple" -> "sub"
+                "kakao" -> "id"
+                else ->
+                    userRequest.clientRegistration
+                        .providerDetails.userInfoEndpoint.userNameAttributeName
+            }
         return CustomOAuth2User(
             authorities = authorities.toList(),
             attributes = oAuth2User.attributes,
-            nameAttributeKey = "sub",
-            authAttributes = OAuthAttributes.of(
-                registrationId.uppercase(),
-                oAuth2User.attributes
-            ) ?: throw UnsupportedOAuthProviderException(),
+            nameAttributeKey = nameAttributeKey,
+            authAttributes =
+                OAuthAttributes.of(
+                    registrationId.uppercase(),
+                    oAuth2User.attributes,
+                ) ?: throw UnsupportedOAuthProviderException(),
         )
     }
 
     private fun loadAppleUser(userRequest: OAuth2UserRequest): OAuth2User {
-        val idToken = userRequest.additionalParameters["id_token"]
+        val idToken =
+            userRequest.additionalParameters["id_token"]
                 as? String
-            ?: throw OAuth2AuthenticationException("Apple id_token missing")
+                ?: throw OAuth2AuthenticationException("Apple id_token missing")
 
         val claims = appleIdTokenValidator.verify(idToken)
 
         return DefaultOAuth2User(
             emptySet(),
             claims,
-            "sub"
+            "sub",
         )
     }
 }

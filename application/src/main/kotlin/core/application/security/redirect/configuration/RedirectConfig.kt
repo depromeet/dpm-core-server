@@ -16,7 +16,6 @@ class RedirectConfig(
     private val validator: RedirectValidator,
     private val errorRedirectStrategy: ErrorRedirectStrategy,
 ) {
-
     @Bean
     fun redirectStrategy(): CompositeRedirectStrategy =
         CompositeRedirectStrategy(
