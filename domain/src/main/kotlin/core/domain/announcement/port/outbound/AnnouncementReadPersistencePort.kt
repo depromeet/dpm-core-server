@@ -16,4 +16,8 @@ interface AnnouncementReadPersistencePort {
         announcementId: AnnouncementId,
         memberId: MemberId,
     ): Boolean
+
+    fun findAllByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead>
+
+    fun countByAnnouncementId(announcementId: AnnouncementId): Int
 }

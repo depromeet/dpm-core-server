@@ -14,4 +14,8 @@ interface AnnouncementReadQueryUseCase {
         memberId: MemberId,
         announcementId: AnnouncementId,
     ): Boolean
+
+    fun getByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead>
+
+    fun countByAnnouncementId(announcementId: AnnouncementId): Int
 }

@@ -26,10 +26,15 @@ class AnnouncementReadQueryService(
     override fun existsByAnnouncementIdAndMemberId(
         memberId: MemberId,
         announcementId: AnnouncementId,
-    ): Boolean {
-        return announcementReadPersistencePort.existsByAnnouncementIdAndMemberId(
+    ): Boolean =
+        announcementReadPersistencePort.existsByAnnouncementIdAndMemberId(
             announcementId = announcementId,
             memberId = memberId,
         )
-    }
+
+    override fun getByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead> =
+        announcementReadPersistencePort.findAllByAnnouncementId(announcementId)
+
+    override fun countByAnnouncementId(announcementId: AnnouncementId): Int =
+        announcementReadPersistencePort.countByAnnouncementId(announcementId)
 }

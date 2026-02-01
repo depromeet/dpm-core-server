@@ -15,4 +15,8 @@ interface AnnouncementReadJpaRepository : JpaRepository<AnnouncementReadEntity, 
         memberId: MemberId,
         announcementId: AnnouncementId,
     ): Boolean
+
+    fun findAllByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementReadEntity>
+
+    fun countByAnnouncementId(announcementId: AnnouncementId): Int
 }
