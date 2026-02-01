@@ -24,8 +24,8 @@ class AnnouncementReadQueryService(
         ) ?: throw AnnouncementReadNotFoundException()
 
     override fun existsByAnnouncementIdAndMemberId(
-        memberId: MemberId,
         announcementId: AnnouncementId,
+        memberId: MemberId,
     ): Boolean =
         announcementReadPersistencePort.existsByAnnouncementIdAndMemberId(
             announcementId = announcementId,

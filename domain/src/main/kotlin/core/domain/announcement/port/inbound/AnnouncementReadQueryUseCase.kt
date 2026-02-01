@@ -11,8 +11,8 @@ interface AnnouncementReadQueryUseCase {
     ): AnnouncementRead
 
     fun existsByAnnouncementIdAndMemberId(
-        memberId: MemberId,
         announcementId: AnnouncementId,
+        memberId: MemberId,
     ): Boolean
 
     fun getByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead>

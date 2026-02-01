@@ -93,8 +93,8 @@ class AnnouncementCommandService(
 
         val isExistedAnnouncementRead: Boolean =
             announcementReadQueryUseCase.existsByAnnouncementIdAndMemberId(
-                memberId = memberId,
                 announcementId = announcementId,
+                memberId = memberId,
             )
         if (!isExistedAnnouncementRead) {
             announcementReadCommandUseCase.markAsRead(memberId, announcementId)
