@@ -98,7 +98,9 @@ class MemberLoginService(
                 ),
             )
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
-        memberRoleService.saveByMemberId(member, authAttributes)
+
+        memberRoleService.assignGuestRole(member.id!!)
+
         return generateLoginResult(
             member.id ?: throw MemberIdRequiredException(),
             securityProperties.redirect.restrictedRedirectUrl,

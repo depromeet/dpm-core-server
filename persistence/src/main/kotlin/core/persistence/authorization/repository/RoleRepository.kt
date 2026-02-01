@@ -56,8 +56,11 @@ class RoleRepository(
             .fetch()
             .map { "${it.get(PERMISSIONS.ACTION)}:${it.get(PERMISSIONS.RESOURCE)}".lowercase() }
 
-    override fun getRoleIdByCode(code: String): RoleId =
-        roleJpaRepository.findByName(code)
-            .map { RoleId(it.id) }
-            .orElseThrow { IllegalArgumentException("Role not found with code: $code") }
+    override fun findIdByName(roleName: String): Long =
+        dsl
+            .select(ROLES.ROLE_ID)
+            .from(ROLES)
+            .where(ROLES.NAME.eq(roleName))
+            .fetchOne(ROLES.ROLE_ID)
+            ?: throw IllegalArgumentException("Role not found: $roleName")
 }
