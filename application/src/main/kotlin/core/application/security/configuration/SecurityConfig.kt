@@ -1,5 +1,6 @@
 package core.application.security.configuration
 
+import core.application.security.handler.CustomAuthenticationEntryPoint
 import core.application.security.oauth.client.CustomOAuth2AccessTokenResponseClient
 import core.application.security.oauth.token.JwtAuthenticationFilter
 import core.application.security.properties.SecurityProperties
@@ -30,12 +31,14 @@ class SecurityConfig(
     private val authenticationFailureHandler: AuthenticationFailureHandler,
     private val logoutSuccessHandler: LogoutSuccessHandler,
     private val customOAuth2AccessTokenResponseClient: CustomOAuth2AccessTokenResponseClient,
+    private val customAuthenticationEntryPoint: CustomAuthenticationEntryPoint,
 ) {
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         disabledConfigurations(httpSecurity)
         configurationSessionManagement(httpSecurity)
         configurationCors(httpSecurity)
+        configureExceptionHandling(httpSecurity)
         configureAuthorizeHttpRequests(httpSecurity)
         configurationOAuth2Login(httpSecurity)
         configurationLogout(httpSecurity)
@@ -58,6 +61,12 @@ class SecurityConfig(
     private fun configurationCors(httpSecurity: HttpSecurity) {
         httpSecurity
             .cors { }
+    }
+
+    private fun configureExceptionHandling(httpSecurity: HttpSecurity) {
+        httpSecurity.exceptionHandling { handling ->
+            handling.authenticationEntryPoint(customAuthenticationEntryPoint)
+        }
     }
 
     private fun configureAuthorizeHttpRequests(httpSecurity: HttpSecurity) {
