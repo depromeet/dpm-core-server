@@ -14,7 +14,6 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.oauth2.client)
-    implementation(libs.spring.boot.starter.thymeleaf)
     implementation(libs.spring.boot.starter.jooq)
     implementation(libs.kotlin.reflect)
     implementation(libs.jackson.module.kotlin)
