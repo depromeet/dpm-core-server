@@ -1,14 +1,16 @@
 package core.application.member.presentation.controller
 
-import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.servlet.http.Cookie
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
-import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.tags.Tag
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.security.properties.SecurityProperties
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -53,7 +55,6 @@ class MemberLoginController(
                 "Sets REQUEST_DOMAIN cookie and redirects to Apple authorization page.",
     )
     @GetMapping("/login/apple")
-    @Operation(summary = "Apple login redirect", description = "Redirects to Apple OAuth2 authorization page")
     fun appleLogin(
         request: HttpServletRequest,
         response: HttpServletResponse,

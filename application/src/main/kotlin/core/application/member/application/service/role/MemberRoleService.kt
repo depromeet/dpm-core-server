@@ -1,6 +1,5 @@
 package core.application.member.application.service.role
 
-import core.application.authorization.application.service.RoleQueryService
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleId
 import core.domain.authorization.vo.RoleType
@@ -56,19 +55,6 @@ class MemberRoleService(
             ?: RoleType.Guest
     }
 
-    fun saveByMemberId(
-        member: Member,
-        authAttributes: OAuthAttributes,
-    ) {
-        val guestRoleId = roleQueryUseCase.getRoleIdByCode(RoleType.Guest.code)
-        val memberRole =
-            MemberRole.of(
-                memberId = member.id!!,
-                roleId = guestRoleId,
-            )
-        memberRolePersistencePort.save(memberRole)
-    }
-
     companion object {
         private val ROLE_PRIORITY: List<RoleType> =
             listOf(
@@ -80,11 +66,12 @@ class MemberRoleService(
 
     fun assignGuestRole(memberId: MemberId) {
         val guestRoleId = roleQueryUseCase.findIdByName(RoleType.Guest.code)
-        val memberRole = MemberRole(
-            memberId = memberId,
-            roleId = RoleId(guestRoleId),
-            grantedAt = Instant.now(),
-        )
+        val memberRole =
+            MemberRole(
+                memberId = memberId,
+                roleId = RoleId(guestRoleId),
+                grantedAt = Instant.now(),
+            )
         memberRolePersistencePort.save(memberRole)
     }
 }

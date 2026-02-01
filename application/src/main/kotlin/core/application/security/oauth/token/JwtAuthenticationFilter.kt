@@ -25,7 +25,10 @@ class JwtAuthenticationFilter(
     ) {
         val authorizationHeader = request.getHeader(HEADER_AUTHORIZATION)
 
-        if (authorizationHeader != null && !authorizationHeader.startsWith(TOKEN_PREFIX)) {
+        if (authorizationHeader != null &&
+            authorizationHeader.isNotEmpty() &&
+            !authorizationHeader.startsWith(TOKEN_PREFIX)
+        ) {
             throw InvalidAccessTokenException(JwtExceptionCode.AUTHORIZATION_HEADER_INVALID)
         }
 
@@ -42,10 +45,11 @@ class JwtAuthenticationFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun getAccessToken(authorizationHeader: String?): String? =
-        if (!authorizationHeader.isNullOrEmpty() && authorizationHeader.startsWith(TOKEN_PREFIX)) {
-            authorizationHeader.substring(TOKEN_PREFIX.length)
-        } else {
-            null
+    private fun getAccessToken(authorizationHeader: String?): String? {
+        if (authorizationHeader.isNullOrEmpty() || !authorizationHeader.startsWith(TOKEN_PREFIX)) {
+            return null
         }
+        val token = authorizationHeader.substring(TOKEN_PREFIX.length)
+        return token.ifEmpty { null }
+    }
 }
