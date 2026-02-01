@@ -15,7 +15,6 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.ResponseBody
 import java.net.URI
 
 @Tag(name = "Member-Login", description = "Member Login API")
@@ -64,9 +63,7 @@ class MemberLoginController(
         return APPLE_REDIRECT_URL
     }
 
-    /**
-     * apple login to support third-party login
-     * */
+    @PostMapping("/v1/auth/login/apple")
     @Operation(
         summary = "Apple OAuth2 Login V1",
         description = "Login with Apple authorization code to receive JWT tokens",
@@ -78,8 +75,6 @@ class MemberLoginController(
             ApiResponse(responseCode = "500", description = "Internal server error"),
         ],
     )
-    @PostMapping("/login/auth/apple")
-    @ResponseBody
     fun appleLoginV1(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,

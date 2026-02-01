@@ -11,5 +11,5 @@ interface RolePersistencePort {
 
     fun findAllPermissionsByMemberId(memberId: MemberId): List<String>
 
-    fun getRoleIdByCode(code: String): RoleId
+    fun findIdByName(roleName: String): Long
 }

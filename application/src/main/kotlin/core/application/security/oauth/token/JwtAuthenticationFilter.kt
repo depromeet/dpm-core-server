@@ -1,5 +1,7 @@
 package core.application.security.oauth.token
 
+import core.application.security.oauth.exception.InvalidAccessTokenException
+import core.application.security.oauth.exception.JwtExceptionCode
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -22,18 +24,32 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain,
     ) {
         val authorizationHeader = request.getHeader(HEADER_AUTHORIZATION)
+
+        if (authorizationHeader != null &&
+            authorizationHeader.isNotEmpty() &&
+            !authorizationHeader.startsWith(TOKEN_PREFIX)
+        ) {
+            throw InvalidAccessTokenException(JwtExceptionCode.AUTHORIZATION_HEADER_INVALID)
+        }
+
         val token = getAccessToken(authorizationHeader)
-        if (jwtTokenProvider.validateToken(token)) {
+
+        if (token != null) {
+            if (!jwtTokenProvider.validateToken(token)) {
+                throw InvalidAccessTokenException(JwtExceptionCode.TOKEN_INVALID)
+            }
             val authentication = jwtTokenProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication
         }
+
         filterChain.doFilter(request, response)
     }
 
-    private fun getAccessToken(authorizationHeader: String?): String? =
-        if (!authorizationHeader.isNullOrEmpty() && authorizationHeader.startsWith(TOKEN_PREFIX)) {
-            authorizationHeader.substring(TOKEN_PREFIX.length)
-        } else {
-            null
+    private fun getAccessToken(authorizationHeader: String?): String? {
+        if (authorizationHeader.isNullOrEmpty() || !authorizationHeader.startsWith(TOKEN_PREFIX)) {
+            return null
         }
+        val token = authorizationHeader.substring(TOKEN_PREFIX.length)
+        return token.ifEmpty { null }
+    }
 }
