@@ -128,14 +128,19 @@ class SecurityConfig(
             )
         private val PERMIT_ALL_PATTERNS =
             arrayOf(
+                // API endpoints (under /v1/)
                 "/v1/reissue",
+                "/v1/**",
+                // OAuth2 endpoints
+                "/oauth2/**",
+                "oauth2/**",
+                "/login/oauth2/**",
+                // Login entry points (specific paths before wildcards)
                 "/login/kakao",
                 "/login/apple",
-                "/login/oauth2/**",
-                "/v1/login/auth/**",
+                "/login/auth/apple",
+                // General login paths (must come after specific paths)
                 "/login/**",
-                "oauth2/**",
-                "/oauth2/**",
                 "/login",
                 "/error",
             )
