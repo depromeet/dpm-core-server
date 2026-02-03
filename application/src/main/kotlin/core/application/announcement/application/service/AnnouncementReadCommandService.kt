@@ -20,4 +20,18 @@ class AnnouncementReadCommandService(
             memberId = memberId,
         ),
     )
+
+    override fun initializeForMembers(
+        announcementId: AnnouncementId,
+        memberIds: List<MemberId>,
+    ) {
+        val initializeAnnouncementReads =
+            memberIds.map { memberId ->
+                AnnouncementRead.createUnread(
+                    announcementId = announcementId,
+                    memberId = memberId,
+                )
+            }
+        announcementReadPersistencePort.saveAll(initializeAnnouncementReads)
+    }
 }

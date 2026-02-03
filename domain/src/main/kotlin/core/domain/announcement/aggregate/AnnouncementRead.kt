@@ -24,6 +24,16 @@ class AnnouncementRead(
                 memberId = memberId,
                 readAt = Instant.now(),
             )
+
+        fun createUnread(
+            announcementId: AnnouncementId,
+            memberId: MemberId,
+        ): AnnouncementRead =
+            AnnouncementRead(
+                announcementId = announcementId,
+                memberId = memberId,
+                readAt = null,
+            )
     }
 
     fun isRead(): Boolean = readAt != null

@@ -1,5 +1,7 @@
 package core.application.announcement.application.service
 
+import core.application.cohort.application.properties.CohortProperties
+import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.Assignment
@@ -35,6 +37,8 @@ class AnnouncementCommandService(
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val assignmentSubmissionQueryUseCase: AssignmentSubmissionQueryUseCase,
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
+    val memberQueryService: MemberQueryService,
+    val cohortProperties: CohortProperties,
 ) : AnnouncementCommandUseCase {
     override fun create(
         authorId: MemberId,
@@ -83,6 +87,12 @@ class AnnouncementCommandService(
                 announcementAssignmentPersistencePort.save(announcementAssignment)
             }
         }
+
+        val memberIds: List<MemberId> = memberQueryService.getMembersByCohort(cohortProperties.value)
+        announcementReadCommandUseCase.initializeForMembers(
+            announcementId = savedAnnouncement.id!!,
+            memberIds = memberIds,
+        )
     }
 
     override fun markAsRead(
