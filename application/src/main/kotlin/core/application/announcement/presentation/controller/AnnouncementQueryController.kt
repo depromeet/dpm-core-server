@@ -24,4 +24,11 @@ class AnnouncementQueryController(
         @RequestParam announcementId: AnnouncementId,
     ): CustomResponse<AnnouncementDetailResponse> =
         CustomResponse.ok(announcementQueryService.getAnnouncementDetail(announcementId))
+
+    @GetMapping("/{announcementId}/mark-as-read/members")
+    override fun getAnnouncementReadMemberList(
+        announcementId: AnnouncementId,
+    ): CustomResponse<AnnouncementDetailResponse> {
+        TODO("Not yet implemented")
+    }
 }

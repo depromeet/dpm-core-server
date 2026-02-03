@@ -3,8 +3,10 @@ package core.application.announcement.application.service
 import core.application.announcement.application.exception.AnnouncementNotFoundException
 import core.application.announcement.presentation.response.AnnouncementDetailResponse
 import core.application.announcement.presentation.response.AnnouncementListResponse
+import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
 import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import core.domain.announcement.aggregate.Announcement
+import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
@@ -39,6 +41,18 @@ class AnnouncementQueryService(
             content = announcement.content,
             createdAt = instantToLocalDateTime(announcement.createdAt!!),
             markAsReadCount = announcementReadCount,
+        )
+    }
+
+    fun getAnnouncementReadMemberList(announcementId: AnnouncementId): AnnouncementViewMemberListResponse {
+        val announcement: Announcement = getAnnouncementById(announcementId)
+        val announcementReads: List<AnnouncementRead> = a
+
+        return AnnouncementDetailResponse.of(
+            title = announcement.title,
+            content = announcement.content,
+            createdAt = instantToLocalDateTime(announcement.createdAt!!),
+            readMemberNames = readMemberNames,
         )
     }
 }
