@@ -1,7 +1,6 @@
 package core.domain.authorization.port.outbound
 
 import core.domain.authorization.aggregate.Role
-import core.domain.authorization.vo.RoleId
 import core.domain.member.vo.MemberId
 
 interface RolePersistencePort {
