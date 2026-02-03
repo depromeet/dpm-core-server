@@ -2,6 +2,7 @@ package core.application.announcement.presentation.controller
 
 import core.application.announcement.presentation.response.AnnouncementDetailResponse
 import core.application.announcement.presentation.response.AnnouncementListResponse
+import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
 import core.application.common.exception.CustomResponse
 import core.domain.announcement.vo.AnnouncementId
 import io.swagger.v3.oas.annotations.Operation
@@ -105,10 +106,28 @@ interface AnnouncementQueryApi {
                               "message": "요청에 성공했습니다",
                               "code": "GLOBAL-200-01",
                               "data": {
-                                "title": "공지/과제 테스트용 제목 001",
-                                "content": "공지/과제 테스트용 내용 001",
-                                "createdAt": "2026-01-30T16:15:36.977721",
-                                "markAsReadCount": 1
+                                "readMembers": [
+                                  {
+                                    "memberId": 1,
+                                    "name": "준원카카오",
+                                    "teamId": 1,
+                                    "part": "SERVER"
+                                  }
+                                ],
+                                "unreadMembers": [
+                                  {
+                                    "memberId": 2,
+                                    "name": "신민철",
+                                    "teamId": 1,
+                                    "part": "SERVER"
+                                  },
+                                  {
+                                    "memberId": 3,
+                                    "name": "이한음",
+                                    "teamId": 1,
+                                    "part": "SERVER"
+                                  }
+                                ]
                               }
                             }
                     """,
@@ -121,5 +140,7 @@ interface AnnouncementQueryApi {
         summary = "멤버들 공지/과제 읽음 여부 조회 API",
         description = "멤버 별로 공지/과제 읽음 여부를 조회합니다",
     )
-    fun getAnnouncementReadMemberList(announcementId: AnnouncementId): CustomResponse<AnnouncementDetailResponse>
+    fun getAnnouncementReadMemberList(
+        announcementId: AnnouncementId,
+    ): CustomResponse<AnnouncementViewMemberListResponse>
 }

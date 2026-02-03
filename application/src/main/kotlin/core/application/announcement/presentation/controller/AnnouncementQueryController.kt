@@ -3,6 +3,7 @@ package core.application.announcement.presentation.controller
 import core.application.announcement.application.service.AnnouncementQueryService
 import core.application.announcement.presentation.response.AnnouncementDetailResponse
 import core.application.announcement.presentation.response.AnnouncementListResponse
+import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
 import core.application.common.exception.CustomResponse
 import core.domain.announcement.vo.AnnouncementId
 import org.springframework.web.bind.annotation.GetMapping
@@ -28,7 +29,6 @@ class AnnouncementQueryController(
     @GetMapping("/{announcementId}/mark-as-read/members")
     override fun getAnnouncementReadMemberList(
         announcementId: AnnouncementId,
-    ): CustomResponse<AnnouncementDetailResponse> {
-        TODO("Not yet implemented")
-    }
+    ): CustomResponse<AnnouncementViewMemberListResponse> =
+        CustomResponse.ok(announcementQueryService.getAnnouncementReadMemberList(announcementId))
 }
