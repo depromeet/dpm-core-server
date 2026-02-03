@@ -41,29 +41,55 @@ class MemberAppleLoginController(
         response: HttpServletResponse,
         tokens: AuthTokenResponse,
     ) {
-        val accessTokenCookie = createCookie("accessToken", tokens.accessToken, 60 * 60 * 24) // 1 day
-        val refreshTokenCookie = createCookie("refreshToken", tokens.refreshToken, 60 * 60 * 24 * 30) // 30 days
+        val accessTokenCookie =
+            createAccessTokenCookie(
+                value = tokens.accessToken,
+                maxAgeSeconds = 60 * 60 * 24, // 1 day
+            )
+
+        val refreshTokenCookie =
+            createRefreshTokenCookie(
+                value = tokens.refreshToken,
+                maxAgeSeconds = 60 * 60 * 24 * 30, // 30 days
+            )
 
         response.addCookie(accessTokenCookie)
         response.addCookie(refreshTokenCookie)
     }
-    private fun createCookie(
-        name: String,
+
+    private fun createAccessTokenCookie(
         value: String,
         maxAgeSeconds: Int,
     ): Cookie {
-        return Cookie(name, value).apply {
+        return Cookie("accessToken", value).apply {
             path = "/"
-            domain =
-                if (securityProperties.cookie.domain != "localhost") {
-                    securityProperties.cookie.domain
-                } else {
-                    null
-                }
+            domain = resolveDomain()
             maxAge = maxAgeSeconds
             isHttpOnly = true
-            secure = securityProperties.cookie.secure // Use config value (true for dev/prod, false for local)
+            secure = securityProperties.cookie.secure
+            setAttribute("SameSite", "Lax")
+        }
+    }
+
+    private fun createRefreshTokenCookie(
+        value: String,
+        maxAgeSeconds: Int,
+    ): Cookie {
+        return Cookie("refreshToken", value).apply {
+            path = "/"
+            domain = resolveDomain()
+            maxAge = maxAgeSeconds
+            isHttpOnly = true
+            secure = true
             setAttribute("SameSite", "None")
+        }
+    }
+
+    private fun resolveDomain(): String? {
+        return if (securityProperties.cookie.domain != "localhost") {
+            securityProperties.cookie.domain
+        } else {
+            null
         }
     }
 }
