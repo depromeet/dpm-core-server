@@ -37,4 +37,11 @@ class AnnouncementRead(
     }
 
     fun isRead(): Boolean = readAt != null
+
+    fun markAsRead(): AnnouncementRead {
+        if (!isRead()) {
+            this.readAt = Instant.now()
+        }
+        return this
+    }
 }

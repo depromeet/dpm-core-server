@@ -11,15 +11,8 @@ import org.springframework.stereotype.Service
 class AnnouncementReadCommandService(
     val announcementReadPersistencePort: AnnouncementReadPersistencePort,
 ) : AnnouncementReadCommandUseCase {
-    override fun markAsRead(
-        memberId: MemberId,
-        announcementId: AnnouncementId,
-    ) = announcementReadPersistencePort.save(
-        AnnouncementRead.create(
-            announcementId = announcementId,
-            memberId = memberId,
-        ),
-    )
+    override fun markAsRead(announcementRead: AnnouncementRead) =
+        announcementReadPersistencePort.save(announcementRead.markAsRead())
 
     override fun initializeForMembers(
         announcementId: AnnouncementId,
