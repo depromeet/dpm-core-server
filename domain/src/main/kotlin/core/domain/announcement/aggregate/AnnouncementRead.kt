@@ -9,18 +9,39 @@ class AnnouncementRead(
     val id: AnnouncementReadId? = null,
     val announcementId: AnnouncementId,
     val memberId: MemberId,
-    val readAt: Instant,
+    readAt: Instant?,
 ) {
+    var readAt: Instant? = readAt
+        private set
+
     companion object {
         fun create(
             announcementId: AnnouncementId,
             memberId: MemberId,
-        ): AnnouncementRead {
-            return AnnouncementRead(
+        ): AnnouncementRead =
+            AnnouncementRead(
                 announcementId = announcementId,
                 memberId = memberId,
                 readAt = Instant.now(),
             )
+
+        fun createUnread(
+            announcementId: AnnouncementId,
+            memberId: MemberId,
+        ): AnnouncementRead =
+            AnnouncementRead(
+                announcementId = announcementId,
+                memberId = memberId,
+                readAt = null,
+            )
+    }
+
+    fun isRead(): Boolean = readAt != null
+
+    fun markAsRead(): AnnouncementRead {
+        if (!isRead()) {
+            this.readAt = Instant.now()
         }
+        return this
     }
 }

@@ -5,8 +5,10 @@ import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
 
 interface AnnouncementReadCommandUseCase {
-    fun markAsRead(
-        memberId: MemberId,
+    fun markAsRead(announcementRead: AnnouncementRead): AnnouncementRead
+
+    fun initializeForMembers(
         announcementId: AnnouncementId,
-    ): AnnouncementRead
+        memberIds: List<MemberId>,
+    )
 }

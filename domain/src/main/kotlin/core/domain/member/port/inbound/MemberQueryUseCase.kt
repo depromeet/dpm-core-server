@@ -3,6 +3,7 @@ package core.domain.member.port.inbound
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
+import core.domain.team.vo.TeamId
 
 interface MemberQueryUseCase {
     /**
@@ -19,4 +20,6 @@ interface MemberQueryUseCase {
     fun getAll(): List<Member>
 
     fun getMemberById(memberId: MemberId): Member
+
+    fun getMemberTeamId(memberId: MemberId): TeamId
 }

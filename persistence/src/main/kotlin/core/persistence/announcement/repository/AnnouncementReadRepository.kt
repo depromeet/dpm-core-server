@@ -14,6 +14,10 @@ class AnnouncementReadRepository(
     override fun save(announcementRead: AnnouncementRead): AnnouncementRead =
         announcementReadJpaRepository.save(AnnouncementReadEntity.from(announcementRead)).toDomain()
 
+    override fun saveAll(announcementReads: List<AnnouncementRead>) {
+        announcementReadJpaRepository.saveAll(announcementReads.map { AnnouncementReadEntity.from(it) })
+    }
+
     override fun findByAnnouncementIdAndMemberId(
         announcementId: AnnouncementId,
         memberId: MemberId,

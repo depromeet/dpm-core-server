@@ -11,6 +11,7 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
+import core.domain.team.vo.TeamId
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
@@ -87,4 +88,9 @@ class MemberQueryService(
         memberPersistencePort.findMemberNameAndRoleByMemberId(memberId)
 
     override fun getAll(): List<Member> = memberPersistencePort.findAll()
+
+    override fun getMemberTeamId(memberId: MemberId): TeamId =
+        TeamId(
+            memberPersistencePort.findMemberTeamByMemberId(memberId)?.toLong() ?: defaultTeamId.toLong(),
+        )
 }

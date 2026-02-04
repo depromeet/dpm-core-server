@@ -7,6 +7,8 @@ import core.domain.member.vo.MemberId
 interface AnnouncementReadPersistencePort {
     fun save(announcementRead: AnnouncementRead): AnnouncementRead
 
+    fun saveAll(announcementReads: List<AnnouncementRead>)
+
     fun findByAnnouncementIdAndMemberId(
         announcementId: AnnouncementId,
         memberId: MemberId,

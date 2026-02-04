@@ -32,8 +32,8 @@ class AnnouncementReadEntity(
     val announcementId: Long,
     @Column(name = "member_id", nullable = false)
     val memberId: Long,
-    @Column(name = "read_at", nullable = false)
-    val readAt: Instant,
+    @Column(name = "read_at")
+    val readAt: Instant?,
 ) {
     companion object {
         fun from(announcementRead: AnnouncementRead): AnnouncementReadEntity =
