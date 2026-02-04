@@ -1,7 +1,10 @@
 package core.application.announcement.application.service
 
+import core.application.cohort.application.properties.CohortProperties
+import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
+import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.enums.AnnouncementType
@@ -35,6 +38,8 @@ class AnnouncementCommandService(
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val assignmentSubmissionQueryUseCase: AssignmentSubmissionQueryUseCase,
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
+    val memberQueryService: MemberQueryService,
+    val cohortProperties: CohortProperties,
 ) : AnnouncementCommandUseCase {
     override fun create(
         authorId: MemberId,
@@ -83,6 +88,12 @@ class AnnouncementCommandService(
                 announcementAssignmentPersistencePort.save(announcementAssignment)
             }
         }
+
+        val memberIds: List<MemberId> = memberQueryService.getMembersByCohort(cohortProperties.value)
+        announcementReadCommandUseCase.initializeForMembers(
+            announcementId = savedAnnouncement.id!!,
+            memberIds = memberIds,
+        )
     }
 
     override fun markAsRead(
@@ -91,13 +102,13 @@ class AnnouncementCommandService(
     ) {
         announcementQueryUseCase.getAnnouncementById(announcementId)
 
-        val isExistedAnnouncementRead: Boolean =
-            announcementReadQueryUseCase.existsByAnnouncementIdAndMemberId(
+        val existedAnnouncement: AnnouncementRead =
+            announcementReadQueryUseCase.getByAnnouncementIdAndMemberId(
                 announcementId = announcementId,
                 memberId = memberId,
             )
-        if (!isExistedAnnouncementRead) {
-            announcementReadCommandUseCase.markAsRead(memberId, announcementId)
+        if (!existedAnnouncement.isRead()) {
+            announcementReadCommandUseCase.markAsRead(existedAnnouncement)
         }
     }
 
