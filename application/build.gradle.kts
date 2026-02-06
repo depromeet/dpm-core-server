@@ -14,13 +14,15 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.oauth2.client)
-    implementation(libs.spring.boot.starter.thymeleaf)
     implementation(libs.spring.boot.starter.jooq)
     implementation(libs.kotlin.reflect)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
     implementation(libs.kotlin.logging)
     implementation(libs.jsonwebtoken.jjwt)
+
+//    TODO : Firebase 의존성 제거 후 application 모듈과 presentation 모듈에서는 몰라도 되게 리팩토링
+    implementation(libs.firebase.admin)
 
     runtimeOnly(libs.mysql.connector)
 
@@ -50,9 +52,10 @@ jib {
     container {
         ports = listOf("8080")
         jvmFlags = listOf("-Xms512m", "-Xmx512m", "-Duser.timezone=Asia/Seoul")
-        environment = mapOf(
-            "APPLE_PRIVATE_KEY_PATH" to "/app/secrets/AuthKey.p8"
-        )
+        environment =
+            mapOf(
+                "APPLE_PRIVATE_KEY_PATH" to "/app/secrets/AuthKey.p8",
+            )
     }
 }
 

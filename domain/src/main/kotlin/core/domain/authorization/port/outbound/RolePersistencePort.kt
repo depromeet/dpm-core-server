@@ -9,4 +9,6 @@ interface RolePersistencePort {
     fun findAllByMemberExternalId(externalId: String): List<String>
 
     fun findAllPermissionsByMemberId(memberId: MemberId): List<String>
+
+    fun findIdByName(roleName: String): Long
 }

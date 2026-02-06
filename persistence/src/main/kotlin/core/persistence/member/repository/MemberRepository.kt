@@ -29,9 +29,13 @@ class MemberRepository(
 
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
-    override fun findAllByIds(ids: List<MemberId>): List<Member> {
-        return memberJpaRepository.findAllByIdInAndDeletedAtIsNull(ids.map { it.value }).map { it.toDomain() }
-    }
+    override fun findAllByIds(ids: List<MemberId>): List<Member> =
+        memberJpaRepository
+            .findAllByIdInAndDeletedAtIsNull(
+                ids.map {
+                    it.value
+                },
+            ).map { it.toDomain() }
 
     override fun existsDeletedMemberById(memberId: Long): Boolean =
         memberJpaRepository.existsByIdAndDeletedAtIsNotNull(memberId)
@@ -96,4 +100,6 @@ class MemberRepository(
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value))
             .fetchOne(TEAMS.NUMBER)
+
+    override fun findAll(): List<Member> = memberJpaRepository.findAll().map { it.toDomain() }
 }

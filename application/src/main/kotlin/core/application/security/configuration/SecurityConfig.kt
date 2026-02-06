@@ -1,5 +1,6 @@
 package core.application.security.configuration
 
+import core.application.security.handler.CustomAuthenticationEntryPoint
 import core.application.security.oauth.client.CustomOAuth2AccessTokenResponseClient
 import core.application.security.oauth.token.JwtAuthenticationFilter
 import core.application.security.properties.SecurityProperties
@@ -30,12 +31,14 @@ class SecurityConfig(
     private val authenticationFailureHandler: AuthenticationFailureHandler,
     private val logoutSuccessHandler: LogoutSuccessHandler,
     private val customOAuth2AccessTokenResponseClient: CustomOAuth2AccessTokenResponseClient,
+    private val customAuthenticationEntryPoint: CustomAuthenticationEntryPoint,
 ) {
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
         disabledConfigurations(httpSecurity)
         configurationSessionManagement(httpSecurity)
         configurationCors(httpSecurity)
+        configureExceptionHandling(httpSecurity)
         configureAuthorizeHttpRequests(httpSecurity)
         configurationOAuth2Login(httpSecurity)
         configurationLogout(httpSecurity)
@@ -60,6 +63,12 @@ class SecurityConfig(
             .cors { }
     }
 
+    private fun configureExceptionHandling(httpSecurity: HttpSecurity) {
+        httpSecurity.exceptionHandling { handling ->
+            handling.authenticationEntryPoint(customAuthenticationEntryPoint)
+        }
+    }
+
     private fun configureAuthorizeHttpRequests(httpSecurity: HttpSecurity) {
         httpSecurity
             .authorizeHttpRequests { auth ->
@@ -70,8 +79,10 @@ class SecurityConfig(
                     .permitAll()
                     .requestMatchers(*PERMIT_ALL_PATTERNS)
                     .permitAll()
-                    .requestMatchers("/logout", "/v1/members/withdraw")
-                    .hasAnyRole("GUEST", "DEEPER", "ORGANIZER")
+                    .requestMatchers("/logout")
+                    .permitAll()
+                    .requestMatchers("/v1/members/withdraw")
+                    .permitAll()
                     .anyRequest()
                     .authenticated()
             }
@@ -117,13 +128,19 @@ class SecurityConfig(
             )
         private val PERMIT_ALL_PATTERNS =
             arrayOf(
+                // API endpoints (under /v1/)
                 "/v1/reissue",
+                "/v1/**",
+                // OAuth2 endpoints
+                "/oauth2/**",
+                "oauth2/**",
+                "/login/oauth2/**",
+                // Login entry points (specific paths before wildcards)
                 "/login/kakao",
                 "/login/apple",
-                "/login/oauth2/**",
+                "/login/auth/apple",
+                // General login paths (must come after specific paths)
                 "/login/**",
-                "oauth2/**",
-                "/oauth2/**",
                 "/login",
                 "/error",
             )

@@ -54,4 +54,12 @@ class RoleRepository(
             )
             .fetch()
             .map { "${it.get(PERMISSIONS.ACTION)}:${it.get(PERMISSIONS.RESOURCE)}".lowercase() }
+
+    override fun findIdByName(roleName: String): Long =
+        dsl
+            .select(ROLES.ROLE_ID)
+            .from(ROLES)
+            .where(ROLES.NAME.eq(roleName))
+            .fetchOne(ROLES.ROLE_ID)
+            ?: throw IllegalArgumentException("Role not found: $roleName")
 }

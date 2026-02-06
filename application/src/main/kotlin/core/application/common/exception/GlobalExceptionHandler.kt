@@ -3,6 +3,7 @@ package core.application.common.exception
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.databind.exc.InvalidNullException
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
+import core.application.security.oauth.exception.InvalidAccessTokenException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
@@ -20,6 +21,22 @@ class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException::class)
     protected fun handleBusinessException(
         exception: BusinessException,
+        response: HttpServletResponse,
+    ): CustomResponse<Void> {
+        response.status = exception.getCode().getStatus().value()
+
+        logger.error {
+            "${exception.getCode()} Exception ${
+                exception.getCode().getCode()
+            }: ${exception.getCode().getMessage()}"
+        }
+
+        return CustomResponse.error(exception.getCode())
+    }
+
+    @ExceptionHandler(InvalidAccessTokenException::class)
+    protected fun handleInvalidAccessTokenException(
+        exception: InvalidAccessTokenException,
         response: HttpServletResponse,
     ): CustomResponse<Void> {
         response.status = exception.getCode().getStatus().value()

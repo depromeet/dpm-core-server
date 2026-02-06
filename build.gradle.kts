@@ -36,6 +36,8 @@ subprojects {
         }
         filter {
             exclude("**/generated/**")
+            // jOOQ 파일 제외
+            exclude { it.file.path.contains("generated") }
             include("**/*.kt", "**/*.kts")
         }
     }
