@@ -11,6 +11,8 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.jooq)
 
+    implementation(libs.firebase.admin)
+
     runtimeOnly(libs.mysql.connector)
 
     implementation(project(":domain"))

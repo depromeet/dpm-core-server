@@ -2,6 +2,7 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.annotation.CurrentMemberId
@@ -136,4 +137,40 @@ interface MemberApi {
     )
     @ApiResponse(responseCode = "200", description = "화이트리스트 체크 및 승인 성공")
     fun checkWhiteList(request: WhiteListCheckRequest): CustomResponse<Void>
+
+    @Operation(
+        summary = "멤버 상태 변경 API (dev)",
+        description = "멤버의 상태를 변경합니다. 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE)",
+        requestBody =
+            RequestBody(
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = InitMemberDataRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "멤버 상태 변경 요청 예시",
+                                value = """
+                                {
+                                    "memberId": "1",
+                                    "memberStatus": "PENDING"
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버 상태 변경 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+            ),
+        ],
+    )
+    fun updateMemberStatus(request: UpdateMemberStatusRequest): CustomResponse<Void>
 }

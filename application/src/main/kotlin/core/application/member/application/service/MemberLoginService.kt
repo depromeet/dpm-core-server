@@ -35,23 +35,22 @@ class MemberLoginService(
         requestUrl: String,
         authAttributes: OAuthAttributes,
     ): LoginResult {
-        val memberOAuth =
-            memberOAuthService.findByProviderAndExternalId(
-                authAttributes.getProvider(),
-                authAttributes.getExternalId(),
-            )
+        val provider = authAttributes.getProvider()
+        val externalId = authAttributes.getExternalId()
 
-        return memberOAuth
-            ?.let {
-                val member =
-                    memberPersistencePort.findById(it.memberId.value)
-                        ?: throw IllegalStateException("MemberOAuth exists but Member not found")
-                handleExistingMemberLogin(requestUrl, member)
-            }
-            ?: memberPersistencePort
-                .findBySignupEmail(authAttributes.getEmail())
-                ?.let { member -> handleExistingMemberLogin(requestUrl, member) }
-            ?: handleUnregisteredMember(authAttributes)
+        // 1. OAuth 연동 계정 존재 여부 확인
+        val memberOAuth =
+            memberOAuthService.findByProviderAndExternalId(provider, externalId)
+
+        if (memberOAuth != null) {
+            val member =
+                memberPersistencePort.findById(memberOAuth.memberId.value)
+                    ?: throw IllegalStateException("MemberOAuth exists but Member not found")
+            return handleExistingMemberLogin(requestUrl, member)
+        }
+
+        // 2. OAuth 연동 없음 → 신규 회원 플로우
+        return handleUnregisteredMember(authAttributes)
     }
 
     private fun generateLoginResult(
@@ -99,6 +98,8 @@ class MemberLoginService(
                 ),
             )
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
+
+        memberRoleService.assignGuestRole(member.id!!)
 
         return generateLoginResult(
             member.id ?: throw MemberIdRequiredException(),

@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service
 class RoleQueryService(
     private val rolePersistencePort: RolePersistencePort,
 ) : RoleQueryUseCase {
-    override fun getAllRoles(): List<Role> {
-        return rolePersistencePort.findAll()
-    }
+    override fun getAllRoles(): List<Role> = rolePersistencePort.findAll()
 
     override fun getRolesByExternalId(externalId: String): List<String> =
         rolePersistencePort
@@ -21,4 +19,6 @@ class RoleQueryService(
 
     override fun getPermissionsByMemberId(memberId: MemberId): List<String> =
         rolePersistencePort.findAllPermissionsByMemberId(memberId)
+
+    override fun findIdByName(roleName: String): Long = rolePersistencePort.findIdByName(roleName)
 }

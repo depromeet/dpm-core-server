@@ -9,4 +9,6 @@ interface RoleQueryUseCase {
     fun getRolesByExternalId(externalId: String): List<String>
 
     fun getPermissionsByMemberId(memberId: MemberId): List<String>
+
+    fun findIdByName(roleName: String): Long
 }

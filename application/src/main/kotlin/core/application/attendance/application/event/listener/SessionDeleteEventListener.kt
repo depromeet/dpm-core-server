@@ -26,7 +26,8 @@ class SessionDeleteEventListener(
             )
         } catch (e: Exception) {
             logger.error(e) {
-                "Error occurred while handling SessionDeleteEvent for sessionId: ${event.sessionId}. Caused By: ${e.cause}"
+                "Error occurred while handling SessionDeleteEvent " +
+                    "for sessionId: ${event.sessionId}. Caused By: ${e.cause}"
             }
         } finally {
             logger.info { "Completed handling SessionDeleteEvent for sessionId: ${event.sessionId}" }

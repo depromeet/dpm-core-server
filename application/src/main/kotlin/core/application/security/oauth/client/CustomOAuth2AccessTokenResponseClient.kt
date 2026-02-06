@@ -1,21 +1,22 @@
 package core.application.security.oauth.client
 
 import core.application.security.oauth.apple.AppleClientSecretGenerator
-import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest
+import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse
 import org.springframework.stereotype.Component
 
 @Component
 class CustomOAuth2AccessTokenResponseClient(
-    private val appleClientSecretGenerator: AppleClientSecretGenerator
+    private val appleClientSecretGenerator: AppleClientSecretGenerator,
 ) : OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
-
     private val defaultClient = RestClientAuthorizationCodeTokenResponseClient()
 
-    override fun getTokenResponse(authorizationGrantRequest: OAuth2AuthorizationCodeGrantRequest): OAuth2AccessTokenResponse {
+    override fun getTokenResponse(
+        authorizationGrantRequest: OAuth2AuthorizationCodeGrantRequest,
+    ): OAuth2AccessTokenResponse {
         val clientRegistration = authorizationGrantRequest.clientRegistration
 
         // Route logic based on Provider
@@ -29,21 +30,23 @@ class CustomOAuth2AccessTokenResponseClient(
 
     private fun getAppleTokenResponse(
         request: OAuth2AuthorizationCodeGrantRequest,
-        registration: ClientRegistration
+        registration: ClientRegistration,
     ): OAuth2AccessTokenResponse {
         val secret = appleClientSecretGenerator.generateClientSecret()
 
         // Create a new ClientRegistration with the dynamic secret
-        val newClientRegistration = ClientRegistration
-            .withClientRegistration(registration)
-            .clientSecret(secret)
-            .build()
+        val newClientRegistration =
+            ClientRegistration
+                .withClientRegistration(registration)
+                .clientSecret(secret)
+                .build()
 
         // Create a new request with the updated registration
-        val newRequest = OAuth2AuthorizationCodeGrantRequest(
-            newClientRegistration,
-            request.authorizationExchange
-        )
+        val newRequest =
+            OAuth2AuthorizationCodeGrantRequest(
+                newClientRegistration,
+                request.authorizationExchange,
+            )
 
         return defaultClient.getTokenResponse(newRequest)
     }

@@ -17,6 +17,7 @@ enum class MemberExceptionCode(
     MEMBER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "MEMBER-400-2", "멤버 ID는 null일 수 없습니다"),
     MEMBER_TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER-404-03", "멤버의 팀을 찾을 수 없습니다"),
     MEMBER_NAME_AUTHORITY_REQUIRED(HttpStatus.BAD_REQUEST, "MEMBER-400-3", "멤버 이름과 권한은 null일 수 없습니다"),
+    MEMBER_STAUTS_ALREADY_UPDATED(HttpStatus.BAD_REQUEST, "MEMBER-400-4", "멤버 상태가 이미 업데이트 되었습니다"),
     ;
 
     override fun getStatus(): HttpStatus = status

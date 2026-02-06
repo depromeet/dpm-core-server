@@ -46,23 +46,12 @@ spring:
             scope:
               - account_email
               - profile_nickname
-          apple:
-            client-authentication-method: client_secret_post
-            authorization-grant-type: authorization_code
-            scope:
-              - name
-              - email
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
-          apple:
-            authorization-uri: https://appleid.apple.com/auth/authorize?response_mode=form_post
-            token-uri: https://appleid.apple.com/auth/token
-            jwk-set-uri: https://appleid.apple.com/auth/keys
-            user-name-attribute: sub
 
 
 management:
@@ -92,9 +81,11 @@ attendance:
   graduation:
     impossible-threshold: ${ATTENDANCE_GRADUATION_IMPOSSIBLE_THRESHOLD:4}
     at-risk-threshold: ${ATTENDANCE_GRADUATION_AT_RISK_THRESHOLD:3}
-
+member:
+  default-team-id: ${DEFAULT_TEAM_ID:8}
 cors:
   allowed-origins:
+    # Frontend origins
     - https://localhost:3000
     - https://local.depromeet.shop
     - https://local-core.depromeet.shop:3010
@@ -105,5 +96,8 @@ cors:
     - https://core.depromeet.com
     - https://admin.depromeet.com
     - https://api.depromeet.com
+    # OAuth2 provider origins (required for OAuth2 callbacks)
+    - https://appleid.apple.com
+    - https://kauth.kakao.com
 server:
   forward-headers-strategy: framework

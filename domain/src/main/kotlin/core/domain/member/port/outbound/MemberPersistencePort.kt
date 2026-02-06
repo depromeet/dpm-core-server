@@ -30,4 +30,6 @@ interface MemberPersistencePort {
     fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel>
 
     fun findMemberTeamByMemberId(memberId: MemberId): Int?
+
+    fun findAll(): List<Member>
 }
