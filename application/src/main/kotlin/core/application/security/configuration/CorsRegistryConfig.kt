@@ -29,6 +29,7 @@ class CorsRegistryConfig(
         // Apply CORS to OAuth2 login endpoints (critical for cookie-based authentication)
         source.registerCorsConfiguration("/login/**", configuration)
         source.registerCorsConfiguration("/v1/**", configuration)
+        source.registerCorsConfiguration("/v2/**", configuration)
         source.registerCorsConfiguration("/oauth2/**", configuration)
         return source
     }
