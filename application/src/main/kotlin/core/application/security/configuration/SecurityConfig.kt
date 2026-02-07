@@ -95,8 +95,7 @@ class SecurityConfig(
                 oauth2
                     .tokenEndpoint {
                         it.accessTokenResponseClient(customOAuth2AccessTokenResponseClient)
-                    }
-                    .authorizationEndpoint {
+                    }.authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {
                         it.userService(defaultOAuth2UserService)
@@ -131,6 +130,7 @@ class SecurityConfig(
                 // API endpoints (under /v1/)
                 "/v1/reissue",
                 "/v1/**",
+                "/v2/**",
                 // OAuth2 endpoints
                 "/oauth2/**",
                 "oauth2/**",
