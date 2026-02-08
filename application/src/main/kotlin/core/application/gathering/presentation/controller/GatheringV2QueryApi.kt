@@ -7,6 +7,7 @@ import core.application.gathering.presentation.response.GatheringV2ListResponse
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
@@ -99,9 +100,15 @@ interface GatheringV2QueryApi {
     )
     @Operation(
         summary = "회식 참여 조사 목록 조회 API",
-        description = "회식 참여 조사 목록을 조회합니다",
+        description = "회식 참여 조사 목록을 조회합니다. 초대 태그별 필터링을 지원합니다.",
     )
-    fun getGatheringV2List(memberId: MemberId): CustomResponse<List<GatheringV2ListResponse>>
+    fun getGatheringV2List(
+        memberId: MemberId,
+        @Parameter(description = "초대 태그로 필터링할 기수 ID", required = false)
+        inviteTagCohortId: Long?,
+        @Parameter(description = "초대 태그로 필터링할 권한 ID", required = false)
+        inviteTagAuthorityId: Long?,
+    ): CustomResponse<List<GatheringV2ListResponse>>
 
     @ApiResponse(
         responseCode = "200",
