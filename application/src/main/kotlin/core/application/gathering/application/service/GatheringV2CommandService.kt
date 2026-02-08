@@ -23,7 +23,6 @@ class GatheringV2CommandService(
     @Transactional
     override fun createGatheringV2(
         gatheringV2: GatheringV2,
-//        TODO 준원 : 태그 사용해서 초대하는 기능 구현 필요
         gatheringV2InviteTags: List<GatheringV2InviteTag>,
         authorMemberId: MemberId,
     ) {
@@ -36,8 +35,25 @@ class GatheringV2CommandService(
                 authorMember = authorMember,
             )
 
-//        멤버 전원 초대
-        val inviteeMembers: List<Member> = memberQueryUseCase.getAll()
+//        태그로 지정된 멤버 초대
+        if (gatheringV2InviteTags.isEmpty()) {
+            // 초대 태그가 없으면 회식만 생성하고 초대는 생성하지 않음
+            return
+        }
+
+        val inviteeMemberIds: List<MemberId> = gatheringV2InviteTags.flatMap { tag ->
+            memberQueryUseCase.findAllMemberIdsByCohortIdAndAuthorityId(
+                tag.cohortId,
+                tag.authorityId,
+            )
+        }.distinct()
+
+        // 태그에 해당하는 멤버가 없으면 초대를 생성하지 않음
+        if (inviteeMemberIds.isEmpty()) {
+            return
+        }
+
+        val inviteeMembers: List<Member> = memberQueryUseCase.getMembersByIds(inviteeMemberIds)
 
         val inviteeList: List<GatheringV2Invitee> =
             inviteeMembers.map { member ->

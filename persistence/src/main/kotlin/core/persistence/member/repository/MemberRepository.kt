@@ -1,6 +1,7 @@
 package core.persistence.member.repository
 
 import core.domain.authorization.vo.RoleId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
@@ -71,6 +72,24 @@ class MemberRepository(
             .map {
                 MemberId(it)
             }
+
+    override fun findAllMemberIdsByCohortIdAndAuthorityId(
+        cohortId: CohortId,
+        authorityId: Long,
+    ): List<MemberId> =
+        dsl
+            .selectDistinct(MEMBERS.MEMBER_ID)
+            .from(MEMBERS)
+            .join(MEMBER_COHORTS)
+            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+            .join(MEMBER_ROLES)
+            .on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
+            .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+            .and(MEMBER_ROLES.ROLE_ID.eq(authorityId))
+            .and(MEMBER_ROLES.DELETED_AT.isNull)
+            .fetch(MEMBERS.MEMBER_ID)
+            .filterNotNull()
+            .map { MemberId(it) }
 
     override fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         dsl
