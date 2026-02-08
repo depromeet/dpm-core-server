@@ -1,5 +1,6 @@
 package core.domain.member.port.inbound
 
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
@@ -22,4 +23,9 @@ interface MemberQueryUseCase {
     fun getMemberById(memberId: MemberId): Member
 
     fun getMemberTeamId(memberId: MemberId): TeamId
+
+    fun findAllMemberIdsByCohortIdAndAuthorityId(
+        cohortId: CohortId,
+        authorityId: Long,
+    ): List<MemberId>
 }
