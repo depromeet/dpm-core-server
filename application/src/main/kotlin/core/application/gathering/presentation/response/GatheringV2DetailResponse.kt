@@ -2,6 +2,7 @@ package core.application.gathering.presentation.response
 
 import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import core.domain.gathering.aggregate.GatheringV2
+import core.domain.gathering.aggregate.GatheringV2InviteTag
 import core.domain.gathering.vo.GatheringV2Id
 import java.time.LocalDateTime
 
@@ -29,6 +30,7 @@ data class GatheringV2DetailResponse(
             isRsvpGoingCount: Int,
             inviteeCount: Int,
             attendanceCount: Int,
+            inviteTags: List<GatheringV2InviteTag> = emptyList(),
         ): GatheringV2DetailResponse =
             GatheringV2DetailResponse(
                 gatheringId = gatheringV2.id!!,
@@ -43,7 +45,9 @@ data class GatheringV2DetailResponse(
                 attendanceCount = attendanceCount,
                 createdAt = instantToLocalDateTime(gatheringV2.createdAt!!),
                 closedAt = instantToLocalDateTime(gatheringV2.closedAt),
-                inviteTags = GatheringV2InviteTagListResponse(),
+                inviteTags = GatheringV2InviteTagListResponse(
+                    inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) }
+                ),
             )
     }
 }

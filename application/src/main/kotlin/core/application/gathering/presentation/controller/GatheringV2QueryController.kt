@@ -11,6 +11,7 @@ import core.domain.member.vo.MemberId
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -21,14 +22,22 @@ class GatheringV2QueryController(
     @GetMapping("/invite-tags")
     override fun getGatheringV2InviteTagList(): CustomResponse<GatheringV2InviteTagListResponse> =
         CustomResponse.ok(
-            GatheringV2InviteTagListResponse(),
+            gatheringV2QueryService.getGatheringV2InviteTags(),
         )
 
     @GetMapping
     override fun getGatheringV2List(
         @CurrentMemberId memberId: MemberId,
+        @RequestParam(required = false) inviteTagCohortId: Long?,
+        @RequestParam(required = false) inviteTagAuthorityId: Long?,
     ): CustomResponse<List<GatheringV2ListResponse>> {
-        return CustomResponse.ok(gatheringV2QueryService.getAllGatherings(memberId))
+        return CustomResponse.ok(
+            gatheringV2QueryService.getAllGatherings(
+                memberId = memberId,
+                inviteTagCohortId = inviteTagCohortId,
+                inviteTagAuthorityId = inviteTagAuthorityId,
+            )
+        )
     }
 
     @GetMapping("/{gatheringId}")
