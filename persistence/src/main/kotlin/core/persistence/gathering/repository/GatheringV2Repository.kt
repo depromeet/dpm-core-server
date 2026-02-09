@@ -2,57 +2,103 @@ package core.persistence.gathering.repository
 
 import core.domain.cohort.vo.CohortId
 import core.domain.gathering.aggregate.GatheringV2
+import core.domain.gathering.aggregate.GatheringV2InviteTag
 import core.domain.gathering.port.outbound.GatheringV2InviteTagPersistencePort
-import core.domain.gathering.port.outbound.GatheringV2PersistencePort
 import core.domain.gathering.vo.GatheringV2Id
-import core.domain.member.aggregate.Member
-import core.entity.gathering.GatheringV2Entity
-import core.entity.member.MemberEntity
+import core.persistence.gathering.repository.GatheringV2InviteTagJpaRepository
+import org.jooq.DSLContext
+import org.jooq.impl.DSL
 import org.springframework.stereotype.Repository
-import kotlin.jvm.optionals.getOrNull
 
 @Repository
-class GatheringV2Repository(
-    val gatheringV2JpaRepository: GatheringV2JpaRepository,
-    val gatheringV2InviteTagPersistencePort: GatheringV2InviteTagPersistencePort,
-) : GatheringV2PersistencePort {
+class GatheringV2InviteTagRepository(
+    private val jpaRepository: GatheringV2InviteTagJpaRepository,
+    private val dsl: DSLContext,
+) : GatheringV2InviteTagPersistencePort {
+    private val gatheringsV2InviteTags = "gatherings_v2_invite_tags"
+
     override fun save(
+        gatheringV2InviteTag: GatheringV2InviteTag,
         gatheringV2: GatheringV2,
-        authorMember: Member,
-    ): GatheringV2 =
-        gatheringV2JpaRepository.save(
-            GatheringV2Entity.of(
-                gatheringV2,
-                MemberEntity.from(authorMember),
-            ),
-        ).toDomain()
+    ) {
+        dsl.insertInto(DSL.table(gatheringsV2InviteTags))
+            .set(
+                DSL.field("gathering_id"),
+                gatheringV2.id?.value
+                    ?: throw IllegalArgumentException("GatheringV2 id cannot be null"),
+            ).set(DSL.field("cohort_id"), gatheringV2InviteTag.cohortId.value)
+            .set(DSL.field("authority_id"), gatheringV2InviteTag.authorityId)
+            .set(DSL.field("tag_name"), gatheringV2InviteTag.tagName)
+            .set(DSL.field("created_at"), gatheringV2InviteTag.createdAt ?: java.time.Instant.now())
+            .execute()
+    }
 
-    override fun findById(gatheringV2Id: GatheringV2Id): GatheringV2? =
-        gatheringV2JpaRepository.findById(
-            gatheringV2Id.value,
-        ).getOrNull()?.toDomain()
+    override fun findByGatheringId(gatheringId: GatheringV2Id): List<GatheringV2InviteTag> =
+        jpaRepository.findByGathering_Id(gatheringId.value).map { it.toDomain() }
 
-    override fun findAll(): List<GatheringV2> = gatheringV2JpaRepository.findAll().map { it.toDomain() }
-
-    override fun findByInviteTagFilters(
+    override fun findGatheringIdsByInviteTag(
         cohortId: CohortId?,
         authorityId: Long?,
-    ): List<GatheringV2> {
+    ): List<GatheringV2Id> {
         if (cohortId == null && authorityId == null) {
-            return findAll()
-        }
-
-        val gatheringIds: List<GatheringV2Id> =
-            gatheringV2InviteTagPersistencePort.findGatheringIdsByInviteTag(
-                cohortId = cohortId,
-                authorityId = authorityId,
-            )
-
-        if (gatheringIds.isEmpty()) {
             return emptyList()
         }
 
-        val ids = gatheringIds.map { it.value }
-        return gatheringV2JpaRepository.findAllById(ids).map { it.toDomain() }
+        val conditions = mutableListOf<String>()
+        val values = mutableListOf<Any>()
+
+        if (cohortId != null) {
+            conditions.add("cohort_id = ?")
+            values.add(cohortId.value)
+        }
+        if (authorityId != null) {
+            conditions.add("authority_id = ?")
+            values.add(authorityId)
+        }
+
+        val whereClause = conditions.joinToString(" AND ")
+
+        val records =
+            dsl.select(DSL.field("gathering_id", Long::class.java))
+                .from(DSL.table(gatheringsV2InviteTags))
+                .where(DSL.condition(whereClause, *values.toTypedArray()))
+                .fetch()
+                .map { it.get("gathering_id", Long::class.java) }
+
+        return records
+            .filterNotNull()
+            .map { GatheringV2Id(it) }
+    }
+
+    override fun findAllDistinct(): List<GatheringV2InviteTag> {
+        val records =
+            dsl.select(
+                DSL.field("cohort_id", Long::class.java),
+                DSL.field("authority_id", Long::class.java),
+                DSL.field("tag_name", String::class.java),
+            )
+                .from(DSL.table(gatheringsV2InviteTags))
+                .groupBy(
+                    DSL.field("cohort_id"),
+                    DSL.field("authority_id"),
+                    DSL.field("tag_name"),
+                )
+                .fetch()
+
+        return records.map { record ->
+            val placeholderGatheringId = GatheringV2Id(0)
+            GatheringV2InviteTag(
+                id = null,
+                gatheringId = placeholderGatheringId,
+                cohortId = CohortId(record.get("cohort_id", Long::class.java) ?: 0),
+                authorityId = record.get("authority_id", Long::class.java) ?: 0,
+                tagName = record.get("tag_name", String::class.java) ?: "",
+                createdAt = null,
+            )
+        }
+    }
+
+    override fun deleteByGatheringId(gatheringId: GatheringV2Id) {
+        jpaRepository.deleteByGathering_Id(gatheringId.value)
     }
 }
