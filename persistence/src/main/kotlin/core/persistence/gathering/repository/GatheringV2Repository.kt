@@ -42,10 +42,11 @@ class GatheringV2Repository(
             return findAll()
         }
 
-        val gatheringIds: List<GatheringV2Id> = gatheringV2InviteTagPersistencePort.findGatheringIdsByInviteTag(
-            cohortId = cohortId,
-            authorityId = authorityId
-        )
+        val gatheringIds: List<GatheringV2Id> =
+            gatheringV2InviteTagPersistencePort.findGatheringIdsByInviteTag(
+                cohortId = cohortId,
+                authorityId = authorityId,
+            )
 
         if (gatheringIds.isEmpty()) {
             return emptyList()
