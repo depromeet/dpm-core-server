@@ -9,8 +9,8 @@ import core.application.gathering.presentation.response.GatheringV2ListResponse
 import core.domain.cohort.vo.CohortId
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.aggregate.GatheringV2InviteTag
-import core.domain.gathering.port.inbound.GatheringV2InviteeQueryUseCase
 import core.domain.gathering.port.inbound.GatheringV2InviteTagQueryUseCase
+import core.domain.gathering.port.inbound.GatheringV2InviteeQueryUseCase
 import core.domain.gathering.port.inbound.GatheringV2QueryUseCase
 import core.domain.gathering.port.outbound.GatheringV2PersistencePort
 import core.domain.gathering.vo.GatheringV2Id
@@ -28,7 +28,7 @@ class GatheringV2QueryService(
     fun getGatheringV2InviteTags(): GatheringV2InviteTagListResponse {
         val inviteTags = gatheringV2InviteTagQueryUseCase.findAllDistinct()
         return GatheringV2InviteTagListResponse(
-            inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) }
+            inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
         )
     }
 
@@ -38,10 +38,11 @@ class GatheringV2QueryService(
         inviteTagAuthorityId: Long? = null,
     ): List<GatheringV2ListResponse> {
         val cohortId = inviteTagCohortId?.let { CohortId(it) }
-        val gatheringV2s: List<GatheringV2> = gatheringV2PersistencePort.findByInviteTagFilters(
-            cohortId = cohortId,
-            authorityId = inviteTagAuthorityId
-        )
+        val gatheringV2s: List<GatheringV2> =
+            gatheringV2PersistencePort.findByInviteTagFilters(
+                cohortId = cohortId,
+                authorityId = inviteTagAuthorityId,
+            )
 
         return gatheringV2s.map { gatheringV2 ->
             val invitees =
