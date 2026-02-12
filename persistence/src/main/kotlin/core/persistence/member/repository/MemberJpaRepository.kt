@@ -14,4 +14,7 @@ interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {
         name: String,
         signupEmail: String,
     ): MemberEntity?
+
+    // NEW: Password update method
+    fun save(entity: MemberEntity): MemberEntity
 }
