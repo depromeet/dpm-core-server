@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest
@@ -110,6 +111,10 @@ class SecurityConfig(
             logout.logoutSuccessHandler(logoutSuccessHandler)
         }
     }
+
+    @Bean
+    fun passwordEncoder(): PasswordEncoder = org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+
 
     companion object {
         private val SWAGGER_PATTERNS =
