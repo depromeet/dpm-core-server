@@ -44,7 +44,7 @@ class MemberLoginService(
 
         if (memberOAuth != null) {
             val member =
-                memberPersistencePort.findById(memberOAuth.memberId.value)
+                memberPersistencePort.findById(memberOAuth.memberId)
                     ?: throw IllegalStateException("MemberOAuth exists but Member not found")
             return handleExistingMemberLogin(requestUrl, member)
         }

@@ -11,7 +11,7 @@ interface MemberPersistencePort {
 
     fun findBySignupEmail(email: String): Member?
 
-    fun findById(memberId: Long): Member?
+    fun findById(memberId: MemberId): Member?
 
     fun findAllByIds(ids: List<MemberId>): List<Member>
 
