@@ -26,7 +26,7 @@ class MemberRepository(
 
     override fun save(member: Member): Member = memberJpaRepository.save(MemberEntity.from(member)).toDomain()
 
-    override fun findById(memberId: Long): Member? = memberJpaRepository.findById(memberId).orElse(null).toDomain()
+    override fun findById(memberId: MemberId): Member? = memberJpaRepository.findById(memberId.value).orElse(null)?.toDomain()
 
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
