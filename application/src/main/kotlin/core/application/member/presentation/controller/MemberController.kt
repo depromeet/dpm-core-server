@@ -1,12 +1,15 @@
 package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.service.MemberCommandService
 import core.application.member.application.service.MemberQueryService
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
+import core.application.member.application.service.auth.EmailPasswordAuthService
 import core.application.member.presentation.controller.MemberLoginController.AppleLoginRequest
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.SetPasswordRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
@@ -15,6 +18,7 @@ import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
@@ -32,6 +36,7 @@ class MemberController(
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
     private val appleAuthService: AppleAuthService,
+    private val emailPasswordAuthService: EmailPasswordAuthService,
     private val securityProperties: SecurityProperties,
 ) : MemberApi {
     //    @PreAuthorize("hasAuthority('read:member')")
@@ -107,6 +112,36 @@ class MemberController(
         return tokens
     }
 
+    @PatchMapping("/password")
+    @Operation(
+        summary = "Set Email Password",
+        description = "Set or update email password for a member. OAuth-only users can use this to enable email login.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Password set successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid request (passwords don't match)"),
+            ApiResponse(responseCode = "401", description = "Unauthorized"),
+            ApiResponse(responseCode = "404", description = "Member not found"),
+        ],
+    )
+    fun setPassword(
+        memberId: MemberId,
+        @Valid @RequestBody request: SetPasswordRequest,
+    ): CustomResponse<Void> {
+        // Validate passwords match
+        if (request.newPassword != request.confirmPassword) {
+            return CustomResponse.error(MemberExceptionCode.MEMBER_STAUTS_ALREADY_UPDATED)
+        }
+
+        emailPasswordAuthService.setPassword(
+            memberId = memberId,
+            oldPassword = request.oldPassword,
+            newPassword = request.newPassword,
+        )
+        return CustomResponse.ok()
+    }
+
     private fun addTokenCookies(
         response: HttpServletResponse,
         tokens: AuthTokenResponse,
@@ -117,7 +152,6 @@ class MemberController(
         response.addCookie(accessTokenCookie)
         response.addCookie(refreshTokenCookie)
     }
-
     private fun createCookie(
         name: String,
         value: String,

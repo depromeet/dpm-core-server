@@ -49,7 +49,7 @@ class MemberQueryService(
      * @update 2026.01.16 junwon service에서 usecase로 이동
      */
     override fun getMemberById(memberId: MemberId) =
-        memberPersistencePort.findById(memberId.value)
+        memberPersistencePort.findById(memberId)
             ?: throw MemberNotFoundException()
 
     /**

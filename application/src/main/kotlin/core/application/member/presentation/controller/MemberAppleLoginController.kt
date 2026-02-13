@@ -42,16 +42,20 @@ class MemberAppleLoginController(
         response: HttpServletResponse,
         tokens: AuthTokenResponse,
     ) {
+        // 1 day
+        val maxAgeSecondsForAccessToken = 60 * 60 * 24
         val accessTokenCookie =
             createAccessTokenCookie(
                 value = tokens.accessToken,
-                maxAgeSeconds = 60 * 60 * 24,
+                maxAgeSeconds = maxAgeSecondsForAccessToken,
             )
 
+        // 30 days
+        val maxAgeSecondsForRefreshToken = 60 * 60 * 24 * 30
         val refreshTokenCookie =
             createRefreshTokenCookie(
                 value = tokens.refreshToken,
-                maxAgeSeconds = 60 * 60 * 24 * 30,
+                maxAgeSeconds = maxAgeSecondsForRefreshToken,
             )
 
         response.addCookie(accessTokenCookie)

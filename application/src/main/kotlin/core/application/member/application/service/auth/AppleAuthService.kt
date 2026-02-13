@@ -65,7 +65,7 @@ class AppleAuthService(
                 newMember
             } else {
                 // Existing member
-                memberPersistencePort.findById(memberOAuth.memberId.value)
+                memberPersistencePort.findById(memberOAuth.memberId)
                     ?: throw IllegalStateException("MemberOAuth exists but Member not found")
             }
 
