@@ -106,7 +106,7 @@ class EmailPasswordAuthService(
     ): AuthTokenResponse {
         // 1. Create new member
         val activeProfile = Profile.get(environment).value
-        val memberName = email.substringBefore("@")
+        val memberName = email.substringBefore("@") ?: "user"
 
         val newMember = memberPersistencePort.save(
             Member.create(
