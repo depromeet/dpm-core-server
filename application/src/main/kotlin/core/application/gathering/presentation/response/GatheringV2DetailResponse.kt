@@ -48,9 +48,10 @@ data class GatheringV2DetailResponse(
                 createdAt = instantToLocalDateTime(gatheringV2.createdAt!!),
                 closedAt = instantToLocalDateTime(gatheringV2.closedAt),
                 isClosed = isClosed,
-                inviteTags = GatheringV2InviteTagListResponse(
-                    inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) }
-                ),
+                inviteTags =
+                    GatheringV2InviteTagListResponse(
+                        inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
+                    ),
             )
     }
 }

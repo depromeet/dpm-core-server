@@ -33,7 +33,7 @@ class MemberController(
     private val memberCommandService: MemberCommandService,
     private val appleAuthService: AppleAuthService,
     private val securityProperties: SecurityProperties,
-    ) : MemberApi {
+) : MemberApi {
     //    @PreAuthorize("hasAuthority('read:member')")
     @PreAuthorize("permitAll()")
     @GetMapping("/me")
@@ -106,6 +106,7 @@ class MemberController(
         addTokenCookies(response, tokens)
         return tokens
     }
+
     private fun addTokenCookies(
         response: HttpServletResponse,
         tokens: AuthTokenResponse,
@@ -116,6 +117,7 @@ class MemberController(
         response.addCookie(accessTokenCookie)
         response.addCookie(refreshTokenCookie)
     }
+
     private fun createCookie(
         name: String,
         value: String,

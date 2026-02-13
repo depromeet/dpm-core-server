@@ -12,8 +12,7 @@ import java.net.URI
 
 @Tag(name = "Member-Login", description = "Member Login API")
 @Controller
-class MemberLoginController(
-) {
+class MemberLoginController() {
     companion object {
         private const val KAKAO_REDIRECT_URL = "redirect:/oauth2/authorization/kakao"
         private const val APPLE_REDIRECT_URL = "redirect:/oauth2/authorization/apple"
