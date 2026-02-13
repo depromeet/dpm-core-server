@@ -49,6 +49,9 @@ class GatheringV2(
             canEditAfterApproval = canEditAfterApproval ?: this.canEditAfterApproval,
         )
 
+    fun isClosed(): Boolean =
+        Instant.now().isAfter(closedAt)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is GatheringV2) return false
