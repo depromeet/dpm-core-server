@@ -5,6 +5,8 @@ import core.application.announcement.presentation.request.CreateAnnouncementRequ
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
+import core.domain.announcement.port.inbound.command.UpdateSubmitStatusCommand
+import core.domain.announcement.port.inbound.command.UpdateSubmitStatusMemberDetailCommand
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
 import org.springframework.web.bind.annotation.PatchMapping
@@ -62,9 +64,17 @@ class AnnouncementCommandController(
         updateSubmitStatusRequest: UpdateSubmitStatusRequest,
     ): CustomResponse<Void> {
         announcementCommandService.updateSubmitStatus(
-            announcementId = announcementId,
-            memberIds = updateSubmitStatusRequest.memberIds,
-            submitStatus = updateSubmitStatusRequest.submitStatus,
+            UpdateSubmitStatusCommand.of(
+                announcementId = announcementId,
+                assignmentSubmitStatus = updateSubmitStatusRequest.assignmentSubmitStatus,
+                members =
+                    updateSubmitStatusRequest.members.map {
+                        UpdateSubmitStatusMemberDetailCommand.of(
+                            memberId = it.memberId,
+                            score = it.score,
+                        )
+                    },
+            ),
         )
         return CustomResponse.ok()
     }

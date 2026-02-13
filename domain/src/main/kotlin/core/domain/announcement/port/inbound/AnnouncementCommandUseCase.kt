@@ -3,6 +3,7 @@ package core.domain.announcement.port.inbound
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
+import core.domain.announcement.port.inbound.command.UpdateSubmitStatusCommand
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
 import java.time.Instant
@@ -26,9 +27,5 @@ interface AnnouncementCommandUseCase {
         announcementId: AnnouncementId,
     )
 
-    fun updateSubmitStatus(
-        announcementId: AnnouncementId,
-        memberIds: List<MemberId>,
-        submitStatus: SubmitStatus,
-    )
+    fun updateSubmitStatus(updateSubmitStatusCommand: UpdateSubmitStatusCommand)
 }

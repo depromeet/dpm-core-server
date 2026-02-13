@@ -8,7 +8,6 @@ import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.enums.AnnouncementType
-import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
@@ -17,6 +16,7 @@ import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
 import core.domain.announcement.port.inbound.AssignmentSubmissionQueryUseCase
+import core.domain.announcement.port.inbound.command.UpdateSubmitStatusCommand
 import core.domain.announcement.port.outbound.AnnouncementAssignmentPersistencePort
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
@@ -112,22 +112,22 @@ class AnnouncementCommandService(
         }
     }
 
-    override fun updateSubmitStatus(
-        announcementId: AnnouncementId,
-        memberIds: List<MemberId>,
-        submitStatus: SubmitStatus,
-    ) {
+    override fun updateSubmitStatus(updateSubmitStatusCommand: UpdateSubmitStatusCommand) {
         val retrievedAssignment: Assignment =
-            assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
+            assignmentQueryUseCase.getAssignmentByAnnouncementId(updateSubmitStatusCommand.announcementId)
 
-        memberIds.forEach { memberId ->
+//        TODO : 점수 업데이트 로직 추가
+        updateSubmitStatusCommand.members.forEach { member ->
             val memberAssignmentSubmission: AssignmentSubmission =
                 assignmentSubmissionQueryUseCase.getByAssignmentIdAndMemberId(
                     assignmentId = retrievedAssignment.id!!,
-                    memberId = memberId,
+                    memberId = member.memberId,
                 )
             val updatedAssignmentSubmission: AssignmentSubmission =
-                memberAssignmentSubmission.updateSubmitStatus(submitStatus)
+                memberAssignmentSubmission.updateSubmitStatus(
+                    newSubmitStatus = updateSubmitStatusCommand.assignmentSubmitStatus,
+                    score = member.score,
+                )
             assignmentSubmissionCommandUseCase.updateAssignmentSubmission(updatedAssignmentSubmission)
         }
     }

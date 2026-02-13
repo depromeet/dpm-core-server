@@ -11,4 +11,6 @@ interface AssignmentSubmissionPersistencePort {
         assignmentId: AssignmentId,
         memberId: MemberId,
     ): AssignmentSubmission?
+
+    fun update(assignmentSubmission: AssignmentSubmission): AssignmentSubmission
 }

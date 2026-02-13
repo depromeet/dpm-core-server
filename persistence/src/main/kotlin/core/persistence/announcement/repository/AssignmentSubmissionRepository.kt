@@ -21,4 +21,7 @@ class AssignmentSubmissionRepository(
         assignmentSubmissionJpaRepository
             .findByAssignmentIdAndMemberId(assignmentId, memberId)
             ?.toDomain()
+
+    override fun update(assignmentSubmission: AssignmentSubmission): AssignmentSubmission =
+        assignmentSubmissionJpaRepository.save(AssignmentSubmissionEntity.from(assignmentSubmission)).toDomain()
 }
