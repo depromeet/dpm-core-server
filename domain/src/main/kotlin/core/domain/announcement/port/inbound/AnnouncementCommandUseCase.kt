@@ -1,7 +1,6 @@
 package core.domain.announcement.port.inbound
 
 import core.domain.announcement.enums.AnnouncementType
-import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.port.inbound.command.UpdateSubmitStatusCommand
 import core.domain.announcement.vo.AnnouncementId

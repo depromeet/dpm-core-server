@@ -45,9 +45,10 @@ data class GatheringV2DetailResponse(
                 attendanceCount = attendanceCount,
                 createdAt = instantToLocalDateTime(gatheringV2.createdAt!!),
                 closedAt = instantToLocalDateTime(gatheringV2.closedAt),
-                inviteTags = GatheringV2InviteTagListResponse(
-                    inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) }
-                ),
+                inviteTags =
+                    GatheringV2InviteTagListResponse(
+                        inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
+                    ),
             )
     }
 }

@@ -2,7 +2,7 @@ package core.domain.announcement.port.inbound.command
 
 import core.domain.member.vo.MemberId
 
-data class UpdateSubmitStatusMemberDetailCommand (
+data class UpdateSubmitStatusMemberDetailCommand(
     val memberId: MemberId,
     val score: Int?,
 ) {

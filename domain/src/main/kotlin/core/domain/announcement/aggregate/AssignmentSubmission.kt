@@ -46,7 +46,7 @@ class AssignmentSubmission(
             teamId = teamId,
             submitType = submitType,
             submitStatus = newSubmitStatus,
-            score = score?: this.score,
+            score = score ?: this.score,
             dueAt = dueAt,
             createdAt = createdAt,
             updatedAt = Instant.now(),

@@ -75,7 +75,9 @@ class MemberLoginController(
     @PostMapping("/email")
     @Operation(
         summary = "Email Password Login",
-        description = "Login with email and password to receive JWT tokens. This is an isolated feature that can be easily deprecated.",
+        description =
+            "Login with email and password to receive JWT tokens." +
+                "This is an isolated feature that can be easily deprecated.",
     )
     @ApiResponses(
         value = [
