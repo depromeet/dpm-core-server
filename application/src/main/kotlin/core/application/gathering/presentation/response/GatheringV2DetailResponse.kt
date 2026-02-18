@@ -1,6 +1,6 @@
 package core.application.gathering.presentation.response
 
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.aggregate.GatheringV2InviteTag
 import core.domain.gathering.vo.GatheringV2Id

@@ -19,13 +19,14 @@ import org.springframework.web.bind.annotation.RestController
 class MemberAppleLoginController(
     private val appleAuthService: AppleAuthService,
     private val securityProperties: SecurityProperties,
-    private val emailPasswordAuthService: EmailPasswordAuthService
+    private val emailPasswordAuthService: EmailPasswordAuthService,
 ) {
-
     @PostMapping("/login/email")
     @Operation(
         summary = "Email Password Login",
-        description = "Login with email and password to receive JWT tokens. This is an isolated feature that can be easily deprecated.",
+        description =
+            "Login with email and password to receive JWT tokens." +
+                "This is an isolated feature that can be easily deprecated.",
     )
     @ApiResponses(
         value = [
@@ -91,8 +92,8 @@ class MemberAppleLoginController(
     private fun createAccessTokenCookie(
         value: String,
         maxAgeSeconds: Int,
-    ): Cookie {
-        return Cookie("accessToken", value).apply {
+    ): Cookie =
+        Cookie("accessToken", value).apply {
             path = "/"
             domain = resolveDomain()
             maxAge = maxAgeSeconds
@@ -100,13 +101,12 @@ class MemberAppleLoginController(
             secure = securityProperties.cookie.secure
             setAttribute("SameSite", "Lax")
         }
-    }
 
     private fun createRefreshTokenCookie(
         value: String,
         maxAgeSeconds: Int,
-    ): Cookie {
-        return Cookie("refreshToken", value).apply {
+    ): Cookie =
+        Cookie("refreshToken", value).apply {
             path = "/"
             domain = resolveDomain()
             maxAge = maxAgeSeconds
@@ -114,13 +114,11 @@ class MemberAppleLoginController(
             secure = true
             setAttribute("SameSite", "None")
         }
-    }
 
-    private fun resolveDomain(): String? {
-        return if (securityProperties.cookie.domain != "localhost") {
+    private fun resolveDomain(): String? =
+        if (securityProperties.cookie.domain != "localhost") {
             securityProperties.cookie.domain
         } else {
             null
         }
-    }
 }

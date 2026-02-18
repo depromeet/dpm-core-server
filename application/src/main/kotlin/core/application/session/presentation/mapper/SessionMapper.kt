@@ -1,7 +1,7 @@
 package core.application.session.presentation.mapper
 
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
-import core.application.session.presentation.mapper.TimeMapper.localDateTimeToInstant
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
+import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.session.presentation.request.SessionCreateRequest
 import core.application.session.presentation.request.SessionUpdateRequest
 import core.application.session.presentation.response.AttendanceTimeResponse
