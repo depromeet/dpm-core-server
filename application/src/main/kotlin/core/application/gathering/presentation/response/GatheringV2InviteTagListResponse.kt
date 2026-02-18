@@ -6,8 +6,9 @@ data class GatheringV2InviteTagListResponse(
     val inviteTags: List<GatheringV2InviteTagNameResponse>,
 ) {
     companion object {
-        fun fromAllTags() = GatheringV2InviteTagListResponse(
-            inviteTags = GatheringV2InviteTag.entries.map { GatheringV2InviteTagNameResponse.from(it) },
-        )
+        fun fromAllTags() =
+            GatheringV2InviteTagListResponse(
+                inviteTags = GatheringV2InviteTag.entries.map { GatheringV2InviteTagNameResponse.from(it) },
+            )
     }
 }

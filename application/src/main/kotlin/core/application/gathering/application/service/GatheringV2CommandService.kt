@@ -3,7 +3,6 @@ package core.application.gathering.application.service
 import core.application.gathering.application.exception.GatheringNotFoundException
 import core.application.member.application.exception.MemberNotFoundException
 import core.domain.gathering.aggregate.GatheringV2
-import core.domain.gathering.aggregate.GatheringV2InviteTag as GatheringV2InviteTagAggregate
 import core.domain.gathering.aggregate.GatheringV2Invitee
 import core.domain.gathering.enums.GatheringV2InviteTag
 import core.domain.gathering.port.inbound.GatheringV2CommandUseCase
@@ -15,6 +14,7 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import core.domain.gathering.aggregate.GatheringV2InviteTag as GatheringV2InviteTagAggregate
 
 @Service
 class GatheringV2CommandService(
@@ -47,22 +47,24 @@ class GatheringV2CommandService(
         // 초대 태그 저장
         gatheringV2InviteTags.forEach { tag ->
             gatheringV2InviteTagPersistencePort.save(
-                gatheringV2InviteTag = GatheringV2InviteTagAggregate.create(
-                    gatheringId = createdGatheringV2.id ?: throw GatheringNotFoundException(),
-                    cohortId = tag.cohortId,
-                    authorityId = tag.authorityId,
-                    tagName = tag.tagName,
-                ),
+                gatheringV2InviteTag =
+                    GatheringV2InviteTagAggregate.create(
+                        gatheringId = createdGatheringV2.id ?: throw GatheringNotFoundException(),
+                        cohortId = tag.cohortId,
+                        authorityId = tag.authorityId,
+                        tagName = tag.tagName,
+                    ),
                 gatheringV2 = createdGatheringV2,
             )
         }
 
-        val inviteeMemberIds: List<MemberId> = gatheringV2InviteTags.flatMap { tag ->
-            memberQueryUseCase.findAllMemberIdsByCohortIdAndAuthorityId(
-                tag.cohortId,
-                tag.authorityId,
-            )
-        }.distinct()
+        val inviteeMemberIds: List<MemberId> =
+            gatheringV2InviteTags.flatMap { tag ->
+                memberQueryUseCase.findAllMemberIdsByCohortIdAndAuthorityId(
+                    tag.cohortId,
+                    tag.authorityId,
+                )
+            }.distinct()
 
         // 태그에 해당하는 멤버가 없으면 초대를 생성하지 않음
         if (inviteeMemberIds.isEmpty()) {

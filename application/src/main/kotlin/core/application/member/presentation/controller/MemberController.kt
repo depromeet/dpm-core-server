@@ -152,7 +152,6 @@ class MemberController(
         response.addCookie(accessTokenCookie)
         response.addCookie(refreshTokenCookie)
     }
-
     private fun createCookie(
         name: String,
         value: String,

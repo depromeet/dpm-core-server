@@ -93,6 +93,7 @@ class GatheringV2QueryService(
             isRsvpGoingCount = invitees.count { it.isRsvpGoing() },
             inviteeCount = invitees.size,
             attendanceCount = invitees.count { it.isAttended == true },
+            isClosed = gatheringV2.isClosed(),
             inviteTags = inviteTags,
         )
     }
