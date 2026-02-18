@@ -1,4 +1,4 @@
-package core.application.session.presentation.mapper
+package core.application.common.converter
 
 import java.time.Instant
 import java.time.LocalDateTime

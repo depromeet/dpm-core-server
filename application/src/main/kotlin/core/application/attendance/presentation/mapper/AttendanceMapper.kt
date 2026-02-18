@@ -14,7 +14,7 @@ import core.application.attendance.presentation.response.MyDetailAttendanceInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceSessionInfo
 import core.application.attendance.presentation.response.MyTeamFilterResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel

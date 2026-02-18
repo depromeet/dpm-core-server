@@ -3,9 +3,9 @@ package core.application.announcement.presentation.controller
 import core.application.announcement.application.service.AnnouncementCommandService
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
+import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
-import core.application.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
 import org.springframework.web.bind.annotation.PatchMapping
