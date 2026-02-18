@@ -36,7 +36,7 @@ class AnnouncementCommandController(
             submitLink = createAnnouncementRequest.submitLink,
             startAt = localDateTimeToInstant(createAnnouncementRequest.startAt),
             dueAt = localDateTimeToInstant(createAnnouncementRequest.dueAt),
-            scheduledAt = createAnnouncementRequest.scheduledAt?.let { localDateTimeToInstant(it) },
+            scheduledAt = localDateTimeToInstant(createAnnouncementRequest.scheduledAt),
             shouldSendNotification = createAnnouncementRequest.shouldSendNotification,
         )
         return CustomResponse.ok()

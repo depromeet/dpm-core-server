@@ -17,6 +17,11 @@ object TimeMapper {
     fun instantToLocalDateTimeString(instant: Instant): String =
         instantToLocalDateTime(instant).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
+    @JvmName("localDateTimeToInstantNonNull")
     fun localDateTimeToInstant(localDateTime: LocalDateTime): Instant =
         localDateTime.atZone(ZoneId.of("Asia/Seoul")).toInstant()
+
+    @JvmName("localDateTimeToInstantNullable")
+    fun localDateTimeToInstant(localDateTime: LocalDateTime?): Instant? =
+        localDateTime?.atZone(ZoneId.of("Asia/Seoul"))?.toInstant()
 }
