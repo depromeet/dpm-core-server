@@ -20,11 +20,25 @@ class GatheringV2InviteTagRepository(
         gatheringV2InviteTag: GatheringV2InviteTag,
         gatheringV2: GatheringV2,
     ) {
+        val gatheringId =
+            gatheringV2.id?.value
+                ?: throw IllegalArgumentException("GatheringV2 id cannot be null")
+
+        val exists =
+            jpaRepository.findByGathering_Id(gatheringId).any { existing ->
+                existing.tagName == gatheringV2InviteTag.tagName &&
+                    existing.cohortId == gatheringV2InviteTag.cohortId.value &&
+                    existing.authorityId == gatheringV2InviteTag.authorityId
+            }
+
+        if (exists) {
+            return
+        }
+
         dsl.insertInto(DSL.table(gatheringsV2InviteTags))
             .set(
                 DSL.field("gathering_id"),
-                gatheringV2.id?.value
-                    ?: throw IllegalArgumentException("GatheringV2 id cannot be null"),
+                gatheringId,
             ).set(DSL.field("cohort_id"), gatheringV2InviteTag.cohortId.value)
             .set(DSL.field("authority_id"), gatheringV2InviteTag.authorityId)
             .set(DSL.field("tag_name"), gatheringV2InviteTag.tagName)

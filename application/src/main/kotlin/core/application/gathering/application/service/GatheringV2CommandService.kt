@@ -72,11 +72,12 @@ class GatheringV2CommandService(
                 authorMember = authorMember,
             )
 
-        if (inviteTagSpecs.isEmpty()) {
+        val normalizedInviteTagSpecs = inviteTagSpecs.distinctBy { it.tagName }
+        if (normalizedInviteTagSpecs.isEmpty()) {
             return
         }
 
-        inviteTagSpecs.forEach { tag ->
+        normalizedInviteTagSpecs.forEach { tag ->
             gatheringV2InviteTagPersistencePort.save(
                 gatheringV2InviteTag = GatheringV2InviteTagAggregate.create(
                     gatheringId = createdGatheringV2.id ?: throw GatheringNotFoundException(),
@@ -88,7 +89,7 @@ class GatheringV2CommandService(
             )
         }
 
-        val inviteeMemberIds: List<MemberId> = inviteTagSpecs.flatMap { tag ->
+        val inviteeMemberIds: List<MemberId> = normalizedInviteTagSpecs.flatMap { tag ->
             memberQueryUseCase.findAllMemberIdsByCohortIdAndAuthorityId(
                 tag.cohortId,
                 tag.authorityId,
