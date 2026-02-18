@@ -78,6 +78,8 @@ class EmailPasswordAuthService(
             throw MemberDeletedException()
         }
 
+        memberRoleService.ensureGuestRoleAssigned(member.id!!)
+
         // 6. Generate JWT tokens
         val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
         val authorities = permissionStrings.map { org.springframework.security.core.authority.SimpleGrantedAuthority(it) }
