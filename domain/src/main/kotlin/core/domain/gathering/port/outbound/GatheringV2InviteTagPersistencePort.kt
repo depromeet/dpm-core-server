@@ -20,5 +20,7 @@ interface GatheringV2InviteTagPersistencePort {
 
     fun findAllDistinct(): List<GatheringV2InviteTag>
 
+    fun findDistinctByTagName(tagName: String): List<GatheringV2InviteTag>
+
     fun deleteByGatheringId(gatheringId: GatheringV2Id)
 }

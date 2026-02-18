@@ -8,6 +8,7 @@ import core.application.gathering.presentation.response.GatheringV2ListResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -19,12 +20,14 @@ import org.springframework.web.bind.annotation.RestController
 class GatheringV2QueryController(
     val gatheringV2QueryService: GatheringV2QueryService,
 ) : GatheringV2QueryApi {
+    @PreAuthorize("hasAuthority('read:gathering')")
     @GetMapping("/invite-tags")
     override fun getGatheringV2InviteTagList(): CustomResponse<GatheringV2InviteTagListResponse> =
         CustomResponse.ok(
             gatheringV2QueryService.getGatheringV2InviteTags(),
         )
 
+    @PreAuthorize("hasAuthority('read:gathering')")
     @GetMapping
     override fun getGatheringV2List(
         @CurrentMemberId memberId: MemberId,
@@ -40,6 +43,7 @@ class GatheringV2QueryController(
         )
     }
 
+    @PreAuthorize("hasAuthority('read:gathering')")
     @GetMapping("/{gatheringId}")
     override fun getGatheringV2Detail(
         @PathVariable("gatheringId") gatheringV2Id: GatheringV2Id,

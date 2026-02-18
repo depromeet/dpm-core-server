@@ -14,4 +14,7 @@ class GatheringV2InviteTagQueryService(
         gatheringV2InviteTagPersistencePort.findByGatheringId(gatheringId)
 
     override fun findAllDistinct(): List<GatheringV2InviteTag> = gatheringV2InviteTagPersistencePort.findAllDistinct()
+
+    override fun findDistinctByTagName(tagName: String): List<GatheringV2InviteTag> =
+        gatheringV2InviteTagPersistencePort.findDistinctByTagName(tagName)
 }

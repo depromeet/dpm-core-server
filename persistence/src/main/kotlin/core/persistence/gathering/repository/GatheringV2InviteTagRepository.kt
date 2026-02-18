@@ -97,6 +97,35 @@ class GatheringV2InviteTagRepository(
         }
     }
 
+    override fun findDistinctByTagName(tagName: String): List<GatheringV2InviteTag> {
+        val records =
+            dsl.select(
+                DSL.field("cohort_id", Long::class.java),
+                DSL.field("authority_id", Long::class.java),
+                DSL.field("tag_name", String::class.java),
+            )
+                .from(DSL.table(gatheringsV2InviteTags))
+                .where(DSL.field("tag_name").eq(tagName))
+                .groupBy(
+                    DSL.field("cohort_id"),
+                    DSL.field("authority_id"),
+                    DSL.field("tag_name"),
+                )
+                .fetch()
+
+        return records.map { record ->
+            val placeholderGatheringId = GatheringV2Id(0)
+            GatheringV2InviteTag(
+                id = null,
+                gatheringId = placeholderGatheringId,
+                cohortId = CohortId(record.get("cohort_id", Long::class.java) ?: 0),
+                authorityId = record.get("authority_id", Long::class.java) ?: 0,
+                tagName = record.get("tag_name", String::class.java) ?: "",
+                createdAt = null,
+            )
+        }
+    }
+
     override fun deleteByGatheringId(gatheringId: GatheringV2Id) {
         jpaRepository.deleteByGathering_Id(gatheringId.value)
     }
