@@ -3,6 +3,7 @@ package core.application.announcement.presentation.controller
 import core.application.announcement.application.service.AnnouncementCommandService
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
+import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.announcement.vo.AnnouncementId
@@ -33,9 +34,9 @@ class AnnouncementCommandController(
             title = createAnnouncementRequest.title,
             content = createAnnouncementRequest.content,
             submitLink = createAnnouncementRequest.submitLink,
-            startAt = createAnnouncementRequest.startAt,
-            dueAt = createAnnouncementRequest.dueAt,
-            scheduledAt = createAnnouncementRequest.scheduledAt,
+            startAt = localDateTimeToInstant(createAnnouncementRequest.startAt),
+            dueAt = localDateTimeToInstant(createAnnouncementRequest.dueAt),
+            scheduledAt = localDateTimeToInstant(createAnnouncementRequest.scheduledAt),
             shouldSendNotification = createAnnouncementRequest.shouldSendNotification,
         )
         return CustomResponse.ok()

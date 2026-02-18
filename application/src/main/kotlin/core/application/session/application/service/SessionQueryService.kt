@@ -1,9 +1,9 @@
 package core.application.session.application.service
 
 import core.application.attendance.application.service.AttendanceQueryService
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.session.application.exception.SessionNotFoundException
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.domain.attendance.aggregate.Attendance
 import core.domain.cohort.port.inbound.CohortQueryUseCase
@@ -78,20 +78,20 @@ class SessionQueryService(
     }
 
     private fun getCurrentPolicy(sessionId: Long): AttendancePolicy =
-        sessionPersistencePort.findSessionById(sessionId)
+        sessionPersistencePort
+            .findSessionById(sessionId)
             ?.attendancePolicy
             ?: throw SessionNotFoundException()
 
     private fun isPolicyChanged(
         currentPolicy: AttendancePolicy,
         command: SessionAttendancePolicyCommand,
-    ): Boolean {
-        return currentPolicy.hasChangedComparedTo(
+    ): Boolean =
+        currentPolicy.hasChangedComparedTo(
             command.attendanceStart,
             command.lateStart,
             command.absentStart,
         )
-    }
 
     private fun classifyAttendancesByPolicyChange(
         attendances: List<Attendance>,
@@ -123,23 +123,21 @@ class SessionQueryService(
         attendance: Attendance,
         command: SessionAttendancePolicyCommand,
         membersById: Map<MemberId?, Member>,
-    ): SessionPolicyUpdateTargetResponse.TargetedResponse {
-        return SessionPolicyUpdateTargetResponse.TargetedResponse(
+    ): SessionPolicyUpdateTargetResponse.TargetedResponse =
+        SessionPolicyUpdateTargetResponse.TargetedResponse(
             name = membersById[attendance.memberId]?.name ?: throw MemberNotFoundException(),
             currentStatus = attendance.status.name,
             targetStatus = attendance.simulateStatusChange(command.lateStart, command.absentStart).name,
             attendedAt = instantToLocalDateTime(attendance.attendedAt),
         )
-    }
 
     private fun createUntargetedResponse(
         attendance: Attendance,
         membersById: Map<MemberId?, Member>,
-    ): SessionPolicyUpdateTargetResponse.UntargetedResponse {
-        return SessionPolicyUpdateTargetResponse.UntargetedResponse(
+    ): SessionPolicyUpdateTargetResponse.UntargetedResponse =
+        SessionPolicyUpdateTargetResponse.UntargetedResponse(
             name = membersById[attendance.memberId]?.name ?: throw MemberNotFoundException(),
             status = attendance.status.name,
             updatedAt = instantToLocalDateTime(attendance.updatedAt),
         )
-    }
 }

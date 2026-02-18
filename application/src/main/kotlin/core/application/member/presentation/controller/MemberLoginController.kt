@@ -64,6 +64,7 @@ class MemberLoginController(
     data class AppleLoginRequest(
         val authorizationCode: String,
     )
+
     private fun setCookie(
         request: HttpServletRequest,
         response: HttpServletResponse,
