@@ -1,10 +1,10 @@
 package core.application.session.presentation.controller
 
 import core.application.attendance.presentation.request.UpdateAttendanceTimeRequest
+import core.application.common.converter.TimeMapper
 import core.application.common.exception.CustomResponse
 import core.application.session.application.service.SessionCommandService
 import core.application.session.presentation.mapper.SessionMapper
-import core.application.session.presentation.mapper.TimeMapper
 import core.application.session.presentation.request.SessionCreateRequest
 import core.application.session.presentation.request.SessionUpdateRequest
 import core.domain.session.vo.SessionId
