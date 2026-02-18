@@ -19,6 +19,7 @@ data class GatheringV2DetailResponse(
     val attendanceCount: Int,
     val createdAt: LocalDateTime,
     val closedAt: LocalDateTime,
+    val isClosed: Boolean,
     val inviteTags: GatheringV2InviteTagListResponse,
 ) {
     companion object {
@@ -30,6 +31,7 @@ data class GatheringV2DetailResponse(
             isRsvpGoingCount: Int,
             inviteeCount: Int,
             attendanceCount: Int,
+            isClosed: Boolean,
             inviteTags: List<GatheringV2InviteTag> = emptyList(),
         ): GatheringV2DetailResponse =
             GatheringV2DetailResponse(
@@ -45,9 +47,11 @@ data class GatheringV2DetailResponse(
                 attendanceCount = attendanceCount,
                 createdAt = instantToLocalDateTime(gatheringV2.createdAt!!),
                 closedAt = instantToLocalDateTime(gatheringV2.closedAt),
-                inviteTags = GatheringV2InviteTagListResponse(
-                    inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) }
-                ),
+                isClosed = isClosed,
+                inviteTags =
+                    GatheringV2InviteTagListResponse(
+                        inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
+                    ),
             )
     }
 }
