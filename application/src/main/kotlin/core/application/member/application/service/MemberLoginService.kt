@@ -78,6 +78,8 @@ class MemberLoginService(
             return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
         }
 
+        memberRoleService.ensureGuestRoleAssigned(memberId)
+
         return generateLoginResult(
             memberId,
             redirectHandler.determineRedirectUrl(

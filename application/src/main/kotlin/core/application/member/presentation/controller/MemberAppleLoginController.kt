@@ -19,14 +19,13 @@ import org.springframework.web.bind.annotation.RestController
 class MemberAppleLoginController(
     private val appleAuthService: AppleAuthService,
     private val securityProperties: SecurityProperties,
-    private val emailPasswordAuthService: EmailPasswordAuthService,
+    private val emailPasswordAuthService: EmailPasswordAuthService
 ) {
+
     @PostMapping("/login/email")
     @Operation(
         summary = "Email Password Login",
-        description =
-            "Login with email and password to receive JWT tokens." +
-                "This is an isolated feature that can be easily deprecated.",
+        description = "Login with email and password to receive JWT tokens. This is an isolated feature that can be easily deprecated.",
     )
     @ApiResponses(
         value = [

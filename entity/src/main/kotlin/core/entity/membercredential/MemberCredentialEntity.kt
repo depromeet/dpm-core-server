@@ -1,8 +1,8 @@
 package core.entity.membercredential
 
-import core.domain.member.vo.MemberId
 import core.domain.membercredential.aggregate.MemberCredential
 import core.domain.membercredential.aggregate.MemberCredentialId
+import core.domain.member.vo.MemberId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
