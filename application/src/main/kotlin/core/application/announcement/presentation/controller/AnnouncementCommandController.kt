@@ -5,6 +5,7 @@ import core.application.announcement.presentation.request.CreateAnnouncementRequ
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
+import core.application.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
 import org.springframework.web.bind.annotation.PatchMapping
@@ -33,9 +34,9 @@ class AnnouncementCommandController(
             title = createAnnouncementRequest.title,
             content = createAnnouncementRequest.content,
             submitLink = createAnnouncementRequest.submitLink,
-            startAt = createAnnouncementRequest.startAt,
-            dueAt = createAnnouncementRequest.dueAt,
-            scheduledAt = createAnnouncementRequest.scheduledAt,
+            startAt = localDateTimeToInstant(createAnnouncementRequest.startAt),
+            dueAt = localDateTimeToInstant(createAnnouncementRequest.dueAt),
+            scheduledAt = createAnnouncementRequest.scheduledAt?.let { localDateTimeToInstant(it) },
             shouldSendNotification = createAnnouncementRequest.shouldSendNotification,
         )
         return CustomResponse.ok()
