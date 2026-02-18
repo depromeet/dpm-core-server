@@ -10,4 +10,10 @@ interface GatheringV2CommandUseCase {
         gatheringV2InviteTags: List<GatheringV2InviteTag>,
         authorMemberId: MemberId,
     )
+
+    fun createGatheringV2ByInviteTagNames(
+        gatheringV2: GatheringV2,
+        inviteTagNames: List<String>,
+        authorMemberId: MemberId,
+    )
 }

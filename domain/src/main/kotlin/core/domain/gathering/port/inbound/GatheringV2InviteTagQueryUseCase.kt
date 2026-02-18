@@ -7,4 +7,6 @@ interface GatheringV2InviteTagQueryUseCase {
     fun findByGatheringId(gatheringId: GatheringV2Id): List<GatheringV2InviteTag>
 
     fun findAllDistinct(): List<GatheringV2InviteTag>
+
+    fun findDistinctByTagName(tagName: String): List<GatheringV2InviteTag>
 }
