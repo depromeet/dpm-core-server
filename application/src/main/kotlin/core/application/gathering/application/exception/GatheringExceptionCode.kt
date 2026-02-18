@@ -15,6 +15,7 @@ enum class GatheringExceptionCode(
     GATHERING_ID_REQUIRED(HttpStatus.BAD_REQUEST, "GATHERING-400-03", "회식 ID는 필수로 존재해야합니다."),
     GATHERING_NOT_INCLUDED_IN_BILL(HttpStatus.BAD_REQUEST, "GATHERING-400-04", "해당 정산에 포함되지 않은 회식입니다."),
     GATHERING_NOT_PARTICIPANT_MEMBER(HttpStatus.BAD_REQUEST, "GATHERING-400-05", "정산에 참여하지 않은 멤버입니다."),
+    INVITE_TAG_NAME_NOT_FOUND(HttpStatus.BAD_REQUEST, "GATHERING-400-06", "초대 태그 이름과 매칭되는 태그를 찾을 수 없습니다."),
     ;
 
     override fun getStatus(): HttpStatus = status
