@@ -1,20 +1,20 @@
 package core.application.member.application.service.auth
 
-import core.application.authorization.application.service.RoleQueryService
 import core.application.common.constant.Profile
 import core.application.member.application.exception.InvalidEmailPasswordException
 import core.application.member.application.exception.MemberAllowedException
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.role.MemberRoleService
+import core.application.authorization.application.service.RoleQueryService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.vo.MemberId
 import core.domain.membercredential.aggregate.MemberCredential
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+import core.domain.member.vo.MemberId
 import org.springframework.core.env.Environment
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -78,14 +78,11 @@ class EmailPasswordAuthService(
             throw MemberDeletedException()
         }
 
+        memberRoleService.ensureGuestRoleAssigned(member.id!!)
+
         // 6. Generate JWT tokens
         val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
-        val authorities =
-            permissionStrings.map {
-                org.springframework.security.core.authority.SimpleGrantedAuthority(
-                    it,
-                )
-            }
+        val authorities = permissionStrings.map { org.springframework.security.core.authority.SimpleGrantedAuthority(it) }
 
         val accessToken =
             jwtTokenProvider.generateAccessTokenWithPermissions(
@@ -111,16 +108,15 @@ class EmailPasswordAuthService(
     ): AuthTokenResponse {
         // 1. Create new member
         val activeProfile = Profile.get(environment).value
-        val memberName = email.substringBefore("@") ?: "user"
+        val memberName = email.substringBefore("@")
 
-        val newMember =
-            memberPersistencePort.save(
-                Member.create(
-                    email = email,
-                    name = memberName,
-                    activeProfile = activeProfile,
-                ),
+        val newMember = memberPersistencePort.save(
+            Member.create(
+                email = email,
+                name = memberName,
+                activeProfile = activeProfile,
             )
+        )
 
         // 2. Create default member role (GUEST)
         memberRoleService.assignGuestRole(newMember.id!!)
@@ -137,12 +133,7 @@ class EmailPasswordAuthService(
 
         // 4. Generate JWT tokens
         val permissionStrings = roleQueryService.getPermissionsByMemberId(newMember.id!!)
-        val authorities =
-            permissionStrings.map {
-                org.springframework.security.core.authority.SimpleGrantedAuthority(
-                    it,
-                )
-            }
+        val authorities = permissionStrings.map { org.springframework.security.core.authority.SimpleGrantedAuthority(it) }
 
         val accessToken =
             jwtTokenProvider.generateAccessTokenWithPermissions(

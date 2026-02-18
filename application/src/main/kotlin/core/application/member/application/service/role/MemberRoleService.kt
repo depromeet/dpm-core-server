@@ -74,4 +74,11 @@ class MemberRoleService(
             )
         memberRolePersistencePort.save(memberRole)
     }
+
+    fun ensureGuestRoleAssigned(memberId: MemberId) {
+        val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
+        if (roles.isEmpty()) {
+            assignGuestRole(memberId)
+        }
+    }
 }
