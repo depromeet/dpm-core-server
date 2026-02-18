@@ -115,6 +115,7 @@ class SecurityConfig(
     @Bean
     fun passwordEncoder(): PasswordEncoder = org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
 
+
     companion object {
         private val SWAGGER_PATTERNS =
             arrayOf(
