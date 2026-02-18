@@ -1,10 +1,10 @@
 package core.application.gathering.presentation.controller
 
+import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.request.CreateGatheringV2ByInviteTagNamesRequest
 import core.application.gathering.presentation.request.CreateGatheringV2Request
 import core.application.security.annotation.CurrentMemberId
-import core.application.session.presentation.mapper.TimeMapper.localDateTimeToInstant
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.enums.GatheringCategory
 import core.domain.gathering.enums.GatheringV2InviteTag
