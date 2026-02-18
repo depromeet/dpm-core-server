@@ -1,6 +1,6 @@
 package core.application.announcement.presentation.response
 
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
@@ -16,8 +16,8 @@ data class AnnouncementListItemResponse(
     val readMemberCount: Int,
 ) {
     companion object {
-        fun from(queryModel: AnnouncementListItemQueryModel): AnnouncementListItemResponse {
-            return AnnouncementListItemResponse(
+        fun from(queryModel: AnnouncementListItemQueryModel): AnnouncementListItemResponse =
+            AnnouncementListItemResponse(
                 announcementId = queryModel.announcementId,
                 title = queryModel.title,
                 announcementType = queryModel.announcementType,
@@ -25,6 +25,5 @@ data class AnnouncementListItemResponse(
                 createdAt = instantToLocalDateTime(queryModel.createdAt),
                 readMemberCount = queryModel.readMemberCount ?: 0,
             )
-        }
     }
 }

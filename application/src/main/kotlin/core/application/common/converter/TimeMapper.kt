@@ -1,4 +1,4 @@
-package core.application.session.presentation.mapper
+package core.application.common.converter
 
 import java.time.Instant
 import java.time.LocalDateTime
@@ -17,6 +17,11 @@ object TimeMapper {
     fun instantToLocalDateTimeString(instant: Instant): String =
         instantToLocalDateTime(instant).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
+    @JvmName("localDateTimeToInstantNonNull")
     fun localDateTimeToInstant(localDateTime: LocalDateTime): Instant =
         localDateTime.atZone(ZoneId.of("Asia/Seoul")).toInstant()
+
+    @JvmName("localDateTimeToInstantNullable")
+    fun localDateTimeToInstant(localDateTime: LocalDateTime?): Instant? =
+        localDateTime?.atZone(ZoneId.of("Asia/Seoul"))?.toInstant()
 }

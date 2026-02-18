@@ -1,8 +1,8 @@
 package core.application.gathering.presentation.response
 
 import core.domain.cohort.vo.CohortId
-import core.domain.gathering.aggregate.GatheringV2InviteTag as GatheringV2InviteTagAggregate
 import core.domain.gathering.enums.GatheringV2InviteTag
+import core.domain.gathering.aggregate.GatheringV2InviteTag as GatheringV2InviteTagAggregate
 
 data class GatheringV2InviteTagNameResponse(
     val cohortId: CohortId,
