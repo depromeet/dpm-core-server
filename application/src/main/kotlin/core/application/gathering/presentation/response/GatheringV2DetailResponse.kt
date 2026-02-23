@@ -10,7 +10,7 @@ data class GatheringV2DetailResponse(
     val gatheringId: GatheringV2Id,
     val title: String,
     val isOwner: Boolean,
-    val rsvpStatus: Boolean,
+    val rsvpStatus: Boolean?,
     val isAttended: Boolean?,
     val description: String?,
     val scheduledAt: LocalDateTime,
@@ -26,7 +26,7 @@ data class GatheringV2DetailResponse(
         fun of(
             gatheringV2: GatheringV2,
             isOwner: Boolean,
-            rsvpStatus: Boolean,
+            rsvpStatus: Boolean?,
             isAttended: Boolean?,
             isRsvpGoingCount: Int,
             inviteeCount: Int,
