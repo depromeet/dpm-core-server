@@ -24,6 +24,9 @@ class MemberRepository(
 ) : MemberPersistencePort {
     override fun findBySignupEmail(email: String): Member? = memberJpaRepository.findBySignupEmail(email)?.toDomain()
 
+    override fun findAllBySignupEmail(email: String): List<Member> =
+        memberJpaRepository.findAllBySignupEmail(email).map { it.toDomain() }
+
     override fun save(member: Member): Member = memberJpaRepository.save(MemberEntity.from(member)).toDomain()
 
     override fun findById(memberId: MemberId): Member? = memberJpaRepository.findById(memberId.value).orElse(null)?.toDomain()

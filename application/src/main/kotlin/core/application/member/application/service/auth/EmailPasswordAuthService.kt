@@ -50,53 +50,60 @@ class EmailPasswordAuthService(
         email: String,
         password: String,
     ): AuthTokenResponse {
-        // 1. Find credential by email
         val credential = memberCredentialPersistencePort.findByEmail(email)
 
         if (credential == null) {
-            // 신규 회원 가입 (Signup)
-            return signupNewMember(email, password)
+            val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
+            if (existingMembers.isEmpty()) {
+                return signupNewMember(email, password)
+            }
+
+            val existingMember = selectLoginCandidate(existingMembers)
+            validateMemberForLogin(existingMember)
+
+            val existingCredential = memberCredentialPersistencePort.findByMemberId(existingMember.id!!)
+            if (existingCredential == null) {
+                createCredential(existingMember.id!!, email, password)
+            }
+
+            memberRoleService.ensureGuestRoleAssigned(existingMember.id!!)
+            return issueTokens(existingMember)
         }
 
-        // 2. Verify password
         if (!passwordEncoder.matches(password, credential.password)) {
             throw InvalidEmailPasswordException()
         }
 
-        // 3. Find member and validate status
-        val member =
-            memberPersistencePort.findById(credential.memberId)
-                ?: throw MemberNotFoundException()
+        val member = memberPersistencePort.findById(credential.memberId)
+        if (member == null) {
+            val membersByEmail = memberPersistencePort.findAllBySignupEmail(email)
+            if (membersByEmail.isEmpty()) {
+                throw MemberNotFoundException()
+            }
 
-        // 4. Check if member is allowed to login
+            val memberByEmail = selectLoginCandidate(membersByEmail)
+            validateMemberForLogin(memberByEmail)
+
+            memberCredentialPersistencePort.deleteByMemberId(credential.memberId)
+            createCredential(memberByEmail.id!!, email, password)
+            memberRoleService.ensureGuestRoleAssigned(memberByEmail.id!!)
+            return issueTokens(memberByEmail)
+        }
+
+        validateMemberForLogin(member)
+        memberRoleService.ensureGuestRoleAssigned(member.id!!)
+
+        return issueTokens(member)
+    }
+
+    private fun validateMemberForLogin(member: Member) {
         if (!member.isAllowed()) {
             throw MemberAllowedException()
         }
 
-        // 5. Check if deleted
-        if (memberPersistencePort.existsDeletedMemberById(credential.memberId.value)) {
+        if (memberPersistencePort.existsDeletedMemberById(member.id!!.value)) {
             throw MemberDeletedException()
         }
-
-        memberRoleService.ensureGuestRoleAssigned(member.id!!)
-
-        // 6. Generate JWT tokens
-        val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
-        val authorities = permissionStrings.map { org.springframework.security.core.authority.SimpleGrantedAuthority(it) }
-
-        val accessToken =
-            jwtTokenProvider.generateAccessTokenWithPermissions(
-                member.id!!.toString(),
-                authorities,
-            )
-
-        val refreshToken = jwtTokenProvider.generateRefreshToken(member.id!!.toString())
-
-        // 7. Save refresh token
-        val refreshTokenEntity = RefreshToken.create(member.id!!, refreshToken)
-        refreshTokenPersistencePort.save(refreshTokenEntity)
-
-        return AuthTokenResponse(accessToken, refreshToken)
     }
 
     /**
@@ -106,7 +113,6 @@ class EmailPasswordAuthService(
         email: String,
         password: String,
     ): AuthTokenResponse {
-        // 1. Create new member
         val activeProfile = Profile.get(environment).value
         val memberName = email.substringBefore("@")
 
@@ -118,36 +124,49 @@ class EmailPasswordAuthService(
             )
         )
 
-        // 2. Create default member role (GUEST)
         memberRoleService.assignGuestRole(newMember.id!!)
 
-        // 3. Create MemberCredential with encoded password
+        createCredential(newMember.id!!, email, password)
+        return issueTokens(newMember)
+    }
+
+    private fun createCredential(
+        memberId: MemberId,
+        email: String,
+        password: String,
+    ) {
         val encodedPassword = passwordEncoder.encode(password)
         val newCredential =
             MemberCredential.create(
-                memberId = newMember.id!!,
+                memberId = memberId,
                 email = email,
                 encodedPassword = encodedPassword,
             )
         memberCredentialPersistencePort.save(newCredential)
+    }
 
-        // 4. Generate JWT tokens
-        val permissionStrings = roleQueryService.getPermissionsByMemberId(newMember.id!!)
+    private fun issueTokens(member: Member): AuthTokenResponse {
+        val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
         val authorities = permissionStrings.map { org.springframework.security.core.authority.SimpleGrantedAuthority(it) }
 
         val accessToken =
             jwtTokenProvider.generateAccessTokenWithPermissions(
-                newMember.id!!.toString(),
+                member.id!!.toString(),
                 authorities,
             )
 
-        val refreshToken = jwtTokenProvider.generateRefreshToken(newMember.id!!.toString())
+        val refreshToken = jwtTokenProvider.generateRefreshToken(member.id!!.toString())
 
-        // 5. Save refresh token
-        val refreshTokenEntity = RefreshToken.create(newMember.id!!, refreshToken)
+        val refreshTokenEntity = RefreshToken.create(member.id!!, refreshToken)
         refreshTokenPersistencePort.save(refreshTokenEntity)
 
         return AuthTokenResponse(accessToken, refreshToken)
+    }
+
+    private fun selectLoginCandidate(members: List<Member>): Member {
+        val activeCandidates = members.filter { it.isAllowed() }
+        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else members
+        return eligible.maxByOrNull { it.id?.value ?: 0L } ?: throw MemberNotFoundException()
     }
 
     /**
