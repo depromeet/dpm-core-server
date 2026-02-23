@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {
     fun findBySignupEmail(email: String): MemberEntity?
 
+    fun findAllBySignupEmail(email: String): List<MemberEntity>
+
     fun findAllByIdInAndDeletedAtIsNull(ids: List<Long>): List<MemberEntity>
 
     fun existsByIdAndDeletedAtIsNotNull(memberId: Long): Boolean

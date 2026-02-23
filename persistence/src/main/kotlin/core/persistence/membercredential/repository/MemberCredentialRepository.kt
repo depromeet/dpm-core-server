@@ -1,9 +1,9 @@
 package core.persistence.membercredential.repository
 
+import core.domain.member.vo.MemberId
 import core.domain.membercredential.aggregate.MemberCredential
 import core.domain.membercredential.aggregate.MemberCredentialId
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
-import core.domain.member.vo.MemberId
 import core.entity.membercredential.MemberCredentialEntity
 import org.springframework.stereotype.Repository
 import java.time.Instant
