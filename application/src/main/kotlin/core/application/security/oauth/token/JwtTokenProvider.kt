@@ -35,7 +35,7 @@ class JwtTokenProvider(
         return Jwts
             .builder()
             .subject(memberId)
-            .claim("permissions", permissions.map { it.authority })  // Store permissions in token
+            .claim("permissions", permissions.map { it.authority }) // Store permissions in token
             .issuedAt(now)
             .expiration(expiration)
             .signWith(secretKey)

@@ -90,12 +90,13 @@ class GatheringV2CommandService(
             )
         }
 
-        val inviteeMemberIds: List<MemberId> = normalizedInviteTagSpecs.flatMap { tag ->
-            memberQueryUseCase.findAllMemberIdsByCohortIdAndAuthorityId(
-                tag.cohortId,
-                tag.authorityId,
-            )
-        }.distinct()
+        val inviteeMemberIds: List<MemberId> =
+            normalizedInviteTagSpecs.flatMap { tag ->
+                memberQueryUseCase.findAllMemberIdsByCohortIdAndAuthorityId(
+                    tag.cohortId,
+                    tag.authorityId,
+                )
+            }.distinct()
 
         if (inviteeMemberIds.isEmpty()) {
             return
