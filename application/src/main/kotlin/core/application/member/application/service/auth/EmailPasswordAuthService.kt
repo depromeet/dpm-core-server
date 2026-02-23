@@ -53,34 +53,54 @@ class EmailPasswordAuthService(
         // 1. Find credential by email
         val credential = memberCredentialPersistencePort.findByEmail(email)
 
-        if (credential == null) {
-            // 신규 회원 가입 (Signup)
-            return signupNewMember(email, password)
-        }
-
-        // 2. Verify password
-        if (!passwordEncoder.matches(password, credential.password)) {
-            throw InvalidEmailPasswordException()
-        }
-
-        // 3. Find member and validate status
         val member =
-            memberPersistencePort.findById(credential.memberId)
-                ?: throw MemberNotFoundException()
+            if (credential == null) {
+                // 신규 회원 가입 (Signup) 또는 기존 회원 연동
+                val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
+                if (existingMembers.isEmpty()) {
+                    return signupNewMember(email, password)
+                }
 
-        // 4. Check if member is allowed to login
-        if (!member.isAllowed()) {
-            throw MemberAllowedException()
-        }
+                val existingMember = selectLoginCandidate(existingMembers)
+                validateMemberForLogin(existingMember)
 
-        // 5. Check if deleted
-        if (memberPersistencePort.existsDeletedMemberById(credential.memberId.value)) {
-            throw MemberDeletedException()
-        }
+                val encodedPassword = passwordEncoder.encode(password)
+                memberCredentialPersistencePort.save(
+                    MemberCredential.create(
+                        memberId = existingMember.id!!,
+                        email = email,
+                        encodedPassword = encodedPassword,
+                    ),
+                )
+
+                existingMember
+            } else {
+                // 2. Verify password
+                if (!passwordEncoder.matches(password, credential.password)) {
+                    throw InvalidEmailPasswordException()
+                }
+
+                // 3. Find member and validate status (re-link if needed)
+                val existingMember = memberPersistencePort.findById(credential.memberId)
+                if (existingMember != null) {
+                    existingMember
+                } else {
+                    val membersByEmail = memberPersistencePort.findAllBySignupEmail(email)
+                    if (membersByEmail.isEmpty()) {
+                        throw MemberNotFoundException()
+                    }
+                    val memberByEmail = selectLoginCandidate(membersByEmail)
+                    validateMemberForLogin(memberByEmail)
+                    relinkCredentialToMember(credential, memberByEmail)
+                    memberByEmail
+                }
+            }
+
+        validateMemberForLogin(member)
 
         memberRoleService.ensureGuestRoleAssigned(member.id!!)
 
-        // 6. Generate JWT tokens
+        // Generate JWT tokens
         val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
         val authorities =
             permissionStrings.map {
@@ -97,7 +117,7 @@ class EmailPasswordAuthService(
 
         val refreshToken = jwtTokenProvider.generateRefreshToken(member.id!!.toString())
 
-        // 7. Save refresh token
+        // Save refresh token
         val refreshTokenEntity = RefreshToken.create(member.id!!, refreshToken)
         refreshTokenPersistencePort.save(refreshTokenEntity)
 
@@ -159,6 +179,36 @@ class EmailPasswordAuthService(
         refreshTokenPersistencePort.save(refreshTokenEntity)
 
         return AuthTokenResponse(accessToken, refreshToken)
+    }
+
+    private fun validateMemberForLogin(member: Member) {
+        if (!member.isAllowed()) {
+            throw MemberAllowedException()
+        }
+
+        if (memberPersistencePort.existsDeletedMemberById(member.id!!.value)) {
+            throw MemberDeletedException()
+        }
+    }
+
+    private fun relinkCredentialToMember(
+        credential: MemberCredential,
+        member: Member,
+    ) {
+        memberCredentialPersistencePort.deleteByMemberId(credential.memberId)
+        memberCredentialPersistencePort.save(
+            MemberCredential.create(
+                memberId = member.id!!,
+                email = credential.email,
+                encodedPassword = credential.password,
+            ),
+        )
+    }
+
+    private fun selectLoginCandidate(members: List<Member>): Member {
+        val activeCandidates = members.filter { it.isAllowed() }
+        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else members
+        return eligible.maxByOrNull { it.id?.value ?: 0L } ?: throw MemberNotFoundException()
     }
 
     /**

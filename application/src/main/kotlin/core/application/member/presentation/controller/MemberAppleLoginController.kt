@@ -25,7 +25,7 @@ class MemberAppleLoginController(
     @Operation(
         summary = "Email Password Login",
         description =
-            "Login with email and password to receive JWT tokens." +
+            "Login with email and password to receive JWT tokens. " +
                 "This is an isolated feature that can be easily deprecated.",
     )
     @ApiResponses(
