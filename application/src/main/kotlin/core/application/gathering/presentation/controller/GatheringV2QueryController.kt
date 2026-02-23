@@ -39,7 +39,7 @@ class GatheringV2QueryController(
                 memberId = memberId,
                 inviteTagCohortId = inviteTagCohortId,
                 inviteTagAuthorityId = inviteTagAuthorityId,
-            )
+            ),
         )
     }
 
