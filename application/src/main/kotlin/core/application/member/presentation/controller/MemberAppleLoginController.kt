@@ -92,8 +92,8 @@ class MemberAppleLoginController(
     private fun createAccessTokenCookie(
         value: String,
         maxAgeSeconds: Int,
-    ): Cookie {
-        return Cookie("accessToken", value).apply {
+    ): Cookie =
+        Cookie("accessToken", value).apply {
             path = "/"
             domain = resolveDomain()
             maxAge = maxAgeSeconds
@@ -101,13 +101,12 @@ class MemberAppleLoginController(
             secure = securityProperties.cookie.secure
             setAttribute("SameSite", "Lax")
         }
-    }
 
     private fun createRefreshTokenCookie(
         value: String,
         maxAgeSeconds: Int,
-    ): Cookie {
-        return Cookie("refreshToken", value).apply {
+    ): Cookie =
+        Cookie("refreshToken", value).apply {
             path = "/"
             domain = resolveDomain()
             maxAge = maxAgeSeconds
@@ -115,13 +114,11 @@ class MemberAppleLoginController(
             secure = true
             setAttribute("SameSite", "None")
         }
-    }
 
-    private fun resolveDomain(): String? {
-        return if (securityProperties.cookie.domain != "localhost") {
+    private fun resolveDomain(): String? =
+        if (securityProperties.cookie.domain != "localhost") {
             securityProperties.cookie.domain
         } else {
             null
         }
-    }
 }

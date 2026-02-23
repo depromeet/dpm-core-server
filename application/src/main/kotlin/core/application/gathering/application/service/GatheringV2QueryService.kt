@@ -88,11 +88,12 @@ class GatheringV2QueryService(
         return GatheringV2DetailResponse.of(
             gatheringV2 = gatheringV2,
             isOwner = gatheringV2.authorMemberId == memberId,
-            rsvpStatus = myInvitee.isRsvpGoing(),
+            rsvpStatus = myInvitee.rsvpStatus,
             isAttended = myInvitee.isAttended,
             isRsvpGoingCount = invitees.count { it.isRsvpGoing() },
             inviteeCount = invitees.size,
             attendanceCount = invitees.count { it.isAttended == true },
+            isClosed = gatheringV2.isClosed(),
             inviteTags = inviteTags,
         )
     }
