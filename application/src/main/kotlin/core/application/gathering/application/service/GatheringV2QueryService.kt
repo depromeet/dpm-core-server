@@ -1,7 +1,6 @@
 package core.application.gathering.application.service
 
 import core.application.gathering.application.exception.GatheringNotFoundException
-import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagNameResponse
@@ -31,6 +30,7 @@ class GatheringV2QueryService(
             inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
         )
     }
+
     fun getAllGatherings(
         memberId: MemberId,
         inviteTagCohortId: Long? = null,
@@ -86,13 +86,12 @@ class GatheringV2QueryService(
 
         val myInvitee =
             invitees.find { it.memberId == memberId }
-                ?: throw GatheringMemberNotFoundException()
 
         return GatheringV2DetailResponse.of(
             gatheringV2 = gatheringV2,
             isOwner = gatheringV2.authorMemberId == memberId,
-            rsvpStatus = myInvitee.rsvpStatus,
-            isAttended = myInvitee.isAttended,
+            rsvpStatus = myInvitee?.rsvpStatus,
+            isAttended = myInvitee?.isAttended,
             isRsvpGoingCount = invitees.count { it.isRsvpGoing() },
             inviteeCount = invitees.size,
             attendanceCount = invitees.count { it.isAttended == true },
