@@ -75,7 +75,7 @@ class GatheringV2CommandController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasAuthority('create:gathering')")
+    @PreAuthorize("hasAuthority('update:gathering')")
     @PatchMapping("/{gatheringId}")
     override fun updateGatheringV2(
         @RequestBody updateGatheringV2Request: UpdateGatheringV2Request,

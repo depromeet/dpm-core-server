@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 
 data class UpdateGatheringV2Request(
     val title: String,
-    val description: String,
+    val description: String?,
     val scheduledAt: LocalDateTime,
     val closedAt: LocalDateTime,
     val isApproved: Boolean,
