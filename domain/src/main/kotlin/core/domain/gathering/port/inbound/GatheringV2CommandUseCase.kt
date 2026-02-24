@@ -16,4 +16,6 @@ interface GatheringV2CommandUseCase {
         inviteTagNames: List<String>,
         authorMemberId: MemberId,
     )
+
+    fun updateGatheringV2(gatheringV2: GatheringV2)
 }

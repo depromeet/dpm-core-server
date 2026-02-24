@@ -4,6 +4,7 @@ import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.aggregate.GatheringV2InviteTag
 import core.domain.gathering.vo.GatheringV2Id
+import core.domain.member.vo.MemberId
 import java.time.LocalDateTime
 
 data class GatheringV2DetailResponse(
@@ -17,6 +18,7 @@ data class GatheringV2DetailResponse(
     val isRsvpGoingCount: Int,
     val inviteeCount: Int,
     val attendanceCount: Int,
+    val authorMemberId: MemberId,
     val createdAt: LocalDateTime,
     val closedAt: LocalDateTime,
     val isClosed: Boolean,
@@ -45,6 +47,7 @@ data class GatheringV2DetailResponse(
                 isRsvpGoingCount = isRsvpGoingCount,
                 inviteeCount = inviteeCount,
                 attendanceCount = attendanceCount,
+                authorMemberId = gatheringV2.authorMemberId,
                 createdAt = instantToLocalDateTime(gatheringV2.createdAt!!),
                 closedAt = instantToLocalDateTime(gatheringV2.closedAt),
                 isClosed = isClosed,

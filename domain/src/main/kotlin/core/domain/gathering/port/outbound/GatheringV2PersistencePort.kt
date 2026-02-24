@@ -11,6 +11,8 @@ interface GatheringV2PersistencePort {
         authorMember: Member,
     ): GatheringV2
 
+    fun update(gatheringV2: GatheringV2): GatheringV2
+
     fun findById(gatheringV2Id: GatheringV2Id): GatheringV2?
 
     fun findAll(): List<GatheringV2>
