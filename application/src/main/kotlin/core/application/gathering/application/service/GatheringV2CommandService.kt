@@ -59,6 +59,11 @@ class GatheringV2CommandService(
         createGatheringV2Internal(gatheringV2, inviteTagSpecs, authorMemberId)
     }
 
+    @Transactional
+    override fun updateGatheringV2(gatheringV2: GatheringV2) {
+        updateGatheringV2Internal(gatheringV2)
+    }
+
     private fun createGatheringV2Internal(
         gatheringV2: GatheringV2,
         inviteTagSpecs: List<InviteTagSpec>,
@@ -123,6 +128,27 @@ class GatheringV2CommandService(
                 inviteeMember = inviteeMember,
             )
         }
+    }
+
+    private fun updateGatheringV2Internal(gatheringV2: GatheringV2) {
+        val existingGatheringV2: GatheringV2 =
+            gatheringV2PersistencePort.findById(gatheringV2.id ?: throw GatheringNotFoundException())
+                ?: throw GatheringNotFoundException()
+
+//        TODO : 최식 초대 범위 수정 시 기존 멤버 제거하는 로직 구현 필요
+        val updatedGatheringV2: GatheringV2 =
+            existingGatheringV2.update(
+                title = gatheringV2.title,
+                description = gatheringV2.description,
+                scheduledAt = gatheringV2.scheduledAt,
+                closedAt = gatheringV2.closedAt,
+                canEditAfterApproval = gatheringV2.canEditAfterApproval,
+            )
+
+        val createdGatheringV2: GatheringV2 =
+            gatheringV2PersistencePort.update(
+                gatheringV2 = updatedGatheringV2,
+            )
     }
 
     private fun resolveInviteTagSpecs(inviteTagNames: List<String>): List<InviteTagSpec> =

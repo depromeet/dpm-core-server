@@ -23,6 +23,13 @@ class GatheringV2Repository(
         return gatheringV2JpaRepository.save(entity).toDomain()
     }
 
+    override fun update(gatheringV2: GatheringV2): GatheringV2 {
+        val existingEntity: GatheringV2Entity = gatheringV2JpaRepository.findById(gatheringV2.id!!.value).get()
+
+        val updatedEntity: GatheringV2Entity = existingEntity.updateFrom(gatheringV2)
+        return gatheringV2JpaRepository.save(updatedEntity).toDomain()
+    }
+
     override fun findById(gatheringV2Id: GatheringV2Id): GatheringV2? =
         gatheringV2JpaRepository.findById(gatheringV2Id.value)
             .map { it.toDomain() }

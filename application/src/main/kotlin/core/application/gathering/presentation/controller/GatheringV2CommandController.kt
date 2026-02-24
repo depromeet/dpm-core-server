@@ -4,13 +4,17 @@ import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.request.CreateGatheringV2ByInviteTagNamesRequest
 import core.application.gathering.presentation.request.CreateGatheringV2Request
+import core.application.gathering.presentation.request.UpdateGatheringV2Request
 import core.application.security.annotation.CurrentMemberId
 import core.domain.gathering.aggregate.GatheringV2
 import core.domain.gathering.enums.GatheringCategory
 import core.domain.gathering.enums.GatheringV2InviteTag
 import core.domain.gathering.port.inbound.GatheringV2CommandUseCase
+import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -67,6 +71,22 @@ class GatheringV2CommandController(
             gatheringV2 = createGatheringV2,
             inviteTagNames = createGatheringV2ByInviteTagNamesRequest.inviteTagNames,
             authorMemberId = memberId,
+        )
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("hasAuthority('update:gathering')")
+    @PatchMapping("/{gatheringId}")
+    override fun updateGatheringV2(
+        @RequestBody updateGatheringV2Request: UpdateGatheringV2Request,
+        @CurrentMemberId memberId: MemberId,
+        @PathVariable gatheringId: GatheringV2Id,
+    ): CustomResponse<Void> {
+        val gatheringV2InviteTags: List<GatheringV2InviteTag> =
+            updateGatheringV2Request.inviteTags.map { it.toDomain() }
+        val updateGatheringV2: GatheringV2 = updateGatheringV2Request.toDomain(gatheringId)
+        gatheringV2CommandUseCase.updateGatheringV2(
+            gatheringV2 = updateGatheringV2,
         )
         return CustomResponse.ok()
     }
