@@ -37,12 +37,16 @@ class GatheringV2QueryService(
         inviteTagCohortId: Long? = null,
         inviteTagAuthorityId: Long? = null,
     ): List<GatheringV2ListResponse> {
-        val cohortId = inviteTagCohortId?.let { CohortId(it) }
         val gatheringV2s: List<GatheringV2> =
-            gatheringV2PersistencePort.findByInviteTagFilters(
-                cohortId = cohortId,
-                authorityId = inviteTagAuthorityId,
-            )
+            if (inviteTagCohortId == null && inviteTagAuthorityId == null) {
+                gatheringV2PersistencePort.findAll()
+            } else {
+                val cohortId = inviteTagCohortId?.let { CohortId(it) }
+                gatheringV2PersistencePort.findByInviteTagFilters(
+                    cohortId = cohortId,
+                    authorityId = inviteTagAuthorityId,
+                )
+            }
 
         return gatheringV2s.map { gatheringV2 ->
             val invitees =
