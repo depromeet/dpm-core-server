@@ -44,7 +44,7 @@ class AnnouncementCommandService(
     override fun create(
         authorId: MemberId,
         announcementType: AnnouncementType,
-        submitType: SubmitType,
+        submitType: SubmitType?,
         title: String,
         content: String?,
         submitLink: String?,

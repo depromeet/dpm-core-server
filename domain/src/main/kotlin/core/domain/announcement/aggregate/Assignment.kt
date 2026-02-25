@@ -6,7 +6,7 @@ import java.time.Instant
 
 class Assignment(
     val id: AssignmentId? = null,
-    val submitType: SubmitType,
+    val submitType: SubmitType?,
     val startAt: Instant?,
     val dueAt: Instant?,
     val submitLink: String?,
@@ -24,7 +24,7 @@ class Assignment(
 
     companion object {
         fun create(
-            submitType: SubmitType,
+            submitType: SubmitType?,
             startAt: Instant? = null,
             dueAt: Instant? = null,
             submitLink: String?,
