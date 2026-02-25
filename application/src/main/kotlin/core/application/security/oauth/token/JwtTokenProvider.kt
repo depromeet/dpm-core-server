@@ -23,6 +23,25 @@ class JwtTokenProvider(
     fun generateAccessToken(memberId: String): String =
         generateToken(memberId, tokenProperties.expirationTime.accessToken)
 
+    fun generateAccessTokenWithPermissions(
+        memberId: String,
+        permissions: List<SimpleGrantedAuthority>,
+    ): String {
+        val currentTimeMillis = System.currentTimeMillis()
+        val now = Date(currentTimeMillis)
+        val expiration = Date(currentTimeMillis + tokenProperties.expirationTime.accessToken * 1000)
+        val secretKey = getSigningKey()
+
+        return Jwts
+            .builder()
+            .subject(memberId)
+            .claim("permissions", permissions.map { it.authority }) // Store permissions in token
+            .issuedAt(now)
+            .expiration(expiration)
+            .signWith(secretKey)
+            .compact()
+    }
+
     fun generateRefreshToken(memberId: String): String =
         generateToken(memberId, tokenProperties.expirationTime.refreshToken)
 

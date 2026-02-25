@@ -6,6 +6,7 @@ import core.application.security.annotation.CurrentMemberId
 import core.domain.gathering.port.inbound.GatheringV2InviteeCommandUseCase
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 class GatheringV2InviteeCommandController(
     val gatheringV2InviteeCommandUseCase: GatheringV2InviteeCommandUseCase,
 ) : GatheringV2InviteeCommandApi {
+    @PreAuthorize("hasAuthority('update:gathering')")
     @PostMapping("/{gatheringId}/rsvp-status")
     override fun submitGatheringV2RsvpStatus(
         @CurrentMemberId

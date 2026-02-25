@@ -7,10 +7,10 @@ import core.application.bill.presentation.response.BillDetailResponse
 import core.application.bill.presentation.response.BillListDetailResponse
 import core.application.bill.presentation.response.BillListGatheringDetailResponse
 import core.application.bill.presentation.response.BillListResponse
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.application.gathering.application.exception.GatheringNotFoundException
 import core.application.gathering.application.exception.GatheringRequiredException
 import core.application.gathering.application.exception.receipt.GatheringReceiptNotFoundException
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
 import core.domain.bill.aggregate.Bill
 import core.domain.gathering.aggregate.Gathering
 import core.domain.gathering.port.inbound.GatheringQueryUseCase

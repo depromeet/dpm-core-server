@@ -5,6 +5,7 @@ import core.application.member.application.exception.MemberTeamNotFoundException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
@@ -48,7 +49,7 @@ class MemberQueryService(
      * @update 2026.01.16 junwon service에서 usecase로 이동
      */
     override fun getMemberById(memberId: MemberId) =
-        memberPersistencePort.findById(memberId.value)
+        memberPersistencePort.findById(memberId)
             ?: throw MemberNotFoundException()
 
     /**
@@ -92,5 +93,14 @@ class MemberQueryService(
     override fun getMemberTeamId(memberId: MemberId): TeamId =
         TeamId(
             memberPersistencePort.findMemberTeamByMemberId(memberId)?.toLong() ?: defaultTeamId.toLong(),
+        )
+
+    override fun findAllMemberIdsByCohortIdAndAuthorityId(
+        cohortId: CohortId,
+        authorityId: Long,
+    ): List<MemberId> =
+        memberPersistencePort.findAllMemberIdsByCohortIdAndAuthorityId(
+            cohortId,
+            authorityId,
         )
 }

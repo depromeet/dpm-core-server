@@ -72,6 +72,7 @@ class SecurityConfig(
                         "https://client.depromeet-core.shop",
                         "https://admin.depromeet-core.shop",
                         "https://api.depromeet-core.shop",
+                        "https://api.depromeet.shop",
                         "https://core.depromeet.com",
                         "https://admin.depromeet.com",
                         "https://api.depromeet.com",

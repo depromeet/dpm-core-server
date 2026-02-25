@@ -5,7 +5,7 @@ import core.application.announcement.presentation.response.AnnouncementDetailRes
 import core.application.announcement.presentation.response.AnnouncementListResponse
 import core.application.announcement.presentation.response.AnnouncementViewMemberListItemResponse
 import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase

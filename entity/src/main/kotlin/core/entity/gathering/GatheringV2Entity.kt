@@ -81,4 +81,19 @@ class GatheringV2Entity(
             updatedAt = this.updatedAt,
             canEditAfterApproval = this.canEditAfterApproval,
         )
+
+    fun updateFrom(gatheringV2: GatheringV2): GatheringV2Entity =
+        GatheringV2Entity(
+            id = this.id,
+            title = gatheringV2.title,
+            description = gatheringV2.description,
+            category = gatheringV2.category.name,
+            scheduledAt = gatheringV2.scheduledAt,
+            closedAt = gatheringV2.closedAt,
+            isApproved = gatheringV2.isApproved,
+            member = this.member,
+            createdAt = this.createdAt,
+            updatedAt = Instant.now(),
+            canEditAfterApproval = gatheringV2.canEditAfterApproval,
+        )
 }
