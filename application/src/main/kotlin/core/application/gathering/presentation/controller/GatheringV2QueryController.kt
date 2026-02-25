@@ -8,9 +8,11 @@ import core.application.gathering.presentation.response.GatheringV2ListResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.gathering.vo.GatheringV2Id
 import core.domain.member.vo.MemberId
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -18,19 +20,30 @@ import org.springframework.web.bind.annotation.RestController
 class GatheringV2QueryController(
     val gatheringV2QueryService: GatheringV2QueryService,
 ) : GatheringV2QueryApi {
+    @PreAuthorize("hasAuthority('read:gathering')")
     @GetMapping("/invite-tags")
     override fun getGatheringV2InviteTagList(): CustomResponse<GatheringV2InviteTagListResponse> =
         CustomResponse.ok(
-            GatheringV2InviteTagListResponse(),
+            gatheringV2QueryService.getGatheringV2InviteTags(),
         )
 
+    @PreAuthorize("hasAuthority('read:gathering')")
     @GetMapping
     override fun getGatheringV2List(
         @CurrentMemberId memberId: MemberId,
+        @RequestParam(required = false) inviteTagCohortId: Long?,
+        @RequestParam(required = false) inviteTagAuthorityId: Long?,
     ): CustomResponse<List<GatheringV2ListResponse>> {
-        return CustomResponse.ok(gatheringV2QueryService.getAllGatherings(memberId))
+        return CustomResponse.ok(
+            gatheringV2QueryService.getAllGatherings(
+                memberId = memberId,
+                inviteTagCohortId = inviteTagCohortId,
+                inviteTagAuthorityId = inviteTagAuthorityId,
+            ),
+        )
     }
 
+    @PreAuthorize("hasAuthority('read:gathering')")
     @GetMapping("/{gatheringId}")
     override fun getGatheringV2Detail(
         @PathVariable("gatheringId") gatheringV2Id: GatheringV2Id,

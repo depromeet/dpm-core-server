@@ -34,37 +34,40 @@ class AppleAuthService(
         val memberOAuth =
             memberOAuthPersistencePort.findByProviderAndExternalId(OAuthProvider.APPLE, externalId)
 
-        val member = if (memberOAuth == null) {
-            // Initial signup - create new member
-            val email = claims["email"] as? String
-                ?: throw IllegalArgumentException("Invalid ID Token: email missing")
+        val member =
+            if (memberOAuth == null) {
+                // Initial signup - create new member
+                val email =
+                    claims["email"] as? String
+                        ?: throw IllegalArgumentException("Invalid ID Token: email missing")
 
-            val name = email.substringBefore("@")
+                val name = email.substringBefore("@")
 
-            val newMember = memberPersistencePort.save(
-                Member.create(
-                    email = email,
-                    name = name,
-                    activeProfile = Profile.get(environment).value,
-                ),
-            )
+                val newMember =
+                    memberPersistencePort.save(
+                        Member.create(
+                            email = email,
+                            name = name,
+                            activeProfile = Profile.get(environment).value,
+                        ),
+                    )
 
-            // Create MemberOAuth
-            memberOAuthPersistencePort.save(
-                MemberOAuth.of(
-                    externalId = externalId,
-                    provider = OAuthProvider.APPLE,
-                    memberId = newMember.id!!,
-                ),
-                newMember,
-            )
+                // Create MemberOAuth
+                memberOAuthPersistencePort.save(
+                    MemberOAuth.of(
+                        externalId = externalId,
+                        provider = OAuthProvider.APPLE,
+                        memberId = newMember.id!!,
+                    ),
+                    newMember,
+                )
 
-            newMember
-        } else {
-            // Existing member
-            memberPersistencePort.findById(memberOAuth.memberId.value)
-                ?: throw IllegalStateException("MemberOAuth exists but Member not found")
-        }
+                newMember
+            } else {
+                // Existing member
+                memberPersistencePort.findById(memberOAuth.memberId)
+                    ?: throw IllegalStateException("MemberOAuth exists but Member not found")
+            }
 
         // 4. Issue App Tokens
         val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())

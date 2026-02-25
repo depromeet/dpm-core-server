@@ -1,10 +1,14 @@
 package core.application.gathering.application.service
 
 import core.application.gathering.application.exception.GatheringNotFoundException
-import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
+import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
+import core.application.gathering.presentation.response.GatheringV2InviteTagNameResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
+import core.domain.cohort.vo.CohortId
 import core.domain.gathering.aggregate.GatheringV2
+import core.domain.gathering.aggregate.GatheringV2InviteTag
+import core.domain.gathering.port.inbound.GatheringV2InviteTagQueryUseCase
 import core.domain.gathering.port.inbound.GatheringV2InviteeQueryUseCase
 import core.domain.gathering.port.inbound.GatheringV2QueryUseCase
 import core.domain.gathering.port.outbound.GatheringV2PersistencePort
@@ -18,9 +22,30 @@ import org.springframework.transaction.annotation.Transactional
 class GatheringV2QueryService(
     val gatheringV2PersistencePort: GatheringV2PersistencePort,
     val gatheringV2InviteeQueryUseCase: GatheringV2InviteeQueryUseCase,
+    val gatheringV2InviteTagQueryUseCase: GatheringV2InviteTagQueryUseCase,
 ) : GatheringV2QueryUseCase {
-    fun getAllGatherings(memberId: MemberId): List<GatheringV2ListResponse> {
-        val gatheringV2s: List<GatheringV2> = gatheringV2PersistencePort.findAll()
+    fun getGatheringV2InviteTags(): GatheringV2InviteTagListResponse {
+        val inviteTags = gatheringV2InviteTagQueryUseCase.findAllDistinct()
+        return GatheringV2InviteTagListResponse(
+            inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
+        )
+    }
+
+    fun getAllGatherings(
+        memberId: MemberId,
+        inviteTagCohortId: Long? = null,
+        inviteTagAuthorityId: Long? = null,
+    ): List<GatheringV2ListResponse> {
+        val gatheringV2s: List<GatheringV2> =
+            if (inviteTagCohortId == null && inviteTagAuthorityId == null) {
+                gatheringV2PersistencePort.findAll()
+            } else {
+                val cohortId = inviteTagCohortId?.let { CohortId(it) }
+                gatheringV2PersistencePort.findByInviteTagFilters(
+                    cohortId = cohortId,
+                    authorityId = inviteTagAuthorityId,
+                )
+            }
 
         return gatheringV2s.map { gatheringV2 ->
             val invitees =
@@ -55,18 +80,23 @@ class GatheringV2QueryService(
                 gatheringV2.id ?: throw GatheringNotFoundException(),
             )
 
+        // Get actual invite tags for this gathering
+        val inviteTags: List<GatheringV2InviteTag> =
+            gatheringV2InviteTagQueryUseCase.findByGatheringId(gatheringV2Id)
+
         val myInvitee =
             invitees.find { it.memberId == memberId }
-                ?: throw GatheringMemberNotFoundException()
 
         return GatheringV2DetailResponse.of(
             gatheringV2 = gatheringV2,
             isOwner = gatheringV2.authorMemberId == memberId,
-            rsvpStatus = myInvitee.isRsvpGoing(),
-            isAttended = myInvitee.isAttended,
+            rsvpStatus = myInvitee?.rsvpStatus,
+            isAttended = myInvitee?.isAttended,
             isRsvpGoingCount = invitees.count { it.isRsvpGoing() },
             inviteeCount = invitees.size,
             attendanceCount = invitees.count { it.isAttended == true },
+            isClosed = gatheringV2.isClosed(),
+            inviteTags = inviteTags,
         )
     }
 }

@@ -1,34 +1,40 @@
 package core.application.gathering.presentation.response
 
-import core.application.session.presentation.mapper.TimeMapper.instantToLocalDateTime
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.gathering.aggregate.GatheringV2
+import core.domain.gathering.aggregate.GatheringV2InviteTag
 import core.domain.gathering.vo.GatheringV2Id
+import core.domain.member.vo.MemberId
 import java.time.LocalDateTime
 
 data class GatheringV2DetailResponse(
     val gatheringId: GatheringV2Id,
     val title: String,
     val isOwner: Boolean,
-    val rsvpStatus: Boolean,
+    val rsvpStatus: Boolean?,
     val isAttended: Boolean?,
     val description: String?,
     val scheduledAt: LocalDateTime,
     val isRsvpGoingCount: Int,
     val inviteeCount: Int,
     val attendanceCount: Int,
+    val authorMemberId: MemberId,
     val createdAt: LocalDateTime,
     val closedAt: LocalDateTime,
+    val isClosed: Boolean,
     val inviteTags: GatheringV2InviteTagListResponse,
 ) {
     companion object {
         fun of(
             gatheringV2: GatheringV2,
             isOwner: Boolean,
-            rsvpStatus: Boolean,
+            rsvpStatus: Boolean?,
             isAttended: Boolean?,
             isRsvpGoingCount: Int,
             inviteeCount: Int,
             attendanceCount: Int,
+            isClosed: Boolean,
+            inviteTags: List<GatheringV2InviteTag> = emptyList(),
         ): GatheringV2DetailResponse =
             GatheringV2DetailResponse(
                 gatheringId = gatheringV2.id!!,
@@ -41,9 +47,14 @@ data class GatheringV2DetailResponse(
                 isRsvpGoingCount = isRsvpGoingCount,
                 inviteeCount = inviteeCount,
                 attendanceCount = attendanceCount,
+                authorMemberId = gatheringV2.authorMemberId,
                 createdAt = instantToLocalDateTime(gatheringV2.createdAt!!),
                 closedAt = instantToLocalDateTime(gatheringV2.closedAt),
-                inviteTags = GatheringV2InviteTagListResponse(),
+                isClosed = isClosed,
+                inviteTags =
+                    GatheringV2InviteTagListResponse(
+                        inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
+                    ),
             )
     }
 }

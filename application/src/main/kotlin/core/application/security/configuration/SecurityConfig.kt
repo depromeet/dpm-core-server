@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest
@@ -95,8 +96,7 @@ class SecurityConfig(
                 oauth2
                     .tokenEndpoint {
                         it.accessTokenResponseClient(customOAuth2AccessTokenResponseClient)
-                    }
-                    .authorizationEndpoint {
+                    }.authorizationEndpoint {
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {
                         it.userService(defaultOAuth2UserService)
@@ -111,6 +111,9 @@ class SecurityConfig(
             logout.logoutSuccessHandler(logoutSuccessHandler)
         }
     }
+
+    @Bean
+    fun passwordEncoder(): PasswordEncoder = org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
 
     companion object {
         private val SWAGGER_PATTERNS =
@@ -131,6 +134,7 @@ class SecurityConfig(
                 // API endpoints (under /v1/)
                 "/v1/reissue",
                 "/v1/**",
+                "/v2/**",
                 // OAuth2 endpoints
                 "/oauth2/**",
                 "oauth2/**",
@@ -139,6 +143,7 @@ class SecurityConfig(
                 "/login/kakao",
                 "/login/apple",
                 "/login/auth/apple",
+                "/login/email",
                 // General login paths (must come after specific paths)
                 "/login/**",
                 "/login",
