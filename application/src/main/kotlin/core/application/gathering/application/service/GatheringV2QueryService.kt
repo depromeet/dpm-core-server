@@ -64,7 +64,7 @@ class GatheringV2QueryService(
                 isAttendedCount = invitees.count { it.isAttended == true },
                 inviteeCount = invitees.count(),
             )
-        }
+        }.sortedByDescending { it.createdAt }
     }
 
     fun getGatheringV2Detail(
