@@ -18,8 +18,8 @@ class AssignmentEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "assignment_id", nullable = false, updatable = false)
     val id: Long,
-    @Column(name = "submit_type")
-    val submitType: Int?,
+    @Column(name = "submit_type", nullable = false)
+    val submitType: Int,
     @Column(name = "start_at")
     val startAt: Instant?,
     @Column(name = "due_at")
@@ -37,7 +37,7 @@ class AssignmentEntity(
         fun from(assignment: Assignment): AssignmentEntity =
             AssignmentEntity(
                 id = assignment.id?.value ?: 0L,
-                submitType = assignment.submitType?.value,
+                submitType = assignment.submitType.value,
                 startAt = assignment.startAt,
                 dueAt = assignment.dueAt,
                 submitLink = assignment.submitLink,
@@ -50,7 +50,7 @@ class AssignmentEntity(
     fun toDomain(): Assignment =
         Assignment(
             id = AssignmentId(id),
-            submitType = submitType?.let { SubmitType.fromValue(it) },
+            submitType = SubmitType.fromValue(submitType),
             startAt = startAt,
             dueAt = dueAt,
             submitLink = submitLink,
