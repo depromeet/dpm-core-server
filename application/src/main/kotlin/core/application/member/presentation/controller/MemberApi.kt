@@ -100,15 +100,18 @@ interface MemberApi {
                                 name = "멤버 데이터 주입 요청 예시",
                                 value = """
                                 {
-                                    "teamId": "1",
                                     "members": [
                                         {
                                             "memberId": "1",
-                                            "memberPart": "SERVER"
+                                            "memberPart": "SERVER",
+                                            "team": "1",
+                                            "status": "ACTIVE"
                                         },
                                         {
                                             "memberId": "2",
-                                            "memberPart": "DESIGN"
+                                            "memberPart": "DESIGN",
+                                            "team": "2",
+                                            "status": "INACTIVE"
                                         }
                                     ]
                                 }
