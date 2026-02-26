@@ -2,6 +2,7 @@ package core.application.announcement.application.service
 
 import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
+import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementReadPersistencePort
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service
 @Service
 class AnnouncementReadCommandService(
     val announcementReadPersistencePort: AnnouncementReadPersistencePort,
+    val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
 ) : AnnouncementReadCommandUseCase {
     override fun markAsRead(announcementRead: AnnouncementRead) =
         announcementReadPersistencePort.save(announcementRead.markAsRead())
@@ -19,12 +21,19 @@ class AnnouncementReadCommandService(
         memberIds: List<MemberId>,
     ) {
         val initializeAnnouncementReads =
-            memberIds.map { memberId ->
-                AnnouncementRead.createUnread(
-                    announcementId = announcementId,
-                    memberId = memberId,
-                )
-            }
+            memberIds
+                .distinct()
+                .map { memberId ->
+                    AnnouncementRead.createUnread(
+                        announcementId = announcementId,
+                        memberId = memberId,
+                    )
+                }.filter { announcementRead ->
+                    announcementReadPersistencePort.findByAnnouncementIdAndMemberId(
+                        announcementId = announcementId,
+                        memberId = announcementRead.memberId,
+                    ) == null
+                }
         announcementReadPersistencePort.saveAll(initializeAnnouncementReads)
     }
 }

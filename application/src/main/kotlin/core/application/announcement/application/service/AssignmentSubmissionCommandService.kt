@@ -20,7 +20,7 @@ class AssignmentSubmissionCommandService(
     override fun updateAssignmentSubmission(assignmentSubmission: AssignmentSubmission): AssignmentSubmission =
         assignmentSubmissionPersistencePort.save(assignmentSubmission)
 
-    override fun addDeeperInvitationsToSubmission(assignment: Assignment) {
+    override fun initializeForMembers(assignment: Assignment) {
         val latestCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
         memberQueryService
             .findAllMemberIdsByCohortIdAndAuthorityId(
