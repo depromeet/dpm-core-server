@@ -32,10 +32,8 @@ class AssignmentSubmissionEntity(
     val submitType: Int,
     @Column(name = "submit_status", nullable = false)
     val submitStatus: Int,
-    @Column(name = "score", nullable = false)
-    val score: Int,
-    @Column(name = "due_at", nullable = false)
-    val dueAt: Instant,
+    @Column(name = "score")
+    val score: Int?,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
     @Column(name = "updated_at", nullable = false)
@@ -53,7 +51,6 @@ class AssignmentSubmissionEntity(
                 submitType = submission.submitType.value,
                 submitStatus = submission.submitStatus.value,
                 score = submission.score,
-                dueAt = submission.dueAt,
                 createdAt = submission.createdAt ?: Instant.now(),
                 updatedAt = submission.updatedAt ?: Instant.now(),
                 deletedAt = submission.deletedAt,
@@ -69,7 +66,6 @@ class AssignmentSubmissionEntity(
             submitType = SubmitType.fromValue(submitType),
             submitStatus = SubmitStatus.fromValue(submitStatus),
             score = score,
-            dueAt = dueAt,
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
