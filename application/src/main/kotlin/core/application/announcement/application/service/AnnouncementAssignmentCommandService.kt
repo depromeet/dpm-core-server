@@ -16,16 +16,15 @@ class AnnouncementAssignmentCommandService(
         announcementAssignment: AnnouncementAssignment,
         assignment: Assignment,
     ): AnnouncementAssignment {
-        val announcementAssignment: AnnouncementAssignment =
+        val savedAnnouncementAssignment: AnnouncementAssignment =
             announcementAssignmentPersistencePort.save(
                 announcementAssignment,
             )
-//                TODO : Assignment_submission에 디퍼들 초대하는 로직 추가
 
         assignmentSubmissionCommandUseCase.addDeeperInvitationsToSubmission(
-            announcementAssignment = announcementAssignment,
+            announcementAssignment = savedAnnouncementAssignment,
             assignment = assignment,
         )
-        return announcementAssignment
+        return savedAnnouncementAssignment
     }
 }

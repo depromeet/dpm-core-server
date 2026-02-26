@@ -33,7 +33,10 @@ class AssignmentSubmissionCommandService(
                 authorityId = 1,
             ).map { memberId ->
                 val teamId: TeamId = memberQueryService.getMemberTeamId(memberId)
-                updateAssignmentSubmission(
+                assignmentSubmissionPersistencePort.findByAssignmentIdAndMemberId(
+                    assignmentId = assignment.id!!,
+                    memberId = memberId,
+                ) ?: assignmentSubmissionPersistencePort.save(
                     AssignmentSubmission.create(
                         assignmentId = announcementAssignment.assignmentId,
                         memberId = memberId,
