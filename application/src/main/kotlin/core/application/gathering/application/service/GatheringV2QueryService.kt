@@ -30,7 +30,6 @@ class GatheringV2QueryService(
             inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
         )
     }
-
     fun getAllGatherings(
         memberId: MemberId,
         inviteTagCohortId: Long? = null,

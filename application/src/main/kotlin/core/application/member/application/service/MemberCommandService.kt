@@ -28,7 +28,7 @@ class MemberCommandService(
     private val memberRoleService: MemberRoleService,
 ) {
     /**
-     * 회원 가입 시 팀 정보 및 파트 정보를 주입하고, 멤버를 ACTIVE 상태로 변경함. (DEV)
+     * 회원 가입 시 멤버별 팀/파트/상태 정보를 주입함. (DEV)
      *
      * @throws MemberNotFoundException
      * @throws AuthorityNotFoundException
@@ -41,10 +41,10 @@ class MemberCommandService(
             memberPersistencePort.save(
                 memberQueryService.getMemberById(it.memberId).apply {
                     updatePart(it.memberPart)
-                    activate()
+                    updateStatus(it.status)
                 },
             )
-            memberTeamService.addMemberToTeam(it.memberId, request.teamId)
+            memberTeamService.addMemberToTeam(it.memberId, it.team)
             memberCohortService.addMemberToCohort(it.memberId)
         }
     }
