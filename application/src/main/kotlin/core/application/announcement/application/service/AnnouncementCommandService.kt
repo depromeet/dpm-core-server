@@ -1,5 +1,6 @@
 package core.application.announcement.application.service
 
+import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
 import core.application.cohort.application.properties.CohortProperties
 import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Announcement
@@ -44,7 +45,7 @@ class AnnouncementCommandService(
     override fun create(
         authorId: MemberId,
         announcementType: AnnouncementType,
-        submitType: SubmitType,
+        submitType: SubmitType?,
         title: String,
         content: String?,
         submitLink: String?,
@@ -70,7 +71,7 @@ class AnnouncementCommandService(
         when (announcementType) {
             AnnouncementType.GENERAL -> {}
             AnnouncementType.ASSIGNMENT -> {
-//                TODO : Assignment_submission에 디퍼들 초대하는 로직 추가
+                if (submitType == null) throw AssignmentSubmitTypeNotNullException()
                 val assignment: Assignment =
                     Assignment.create(
                         submitType = submitType,
@@ -86,6 +87,7 @@ class AnnouncementCommandService(
                         assignmentId = savedAssignment.id!!,
                     )
                 announcementAssignmentPersistencePort.save(announcementAssignment)
+//                TODO : Assignment_submission에 디퍼들 초대하는 로직 추가
             }
         }
 
