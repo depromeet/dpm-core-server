@@ -31,7 +31,7 @@ class AssignmentSubmissionCommandService(
             .findAllMemberIdsByCohortIdAndAuthorityId(
                 cohortId = latestCohortId,
                 authorityId = 1,
-            ).map { memberId ->
+            ).forEach { memberId ->
                 val teamId: TeamId = memberQueryService.getMemberTeamId(memberId)
                 assignmentSubmissionPersistencePort.findByAssignmentIdAndMemberId(
                     assignmentId = assignment.id!!,
