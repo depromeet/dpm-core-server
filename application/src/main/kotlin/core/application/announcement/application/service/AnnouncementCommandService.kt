@@ -11,6 +11,7 @@ import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
+import core.domain.announcement.port.inbound.AnnouncementAssignmentCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
@@ -18,7 +19,6 @@ import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
 import core.domain.announcement.port.inbound.AssignmentSubmissionQueryUseCase
-import core.domain.announcement.port.outbound.AnnouncementAssignmentPersistencePort
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
@@ -31,7 +31,7 @@ import java.time.Instant
 @Transactional
 class AnnouncementCommandService(
     val announcementPersistencePort: AnnouncementPersistencePort,
-    val announcementAssignmentPersistencePort: AnnouncementAssignmentPersistencePort,
+    val announcementAssignmentCommandUseCase: AnnouncementAssignmentCommandUseCase,
     val assignmentPersistencePort: AssignmentPersistencePort,
     val announcementReadCommandUseCase: AnnouncementReadCommandUseCase,
     val announcementQueryUseCase: AnnouncementQueryUseCase,
@@ -86,8 +86,10 @@ class AnnouncementCommandService(
                         announcementId = savedAnnouncement.id!!,
                         assignmentId = savedAssignment.id!!,
                     )
-                announcementAssignmentPersistencePort.save(announcementAssignment)
-//                TODO : Assignment_submission에 디퍼들 초대하는 로직 추가
+                announcementAssignmentCommandUseCase.create(
+                    announcementAssignment = announcementAssignment,
+                    assignment = savedAssignment,
+                )
             }
         }
 
