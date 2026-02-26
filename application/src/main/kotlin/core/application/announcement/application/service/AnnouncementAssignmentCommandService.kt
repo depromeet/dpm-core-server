@@ -21,7 +21,7 @@ class AnnouncementAssignmentCommandService(
                 announcementAssignment,
             )
 
-        assignmentSubmissionCommandUseCase.addDeeperInvitationsToSubmission(assignment)
+        assignmentSubmissionCommandUseCase.initializeForMembers(assignment)
         return savedAnnouncementAssignment
     }
 }
