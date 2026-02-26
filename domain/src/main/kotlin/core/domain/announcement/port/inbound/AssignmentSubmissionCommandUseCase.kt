@@ -7,7 +7,7 @@ import core.domain.announcement.aggregate.AssignmentSubmission
 interface AssignmentSubmissionCommandUseCase {
     fun updateAssignmentSubmission(assignmentSubmission: AssignmentSubmission): AssignmentSubmission
 
-    fun addDpperInvitationsToSubmission(
+    fun addDeeperInvitationsToSubmission(
         announcementAssignment: AnnouncementAssignment,
         assignment: Assignment,
     )

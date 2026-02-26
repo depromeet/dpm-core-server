@@ -22,24 +22,25 @@ class AssignmentSubmissionCommandService(
     override fun updateAssignmentSubmission(assignmentSubmission: AssignmentSubmission): AssignmentSubmission =
         assignmentSubmissionPersistencePort.save(assignmentSubmission)
 
-    override fun addDpperInvitationsToSubmission(
+    override fun addDeeperInvitationsToSubmission(
         announcementAssignment: AnnouncementAssignment,
         assignment: Assignment,
     ) {
         val latestCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
-        memberQueryService.findAllMemberIdsByCohortIdAndAuthorityId(
-            cohortId = latestCohortId,
-            authorityId = 1,
-        ).map { memberId ->
-            val teamId: TeamId = memberQueryService.getMemberTeamId(memberId)
-            updateAssignmentSubmission(
-                AssignmentSubmission.create(
-                    assignmentId = announcementAssignment.assignmentId,
-                    memberId = memberId,
-                    teamId = teamId,
-                    submitType = assignment.submitType,
-                ),
-            )
-        }
+        memberQueryService
+            .findAllMemberIdsByCohortIdAndAuthorityId(
+                cohortId = latestCohortId,
+                authorityId = 1,
+            ).map { memberId ->
+                val teamId: TeamId = memberQueryService.getMemberTeamId(memberId)
+                updateAssignmentSubmission(
+                    AssignmentSubmission.create(
+                        assignmentId = announcementAssignment.assignmentId,
+                        memberId = memberId,
+                        teamId = teamId,
+                        submitType = assignment.submitType,
+                    ),
+                )
+            }
     }
 }

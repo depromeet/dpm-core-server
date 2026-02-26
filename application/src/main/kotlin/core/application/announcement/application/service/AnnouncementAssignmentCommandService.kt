@@ -22,7 +22,7 @@ class AnnouncementAssignmentCommandService(
             )
 //                TODO : Assignment_submission에 디퍼들 초대하는 로직 추가
 
-        assignmentSubmissionCommandUseCase.addDpperInvitationsToSubmission(
+        assignmentSubmissionCommandUseCase.addDeeperInvitationsToSubmission(
             announcementAssignment = announcementAssignment,
             assignment = assignment,
         )
