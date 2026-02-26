@@ -1,7 +1,6 @@
 package core.application.announcement.application.service
 
 import core.application.member.application.service.MemberQueryService
-import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
@@ -22,10 +21,7 @@ class AssignmentSubmissionCommandService(
     override fun updateAssignmentSubmission(assignmentSubmission: AssignmentSubmission): AssignmentSubmission =
         assignmentSubmissionPersistencePort.save(assignmentSubmission)
 
-    override fun addDeeperInvitationsToSubmission(
-        announcementAssignment: AnnouncementAssignment,
-        assignment: Assignment,
-    ) {
+    override fun addDeeperInvitationsToSubmission(assignment: Assignment) {
         val latestCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
         memberQueryService
             .findAllMemberIdsByCohortIdAndAuthorityId(
@@ -38,7 +34,7 @@ class AssignmentSubmissionCommandService(
                     memberId = memberId,
                 ) ?: assignmentSubmissionPersistencePort.save(
                     AssignmentSubmission.create(
-                        assignmentId = announcementAssignment.assignmentId,
+                        assignmentId = assignment.id!!,
                         memberId = memberId,
                         teamId = teamId,
                         submitType = assignment.submitType,

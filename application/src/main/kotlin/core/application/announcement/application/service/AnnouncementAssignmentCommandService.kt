@@ -21,10 +21,7 @@ class AnnouncementAssignmentCommandService(
                 announcementAssignment,
             )
 
-        assignmentSubmissionCommandUseCase.addDeeperInvitationsToSubmission(
-            announcementAssignment = savedAnnouncementAssignment,
-            assignment = assignment,
-        )
+        assignmentSubmissionCommandUseCase.addDeeperInvitationsToSubmission(assignment)
         return savedAnnouncementAssignment
     }
 }
