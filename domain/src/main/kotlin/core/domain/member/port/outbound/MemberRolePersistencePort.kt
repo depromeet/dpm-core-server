@@ -8,4 +8,9 @@ interface MemberRolePersistencePort {
     fun findRoleNamesByMemberId(memberId: Long): List<String>
 
     fun softDeleteAllByMemberId(memberId: Long)
+
+    fun softDeleteByMemberIdAndRoleId(
+        memberId: Long,
+        roleId: Long,
+    )
 }

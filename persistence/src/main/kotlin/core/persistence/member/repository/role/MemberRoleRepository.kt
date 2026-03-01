@@ -50,6 +50,21 @@ class MemberRoleRepository(
             ).execute()
     }
 
+    override fun softDeleteByMemberIdAndRoleId(
+        memberId: Long,
+        roleId: Long,
+    ) {
+        dsl
+            .update(MEMBER_ROLES)
+            .set(MEMBER_ROLES.DELETED_AT, LocalDateTime.now(ZoneId.of(TIME_ZONE)))
+            .where(
+                MEMBER_ROLES.MEMBER_ID
+                    .eq(memberId)
+                    .and(MEMBER_ROLES.ROLE_ID.eq(roleId))
+                    .and(MEMBER_ROLES.DELETED_AT.isNull()),
+            ).execute()
+    }
+
     override fun findRoleNamesByMemberId(memberId: Long): List<String> =
         dsl
             .select(ROLES.NAME)

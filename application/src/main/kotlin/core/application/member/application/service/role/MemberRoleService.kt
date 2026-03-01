@@ -93,6 +93,14 @@ class MemberRoleService(
         }
     }
 
+    fun revokeRole(
+        memberId: MemberId,
+        roleType: RoleType,
+    ) {
+        val roleId = roleQueryUseCase.findIdByName(roleType.code)
+        memberRolePersistencePort.softDeleteByMemberIdAndRoleId(memberId.value, roleId)
+    }
+
     fun ensureGuestRoleAssigned(memberId: MemberId) {
         val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
         if (roles.isEmpty()) {
