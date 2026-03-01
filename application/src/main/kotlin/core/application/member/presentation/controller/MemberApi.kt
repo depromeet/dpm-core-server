@@ -4,6 +4,7 @@ import core.application.common.exception.CustomResponse
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
+import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
@@ -176,4 +177,11 @@ interface MemberApi {
         ],
     )
     fun updateMemberStatus(request: UpdateMemberStatusRequest): CustomResponse<Void>
+
+    @Operation(
+        summary = "DEEPER를 ORGANIZER로 변환 API (dev)",
+        description = "지정한 멤버의 권한을 DEEPER에서 ORGANIZER로 변환합니다.",
+    )
+    @ApiResponse(responseCode = "200", description = "권한 변환 성공")
+    fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest): CustomResponse<Void>
 }

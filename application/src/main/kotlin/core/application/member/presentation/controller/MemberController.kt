@@ -12,6 +12,7 @@ import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.SetPasswordRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
+import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.properties.SecurityProperties
 import core.domain.member.vo.MemberId
@@ -87,6 +88,15 @@ class MemberController(
         @Valid @RequestBody request: UpdateMemberStatusRequest,
     ): CustomResponse<Void> {
         memberCommandService.updateMemberStatus(request)
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("permitAll()")
+    @PatchMapping("/authority/organizer")
+    override fun convertDeeperToOrganizer(
+        @Valid @RequestBody request: ConvertDeeperToOrganizerRequest,
+    ): CustomResponse<Void> {
+        memberCommandService.convertDeeperToOrganizer(request)
         return CustomResponse.ok()
     }
 
