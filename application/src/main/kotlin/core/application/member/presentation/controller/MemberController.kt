@@ -116,7 +116,13 @@ class MemberController(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
-        val tokens = appleAuthService.login(body.authorizationCode)
+        val tokens =
+            appleAuthService.login(
+                authorizationCode = body.authorizationCode,
+                fullName = body.fullName,
+                familyName = body.familyName,
+                givenName = body.givenName,
+            )
         addTokenCookies(response, tokens)
         return tokens
     }

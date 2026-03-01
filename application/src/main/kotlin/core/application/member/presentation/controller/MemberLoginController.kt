@@ -63,6 +63,9 @@ class MemberLoginController(
 
     data class AppleLoginRequest(
         val authorizationCode: String,
+        val fullName: String? = null,
+        val familyName: String? = null,
+        val givenName: String? = null,
     )
 
     private fun setCookie(
