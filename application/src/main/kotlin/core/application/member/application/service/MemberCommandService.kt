@@ -8,6 +8,7 @@ import core.application.member.application.service.team.MemberTeamService
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
+import core.domain.authorization.vo.RoleType
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -76,6 +77,8 @@ class MemberCommandService(
     fun activate(member: Member) {
         member.activate()
         memberPersistencePort.save(member)
+        val memberId = member.id ?: return
+        memberRoleService.ensureRoleAssigned(memberId, RoleType.Deeper)
     }
 
     /**
