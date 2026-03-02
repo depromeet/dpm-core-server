@@ -34,14 +34,14 @@ interface AfterPartyInviteeQueryApi {
                                   "name": "준원카카오",
                                   "part": "SERVER",
                                   "team": 1,
-                                  "isRsvpGoing": true
+                                  "rsvpStatus": true
                                 },
                                 {
                                   "memberId": 2,
                                   "name": "신민철",
                                   "part": "SERVER",
                                   "team": 1,
-                                  "isRsvpGoing": false
+                                  "rsvpStatus": false
                                 }
                               ]
                             }

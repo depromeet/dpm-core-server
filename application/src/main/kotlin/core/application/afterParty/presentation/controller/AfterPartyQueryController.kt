@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v2/after-party")
+@RequestMapping("/v2/after-parties")
 class AfterPartyQueryController(
     val afterPartyQueryService: AfterPartyQueryService,
 ) : AfterPartyQueryApi {

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v2/after-party")
+@RequestMapping("/v2/after-parties")
 class AfterPartyInviteeCommandController(
     val afterPartyInviteeCommandUseCase: AfterPartyInviteeCommandUseCase,
 ) : AfterPartyInviteeCommandApi {

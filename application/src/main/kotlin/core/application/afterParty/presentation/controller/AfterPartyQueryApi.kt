@@ -133,12 +133,15 @@ interface AfterPartyQueryApi {
                                 "isAttended": null,
                                 "description": "테스트용 회식 참여 조사입니다 001",
                                 "scheduledAt": "2026-01-26T05:31:48.588",
-                                "isRsvpGoingCount": 1,
+                                "submitRsvpCount": 2,
+                                "rsvpGoingCount": 1,
+                                "notRsvpGoingCount": 1,
                                 "inviteeCount": 21,
                                 "attendanceCount": 0,
                                 "authorMemberId": 1,
                                 "createdAt": "2026-01-26T14:45:19.504268",
                                 "closedAt": "2026-01-26T05:31:48.589",
+                                "canEditAfterApproval": false,
                                 "inviteTags": {
                                   "inviteTags": [
                                     {
