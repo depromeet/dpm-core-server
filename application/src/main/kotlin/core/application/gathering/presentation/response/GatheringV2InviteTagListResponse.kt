@@ -1,6 +1,6 @@
 package core.application.gathering.presentation.response
 
-import core.domain.gathering.enums.GatheringV2InviteTag
+import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 
 data class GatheringV2InviteTagListResponse(
     val inviteTags: List<GatheringV2InviteTagNameResponse>,
@@ -8,7 +8,7 @@ data class GatheringV2InviteTagListResponse(
     companion object {
         fun fromAllTags() =
             GatheringV2InviteTagListResponse(
-                inviteTags = GatheringV2InviteTag.entries.map { GatheringV2InviteTagNameResponse.from(it) },
+                inviteTags = AfterPartyInviteTagEnum.entries.map { GatheringV2InviteTagNameResponse.from(it) },
             )
     }
 }

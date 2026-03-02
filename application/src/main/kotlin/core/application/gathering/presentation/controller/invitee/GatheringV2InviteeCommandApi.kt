@@ -2,7 +2,7 @@ package core.application.gathering.presentation.controller.invitee
 
 import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.request.SubmitGatheringV2RsvpStatusRequest
-import core.domain.gathering.vo.GatheringV2Id
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -20,7 +20,7 @@ interface GatheringV2InviteeCommandApi {
     )
     fun submitGatheringV2RsvpStatus(
         memberId: MemberId,
-        gatheringV2Id: GatheringV2Id,
+        afterPartyId: AfterPartyId,
         submitGatheringV2RsvpStatusRequest: SubmitGatheringV2RsvpStatusRequest,
     ): CustomResponse<Void>
 }
