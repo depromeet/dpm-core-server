@@ -1,0 +1,25 @@
+package core.application.afterParty.application.exception
+
+import core.application.common.exception.ExceptionCode
+import org.springframework.http.HttpStatus
+
+enum class AfterPartyExceptionCode(
+    @JvmField val status: HttpStatus,
+    @JvmField val code: String,
+    @JvmField val message: String,
+) : ExceptionCode {
+    SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AFTER_PARTY-500-01", "예상치 못한 서버 에러가 발생했습니다"),
+
+    AFTER_PARTY_NOT_FOUND(HttpStatus.NOT_FOUND, "AFTER_PARTY-404-01", "존재하지 않는 회식입니다."),
+    AFTER_PARTY_REQUIRED(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-02", "회식은 필수로 존재해야합니다."),
+    AFTER_PARTY_ID_REQUIRED(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-03", "회식 ID는 필수로 존재해야합니다."),
+    AFTER_PARTY_NOT_PARTICIPANT_MEMBER(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-05", "정산에 참여하지 않은 멤버입니다."),
+    INVITE_TAG_NAME_NOT_FOUND(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-06", "초대 태그 이름과 매칭되는 태그를 찾을 수 없습니다."),
+    ;
+
+    override fun getStatus(): HttpStatus = status
+
+    override fun getCode(): String = code
+
+    override fun getMessage(): String = message
+}

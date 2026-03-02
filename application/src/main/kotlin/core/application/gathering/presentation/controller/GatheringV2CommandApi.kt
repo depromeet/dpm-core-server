@@ -4,7 +4,7 @@ import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.request.CreateGatheringV2ByInviteTagNamesRequest
 import core.application.gathering.presentation.request.CreateGatheringV2Request
 import core.application.gathering.presentation.request.UpdateGatheringV2Request
-import core.domain.gathering.vo.GatheringV2Id
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -49,6 +49,6 @@ interface GatheringV2CommandApi {
     fun updateGatheringV2(
         updateGatheringV2Request: UpdateGatheringV2Request,
         memberId: MemberId,
-        gatheringId: GatheringV2Id,
+        gatheringId: AfterPartyId,
     ): CustomResponse<Void>
 }

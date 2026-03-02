@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 
 data class CreateAnnouncementRequest(
     val announcementType: AnnouncementType,
-    val submitType: SubmitType,
+    val submitType: SubmitType?,
     val title: String,
     val content: String?,
     val submitLink: String?,
