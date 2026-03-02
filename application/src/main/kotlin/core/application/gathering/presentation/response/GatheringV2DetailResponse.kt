@@ -1,14 +1,14 @@
 package core.application.gathering.presentation.response
 
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
-import core.domain.gathering.aggregate.GatheringV2
-import core.domain.gathering.aggregate.GatheringV2InviteTag
-import core.domain.gathering.vo.GatheringV2Id
+import core.domain.afterParty.aggregate.AfterParty
+import core.domain.afterParty.aggregate.AfterPartyInviteTag
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import java.time.LocalDateTime
 
 data class GatheringV2DetailResponse(
-    val gatheringId: GatheringV2Id,
+    val gatheringId: AfterPartyId,
     val title: String,
     val isOwner: Boolean,
     val rsvpStatus: Boolean?,
@@ -26,7 +26,7 @@ data class GatheringV2DetailResponse(
 ) {
     companion object {
         fun of(
-            gatheringV2: GatheringV2,
+            afterParty: AfterParty,
             isOwner: Boolean,
             rsvpStatus: Boolean?,
             isAttended: Boolean?,
@@ -34,22 +34,22 @@ data class GatheringV2DetailResponse(
             inviteeCount: Int,
             attendanceCount: Int,
             isClosed: Boolean,
-            inviteTags: List<GatheringV2InviteTag> = emptyList(),
+            inviteTags: List<AfterPartyInviteTag> = emptyList(),
         ): GatheringV2DetailResponse =
             GatheringV2DetailResponse(
-                gatheringId = gatheringV2.id!!,
-                title = gatheringV2.title,
+                gatheringId = afterParty.id!!,
+                title = afterParty.title,
                 isOwner = isOwner,
                 rsvpStatus = rsvpStatus,
                 isAttended = isAttended,
-                description = gatheringV2.description,
-                scheduledAt = instantToLocalDateTime(gatheringV2.scheduledAt),
+                description = afterParty.description,
+                scheduledAt = instantToLocalDateTime(afterParty.scheduledAt),
                 isRsvpGoingCount = isRsvpGoingCount,
                 inviteeCount = inviteeCount,
                 attendanceCount = attendanceCount,
-                authorMemberId = gatheringV2.authorMemberId,
-                createdAt = instantToLocalDateTime(gatheringV2.createdAt!!),
-                closedAt = instantToLocalDateTime(gatheringV2.closedAt),
+                authorMemberId = afterParty.authorMemberId,
+                createdAt = instantToLocalDateTime(afterParty.createdAt!!),
+                closedAt = instantToLocalDateTime(afterParty.closedAt),
                 isClosed = isClosed,
                 inviteTags =
                     GatheringV2InviteTagListResponse(

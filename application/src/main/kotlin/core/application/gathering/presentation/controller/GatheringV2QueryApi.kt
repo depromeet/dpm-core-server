@@ -4,7 +4,7 @@ import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
-import core.domain.gathering.vo.GatheringV2Id
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -166,7 +166,7 @@ interface GatheringV2QueryApi {
         description = "회식 참여 조사 상세 정보를 조회합니다",
     )
     fun getGatheringV2Detail(
-        gatheringV2Id: GatheringV2Id,
+        afterPartyId: AfterPartyId,
         memberId: MemberId,
     ): CustomResponse<GatheringV2DetailResponse>
 }
