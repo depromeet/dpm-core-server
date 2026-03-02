@@ -39,7 +39,7 @@ class AfterPartyInviteeQueryService(
                 name = rsvpMember.name,
                 part = rsvpMember.part,
                 team = rsvpMemberTeamId,
-                isRsvpGoing = invitee.isRsvpGoing(),
+                rsvpStatus = invitee.rsvpStatus,
             )
         }
 
@@ -54,7 +54,7 @@ class AfterPartyInviteeQueryService(
                 name = rsvpMember.name,
                 part = rsvpMember.part,
                 team = rsvpMemberTeamId,
-                isRsvpGoing = invitee.isRsvpGoing(),
+                rsvpStatus = invitee.rsvpStatus,
             )
         }
 }
