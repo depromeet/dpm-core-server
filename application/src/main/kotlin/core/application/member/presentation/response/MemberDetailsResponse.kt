@@ -52,7 +52,7 @@ data class MemberDetailsResponse(
     companion object {
         fun of(
             member: Member,
-            roles: List<String>,
+            authorities: List<String>,
             teamNumber: Int?,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
@@ -61,10 +61,10 @@ data class MemberDetailsResponse(
                 part = member.part?.name,
                 cohort = "17",
                 teamNumber = teamNumber,
-                isAdmin = roles.contains(ADMIN_ROLE),
+                isAdmin = authorities.any { it == ADMIN_AUTHORITY },
                 status = member.status.name,
             )
 
-        private const val ADMIN_ROLE = "ORGANIZER"
+        private const val ADMIN_AUTHORITY = "ORGANIZER"
     }
 }
