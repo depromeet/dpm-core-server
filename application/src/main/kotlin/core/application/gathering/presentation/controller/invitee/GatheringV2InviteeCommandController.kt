@@ -24,12 +24,12 @@ class GatheringV2InviteeCommandController(
         @CurrentMemberId
         memberId: MemberId,
         @PathVariable("gatheringId")
-        afterPartyId: AfterPartyId,
+        gatheringId: AfterPartyId,
         @RequestBody submitGatheringV2RsvpStatusRequest: SubmitGatheringV2RsvpStatusRequest,
     ): CustomResponse<Void> {
         afterPartyInviteeCommandUseCase.submitAfterPartyRsvpStatus(
             memberId = memberId,
-            afterPartyId = afterPartyId,
+            afterPartyId = gatheringId,
             isRsvpGoing = submitGatheringV2RsvpStatusRequest.isRsvpGoing,
         )
         return CustomResponse.ok()

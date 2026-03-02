@@ -51,7 +51,7 @@ class AfterPartyInvitee(
     }
 
     override fun toString(): String =
-        "AfterPartyInvitee(id=$id, gatheringId=$afterPartyId, memberId=$memberId, " +
+        "AfterPartyInvitee(id=$id, afterPartyId=$afterPartyId, memberId=$memberId, " +
             "rsvpStatus=$rsvpStatus, invitedAt=$invitedAt, confirmedAt=$confirmedAt)"
 
     companion object {

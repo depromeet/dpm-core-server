@@ -1,5 +1,6 @@
 package core.application.gathering.presentation.response
 
+import core.application.afterParty.application.exception.AfterPartyNotFoundException
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
@@ -48,7 +49,7 @@ data class GatheringV2DetailResponse(
                 inviteeCount = inviteeCount,
                 attendanceCount = attendanceCount,
                 authorMemberId = afterParty.authorMemberId,
-                createdAt = instantToLocalDateTime(afterParty.createdAt!!),
+                createdAt = instantToLocalDateTime(afterParty.createdAt ?: throw AfterPartyNotFoundException()),
                 closedAt = instantToLocalDateTime(afterParty.closedAt),
                 isClosed = isClosed,
                 inviteTags =

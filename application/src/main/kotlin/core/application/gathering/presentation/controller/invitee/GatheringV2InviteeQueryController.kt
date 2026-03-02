@@ -18,7 +18,7 @@ class GatheringV2InviteeQueryController(
     @PreAuthorize("hasAuthority('read:gathering')")
     @GetMapping("/{gatheringId}/rsvp-members")
     override fun getGatheringV2RsvpMemberList(
-        @PathVariable("gatheringId") afterPartyId: AfterPartyId,
+        @PathVariable("gatheringId") gatheringId: AfterPartyId,
     ): CustomResponse<List<GatheringV2RsvpMemberResponse>> =
-        CustomResponse.ok(gatheringV2InviteeQueryService.getRsvpMembersOld(afterPartyId))
+        CustomResponse.ok(gatheringV2InviteeQueryService.getRsvpMembersOld(gatheringId))
 }

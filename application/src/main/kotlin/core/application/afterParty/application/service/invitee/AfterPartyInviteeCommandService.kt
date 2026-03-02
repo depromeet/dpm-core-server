@@ -9,8 +9,10 @@ import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.aggregate.Member
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
+@Transactional
 class AfterPartyInviteeCommandService(
     val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val afterPartyInviteeQueryUseCase: AfterPartyInviteeQueryUseCase,
