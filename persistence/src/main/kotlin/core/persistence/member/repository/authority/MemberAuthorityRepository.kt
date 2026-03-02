@@ -15,6 +15,20 @@ import java.time.ZoneId
 class MemberAuthorityRepository(
     private val dsl: DSLContext,
 ) : MemberAuthorityPersistencePort {
+    override fun findAuthorityNamesByMemberId(memberId: MemberId): List<String> {
+        val authorityNameField = field(name("a", "name"), String::class.java)
+
+        return dsl
+            .select(authorityNameField)
+            .from(table(name("member_authorities")).`as`("ma"))
+            .join(table(name("authorities")).`as`("a"))
+            .on(field(name("ma", "authority_id"), Long::class.java).eq(field(name("a", "authority_id"), Long::class.java)))
+            .where(field(name("ma", "member_id"), Long::class.java).eq(memberId.value))
+            .and(field(name("ma", "deleted_at"), LocalDateTime::class.java).isNull)
+            .fetch(authorityNameField)
+            .filterNotNull()
+    }
+
     override fun ensureAuthorityAssigned(
         memberId: MemberId,
         authorityName: String,

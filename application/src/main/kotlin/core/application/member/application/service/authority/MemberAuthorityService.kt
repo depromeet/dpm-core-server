@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service
 class MemberAuthorityService(
     private val memberAuthorityPersistencePort: MemberAuthorityPersistencePort,
 ) {
+    fun getAuthorityNamesByMemberId(memberId: MemberId): List<String> =
+        memberAuthorityPersistencePort.findAuthorityNamesByMemberId(memberId)
+
     fun ensureAuthorityAssigned(
         memberId: MemberId,
         authorityName: String,

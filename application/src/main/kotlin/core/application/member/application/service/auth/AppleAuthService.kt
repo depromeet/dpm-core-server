@@ -44,12 +44,12 @@ class AppleAuthService(
                 // Initial signup - create new member
                 val email =
                     claims["email"] as? String
-                        ?: throw IllegalArgumentException("Invalid ID Token: email missing")
+                        ?: throw IllegalArgumentException("Invalid ID Token: emailassignments missing")
 
-                val claimName = claims["name"] as? String
+                val claimName = (claims["name"] as? String)?.trim()?.takeIf { it.isNotBlank() }
                 val name =
                     resolveMemberName(
-                        fullName = fullName ?: claimName,
+                        fullName = fullName?.trim()?.takeIf { it.isNotBlank() } ?: claimName,
                         familyName = familyName,
                         givenName = givenName,
                     ) ?: throw IllegalArgumentException("Apple name missing for initial signup")

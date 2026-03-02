@@ -3,6 +3,8 @@ package core.domain.member.port.outbound
 import core.domain.member.vo.MemberId
 
 interface MemberAuthorityPersistencePort {
+    fun findAuthorityNamesByMemberId(memberId: MemberId): List<String>
+
     fun ensureAuthorityAssigned(
         memberId: MemberId,
         authorityName: String,
