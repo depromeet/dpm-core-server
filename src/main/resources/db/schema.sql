@@ -206,6 +206,20 @@ CREATE TABLE `gatherings`
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
+-- dpm_core.device_tokens definition
+
+CREATE TABLE `device_tokens`
+(
+    `device_token_id` bigint       NOT NULL AUTO_INCREMENT,
+    `member_id`       bigint       NOT NULL,
+    `token`           varchar(255) NOT NULL,
+    `created_at`      datetime(6)  NOT NULL,
+    `updated_at`      datetime(6) DEFAULT NULL,
+    PRIMARY KEY (`device_token_id`),
+    KEY (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
 -- dpm_core.receipts definition
 
 CREATE TABLE `gathering_receipts`

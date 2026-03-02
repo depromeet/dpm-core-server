@@ -13,11 +13,12 @@ class FirebaseConfig {
     fun init() {
         try {
             // 리소스 폴더에서 파일 읽기
-            val resource = ClassPathResource("firebase-key.json")
+            val resource = ClassPathResource("dpm-core-firebase-key.json")
             val serviceAccount = resource.inputStream
 
             val options =
-                FirebaseOptions.builder()
+                FirebaseOptions
+                    .builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .build()
 

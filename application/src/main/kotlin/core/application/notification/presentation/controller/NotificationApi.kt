@@ -36,4 +36,7 @@ interface NotificationApi {
     )
     @Operation(summary = "FCM 알림 테스트 API", description = "FCM 알림을 테스트합니다.")
     fun testSendNotification(notificationRequest: NotificationRequest): CustomResponse<Void>
+
+    @Operation(summary = "FCM 토큰 입력 API", description = "FCM 토큰을 입력받습니다.")
+    fun getToken(notificationRequest: NotificationRequest): CustomResponse<Void>
 }

@@ -50,3 +50,4 @@ out/
 
 # Secrets
 secrets/
+/application/src/main/resources/dpm-core-firebase-key.json
