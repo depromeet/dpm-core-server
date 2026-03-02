@@ -30,6 +30,9 @@ object SessionMapper {
                 place = place,
                 isOnline = isOnline,
                 date = instantToLocalDateTime(date),
+                attendanceStart = instantToLocalDateTime(attendancePolicy.attendanceStart),
+                lateStart = instantToLocalDateTime(attendancePolicy.lateStart),
+                absentStart = instantToLocalDateTime(attendancePolicy.absentStart),
                 attendanceCode = attendancePolicy.attendanceCode,
             )
         }

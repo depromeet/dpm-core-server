@@ -9,5 +9,8 @@ data class NextSessionResponse(
     val place: String,
     val isOnline: Boolean,
     val date: LocalDateTime,
+    val attendanceStart: LocalDateTime,
+    val lateStart: LocalDateTime,
+    val absentStart: LocalDateTime,
     val attendanceCode: String,
 )
