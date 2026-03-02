@@ -80,7 +80,7 @@ class MemberCommandService(
     fun activate(member: Member) {
         member.activate()
         memberPersistencePort.save(member)
-        val memberId = member.id ?: return
+        val memberId = requireNotNull(member.id) { "Activated member must have id" }
         memberRoleService.ensureRoleAssigned(memberId, RoleType.Deeper)
         memberAuthorityService.ensureAuthorityAssigned(memberId, RoleType.Deeper.code)
     }
