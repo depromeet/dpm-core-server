@@ -1,15 +1,15 @@
-package core.application.gathering.presentation.controller.invitee
+package core.application.afterParty.presentation.controller.invitee
 
+import core.application.afterParty.presentation.request.SubmitAfterPartyRsvpStatusRequest
 import core.application.common.exception.CustomResponse
-import core.application.gathering.presentation.request.SubmitGatheringV2RsvpStatusRequest
 import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
-@Tag(name = "GatheringV2", description = "회식 참여 조사 API")
-interface GatheringV2InviteeCommandApi {
+@Tag(name = "AfterParty", description = "회식 참여 조사 API")
+interface AfterPartyInviteeCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 여부 제출 성공",
@@ -18,9 +18,9 @@ interface GatheringV2InviteeCommandApi {
         summary = "회식 참여 여부 제출 API",
         description = "회식 참여 여부를 제출하는 API입니다",
     )
-    fun submitGatheringV2RsvpStatus(
+    fun submitAfterPartyRsvpStatus(
         memberId: MemberId,
         afterPartyId: AfterPartyId,
-        submitGatheringV2RsvpStatusRequest: SubmitGatheringV2RsvpStatusRequest,
+        submitAfterPartyRsvpStatusRequest: SubmitAfterPartyRsvpStatusRequest,
     ): CustomResponse<Void>
 }

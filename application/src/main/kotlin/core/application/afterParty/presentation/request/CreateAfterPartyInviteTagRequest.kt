@@ -1,9 +1,9 @@
-package core.application.gathering.presentation.request
+package core.application.afterParty.presentation.request
 
 import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 import core.domain.cohort.vo.CohortId
 
-data class CreateGatheringV2InviteTagRequest(
+data class CreateAfterPartyInviteTagRequest(
     val cohortId: CohortId,
     val authorityId: Long,
 ) {

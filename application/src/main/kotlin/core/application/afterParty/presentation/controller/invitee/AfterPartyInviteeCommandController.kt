@@ -1,7 +1,7 @@
-package core.application.gathering.presentation.controller.invitee
+package core.application.afterParty.presentation.controller.invitee
 
+import core.application.afterParty.presentation.request.SubmitAfterPartyRsvpStatusRequest
 import core.application.common.exception.CustomResponse
-import core.application.gathering.presentation.request.SubmitGatheringV2RsvpStatusRequest
 import core.application.security.annotation.CurrentMemberId
 import core.domain.afterParty.port.inbound.AfterPartyInviteeCommandUseCase
 import core.domain.afterParty.vo.AfterPartyId
@@ -14,23 +14,23 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v2/gatherings")
-class GatheringV2InviteeCommandController(
+@RequestMapping("/v2/after-party")
+class AfterPartyInviteeCommandController(
     val afterPartyInviteeCommandUseCase: AfterPartyInviteeCommandUseCase,
-) : GatheringV2InviteeCommandApi {
-    @PreAuthorize("hasAuthority('update:gathering')")
-    @PostMapping("/{gatheringId}/rsvp-status")
-    override fun submitGatheringV2RsvpStatus(
+) : AfterPartyInviteeCommandApi {
+    @PreAuthorize("hasAuthority('update:after_party')")
+    @PostMapping("/{afterPartyId}/rsvp-status")
+    override fun submitAfterPartyRsvpStatus(
         @CurrentMemberId
         memberId: MemberId,
-        @PathVariable("gatheringId")
+        @PathVariable("afterPartyId")
         afterPartyId: AfterPartyId,
-        @RequestBody submitGatheringV2RsvpStatusRequest: SubmitGatheringV2RsvpStatusRequest,
+        @RequestBody submitAfterPartyRsvpStatusRequest: SubmitAfterPartyRsvpStatusRequest,
     ): CustomResponse<Void> {
         afterPartyInviteeCommandUseCase.submitAfterPartyRsvpStatus(
             memberId = memberId,
             afterPartyId = afterPartyId,
-            isRsvpGoing = submitGatheringV2RsvpStatusRequest.isRsvpGoing,
+            isRsvpGoing = submitAfterPartyRsvpStatusRequest.isRsvpGoing,
         )
         return CustomResponse.ok()
     }

@@ -1,7 +1,7 @@
-package core.application.gathering.presentation.controller.invitee
+package core.application.afterParty.presentation.controller.invitee
 
+import core.application.afterParty.presentation.response.AfterPartyRsvpMemberResponse
 import core.application.common.exception.CustomResponse
-import core.application.gathering.presentation.response.GatheringV2RsvpMemberResponse
 import core.domain.afterParty.vo.AfterPartyId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -11,8 +11,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
-@Tag(name = "GatheringV2", description = "회식 참여 조사 API")
-interface GatheringV2InviteeQueryApi {
+@Tag(name = "AfterParty", description = "회식 참여 조사 API")
+interface AfterPartyInviteeQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 초대자 목록 조회",
@@ -55,5 +55,5 @@ interface GatheringV2InviteeQueryApi {
         summary = "회식 초대자 목록 조회 API",
         description = "회식 초대자 목록을 조회합니다",
     )
-    fun getGatheringV2RsvpMemberList(afterPartyId: AfterPartyId): CustomResponse<List<GatheringV2RsvpMemberResponse>>
+    fun getAfterPartyRsvpMemberList(afterPartyId: AfterPartyId): CustomResponse<List<AfterPartyRsvpMemberResponse>>
 }
