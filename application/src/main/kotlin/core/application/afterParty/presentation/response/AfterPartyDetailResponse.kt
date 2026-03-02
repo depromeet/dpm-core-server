@@ -22,6 +22,7 @@ data class AfterPartyDetailResponse(
     val authorMemberId: MemberId,
     val createdAt: LocalDateTime,
     val closedAt: LocalDateTime,
+    val canEditAfterApproval: Boolean,
     val isClosed: Boolean,
     val inviteTags: AfterPartyInviteTagListResponse,
 ) {
@@ -51,6 +52,7 @@ data class AfterPartyDetailResponse(
                 authorMemberId = afterParty.authorMemberId,
                 createdAt = instantToLocalDateTime(afterParty.createdAt ?: throw AfterPartyNotFoundException()),
                 closedAt = instantToLocalDateTime(afterParty.closedAt),
+                canEditAfterApproval = afterParty.canEditAfterApproval,
                 isClosed = isClosed,
                 inviteTags =
                     AfterPartyInviteTagListResponse(

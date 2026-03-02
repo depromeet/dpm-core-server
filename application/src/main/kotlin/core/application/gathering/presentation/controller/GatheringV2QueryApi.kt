@@ -139,6 +139,7 @@ interface GatheringV2QueryApi {
                                 "authorMemberId": 1,
                                 "createdAt": "2026-01-26T14:45:19.504268",
                                 "closedAt": "2026-01-26T05:31:48.589",
+                                "canEditAfterApproval": false,
                                 "inviteTags": {
                                   "inviteTags": [
                                     {

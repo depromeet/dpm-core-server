@@ -22,6 +22,7 @@ data class GatheringV2DetailResponse(
     val authorMemberId: MemberId,
     val createdAt: LocalDateTime,
     val closedAt: LocalDateTime,
+    val canEditAfterApproval: Boolean,
     val isClosed: Boolean,
     val inviteTags: GatheringV2InviteTagListResponse,
 ) {
@@ -51,6 +52,7 @@ data class GatheringV2DetailResponse(
                 authorMemberId = afterParty.authorMemberId,
                 createdAt = instantToLocalDateTime(afterParty.createdAt ?: throw AfterPartyNotFoundException()),
                 closedAt = instantToLocalDateTime(afterParty.closedAt),
+                canEditAfterApproval = afterParty.canEditAfterApproval,
                 isClosed = isClosed,
                 inviteTags =
                     GatheringV2InviteTagListResponse(
