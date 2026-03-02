@@ -133,7 +133,7 @@ interface GatheringV2QueryApi {
                                 "isAttended": null,
                                 "description": "테스트용 회식 참여 조사입니다 001",
                                 "scheduledAt": "2026-01-26T05:31:48.588",
-                                "submitRsvpCount": 1,
+                                "submitRsvpCount": 2,
                                 "rsvpGoingCount": 1,
                                 "notRsvpGoingCount": 1,
                                 "inviteeCount": 21,
