@@ -75,7 +75,10 @@ class MemberRoleService(
         memberRolePersistencePort.save(memberRole)
     }
 
-    fun assignRole(memberId: MemberId, roleType: RoleType) {
+    fun assignRole(
+        memberId: MemberId,
+        roleType: RoleType,
+    ) {
         val roleId = roleQueryUseCase.findIdByName(roleType.code)
         val memberRole =
             MemberRole(
@@ -86,7 +89,10 @@ class MemberRoleService(
         memberRolePersistencePort.save(memberRole)
     }
 
-    fun ensureRoleAssigned(memberId: MemberId, roleType: RoleType) {
+    fun ensureRoleAssigned(
+        memberId: MemberId,
+        roleType: RoleType,
+    ) {
         val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
         if (roles.none { it == roleType.code }) {
             assignRole(memberId, roleType)

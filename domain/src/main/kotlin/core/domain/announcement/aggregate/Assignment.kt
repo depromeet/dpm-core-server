@@ -6,14 +6,26 @@ import java.time.Instant
 
 class Assignment(
     val id: AssignmentId? = null,
-    val submitType: SubmitType,
-    val startAt: Instant?,
-    val dueAt: Instant?,
-    val submitLink: String?,
+    submitType: SubmitType,
+    startAt: Instant?,
+    dueAt: Instant?,
+    submitLink: String?,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
 ) {
+    var submitType: SubmitType = submitType
+        private set
+
+    var startAt: Instant? = startAt
+        private set
+
+    var dueAt: Instant? = dueAt
+        private set
+
+    var submitLink: String? = submitLink
+        private set
+
     var updatedAt: Instant? = updatedAt
         private set
 
@@ -21,6 +33,19 @@ class Assignment(
         private set
 
     fun isDeleted(): Boolean = deletedAt != null
+
+    fun update(
+        submitType: SubmitType?,
+        startAt: Instant?,
+        dueAt: Instant?,
+        submitLink: String?,
+    ) {
+        this.submitType = submitType ?: this.submitType
+        this.startAt = startAt
+        this.dueAt = dueAt
+        this.submitLink = submitLink
+        this.updatedAt = Instant.now()
+    }
 
     companion object {
         fun create(
