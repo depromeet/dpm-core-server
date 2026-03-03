@@ -29,7 +29,7 @@ class AnnouncementQueryService(
 ) : AnnouncementQueryUseCase {
     fun getAllAnnouncements(): AnnouncementListResponse {
         val announcementListItemQueryModels: List<AnnouncementListItemQueryModel> =
-            announcementPersistencePort.findAnnouncementListItems()
+            announcementPersistencePort.findAnnouncementListItems().sortedByDescending { it.createdAt }
 
         return AnnouncementListResponse.from(announcementListItemQueryModels)
     }
