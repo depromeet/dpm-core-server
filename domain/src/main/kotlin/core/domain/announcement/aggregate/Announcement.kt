@@ -23,6 +23,10 @@ class Announcement(
 
     fun isDeleted(): Boolean = deletedAt != null
 
+    fun markAsDeleted() {
+        deletedAt = Instant.now()
+    }
+
     companion object {
         fun create(
             announcementType: AnnouncementType,

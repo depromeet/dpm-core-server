@@ -135,4 +135,10 @@ class AnnouncementCommandService(
             assignmentSubmissionCommandUseCase.updateAssignmentSubmission(updatedAssignmentSubmission)
         }
     }
+
+    override fun delete(announcementId: AnnouncementId) {
+        val announcement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        announcement.markAsDeleted()
+        announcementPersistencePort.softDeleteByAnnouncement(announcement)
+    }
 }

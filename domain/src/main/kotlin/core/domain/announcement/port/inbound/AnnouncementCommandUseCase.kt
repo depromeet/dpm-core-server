@@ -31,4 +31,6 @@ interface AnnouncementCommandUseCase {
         memberIds: List<MemberId>,
         submitStatus: SubmitStatus,
     )
+
+    fun delete(announcementId: AnnouncementId)
 }

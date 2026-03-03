@@ -67,4 +67,7 @@ class AnnouncementRepository(
     override fun findAnnouncementById(announcementId: AnnouncementId): Announcement? =
         announcementJpaRepository.findByIdOrNull(announcementId.value)
             ?.toDomain()
+
+    override fun softDeleteByAnnouncement(announcement: Announcement): Announcement =
+        announcementJpaRepository.save(AnnouncementEntity.from(announcement)).toDomain()
 }
