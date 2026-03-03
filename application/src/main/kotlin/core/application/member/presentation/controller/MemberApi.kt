@@ -1,10 +1,10 @@
 package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
-import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId

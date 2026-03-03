@@ -12,4 +12,8 @@ interface AnnouncementPersistencePort {
     fun findAnnouncementListItems(): List<AnnouncementListItemQueryModel>
 
     fun findAnnouncementById(announcementId: AnnouncementId): Announcement?
+
+    fun softDeleteByAnnouncement(announcement: Announcement): Announcement
+
+    fun update(announcement: Announcement): Announcement
 }

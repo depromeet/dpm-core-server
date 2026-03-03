@@ -4,7 +4,7 @@ import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitType
 import java.time.LocalDateTime
 
-data class CreateAnnouncementRequest(
+data class UpdateAnnouncementRequest(
     val announcementType: AnnouncementType,
     val submitType: SubmitType?,
     val title: String,

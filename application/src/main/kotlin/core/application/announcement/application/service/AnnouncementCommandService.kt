@@ -1,5 +1,6 @@
 package core.application.announcement.application.service
 
+import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
 import core.application.cohort.application.properties.CohortProperties
 import core.application.member.application.service.MemberQueryService
@@ -49,8 +50,8 @@ class AnnouncementCommandService(
         title: String,
         content: String?,
         submitLink: String?,
-        startAt: Instant,
-        dueAt: Instant,
+        startAt: Instant?,
+        dueAt: Instant?,
         scheduledAt: Instant?,
         shouldSendNotification: Boolean,
     ) {
@@ -133,6 +134,56 @@ class AnnouncementCommandService(
             val updatedAssignmentSubmission: AssignmentSubmission =
                 memberAssignmentSubmission.updateSubmitStatus(submitStatus)
             assignmentSubmissionCommandUseCase.updateAssignmentSubmission(updatedAssignmentSubmission)
+        }
+    }
+
+    override fun delete(announcementId: AnnouncementId) {
+        val announcement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        announcement.markAsDeleted()
+        announcementPersistencePort.softDeleteByAnnouncement(announcement)
+    }
+
+    override fun update(
+        announcementId: AnnouncementId,
+        announcementType: AnnouncementType,
+        submitType: SubmitType?,
+        title: String,
+        content: String?,
+        submitLink: String?,
+        startAt: Instant?,
+        dueAt: Instant?,
+        scheduledAt: Instant?,
+        shouldSendNotification: Boolean,
+    ) {
+        val existingAnnouncement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        if (existingAnnouncement.announcementType != announcementType) {
+            throw AnnouncementTypeCannotBeChangedException()
+        }
+
+        existingAnnouncement.update(
+            title = title,
+            content = content,
+        )
+        announcementPersistencePort.update(existingAnnouncement)
+
+        when (existingAnnouncement.announcementType) {
+            AnnouncementType.GENERAL -> {}
+            AnnouncementType.ASSIGNMENT -> {
+                val existingAssignment: Assignment =
+                    assignmentQueryUseCase.getAssignmentByAnnouncementId(
+                        announcementId,
+                    )
+                existingAssignment.update(
+                    submitType = submitType,
+                    startAt = startAt,
+                    dueAt = dueAt,
+                    submitLink = submitLink,
+                )
+
+//                TODO : 스케쥴이나 알림 변경 시 적용
+
+                assignmentPersistencePort.save(existingAssignment)
+            }
         }
     }
 }

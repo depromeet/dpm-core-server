@@ -10,9 +10,11 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.annotations.SQLRestriction
 import java.time.Instant
 
 @Entity
+@SQLRestriction("deleted_at is NULL")
 @Table(name = "announcements")
 class AnnouncementEntity(
     @Id

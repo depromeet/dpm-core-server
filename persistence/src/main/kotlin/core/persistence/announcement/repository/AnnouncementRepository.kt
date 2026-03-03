@@ -43,6 +43,7 @@ class AnnouncementRepository(
             .on(ASSIGNMENTS.ASSIGNMENT_ID.eq(ANNOUNCEMENT_ASSIGNMENTS.ASSIGNMENT_ID))
             .leftJoin(ANNOUNCEMENT_READS)
             .on(ANNOUNCEMENTS.ANNOUNCEMENT_ID.eq(ANNOUNCEMENT_READS.ANNOUNCEMENT_ID))
+            .where(ANNOUNCEMENTS.DELETED_AT.isNull())
             .groupBy(
                 ANNOUNCEMENTS.ANNOUNCEMENT_ID,
                 ANNOUNCEMENTS.TITLE,
@@ -67,4 +68,10 @@ class AnnouncementRepository(
     override fun findAnnouncementById(announcementId: AnnouncementId): Announcement? =
         announcementJpaRepository.findByIdOrNull(announcementId.value)
             ?.toDomain()
+
+    override fun softDeleteByAnnouncement(announcement: Announcement): Announcement =
+        announcementJpaRepository.save(AnnouncementEntity.from(announcement)).toDomain()
+
+    override fun update(announcement: Announcement): Announcement =
+        announcementJpaRepository.save(AnnouncementEntity.from(announcement)).toDomain()
 }

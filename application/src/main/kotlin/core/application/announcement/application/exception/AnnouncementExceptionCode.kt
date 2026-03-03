@@ -9,6 +9,7 @@ enum class AnnouncementExceptionCode(
     @JvmField val message: String,
 ) : ExceptionCode {
     ANNOUNCEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ANNOUNCEMENT-404-01", "존재하지 않는 공지입니다."),
+    ANNOUNCEMENT_TYPE_CANNOT_BE_CHANGED(HttpStatus.BAD_REQUEST, "ANNOUNCEMENT-400-01", "공지 유형은 변경할 수 없습니다."),
 
     ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ASSIGNMENT-404-01", "존재하지 않는 과제입니다."),
     ASSIGNMENT_SUBMIT_TYPE_NOT_NULL(HttpStatus.BAD_REQUEST, "ASSIGNMENT-400-01", "과제 제출 유형은 null이 될 수 없습니다."),
