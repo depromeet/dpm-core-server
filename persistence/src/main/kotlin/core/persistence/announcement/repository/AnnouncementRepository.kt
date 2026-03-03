@@ -43,6 +43,7 @@ class AnnouncementRepository(
             .on(ASSIGNMENTS.ASSIGNMENT_ID.eq(ANNOUNCEMENT_ASSIGNMENTS.ASSIGNMENT_ID))
             .leftJoin(ANNOUNCEMENT_READS)
             .on(ANNOUNCEMENTS.ANNOUNCEMENT_ID.eq(ANNOUNCEMENT_READS.ANNOUNCEMENT_ID))
+            .where(ANNOUNCEMENTS.DELETED_AT.isNull())
             .groupBy(
                 ANNOUNCEMENTS.ANNOUNCEMENT_ID,
                 ANNOUNCEMENTS.TITLE,
