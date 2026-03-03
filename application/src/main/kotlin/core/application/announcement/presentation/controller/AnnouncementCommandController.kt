@@ -2,6 +2,7 @@ package core.application.announcement.presentation.controller
 
 import core.application.announcement.application.service.AnnouncementCommandService
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
+import core.application.announcement.presentation.request.UpdateAnnouncementRequest
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.common.exception.CustomResponse
@@ -79,6 +80,30 @@ class AnnouncementCommandController(
         memberId: MemberId,
     ): CustomResponse<Void> {
         announcementCommandService.delete(announcementId)
+        return CustomResponse.ok()
+    }
+
+    @PatchMapping("/{announcementId}")
+    override fun updateAnnouncement(
+        @PathVariable
+        announcementId: AnnouncementId,
+        @RequestBody
+        updateAnnouncementRequest: UpdateAnnouncementRequest,
+        @CurrentMemberId
+        memberId: MemberId,
+    ): CustomResponse<Void> {
+        announcementCommandService.update(
+            announcementId = announcementId,
+            announcementType = updateAnnouncementRequest.announcementType,
+            submitType = updateAnnouncementRequest.submitType,
+            title = updateAnnouncementRequest.title,
+            content = updateAnnouncementRequest.content,
+            submitLink = updateAnnouncementRequest.submitLink,
+            startAt = localDateTimeToInstant(updateAnnouncementRequest.startAt),
+            dueAt = localDateTimeToInstant(updateAnnouncementRequest.dueAt),
+            scheduledAt = localDateTimeToInstant(updateAnnouncementRequest.scheduledAt),
+            shouldSendNotification = updateAnnouncementRequest.shouldSendNotification,
+        )
         return CustomResponse.ok()
     }
 }
