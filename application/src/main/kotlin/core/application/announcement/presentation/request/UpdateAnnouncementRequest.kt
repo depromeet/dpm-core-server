@@ -1,17 +1,13 @@
 package core.application.announcement.presentation.request
 
 import core.domain.announcement.enums.AnnouncementType
-import core.domain.announcement.enums.SubmitType
 import java.time.LocalDateTime
 
 data class UpdateAnnouncementRequest(
     val announcementType: AnnouncementType,
-    val submitType: SubmitType?,
     val title: String,
     val content: String?,
-    val submitLink: String?,
-    val startAt: LocalDateTime?,
-    val dueAt: LocalDateTime?,
+    val assignment: UpdateAssignmentRequest?,
     val scheduledAt: LocalDateTime?,
     val shouldSendNotification: Boolean,
 )
