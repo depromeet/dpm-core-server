@@ -7,7 +7,7 @@ data class CreateAnnouncementRequest(
     val announcementType: AnnouncementType,
     val title: String,
     val content: String?,
-    val createAssignmentRequest: CreateAssignmentRequest?,
+    val assignment: CreateAssignmentRequest?,
     val scheduledAt: LocalDateTime?,
     val shouldSendNotification: Boolean,
 )
