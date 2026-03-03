@@ -32,12 +32,12 @@ class AnnouncementCommandController(
         announcementCommandService.create(
             authorId = memberId,
             announcementType = createAnnouncementRequest.announcementType,
-            submitType = createAnnouncementRequest.submitType,
+            submitType = createAnnouncementRequest.createAssignmentRequest?.submitType,
             title = createAnnouncementRequest.title,
             content = createAnnouncementRequest.content,
-            submitLink = createAnnouncementRequest.submitLink,
-            startAt = localDateTimeToInstant(createAnnouncementRequest.startAt),
-            dueAt = localDateTimeToInstant(createAnnouncementRequest.dueAt),
+            submitLink = createAnnouncementRequest.createAssignmentRequest?.submitLink,
+            startAt = localDateTimeToInstant(createAnnouncementRequest.createAssignmentRequest?.startAt),
+            dueAt = localDateTimeToInstant(createAnnouncementRequest.createAssignmentRequest?.dueAt),
             scheduledAt = localDateTimeToInstant(createAnnouncementRequest.scheduledAt),
             shouldSendNotification = createAnnouncementRequest.shouldSendNotification,
         )
@@ -95,12 +95,12 @@ class AnnouncementCommandController(
         announcementCommandService.update(
             announcementId = announcementId,
             announcementType = updateAnnouncementRequest.announcementType,
-            submitType = updateAnnouncementRequest.submitType,
+            submitType = updateAnnouncementRequest.updateAssignmentRequest?.submitType,
             title = updateAnnouncementRequest.title,
             content = updateAnnouncementRequest.content,
-            submitLink = updateAnnouncementRequest.submitLink,
-            startAt = localDateTimeToInstant(updateAnnouncementRequest.startAt),
-            dueAt = localDateTimeToInstant(updateAnnouncementRequest.dueAt),
+            submitLink = updateAnnouncementRequest.updateAssignmentRequest?.submitLink,
+            startAt = localDateTimeToInstant(updateAnnouncementRequest.updateAssignmentRequest?.startAt),
+            dueAt = localDateTimeToInstant(updateAnnouncementRequest.updateAssignmentRequest?.dueAt),
             scheduledAt = localDateTimeToInstant(updateAnnouncementRequest.scheduledAt),
             shouldSendNotification = updateAnnouncementRequest.shouldSendNotification,
         )
