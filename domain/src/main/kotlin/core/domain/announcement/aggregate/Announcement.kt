@@ -30,7 +30,9 @@ class Announcement(
     fun isDeleted(): Boolean = deletedAt != null
 
     fun markAsDeleted() {
-        deletedAt = Instant.now()
+        val now = Instant.now()
+        updatedAt = now
+        deletedAt = now
     }
 
     fun update(
