@@ -8,13 +8,19 @@ import java.time.Instant
 class Announcement(
     val id: AnnouncementId? = null,
     val announcementType: AnnouncementType,
-    val title: String,
-    val content: String?,
+    title: String,
+    content: String?,
     val authorId: MemberId,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
 ) {
+    var title: String = title
+        private set
+
+    var content: String? = content
+        private set
+
     var updatedAt: Instant? = updatedAt
         private set
 
@@ -25,6 +31,15 @@ class Announcement(
 
     fun markAsDeleted() {
         deletedAt = Instant.now()
+    }
+
+    fun update(
+        title: String,
+        content: String?,
+    ) {
+        this.title = title
+        this.content = content
+        this.updatedAt = Instant.now()
     }
 
     companion object {

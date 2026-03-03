@@ -10,8 +10,8 @@ data class CreateAnnouncementRequest(
     val title: String,
     val content: String?,
     val submitLink: String?,
-    val startAt: LocalDateTime,
-    val dueAt: LocalDateTime,
+    val startAt: LocalDateTime?,
+    val dueAt: LocalDateTime?,
     val scheduledAt: LocalDateTime?,
     val shouldSendNotification: Boolean,
 )

@@ -15,8 +15,8 @@ interface AnnouncementCommandUseCase {
         title: String,
         content: String?,
         submitLink: String?,
-        startAt: Instant,
-        dueAt: Instant,
+        startAt: Instant?,
+        dueAt: Instant?,
         scheduledAt: Instant?,
         shouldSendNotification: Boolean,
     )
@@ -33,4 +33,17 @@ interface AnnouncementCommandUseCase {
     )
 
     fun delete(announcementId: AnnouncementId)
+
+    fun update(
+        announcementId: AnnouncementId,
+        announcementType: AnnouncementType,
+        submitType: SubmitType?,
+        title: String,
+        content: String?,
+        submitLink: String?,
+        startAt: Instant?,
+        dueAt: Instant?,
+        scheduledAt: Instant?,
+        shouldSendNotification: Boolean,
+    )
 }
