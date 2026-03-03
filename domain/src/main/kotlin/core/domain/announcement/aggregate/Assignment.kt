@@ -14,7 +14,7 @@ class Assignment(
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
 ) {
-    var submitType: SubmitType = submitType
+    var submitType: SubmitType? = submitType
         private set
 
     var startAt: Instant? = startAt
@@ -40,7 +40,7 @@ class Assignment(
         dueAt: Instant?,
         submitLink: String?,
     ) {
-        this.submitType = submitType ?: this.submitType
+        this.submitType = submitType
         this.startAt = startAt ?: this.startAt
         this.dueAt = dueAt ?: this.dueAt
         this.submitLink = submitLink ?: this.submitLink
