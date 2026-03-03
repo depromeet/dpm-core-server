@@ -8,6 +8,7 @@ import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -67,6 +68,17 @@ class AnnouncementCommandController(
             memberIds = updateSubmitStatusRequest.memberIds,
             submitStatus = updateSubmitStatusRequest.submitStatus,
         )
+        return CustomResponse.ok()
+    }
+
+    @DeleteMapping("/{announcementId}")
+    override fun deleteAnnouncement(
+        @PathVariable
+        announcementId: AnnouncementId,
+        @CurrentMemberId
+        memberId: MemberId,
+    ): CustomResponse<Void> {
+        announcementCommandService.delete(announcementId)
         return CustomResponse.ok()
     }
 }
