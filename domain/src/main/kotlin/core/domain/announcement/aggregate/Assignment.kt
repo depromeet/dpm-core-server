@@ -41,8 +41,8 @@ class Assignment(
         submitLink: String?,
     ) {
         this.submitType = submitType ?: this.submitType
-        this.startAt = startAt ?: this.startAt
-        this.dueAt = dueAt ?: this.dueAt
+        this.startAt = startAt
+        this.dueAt = dueAt
         this.submitLink = submitLink
         this.updatedAt = Instant.now()
     }
