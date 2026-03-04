@@ -1,5 +1,6 @@
 package core.application.announcement.application.service
 
+import core.application.announcement.application.exception.AssignmentNotFoundException
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
@@ -15,5 +16,8 @@ class AssignmentQueryService(
     override fun getAllAssignments(): List<Assignment> = assignmentPersistencePort.findAll()
 
     override fun getAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment =
+        assignmentPersistencePort.findByAnnouncementId(announcementId)?: throw AssignmentNotFoundException()
+
+    override fun findAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment? =
         assignmentPersistencePort.findByAnnouncementId(announcementId)
 }

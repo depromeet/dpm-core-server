@@ -8,8 +8,11 @@ import core.application.announcement.presentation.response.AnnouncementViewMembe
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementRead
+import core.domain.announcement.aggregate.Assignment
+import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
+import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
 import core.domain.announcement.vo.AnnouncementId
@@ -25,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional
 class AnnouncementQueryService(
     val announcementPersistencePort: AnnouncementPersistencePort,
     val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
+    val assignmentQueryUseCase: AssignmentQueryUseCase,
     val memberQueryUseCase: MemberQueryUseCase,
 ) : AnnouncementQueryUseCase {
     fun getAllAnnouncements(): AnnouncementListResponse {
@@ -37,17 +41,39 @@ class AnnouncementQueryService(
     override fun getAnnouncementById(announcementId: AnnouncementId): Announcement =
         announcementPersistencePort.findAnnouncementById(announcementId) ?: throw AnnouncementNotFoundException()
 
-    fun getAnnouncementDetail(announcementId: AnnouncementId): AnnouncementDetailResponse {
+    fun getAnnouncementDetail(
+        announcementId: AnnouncementId,
+        memberId: MemberId,
+    ): AnnouncementDetailResponse {
         val announcement: Announcement = getAnnouncementById(announcementId)
+        val announcementRead: AnnouncementRead =
+            announcementReadQueryUseCase.getByAnnouncementIdAndMemberId(announcementId, memberId)
         val announcementReadCount: Int =
             announcementReadQueryUseCase.countByAnnouncementId(announcementId)
+        when (announcement.announcementType) {
+            AnnouncementType.GENERAL -> return AnnouncementDetailResponse.of(
+                title = announcement.title,
+                content = announcement.content,
+                createdAt = instantToLocalDateTime(announcement.createdAt!!),
+                dueAt = null,
+                submitLink = null,
+                isRead = announcementRead.isRead(),
+                markAsReadCount = announcementReadCount,
+            )
+            AnnouncementType.ASSIGNMENT -> {
+                val assignment: Assignment = assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
 
-        return AnnouncementDetailResponse.of(
-            title = announcement.title,
-            content = announcement.content,
-            createdAt = instantToLocalDateTime(announcement.createdAt!!),
-            markAsReadCount = announcementReadCount,
-        )
+                return AnnouncementDetailResponse.of(
+                    title = announcement.title,
+                    content = announcement.content,
+                    createdAt = instantToLocalDateTime(announcement.createdAt!!),
+                    dueAt = instantToLocalDateTime(assignment.dueAt),
+                    submitLink = assignment.submitLink,
+                    isRead = announcementRead.isRead(),
+                    markAsReadCount = announcementReadCount,
+                )
+            }
+        }
     }
 
     fun getAnnouncementReadMemberList(announcementId: AnnouncementId): AnnouncementViewMemberListResponse {

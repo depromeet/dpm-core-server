@@ -7,4 +7,6 @@ interface AssignmentQueryUseCase {
     fun getAllAssignments(): List<Assignment>
 
     fun getAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment
+
+    fun findAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment?
 }
