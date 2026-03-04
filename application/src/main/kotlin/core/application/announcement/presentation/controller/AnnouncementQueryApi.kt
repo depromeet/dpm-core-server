@@ -5,6 +5,7 @@ import core.application.announcement.presentation.response.AnnouncementListRespo
 import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
 import core.application.common.exception.CustomResponse
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
@@ -88,7 +89,10 @@ interface AnnouncementQueryApi {
         summary = "공지/과제 상세 조회 API",
         description = "공지/과제 상세 내용을 조회합니다",
     )
-    fun getAnnouncementDetail(announcementId: AnnouncementId): CustomResponse<AnnouncementDetailResponse>
+    fun getAnnouncementDetail(
+        announcementId: AnnouncementId,
+        memberId: MemberId,
+    ): CustomResponse<AnnouncementDetailResponse>
 
     @ApiResponse(
         responseCode = "200",

@@ -16,4 +16,7 @@ class AssignmentQueryService(
 
     override fun getAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment =
         assignmentPersistencePort.findByAnnouncementId(announcementId)
+
+    override fun findAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment? =
+        assignmentPersistencePort.findByAnnouncementId(announcementId)
 }
