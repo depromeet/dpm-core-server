@@ -31,17 +31,19 @@ class AfterPartyQueryService(
 ) : AfterPartyQueryUseCase {
     fun getAfterPartyInviteTags(): AfterPartyInviteTagListResponse =
         AfterPartyInviteTagListResponse(
-            inviteTags = AfterPartyInviteTagEnum.entries.map {
-                AfterPartyInviteTagNameResponse.from(it)
-            }
+            inviteTags =
+                AfterPartyInviteTagEnum.entries.map {
+                    AfterPartyInviteTagNameResponse.from(it)
+                },
         )
 
     @Deprecated("GatheringV2에서만 사용되는 메서드입니다. GatheringV2 삭제 후 제거 예정입니다.")
     fun getGatheringV2InviteTags(): GatheringV2InviteTagListResponse =
         GatheringV2InviteTagListResponse(
-            inviteTags = AfterPartyInviteTagEnum.entries.map {
-                GatheringV2InviteTagNameResponse.from(it)
-                                                             },
+            inviteTags =
+                AfterPartyInviteTagEnum.entries.map {
+                    GatheringV2InviteTagNameResponse.from(it)
+                },
         )
 
     fun getAllAfterPartys(
