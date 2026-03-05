@@ -39,7 +39,7 @@ class SessionQueryController(
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
         val response =
             sessionQueryService
-                .getAllSessions()
+                .getAllCohortSessions()
                 .let { SessionMapper.toSessionListResponse(it) }
 
         return CustomResponse.ok(response)
