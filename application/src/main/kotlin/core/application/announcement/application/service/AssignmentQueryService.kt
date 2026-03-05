@@ -16,7 +16,7 @@ class AssignmentQueryService(
     override fun getAllAssignments(): List<Assignment> = assignmentPersistencePort.findAll()
 
     override fun getAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment =
-        assignmentPersistencePort.findByAnnouncementId(announcementId)?: throw AssignmentNotFoundException()
+        assignmentPersistencePort.findByAnnouncementId(announcementId) ?: throw AssignmentNotFoundException()
 
     override fun findAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment? =
         assignmentPersistencePort.findByAnnouncementId(announcementId)
