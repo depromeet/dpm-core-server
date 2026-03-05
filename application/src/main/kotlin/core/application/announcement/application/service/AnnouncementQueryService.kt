@@ -11,6 +11,7 @@ import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
+import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional
 class AnnouncementQueryService(
     val announcementPersistencePort: AnnouncementPersistencePort,
     val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
+    val announcementReadCommandUseCase: AnnouncementReadCommandUseCase,
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val memberQueryUseCase: MemberQueryUseCase,
 ) : AnnouncementQueryUseCase {
@@ -47,7 +49,9 @@ class AnnouncementQueryService(
     ): AnnouncementDetailResponse {
         val announcement: Announcement = getAnnouncementById(announcementId)
         val announcementRead: AnnouncementRead =
-            announcementReadQueryUseCase.getByAnnouncementIdAndMemberId(announcementId, memberId)
+            announcementReadQueryUseCase.findByAnnouncementIdAndMemberId(announcementId, memberId)
+                ?: announcementReadCommandUseCase.create(announcementId, memberId)
+
         val announcementReadCount: Int =
             announcementReadQueryUseCase.countByAnnouncementId(announcementId)
         when (announcement.announcementType) {
