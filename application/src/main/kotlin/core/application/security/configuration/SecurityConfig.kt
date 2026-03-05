@@ -145,7 +145,6 @@ class SecurityConfig(
                 "/login/kakao",
                 "/login/apple",
                 "/login/auth/apple",
-                "/login/email",
                 // General login paths (must come after specific paths)
                 "/login/**",
                 "/login",
