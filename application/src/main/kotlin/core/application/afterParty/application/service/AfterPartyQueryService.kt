@@ -11,6 +11,7 @@ import core.application.gathering.presentation.response.GatheringV2InviteTagName
 import core.application.gathering.presentation.response.GatheringV2ListResponse
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
+import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 import core.domain.afterParty.port.inbound.AfterPartyInviteTagQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteeQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyQueryUseCase
@@ -28,20 +29,22 @@ class AfterPartyQueryService(
     val afterPartyInviteeQueryUseCase: AfterPartyInviteeQueryUseCase,
     val afterPartyInviteTagQueryUseCase: AfterPartyInviteTagQueryUseCase,
 ) : AfterPartyQueryUseCase {
-    fun getAfterPartyInviteTags(): AfterPartyInviteTagListResponse {
-        val inviteTags = afterPartyInviteTagQueryUseCase.findAllDistinct()
-        return AfterPartyInviteTagListResponse(
-            inviteTags = inviteTags.map { AfterPartyInviteTagNameResponse.from(it) },
+    fun getAfterPartyInviteTags(): AfterPartyInviteTagListResponse =
+        AfterPartyInviteTagListResponse(
+            inviteTags =
+                AfterPartyInviteTagEnum.entries.map {
+                    AfterPartyInviteTagNameResponse.from(it)
+                },
         )
-    }
 
     @Deprecated("GatheringV2에서만 사용되는 메서드입니다. GatheringV2 삭제 후 제거 예정입니다.")
-    fun getGatheringV2InviteTags(): GatheringV2InviteTagListResponse {
-        val inviteTags = afterPartyInviteTagQueryUseCase.findAllDistinct()
-        return GatheringV2InviteTagListResponse(
-            inviteTags = inviteTags.map { GatheringV2InviteTagNameResponse.from(it) },
+    fun getGatheringV2InviteTags(): GatheringV2InviteTagListResponse =
+        GatheringV2InviteTagListResponse(
+            inviteTags =
+                AfterPartyInviteTagEnum.entries.map {
+                    GatheringV2InviteTagNameResponse.from(it)
+                },
         )
-    }
 
     fun getAllAfterPartys(
         memberId: MemberId,
