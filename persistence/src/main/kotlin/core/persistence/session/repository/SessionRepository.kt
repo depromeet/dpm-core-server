@@ -15,7 +15,7 @@ class SessionRepository(
     override fun findNextSessionBy(startOfToday: Instant): Session? =
         sessionJpaRepository.findFirstByDateAfterAndDeletedAtIsNullOrderByDateAsc(startOfToday)?.toDomain()
 
-    override fun findAllSessions(cohortId: Long): List<Session> =
+    override fun findAllCohortSessions(cohortId: Long): List<Session> =
         sessionJpaRepository.findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId).map { it.toDomain() }
 
     override fun findSessionById(sessionId: Long): Session? =
