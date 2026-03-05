@@ -71,7 +71,7 @@ logging:
     org.springframework.security: ${SECURITY_LOGGING_LEVEL:DEBUG}
 
 cohort:
-  value: ${COHORT_VALUE:17}
+  value: ${COHORT_VALUE}
 
 session:
   attendance:

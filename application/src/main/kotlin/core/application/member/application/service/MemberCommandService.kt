@@ -2,12 +2,15 @@ package core.application.member.application.service
 
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
+import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.member.application.service.cohort.MemberCohortService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
+import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
+import core.domain.authorization.vo.RoleType
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -26,9 +29,10 @@ class MemberCommandService(
     private val tokenInjector: JwtTokenInjector,
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
     private val memberRoleService: MemberRoleService,
+    private val memberAuthorityService: MemberAuthorityService,
 ) {
     /**
-     * 회원 가입 시 팀 정보 및 파트 정보를 주입하고, 멤버를 ACTIVE 상태로 변경함. (DEV)
+     * 회원 가입 시 멤버별 팀/파트/상태 정보를 주입함. (DEV)
      *
      * @throws MemberNotFoundException
      * @throws AuthorityNotFoundException
@@ -41,10 +45,10 @@ class MemberCommandService(
             memberPersistencePort.save(
                 memberQueryService.getMemberById(it.memberId).apply {
                     updatePart(it.memberPart)
-                    activate()
+                    updateStatus(it.status)
                 },
             )
-            memberTeamService.addMemberToTeam(it.memberId, request.teamId)
+            memberTeamService.addMemberToTeam(it.memberId, it.team)
             memberCohortService.addMemberToCohort(it.memberId)
         }
     }
@@ -76,6 +80,20 @@ class MemberCommandService(
     fun activate(member: Member) {
         member.activate()
         memberPersistencePort.save(member)
+        val memberId = requireNotNull(member.id) { "Activated member must have id" }
+        memberRoleService.ensureRoleAssigned(memberId, RoleType.Deeper)
+        memberAuthorityService.ensureAuthorityAssigned(memberId, RoleType.Deeper.code)
+    }
+
+    fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest) {
+        val memberId = request.memberId
+        memberQueryService.getMemberById(memberId)
+
+        memberRoleService.ensureRoleAssigned(memberId, RoleType.Organizer)
+        memberRoleService.revokeRole(memberId, RoleType.Deeper)
+
+        memberAuthorityService.ensureAuthorityAssigned(memberId, RoleType.Organizer.code)
+        memberAuthorityService.revokeAuthority(memberId, RoleType.Deeper.code)
     }
 
     /**

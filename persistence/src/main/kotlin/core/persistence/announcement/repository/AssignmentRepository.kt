@@ -22,7 +22,7 @@ class AssignmentRepository(
 
     override fun findAll(): List<Assignment> = assignmentJpaRepository.findAll().map { it.toDomain() }
 
-    override fun findByAnnouncementId(announcementId: AnnouncementId): Assignment =
+    override fun findByAnnouncementId(announcementId: AnnouncementId): Assignment? =
         dsl
             .select(
                 ASSIGNMENTS.ASSIGNMENT_ID,

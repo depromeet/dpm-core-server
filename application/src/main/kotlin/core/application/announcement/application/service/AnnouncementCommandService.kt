@@ -1,5 +1,7 @@
 package core.application.announcement.application.service
 
+import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
+import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
 import core.application.cohort.application.properties.CohortProperties
 import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Announcement
@@ -10,6 +12,7 @@ import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
+import core.domain.announcement.port.inbound.AnnouncementAssignmentCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
@@ -17,7 +20,6 @@ import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
 import core.domain.announcement.port.inbound.AssignmentSubmissionQueryUseCase
-import core.domain.announcement.port.outbound.AnnouncementAssignmentPersistencePort
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
@@ -30,7 +32,7 @@ import java.time.Instant
 @Transactional
 class AnnouncementCommandService(
     val announcementPersistencePort: AnnouncementPersistencePort,
-    val announcementAssignmentPersistencePort: AnnouncementAssignmentPersistencePort,
+    val announcementAssignmentCommandUseCase: AnnouncementAssignmentCommandUseCase,
     val assignmentPersistencePort: AssignmentPersistencePort,
     val announcementReadCommandUseCase: AnnouncementReadCommandUseCase,
     val announcementQueryUseCase: AnnouncementQueryUseCase,
@@ -44,12 +46,12 @@ class AnnouncementCommandService(
     override fun create(
         authorId: MemberId,
         announcementType: AnnouncementType,
-        submitType: SubmitType,
+        submitType: SubmitType?,
         title: String,
         content: String?,
         submitLink: String?,
-        startAt: Instant,
-        dueAt: Instant,
+        startAt: Instant?,
+        dueAt: Instant?,
         scheduledAt: Instant?,
         shouldSendNotification: Boolean,
     ) {
@@ -70,7 +72,7 @@ class AnnouncementCommandService(
         when (announcementType) {
             AnnouncementType.GENERAL -> {}
             AnnouncementType.ASSIGNMENT -> {
-//                TODO : Assignment_submission에 디퍼들 초대하는 로직 추가
+                if (submitType == null) throw AssignmentSubmitTypeNotNullException()
                 val assignment: Assignment =
                     Assignment.create(
                         submitType = submitType,
@@ -85,7 +87,10 @@ class AnnouncementCommandService(
                         announcementId = savedAnnouncement.id!!,
                         assignmentId = savedAssignment.id!!,
                     )
-                announcementAssignmentPersistencePort.save(announcementAssignment)
+                announcementAssignmentCommandUseCase.create(
+                    announcementAssignment = announcementAssignment,
+                    assignment = savedAssignment,
+                )
             }
         }
 
@@ -129,6 +134,56 @@ class AnnouncementCommandService(
             val updatedAssignmentSubmission: AssignmentSubmission =
                 memberAssignmentSubmission.updateSubmitStatus(submitStatus)
             assignmentSubmissionCommandUseCase.updateAssignmentSubmission(updatedAssignmentSubmission)
+        }
+    }
+
+    override fun delete(announcementId: AnnouncementId) {
+        val announcement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        announcement.markAsDeleted()
+        announcementPersistencePort.softDeleteByAnnouncement(announcement)
+    }
+
+    override fun update(
+        announcementId: AnnouncementId,
+        announcementType: AnnouncementType,
+        submitType: SubmitType?,
+        title: String,
+        content: String?,
+        submitLink: String?,
+        startAt: Instant?,
+        dueAt: Instant?,
+        scheduledAt: Instant?,
+        shouldSendNotification: Boolean,
+    ) {
+        val existingAnnouncement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        if (existingAnnouncement.announcementType != announcementType) {
+            throw AnnouncementTypeCannotBeChangedException()
+        }
+
+        existingAnnouncement.update(
+            title = title,
+            content = content,
+        )
+        announcementPersistencePort.update(existingAnnouncement)
+
+        when (existingAnnouncement.announcementType) {
+            AnnouncementType.GENERAL -> {}
+            AnnouncementType.ASSIGNMENT -> {
+                val existingAssignment: Assignment =
+                    assignmentQueryUseCase.getAssignmentByAnnouncementId(
+                        announcementId,
+                    )
+                existingAssignment.update(
+                    submitType = submitType,
+                    startAt = startAt,
+                    dueAt = dueAt,
+                    submitLink = submitLink,
+                )
+
+//                TODO : 스케쥴이나 알림 변경 시 적용
+
+                assignmentPersistencePort.save(existingAssignment)
+            }
         }
     }
 }

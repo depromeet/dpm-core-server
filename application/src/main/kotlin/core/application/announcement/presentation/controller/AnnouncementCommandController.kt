@@ -2,12 +2,14 @@ package core.application.announcement.presentation.controller
 
 import core.application.announcement.application.service.AnnouncementCommandService
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
+import core.application.announcement.presentation.request.UpdateAnnouncementRequest
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -30,12 +32,12 @@ class AnnouncementCommandController(
         announcementCommandService.create(
             authorId = memberId,
             announcementType = createAnnouncementRequest.announcementType,
-            submitType = createAnnouncementRequest.submitType,
+            submitType = createAnnouncementRequest.assignment?.submitType,
             title = createAnnouncementRequest.title,
             content = createAnnouncementRequest.content,
-            submitLink = createAnnouncementRequest.submitLink,
-            startAt = localDateTimeToInstant(createAnnouncementRequest.startAt),
-            dueAt = localDateTimeToInstant(createAnnouncementRequest.dueAt),
+            submitLink = createAnnouncementRequest.assignment?.submitLink,
+            startAt = localDateTimeToInstant(createAnnouncementRequest.assignment?.startAt),
+            dueAt = localDateTimeToInstant(createAnnouncementRequest.assignment?.dueAt),
             scheduledAt = localDateTimeToInstant(createAnnouncementRequest.scheduledAt),
             shouldSendNotification = createAnnouncementRequest.shouldSendNotification,
         )
@@ -66,6 +68,41 @@ class AnnouncementCommandController(
             announcementId = announcementId,
             memberIds = updateSubmitStatusRequest.memberIds,
             submitStatus = updateSubmitStatusRequest.submitStatus,
+        )
+        return CustomResponse.ok()
+    }
+
+    @DeleteMapping("/{announcementId}")
+    override fun deleteAnnouncement(
+        @PathVariable
+        announcementId: AnnouncementId,
+        @CurrentMemberId
+        memberId: MemberId,
+    ): CustomResponse<Void> {
+        announcementCommandService.delete(announcementId)
+        return CustomResponse.ok()
+    }
+
+    @PatchMapping("/{announcementId}")
+    override fun updateAnnouncement(
+        @PathVariable
+        announcementId: AnnouncementId,
+        @RequestBody
+        updateAnnouncementRequest: UpdateAnnouncementRequest,
+        @CurrentMemberId
+        memberId: MemberId,
+    ): CustomResponse<Void> {
+        announcementCommandService.update(
+            announcementId = announcementId,
+            announcementType = updateAnnouncementRequest.announcementType,
+            submitType = updateAnnouncementRequest.assignment?.submitType,
+            title = updateAnnouncementRequest.title,
+            content = updateAnnouncementRequest.content,
+            submitLink = updateAnnouncementRequest.assignment?.submitLink,
+            startAt = localDateTimeToInstant(updateAnnouncementRequest.assignment?.startAt),
+            dueAt = localDateTimeToInstant(updateAnnouncementRequest.assignment?.dueAt),
+            scheduledAt = localDateTimeToInstant(updateAnnouncementRequest.scheduledAt),
+            shouldSendNotification = updateAnnouncementRequest.shouldSendNotification,
         )
         return CustomResponse.ok()
     }

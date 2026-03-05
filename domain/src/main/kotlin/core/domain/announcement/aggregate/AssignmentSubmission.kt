@@ -15,12 +15,28 @@ class AssignmentSubmission(
     val teamId: TeamId,
     submitType: SubmitType,
     submitStatus: SubmitStatus,
-    val score: Int,
-    val dueAt: Instant,
+    val score: Int? = null,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
 ) {
+    companion object {
+        fun create(
+            assignmentId: AssignmentId,
+            memberId: MemberId,
+            teamId: TeamId,
+            submitType: SubmitType,
+        ): AssignmentSubmission =
+            AssignmentSubmission(
+                assignmentId = assignmentId,
+                memberId = memberId,
+                teamId = teamId,
+                submitType = submitType,
+                submitStatus = SubmitStatus.PENDING,
+                createdAt = Instant.now(),
+            )
+    }
+
     var submitType: SubmitType = submitType
         private set
 
@@ -44,7 +60,6 @@ class AssignmentSubmission(
             submitType = submitType,
             submitStatus = newSubmitStatus,
             score = score,
-            dueAt = dueAt,
             createdAt = createdAt,
             updatedAt = Instant.now(),
             deletedAt = deletedAt,

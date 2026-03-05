@@ -8,5 +8,5 @@ interface AssignmentPersistencePort {
 
     fun findAll(): List<Assignment>
 
-    fun findByAnnouncementId(announcementId: AnnouncementId): Assignment
+    fun findByAnnouncementId(announcementId: AnnouncementId): Assignment?
 }

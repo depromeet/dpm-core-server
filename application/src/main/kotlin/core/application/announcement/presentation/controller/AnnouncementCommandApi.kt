@@ -1,6 +1,7 @@
 package core.application.announcement.presentation.controller
 
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
+import core.application.announcement.presentation.request.UpdateAnnouncementRequest
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.exception.CustomResponse
 import core.domain.announcement.vo.AnnouncementId
@@ -48,5 +49,32 @@ interface AnnouncementCommandApi {
     fun updateSubmitStatus(
         announcementId: AnnouncementId,
         updateSubmitStatusRequest: UpdateSubmitStatusRequest,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "공지/과제 삭제 성공",
+    )
+    @Operation(
+        summary = "공지/과제 삭제 API",
+        description = "공지나 과제를 삭제하는 API입니다",
+    )
+    fun deleteAnnouncement(
+        announcementId: AnnouncementId,
+        memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "공지/과제 수정 성공",
+    )
+    @Operation(
+        summary = "공지/과제 수정 API",
+        description = "공지나 과제를 수정하는 API입니다",
+    )
+    fun updateAnnouncement(
+        announcementId: AnnouncementId,
+        updateAnnouncementRequest: UpdateAnnouncementRequest,
+        memberId: MemberId,
     ): CustomResponse<Void>
 }

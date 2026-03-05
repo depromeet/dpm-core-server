@@ -4,7 +4,7 @@ import core.application.common.exception.CustomResponse
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
-import core.domain.gathering.vo.GatheringV2Id
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -133,12 +133,15 @@ interface GatheringV2QueryApi {
                                 "isAttended": null,
                                 "description": "테스트용 회식 참여 조사입니다 001",
                                 "scheduledAt": "2026-01-26T05:31:48.588",
-                                "isRsvpGoingCount": 1,
+                                "submitRsvpCount": 2,
+                                "rsvpGoingCount": 1,
+                                "notRsvpGoingCount": 1,
                                 "inviteeCount": 21,
                                 "attendanceCount": 0,
                                 "authorMemberId": 1,
                                 "createdAt": "2026-01-26T14:45:19.504268",
                                 "closedAt": "2026-01-26T05:31:48.589",
+                                "canEditAfterApproval": false,
                                 "inviteTags": {
                                   "inviteTags": [
                                     {
@@ -166,7 +169,7 @@ interface GatheringV2QueryApi {
         description = "회식 참여 조사 상세 정보를 조회합니다",
     )
     fun getGatheringV2Detail(
-        gatheringV2Id: GatheringV2Id,
+        afterPartyId: AfterPartyId,
         memberId: MemberId,
     ): CustomResponse<GatheringV2DetailResponse>
 }

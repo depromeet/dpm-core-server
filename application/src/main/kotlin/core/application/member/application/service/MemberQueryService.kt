@@ -2,6 +2,7 @@ package core.application.member.application.service
 
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
+import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberRoleService: MemberRoleService,
+    private val memberAuthorityService: MemberAuthorityService,
     @Value("\${member.default-team-id:8}")
     private val defaultTeamId: Int,
 ) : MemberQueryByRoleUseCase,
@@ -35,7 +37,7 @@ class MemberQueryService(
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.of(
             getMemberById(memberId),
-            memberRoleService.getRoleNamesByMemberId(memberId),
+            memberAuthorityService.getAuthorityNamesByMemberId(memberId),
             getMemberTeamNumber(memberId),
         )
 

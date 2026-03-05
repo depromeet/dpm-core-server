@@ -11,12 +11,12 @@ interface AnnouncementCommandUseCase {
     fun create(
         authorId: MemberId,
         announcementType: AnnouncementType,
-        submitType: SubmitType,
+        submitType: SubmitType?,
         title: String,
         content: String?,
         submitLink: String?,
-        startAt: Instant,
-        dueAt: Instant,
+        startAt: Instant?,
+        dueAt: Instant?,
         scheduledAt: Instant?,
         shouldSendNotification: Boolean,
     )
@@ -30,5 +30,20 @@ interface AnnouncementCommandUseCase {
         announcementId: AnnouncementId,
         memberIds: List<MemberId>,
         submitStatus: SubmitStatus,
+    )
+
+    fun delete(announcementId: AnnouncementId)
+
+    fun update(
+        announcementId: AnnouncementId,
+        announcementType: AnnouncementType,
+        submitType: SubmitType?,
+        title: String,
+        content: String?,
+        submitLink: String?,
+        startAt: Instant?,
+        dueAt: Instant?,
+        scheduledAt: Instant?,
+        shouldSendNotification: Boolean,
     )
 }

@@ -5,7 +5,9 @@ import core.application.announcement.presentation.response.AnnouncementDetailRes
 import core.application.announcement.presentation.response.AnnouncementListResponse
 import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
 import core.application.common.exception.CustomResponse
+import core.application.security.annotation.CurrentMemberId
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.member.vo.MemberId
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -23,8 +25,9 @@ class AnnouncementQueryController(
     @GetMapping("/{announcementId}")
     override fun getAnnouncementDetail(
         @PathVariable announcementId: AnnouncementId,
+        @CurrentMemberId memberId: MemberId,
     ): CustomResponse<AnnouncementDetailResponse> =
-        CustomResponse.ok(announcementQueryService.getAnnouncementDetail(announcementId))
+        CustomResponse.ok(announcementQueryService.getAnnouncementDetail(announcementId, memberId))
 
     @GetMapping("/{announcementId}/mark-as-read/members")
     override fun getAnnouncementReadMemberList(

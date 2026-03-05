@@ -113,7 +113,9 @@ class SecurityConfig(
     }
 
     @Bean
-    fun passwordEncoder(): PasswordEncoder = org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+    fun passwordEncoder(): PasswordEncoder =
+        org.springframework.security.crypto.bcrypt
+            .BCryptPasswordEncoder()
 
     companion object {
         private val SWAGGER_PATTERNS =
@@ -143,7 +145,6 @@ class SecurityConfig(
                 "/login/kakao",
                 "/login/apple",
                 "/login/auth/apple",
-                "/login/email",
                 // General login paths (must come after specific paths)
                 "/login/**",
                 "/login",

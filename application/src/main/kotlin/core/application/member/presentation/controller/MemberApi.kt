@@ -1,6 +1,7 @@
 package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
@@ -100,15 +101,18 @@ interface MemberApi {
                                 name = "멤버 데이터 주입 요청 예시",
                                 value = """
                                 {
-                                    "teamId": "1",
                                     "members": [
                                         {
                                             "memberId": "1",
-                                            "memberPart": "SERVER"
+                                            "memberPart": "SERVER",
+                                            "team": "1",
+                                            "status": "ACTIVE"
                                         },
                                         {
                                             "memberId": "2",
-                                            "memberPart": "DESIGN"
+                                            "memberPart": "DESIGN",
+                                            "team": "2",
+                                            "status": "INACTIVE"
                                         }
                                     ]
                                 }
@@ -173,4 +177,11 @@ interface MemberApi {
         ],
     )
     fun updateMemberStatus(request: UpdateMemberStatusRequest): CustomResponse<Void>
+
+    @Operation(
+        summary = "DEEPER를 ORGANIZER로 변환 API (dev)",
+        description = "지정한 멤버의 권한을 DEEPER에서 ORGANIZER로 변환합니다.",
+    )
+    @ApiResponse(responseCode = "200", description = "권한 변환 성공")
+    fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest): CustomResponse<Void>
 }

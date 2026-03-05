@@ -6,11 +6,11 @@ import core.application.gathering.presentation.request.CreateGatheringV2ByInvite
 import core.application.gathering.presentation.request.CreateGatheringV2Request
 import core.application.gathering.presentation.request.UpdateGatheringV2Request
 import core.application.security.annotation.CurrentMemberId
-import core.domain.gathering.aggregate.GatheringV2
-import core.domain.gathering.enums.GatheringCategory
-import core.domain.gathering.enums.GatheringV2InviteTag
-import core.domain.gathering.port.inbound.GatheringV2CommandUseCase
-import core.domain.gathering.vo.GatheringV2Id
+import core.domain.afterParty.aggregate.AfterParty
+import core.domain.afterParty.enums.AfterPartyCategory
+import core.domain.afterParty.enums.AfterPartyInviteTagEnum
+import core.domain.afterParty.port.inbound.AfterPartyCommandUseCase
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PatchMapping
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/v2/gatherings")
 class GatheringV2CommandController(
-    val gatheringV2CommandUseCase: GatheringV2CommandUseCase,
+    val afterPartyCommandUseCase: AfterPartyCommandUseCase,
 ) : GatheringV2CommandApi {
     @PreAuthorize("hasAuthority('create:gathering')")
     @PostMapping
@@ -31,21 +31,21 @@ class GatheringV2CommandController(
         @RequestBody createGatheringV2Request: CreateGatheringV2Request,
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
-        val gatheringV2InviteTags: List<GatheringV2InviteTag> =
+        val afterPartyInviteTags: List<AfterPartyInviteTagEnum> =
             createGatheringV2Request.inviteTags.map { it.toDomain() }
-        val createGatheringV2: GatheringV2 =
-            GatheringV2.create(
+        val createAfterParty: AfterParty =
+            AfterParty.create(
                 title = createGatheringV2Request.title,
                 description = createGatheringV2Request.description,
-                category = GatheringCategory.GATHERING,
+                category = AfterPartyCategory.AFTER_PARTY,
                 scheduledAt = localDateTimeToInstant(createGatheringV2Request.scheduledAt),
                 closedAt = localDateTimeToInstant(createGatheringV2Request.closedAt),
                 authorMemberId = memberId,
                 canEditAfterApproval = createGatheringV2Request.canEditAfterApproval,
             )
-        gatheringV2CommandUseCase.createGatheringV2(
-            gatheringV2 = createGatheringV2,
-            gatheringV2InviteTags = gatheringV2InviteTags,
+        afterPartyCommandUseCase.createAfterParty(
+            afterParty = createAfterParty,
+            afterPartyInviteTags = afterPartyInviteTags,
             authorMemberId = memberId,
         )
         return CustomResponse.ok()
@@ -57,18 +57,18 @@ class GatheringV2CommandController(
         @RequestBody createGatheringV2ByInviteTagNamesRequest: CreateGatheringV2ByInviteTagNamesRequest,
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
-        val createGatheringV2: GatheringV2 =
-            GatheringV2.create(
+        val createAfterParty: AfterParty =
+            AfterParty.create(
                 title = createGatheringV2ByInviteTagNamesRequest.title,
                 description = createGatheringV2ByInviteTagNamesRequest.description,
-                category = GatheringCategory.GATHERING,
+                category = AfterPartyCategory.AFTER_PARTY,
                 scheduledAt = localDateTimeToInstant(createGatheringV2ByInviteTagNamesRequest.scheduledAt),
                 closedAt = localDateTimeToInstant(createGatheringV2ByInviteTagNamesRequest.closedAt),
                 authorMemberId = memberId,
                 canEditAfterApproval = createGatheringV2ByInviteTagNamesRequest.canEditAfterApproval,
             )
-        gatheringV2CommandUseCase.createGatheringV2ByInviteTagNames(
-            gatheringV2 = createGatheringV2,
+        afterPartyCommandUseCase.createAfterPartyByInviteTagNames(
+            afterParty = createAfterParty,
             inviteTagNames = createGatheringV2ByInviteTagNamesRequest.inviteTagNames,
             authorMemberId = memberId,
         )
@@ -80,13 +80,13 @@ class GatheringV2CommandController(
     override fun updateGatheringV2(
         @RequestBody updateGatheringV2Request: UpdateGatheringV2Request,
         @CurrentMemberId memberId: MemberId,
-        @PathVariable gatheringId: GatheringV2Id,
+        @PathVariable gatheringId: AfterPartyId,
     ): CustomResponse<Void> {
-        val gatheringV2InviteTags: List<GatheringV2InviteTag> =
+        val afterPartyInviteTags: List<AfterPartyInviteTagEnum> =
             updateGatheringV2Request.inviteTags.map { it.toDomain() }
-        val updateGatheringV2: GatheringV2 = updateGatheringV2Request.toDomain(gatheringId)
-        gatheringV2CommandUseCase.updateGatheringV2(
-            gatheringV2 = updateGatheringV2,
+        val updateAfterParty: AfterParty = updateGatheringV2Request.toDomain(gatheringId)
+        afterPartyCommandUseCase.updateAfterParty(
+            afterParty = updateAfterParty,
         )
         return CustomResponse.ok()
     }
