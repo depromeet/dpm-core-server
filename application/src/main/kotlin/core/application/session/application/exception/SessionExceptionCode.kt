@@ -14,6 +14,7 @@ enum class SessionExceptionCode(
     ALREADY_CHECKED_ATTENDANCE(HttpStatus.BAD_REQUEST, "SESSION-400-04", "이미 출석을 체크했습니다"),
     ATTENDANCE_START_TIME_DATE_MISMATCH(HttpStatus.BAD_REQUEST, "SESSION-400-05", "출석 시작 시간의 날짜가 세션의 날짜와 일치하지 않습니다"),
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION-404-01", "세션을 찾을 수 없습니다"),
+    COHORT_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION-404-02", "해당 기수의 세션을 찾을 수 없습니다"),
     ;
 
     override fun getStatus(): HttpStatus = status
