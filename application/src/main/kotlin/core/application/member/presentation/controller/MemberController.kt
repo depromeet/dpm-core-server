@@ -8,6 +8,7 @@ import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.member.application.service.auth.EmailPasswordAuthService
 import core.application.member.presentation.controller.MemberLoginController.AppleLoginRequest
+import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.SetPasswordRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
@@ -90,6 +91,15 @@ class MemberController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("permitAll()")
+    @PatchMapping("/authority/organizer")
+    override fun convertDeeperToOrganizer(
+        @Valid @RequestBody request: ConvertDeeperToOrganizerRequest,
+    ): CustomResponse<Void> {
+        memberCommandService.convertDeeperToOrganizer(request)
+        return CustomResponse.ok()
+    }
+
     @PostMapping("/login/auth/apple")
     @Operation(
         summary = "Apple OAuth2 Login V1",
@@ -106,7 +116,13 @@ class MemberController(
         @RequestBody body: AppleLoginRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
-        val tokens = appleAuthService.login(body.authorizationCode)
+        val tokens =
+            appleAuthService.login(
+                authorizationCode = body.authorizationCode,
+                fullName = body.fullName,
+                familyName = body.familyName,
+                givenName = body.givenName,
+            )
         addTokenCookies(response, tokens)
         return tokens
     }

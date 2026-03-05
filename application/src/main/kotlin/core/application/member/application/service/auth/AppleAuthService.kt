@@ -25,7 +25,12 @@ class AppleAuthService(
     private val environment: Environment,
 ) {
     @Transactional
-    fun login(authorizationCode: String): AuthTokenResponse {
+    fun login(
+        authorizationCode: String,
+        fullName: String? = null,
+        familyName: String? = null,
+        givenName: String? = null,
+    ): AuthTokenResponse {
         val tokenResponse = appleTokenExchangeService.getTokens(authorizationCode)
 
         val claims = appleIdTokenValidator.verify(tokenResponse.id_token)
@@ -39,9 +44,15 @@ class AppleAuthService(
                 // Initial signup - create new member
                 val email =
                     claims["email"] as? String
-                        ?: throw IllegalArgumentException("Invalid ID Token: email missing")
+                        ?: throw IllegalArgumentException("Invalid ID Token: emailassignments missing")
 
-                val name = email.substringBefore("@")
+                val claimName = (claims["name"] as? String)?.trim()?.takeIf { it.isNotBlank() }
+                val name =
+                    resolveMemberName(
+                        fullName = fullName?.trim()?.takeIf { it.isNotBlank() } ?: claimName,
+                        familyName = familyName,
+                        givenName = givenName,
+                    ) ?: throw IllegalArgumentException("Apple name missing for initial signup")
 
                 val newMember =
                     memberPersistencePort.save(
@@ -81,6 +92,21 @@ class AppleAuthService(
         refreshTokenPersistencePort.save(refreshTokenEntity)
 
         return AuthTokenResponse(accessToken, refreshToken)
+    }
+
+    private fun resolveMemberName(
+        fullName: String?,
+        familyName: String?,
+        givenName: String?,
+    ): String? {
+        val normalizedFamilyName = familyName?.trim().orEmpty()
+        val normalizedGivenName = givenName?.trim().orEmpty()
+
+        if (normalizedFamilyName.isNotBlank() || normalizedGivenName.isNotBlank()) {
+            return (normalizedFamilyName + normalizedGivenName).ifBlank { null }
+        }
+
+        return fullName?.trim()?.takeIf { it.isNotBlank() }
     }
 }
 

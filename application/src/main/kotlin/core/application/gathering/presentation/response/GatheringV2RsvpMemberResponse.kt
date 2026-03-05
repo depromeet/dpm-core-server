@@ -8,5 +8,5 @@ data class GatheringV2RsvpMemberResponse(
     val name: String,
     val part: MemberPart?,
     val team: Int,
-    val isRsvpGoing: Boolean,
+    val rsvpStatus: Boolean?,
 )

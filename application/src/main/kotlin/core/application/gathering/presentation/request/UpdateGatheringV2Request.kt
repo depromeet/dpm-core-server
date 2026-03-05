@@ -1,9 +1,9 @@
 package core.application.gathering.presentation.request
 
 import core.application.common.converter.TimeMapper.localDateTimeToInstant
-import core.domain.gathering.aggregate.GatheringV2
-import core.domain.gathering.enums.GatheringCategory
-import core.domain.gathering.vo.GatheringV2Id
+import core.domain.afterParty.aggregate.AfterParty
+import core.domain.afterParty.enums.AfterPartyCategory
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
 import java.time.LocalDateTime
 
@@ -17,12 +17,12 @@ data class UpdateGatheringV2Request(
     val canEditAfterApproval: Boolean,
     val inviteTags: List<CreateGatheringV2InviteTagRequest>,
 ) {
-    fun toDomain(gatheringV2Id: GatheringV2Id): GatheringV2 =
-        GatheringV2(
-            id = gatheringV2Id,
+    fun toDomain(afterPartyId: AfterPartyId): AfterParty =
+        AfterParty(
+            id = afterPartyId,
             title = title,
             description = description,
-            category = GatheringCategory.GATHERING,
+            category = AfterPartyCategory.AFTER_PARTY,
             scheduledAt = localDateTimeToInstant(scheduledAt),
             closedAt = localDateTimeToInstant(closedAt),
             isApproved = isApproved,
