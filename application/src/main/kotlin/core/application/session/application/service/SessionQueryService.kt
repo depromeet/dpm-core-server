@@ -39,10 +39,10 @@ class SessionQueryService(
         return sessionPersistencePort.findNextSessionBy(startOfToday)
     }
 
-    fun getAllSessions(): List<Session> {
+    fun getAllCohortSessions(): List<Session> {
         val cohortId = cohortQueryUseCase.getLatestCohortId()
 
-        return sessionPersistencePort.findAllSessions(cohortId.value)
+        return sessionPersistencePort.findAllCohortSessions(cohortId.value)
     }
 
     fun getSessionById(sessionId: SessionId): Session =
@@ -60,7 +60,7 @@ class SessionQueryService(
         val cohortId = cohortQueryUseCase.getLatestCohortId()
 
         return sessionPersistencePort
-            .findAllSessions(cohortId.value)
+            .findAllCohortSessions(cohortId.value)
             .map { SessionWeekQueryModel(sessionId = it.id!!, week = it.week, date = it.date) }
     }
 
