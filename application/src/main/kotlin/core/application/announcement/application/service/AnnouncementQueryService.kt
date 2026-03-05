@@ -43,11 +43,13 @@ class AnnouncementQueryService(
     override fun getAnnouncementById(announcementId: AnnouncementId): Announcement =
         announcementPersistencePort.findAnnouncementById(announcementId) ?: throw AnnouncementNotFoundException()
 
+    @Transactional(readOnly = false)
     fun getAnnouncementDetail(
         announcementId: AnnouncementId,
         memberId: MemberId,
     ): AnnouncementDetailResponse {
         val announcement: Announcement = getAnnouncementById(announcementId)
+//        TODO : Get에서 POST 문제가 있다..!
         val announcementRead: AnnouncementRead =
             announcementReadQueryUseCase.findByAnnouncementIdAndMemberId(announcementId, memberId)
                 ?: announcementReadCommandUseCase.create(announcementId, memberId)
