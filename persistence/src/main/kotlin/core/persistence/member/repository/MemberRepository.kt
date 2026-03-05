@@ -15,7 +15,11 @@ import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.TEAMS
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.name
+import org.jooq.impl.DSL.table
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 
 @Repository
 class MemberRepository(
@@ -83,19 +87,26 @@ class MemberRepository(
         cohortId: CohortId,
         authorityId: Long,
     ): List<MemberId> =
-        dsl
-            .selectDistinct(MEMBERS.MEMBER_ID)
-            .from(MEMBERS)
-            .join(MEMBER_COHORTS)
-            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
-            .join(MEMBER_ROLES)
-            .on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
-            .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
-            .and(MEMBER_ROLES.ROLE_ID.eq(authorityId))
-            .and(MEMBER_ROLES.DELETED_AT.isNull)
-            .fetch(MEMBERS.MEMBER_ID)
-            .filterNotNull()
-            .map { MemberId(it) }
+        run {
+            val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
+            val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
+            val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
+            val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+
+            dsl
+                .selectDistinct(MEMBERS.MEMBER_ID)
+                .from(MEMBERS)
+                .join(MEMBER_COHORTS)
+                .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+                .join(memberAuthoritiesTable)
+                .on(MEMBERS.MEMBER_ID.eq(memberAuthoritiesMemberIdField))
+                .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+                .and(memberAuthoritiesAuthorityIdField.eq(authorityId))
+                .and(memberAuthoritiesDeletedAtField.isNull)
+                .fetch(MEMBERS.MEMBER_ID)
+                .filterNotNull()
+                .map { MemberId(it) }
+        }
 
     override fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         dsl
