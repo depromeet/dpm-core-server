@@ -96,6 +96,7 @@ jobs:
             rm -rf .env
 
             cat <<EOF > .env
+            COHORT_VALUE=${{ secrets.PROD_COHORT_VALUE }}
             SPRING_PROFILES_ACTIVE=prod
             PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}
             PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}
