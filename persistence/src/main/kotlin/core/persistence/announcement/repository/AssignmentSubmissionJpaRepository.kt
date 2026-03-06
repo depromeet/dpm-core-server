@@ -10,4 +10,6 @@ interface AssignmentSubmissionJpaRepository : JpaRepository<AssignmentSubmission
         assignmentId: AssignmentId,
         memberId: MemberId,
     ): AssignmentSubmissionEntity?
+
+    fun findByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmissionEntity>
 }

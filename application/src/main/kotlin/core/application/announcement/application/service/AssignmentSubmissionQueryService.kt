@@ -20,4 +20,7 @@ class AssignmentSubmissionQueryService(
             assignmentId = assignmentId,
             memberId = memberId,
         ) ?: throw AssignmentSubmissionNotFoundException()
+
+    override fun getByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmission> =
+        assignmentSubmissionPersistencePort.findByAssignmentId(assignmentId)
 }
