@@ -51,7 +51,10 @@ class AssignmentSubmission(
 
     fun isDeleted(): Boolean = deletedAt != null
 
-    fun updateSubmitStatus(newSubmitStatus: SubmitStatus): AssignmentSubmission =
+    fun updateSubmitStatus(
+        newSubmitStatus: SubmitStatus,
+        newScore: Int?,
+    ): AssignmentSubmission =
         AssignmentSubmission(
             id = id,
             assignmentId = assignmentId,
@@ -59,7 +62,7 @@ class AssignmentSubmission(
             teamId = teamId,
             submitType = submitType,
             submitStatus = newSubmitStatus,
-            score = score,
+            score = newScore,
             createdAt = createdAt,
             updatedAt = Instant.now(),
             deletedAt = deletedAt,

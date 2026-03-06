@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "GatheringV2", description = "회식 참여 조사 API")
+@Deprecated("AfterParty로 회식 API가 대체될 예정입니다.")
 interface GatheringV2QueryApi {
     @ApiResponse(
         responseCode = "200",

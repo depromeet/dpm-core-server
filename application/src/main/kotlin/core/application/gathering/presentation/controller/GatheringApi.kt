@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Positive
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "Gathering", description = "회식 API")
+@Deprecated("AfterParty로 회식 API가 대체될 예정입니다.")
 interface GatheringApi {
     @ApiResponse(
         responseCode = "200",

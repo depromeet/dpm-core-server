@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
 @Tag(name = "GatheringV2", description = "회식 참여 조사 API")
+@Deprecated("AfterParty로 회식 API가 대체될 예정입니다.")
 interface GatheringV2InviteeCommandApi {
     @ApiResponse(
         responseCode = "200",
