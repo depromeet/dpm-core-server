@@ -1,6 +1,7 @@
 package core.application.announcement.application.service
 
 import core.application.announcement.application.exception.AnnouncementNotFoundException
+import core.application.announcement.presentation.response.AnnouncementDetailAssignmentResponse
 import core.application.announcement.presentation.response.AnnouncementDetailResponse
 import core.application.announcement.presentation.response.AnnouncementListResponse
 import core.application.announcement.presentation.response.AnnouncementViewMemberListItemResponse
@@ -58,11 +59,11 @@ class AnnouncementQueryService(
             announcementReadQueryUseCase.countByAnnouncementId(announcementId)
         when (announcement.announcementType) {
             AnnouncementType.GENERAL -> return AnnouncementDetailResponse.of(
+                announcementId = announcementId,
+                announcementType = announcement.announcementType,
                 title = announcement.title,
                 content = announcement.content,
                 createdAt = instantToLocalDateTime(announcement.createdAt!!),
-                dueAt = null,
-                submitLink = null,
                 isRead = announcementRead.isRead(),
                 markAsReadCount = announcementReadCount,
             )
@@ -70,11 +71,18 @@ class AnnouncementQueryService(
                 val assignment: Assignment = assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
 
                 return AnnouncementDetailResponse.of(
+                    announcementId = announcementId,
+                    announcementType = announcement.announcementType,
                     title = announcement.title,
                     content = announcement.content,
                     createdAt = instantToLocalDateTime(announcement.createdAt!!),
-                    dueAt = instantToLocalDateTime(assignment.dueAt),
-                    submitLink = assignment.submitLink,
+                    announcementDetailAssignmentResponse =
+                        AnnouncementDetailAssignmentResponse.of(
+                            submitType = assignment.submitType,
+                            startAt = instantToLocalDateTime(assignment.startAt),
+                            dueAt = instantToLocalDateTime(assignment.dueAt),
+                            submitLink = assignment.submitLink,
+                        ),
                     isRead = announcementRead.isRead(),
                     markAsReadCount = announcementReadCount,
                 )
