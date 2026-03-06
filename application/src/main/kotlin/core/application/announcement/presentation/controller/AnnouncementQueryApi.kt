@@ -160,40 +160,28 @@ interface AnnouncementQueryApi {
 
     @ApiResponse(
         responseCode = "200",
-        description = "멤버들 공지/과제 읽음 여부 조회 상세",
+        description = "멤버들 과제 제출 현황 조회",
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
                 schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
-                        name = "멤버들 공지/과제 읽음 여부 조회 성공 응답",
+                        name = "멤버들 과제 제출 상태 현황 성공 응답",
                         value = """
                             {
                               "status": "OK",
                               "message": "요청에 성공했습니다",
                               "code": "GLOBAL-200-01",
                               "data": {
-                                "readMembers": [
+                                "members": [
                                   {
                                     "memberId": 1,
                                     "name": "준원카카오",
                                     "teamId": 1,
-                                    "part": "SERVER"
-                                  }
-                                ],
-                                "unreadMembers": [
-                                  {
-                                    "memberId": 2,
-                                    "name": "신민철",
-                                    "teamId": 1,
-                                    "part": "SERVER"
-                                  },
-                                  {
-                                    "memberId": 3,
-                                    "name": "이한음",
-                                    "teamId": 1,
-                                    "part": "SERVER"
+                                    "part": "SERVER",
+                                    "submitStatus": "SUBMITTED",
+                                    "score": 10
                                   }
                                 ]
                               }
@@ -205,8 +193,8 @@ interface AnnouncementQueryApi {
         ],
     )
     @Operation(
-        summary = "멤버들 공지/과제 읽음 여부 조회 API",
-        description = "멤버 별로 공지/과제 읽음 여부를 조회합니다",
+        summary = "멤버들 과제 제출 현황 조회 API",
+        description = "멤버 별로 과제 제출 현황를 조회합니다",
     )
     fun getAssignmentStatusMemberList(
         announcementId: AnnouncementId,
