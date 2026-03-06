@@ -3,6 +3,7 @@ package core.application.announcement.presentation.controller
 import core.application.announcement.presentation.response.AnnouncementDetailResponse
 import core.application.announcement.presentation.response.AnnouncementListResponse
 import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
+import core.application.announcement.presentation.response.AssignmentStatusMemberListResponse
 import core.application.common.exception.CustomResponse
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
@@ -156,4 +157,46 @@ interface AnnouncementQueryApi {
     fun getAnnouncementReadMemberList(
         announcementId: AnnouncementId,
     ): CustomResponse<AnnouncementViewMemberListResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버들 과제 제출 현황 조회",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "멤버들 과제 제출 상태 현황 성공 응답",
+                        value = """
+                            {
+                              "status": "OK",
+                              "message": "요청에 성공했습니다",
+                              "code": "GLOBAL-200-01",
+                              "data": {
+                                "members": [
+                                  {
+                                    "memberId": 1,
+                                    "name": "준원카카오",
+                                    "teamId": 1,
+                                    "part": "SERVER",
+                                    "submitStatus": "SUBMITTED",
+                                    "score": 10
+                                  }
+                                ]
+                              }
+                            }
+                    """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "멤버들 과제 제출 현황 조회 API",
+        description = "멤버 별로 과제 제출 현황를 조회합니다",
+    )
+    fun getAssignmentStatusMemberList(
+        announcementId: AnnouncementId,
+    ): CustomResponse<AssignmentStatusMemberListResponse>
 }

@@ -19,6 +19,7 @@ import jakarta.validation.constraints.Positive
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "Bill", description = "정산 API")
+@Deprecated("정산 API는 현재 사용되지 않으며, 향후 회식 API로 대체될 예정입니다.")
 interface BillCommandApi {
     @Operation(
         summary = "정산서 생성 또는 추가",

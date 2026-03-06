@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 
 @Tag(name = "Bill Account", description = "정산 계좌 API")
+@Deprecated("정산 API는 현재 사용되지 않으며, 향후 회식 API로 대체될 예정입니다.")
 interface BillAccountQueryApi {
     @Operation(
         summary = "정산 계좌 조회",

@@ -21,4 +21,9 @@ class AssignmentSubmissionRepository(
         assignmentSubmissionJpaRepository
             .findByAssignmentIdAndMemberId(assignmentId, memberId)
             ?.toDomain()
+
+    override fun findByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmission> =
+        assignmentSubmissionJpaRepository
+            .findByAssignmentId(assignmentId)
+            .map { it.toDomain() }
 }

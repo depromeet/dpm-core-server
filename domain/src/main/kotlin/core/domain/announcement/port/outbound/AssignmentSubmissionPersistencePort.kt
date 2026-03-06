@@ -11,4 +11,6 @@ interface AssignmentSubmissionPersistencePort {
         assignmentId: AssignmentId,
         memberId: MemberId,
     ): AssignmentSubmission?
+
+    fun findByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmission>
 }

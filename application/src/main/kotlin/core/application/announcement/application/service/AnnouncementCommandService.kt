@@ -121,6 +121,7 @@ class AnnouncementCommandService(
         announcementId: AnnouncementId,
         memberIds: List<MemberId>,
         submitStatus: SubmitStatus,
+        assignmentScore: Int?,
     ) {
         val retrievedAssignment: Assignment =
             assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
@@ -132,7 +133,10 @@ class AnnouncementCommandService(
                     memberId = memberId,
                 )
             val updatedAssignmentSubmission: AssignmentSubmission =
-                memberAssignmentSubmission.updateSubmitStatus(submitStatus)
+                memberAssignmentSubmission.updateSubmitStatus(
+                    newSubmitStatus = submitStatus,
+                    newScore = assignmentScore,
+                )
             assignmentSubmissionCommandUseCase.updateAssignmentSubmission(updatedAssignmentSubmission)
         }
     }

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Positive
 
 @Tag(name = "Bill", description = "정산 API")
+@Deprecated("정산 API는 현재 사용되지 않으며, 향후 회식 API로 대체될 예정입니다.")
 interface BillQueryApi {
     @ApiResponses(
         value = [
