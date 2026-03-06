@@ -9,4 +9,6 @@ interface AssignmentSubmissionQueryUseCase {
         assignmentId: AssignmentId,
         memberId: MemberId,
     ): AssignmentSubmission
+
+    fun getByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmission>
 }
