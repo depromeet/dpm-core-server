@@ -73,9 +73,18 @@ interface AnnouncementQueryApi {
                               "message": "요청에 성공했습니다",
                               "code": "GLOBAL-200-01",
                               "data": {
+                                "announcementId": 3,
+                                "announcementType": "ASSIGNMENT",
                                 "title": "공지/과제 테스트용 제목 001",
                                 "content": "공지/과제 테스트용 내용 001",
                                 "createdAt": "2026-01-30T16:15:36.977721",
+                                "assignment": {
+                                  "submitType": "INDIVIDUAL",
+                                  "startAt": "2026-01-30T07:11:11.938",
+                                  "dueAt": "2026-01-30T07:11:11.938",
+                                  "submitLink": "테스트용 제출 링크 001"
+                                },
+                                "isRead": true,
                                 "markAsReadCount": 1
                               }
                             }
