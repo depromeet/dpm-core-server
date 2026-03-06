@@ -26,7 +26,6 @@ interface BillCommandApi {
         description =
             "정산을 추가합니다. 각 차수의 회식과 정산서, 참여 멤버 등을 함께 추가해야 합니다. \n" +
                 "추후에는 영수증 사진이 추가될 수 있습니다.",
-        deprecated = true,
     )
     @ApiResponses(
         value = [

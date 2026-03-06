@@ -1,6 +1,7 @@
 package core.application.announcement.application.service
 
 import core.application.announcement.application.exception.AnnouncementNotFoundException
+import core.application.announcement.application.exception.AssignmentNotFoundException
 import core.application.announcement.application.exception.NotAnAssignmentException
 import core.application.announcement.presentation.response.AnnouncementDetailAssignmentResponse
 import core.application.announcement.presentation.response.AnnouncementDetailResponse
@@ -133,7 +134,7 @@ class AnnouncementQueryService(
             )
         val assignmentSubmissions: List<AssignmentSubmission> =
             assignmentSubmissionQueryUseCase.getByAssignmentId(
-                assignment.id ?: throw AnnouncementNotFoundException(),
+                assignment.id ?: throw AssignmentNotFoundException(),
             )
 
         val assignmentStatusMemberListItemResponses: List<AssignmentStatusMemberListItemResponse> =
