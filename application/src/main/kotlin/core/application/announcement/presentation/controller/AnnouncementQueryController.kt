@@ -4,6 +4,7 @@ import core.application.announcement.application.service.AnnouncementQueryServic
 import core.application.announcement.presentation.response.AnnouncementDetailResponse
 import core.application.announcement.presentation.response.AnnouncementListResponse
 import core.application.announcement.presentation.response.AnnouncementViewMemberListResponse
+import core.application.announcement.presentation.response.AssignmentStatusMemberListResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.announcement.vo.AnnouncementId
@@ -34,4 +35,10 @@ class AnnouncementQueryController(
         @PathVariable announcementId: AnnouncementId,
     ): CustomResponse<AnnouncementViewMemberListResponse> =
         CustomResponse.ok(announcementQueryService.getAnnouncementReadMemberList(announcementId))
+
+    @GetMapping("/{announcementId}/assignment-status")
+    override fun getAssignmentStatusMemberList(
+        @PathVariable announcementId: AnnouncementId,
+    ): CustomResponse<AssignmentStatusMemberListResponse> =
+        CustomResponse.ok(announcementQueryService.getAssignmentStatusMemberList(announcementId))
 }
