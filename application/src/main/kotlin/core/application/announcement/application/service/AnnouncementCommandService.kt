@@ -1,5 +1,6 @@
 package core.application.announcement.application.service
 
+import core.application.announcement.application.exception.AnnouncementNotFoundException
 import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
 import core.application.cohort.application.properties.CohortProperties
@@ -23,6 +24,7 @@ import core.domain.announcement.port.inbound.AssignmentSubmissionQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -189,5 +191,28 @@ class AnnouncementCommandService(
                 assignmentPersistencePort.save(existingAssignment)
             }
         }
+    }
+
+    override fun initializeForNewCohortMember(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ) {
+        // TODO : 해당 기수의 공지 읽음 이력, 과제 제출 현황에 추가. 지금은 공지/과제가 기수 별로 나눠져 있지 않은 상태라서, 공지 읽음 이력도 기수 별로 나눠야 할듯
+        val announcementIds: List<AnnouncementId> =
+            announcementQueryUseCase.getAll().map { it.id ?: throw AnnouncementNotFoundException() }
+
+        announcementReadCommandUseCase.initializeForNewCohortMember(
+            memberId = memberId,
+            announcementIds = announcementIds,
+        )
+
+        assignmentSubmissionCommandUseCase.initializeForNewCohortMember(
+            memberId = memberId,
+            assignments =
+                announcementIds.mapNotNull { announcementId ->
+                    val assignment: Assignment? = assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
+                    assignment
+                },
+        )
     }
 }
