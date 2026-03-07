@@ -1,7 +1,6 @@
 package core.application.member.application.service.auth
 
 import core.application.authorization.application.service.RoleQueryService
-import core.application.common.constant.Profile
 import core.application.member.application.exception.InvalidEmailPasswordException
 import core.application.member.application.exception.MemberAllowedException
 import core.application.member.application.exception.MemberDeletedException
@@ -15,7 +14,6 @@ import core.domain.membercredential.aggregate.MemberCredential
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
-import org.springframework.core.env.Environment
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -38,7 +36,6 @@ class EmailPasswordAuthService(
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val passwordEncoder: PasswordEncoder,
-    private val environment: Environment,
 ) {
     /**
      * 이메일과 비밀번호로 로그인하거나, 신규 회원가입을 처리합니다.
@@ -132,15 +129,13 @@ class EmailPasswordAuthService(
         password: String,
     ): AuthTokenResponse {
         // 1. Create new member
-        val activeProfile = Profile.get(environment).value
         val memberName = email.substringBefore("@")
 
         val newMember =
             memberPersistencePort.save(
-                Member.create(
+                Member.createPending(
                     email = email,
                     name = memberName,
-                    activeProfile = activeProfile,
                 ),
             )
 
