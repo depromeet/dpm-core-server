@@ -78,11 +78,16 @@ class MemberCommandService(
     }
 
     fun activate(member: Member) {
+        val memberId = requireNotNull(member.id) { "Activated member must have id" }
+        val activeAuthorityIds = memberAuthorityService.getActiveAuthorityIdsByMemberId(memberId)
+        if (activeAuthorityIds.isEmpty()) {
+            memberAuthorityService.ensureAuthorityAssigned(memberId, DEEPER_AUTHORITY_ID)
+        } else if (activeAuthorityIds.none { it == DEEPER_AUTHORITY_ID || it == ORGANIZER_AUTHORITY_ID }) {
+            return
+        }
+
         member.activate()
         memberPersistencePort.save(member)
-        val memberId = requireNotNull(member.id) { "Activated member must have id" }
-        memberRoleService.ensureRoleAssigned(memberId, RoleType.Deeper)
-        memberAuthorityService.ensureAuthorityAssigned(memberId, RoleType.Deeper.code)
     }
 
     fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest) {
@@ -118,5 +123,10 @@ class MemberCommandService(
         } else {
             throw MemberStatusAlreadyUpdatedException()
         }
+    }
+
+    companion object {
+        private const val DEEPER_AUTHORITY_ID = 1L
+        private const val ORGANIZER_AUTHORITY_ID = 2L
     }
 }

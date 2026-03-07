@@ -103,6 +103,21 @@ class Member(
     }
 
     companion object {
+        fun createPending(
+            email: String,
+            name: String,
+        ): Member {
+            val now = Instant.now()
+            return Member(
+                email = email,
+                signupEmail = email,
+                name = name,
+                status = MemberStatus.PENDING,
+                createdAt = now,
+                updatedAt = now,
+            )
+        }
+
         fun create(
             email: String,
             name: String,

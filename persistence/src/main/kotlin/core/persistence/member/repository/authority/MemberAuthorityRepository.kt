@@ -29,11 +29,30 @@ class MemberAuthorityRepository(
             .filterNotNull()
     }
 
+    override fun findActiveAuthorityIdsByMemberId(memberId: MemberId): List<Long> {
+        val authorityIdField = field(name("authority_id"), Long::class.java)
+
+        return dsl
+            .select(authorityIdField)
+            .from(table(name("member_authorities")))
+            .where(field(name("member_id"), Long::class.java).eq(memberId.value))
+            .and(field(name("deleted_at"), LocalDateTime::class.java).isNull)
+            .fetch(authorityIdField)
+            .filterNotNull()
+    }
+
     override fun ensureAuthorityAssigned(
         memberId: MemberId,
         authorityName: String,
     ) {
         val authorityId = findAuthorityIdByName(authorityName)
+        ensureAuthorityAssigned(memberId, authorityId)
+    }
+
+    override fun ensureAuthorityAssigned(
+        memberId: MemberId,
+        authorityId: Long,
+    ) {
         val memberIdField = field(name("member_id"), Long::class.java)
         val authorityIdField = field(name("authority_id"), Long::class.java)
         val deletedAtField = field(name("deleted_at"), LocalDateTime::class.java)
