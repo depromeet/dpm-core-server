@@ -5,6 +5,7 @@ import core.application.cohort.application.properties.CohortProperties
 import core.application.member.application.exception.CohortMembersNotFoundException
 import core.application.member.application.service.MemberQueryService
 import core.application.session.application.exception.CheckedAttendanceException
+import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.exception.TooEarlyAttendanceException
 import core.application.session.application.service.SessionQueryService
 import core.application.session.application.validator.SessionValidator
@@ -15,7 +16,9 @@ import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.vo.AttendanceResult
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
+import core.domain.session.aggregate.Session
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -117,5 +120,25 @@ class AttendanceCommandService(
                 .onEach { it.delete(deletedAt) }
 
         attendancePersistencePort.updateInBatch(attendances)
+    }
+
+    fun initializeForNewCohortMember(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ) {
+        val cohortSessions: List<Session> = sessionQueryService.getAllCohortSessions(cohortId)
+
+        val attendances =
+            cohortSessions
+                .map { session ->
+                    Attendance.create(
+                        AttendanceCreateCommand(
+                            sessionId = session.id ?: throw SessionNotFoundException(),
+                            memberId = memberId,
+                        ),
+                    )
+                }
+
+        attendancePersistencePort.saveInBatch(attendances)
     }
 }
