@@ -22,13 +22,13 @@ class AfterPartyInviteeRepository(
         inviteeMember: Member,
     ) {
         afterPartyInviteeJpaRepository.save(
-            AfterPartyInviteeEntity.Companion.from(
+            AfterPartyInviteeEntity.from(
                 afterPartyInvitee,
-                AfterPartyEntity.Companion.of(
+                AfterPartyEntity.of(
                     afterParty = afterParty,
                     authorMember = MemberEntity.Companion.from(authorMember),
                 ),
-                MemberEntity.Companion.from(inviteeMember),
+                MemberEntity.from(inviteeMember),
             ),
         )
     }
