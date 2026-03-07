@@ -8,6 +8,7 @@ import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
 import core.domain.announcement.port.outbound.AssignmentSubmissionPersistencePort
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
+import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamId
 import org.springframework.stereotype.Service
 
@@ -40,5 +41,25 @@ class AssignmentSubmissionCommandService(
                     ),
                 )
             }
+    }
+
+    override fun initializeForNewCohortMember(
+        memberId: MemberId,
+        assignments: List<Assignment>,
+    ) {
+        assignments.forEach { assignment ->
+            val teamId: TeamId = memberQueryService.getMemberTeamId(memberId)
+            assignmentSubmissionPersistencePort.findByAssignmentIdAndMemberId(
+                assignmentId = assignment.id ?: throw AssignmentNotFoundException(),
+                memberId = memberId,
+            ) ?: assignmentSubmissionPersistencePort.save(
+                AssignmentSubmission.create(
+                    assignmentId = assignment.id ?: throw AssignmentNotFoundException(),
+                    memberId = memberId,
+                    teamId = teamId,
+                    submitType = assignment.submitType,
+                ),
+            )
+        }
     }
 }
