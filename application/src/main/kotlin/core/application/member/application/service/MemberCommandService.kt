@@ -10,7 +10,6 @@ import core.application.member.presentation.request.ConvertDeeperToOrganizerRequ
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
-import core.domain.authorization.vo.RoleType
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.event.MemberActivatedEvent
@@ -83,22 +82,28 @@ class MemberCommandService(
     }
 
     fun activate(member: Member) {
+        val memberId = requireNotNull(member.id) { "Activated member must have id" }
+        val activeAuthorityIds = memberAuthorityService.getActiveAuthorityIdsByMemberId(memberId)
+        if (activeAuthorityIds.isEmpty()) {
+            memberAuthorityService.ensureAuthorityAssigned(memberId, DEEPER_AUTHORITY_ID)
+        } else if (activeAuthorityIds.none { it == DEEPER_AUTHORITY_ID || it == ORGANIZER_AUTHORITY_ID }) {
+            return
+        }
+
         member.activate()
         memberPersistencePort.save(member)
-        val memberId = requireNotNull(member.id) { "Activated member must have id" }
-        memberRoleService.ensureRoleAssigned(memberId, RoleType.Deeper)
-        memberAuthorityService.ensureAuthorityAssigned(memberId, RoleType.Deeper.code)
     }
 
     fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest) {
         val memberId = request.memberId
         memberQueryService.getMemberById(memberId)
+        val activeAuthorityIds = memberAuthorityService.getActiveAuthorityIdsByMemberId(memberId)
+        if (activeAuthorityIds.none { it == DEEPER_AUTHORITY_ID }) {
+            return
+        }
 
-        memberRoleService.ensureRoleAssigned(memberId, RoleType.Organizer)
-        memberRoleService.revokeRole(memberId, RoleType.Deeper)
-
-        memberAuthorityService.ensureAuthorityAssigned(memberId, RoleType.Organizer.code)
-        memberAuthorityService.revokeAuthority(memberId, RoleType.Deeper.code)
+        memberAuthorityService.ensureAuthorityAssigned(memberId, ORGANIZER_AUTHORITY_ID)
+        memberAuthorityService.revokeAuthority(memberId, DEEPER_AUTHORITY_ID)
     }
 
     /**
@@ -135,5 +140,10 @@ class MemberCommandService(
                 cohortId = cohortId,
             ),
         )
+    }
+
+    companion object {
+        private const val DEEPER_AUTHORITY_ID = 1L
+        private const val ORGANIZER_AUTHORITY_ID = 2L
     }
 }
