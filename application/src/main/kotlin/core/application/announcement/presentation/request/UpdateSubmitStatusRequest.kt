@@ -5,5 +5,6 @@ import core.domain.member.vo.MemberId
 
 data class UpdateSubmitStatusRequest(
     val submitStatus: SubmitStatus,
+    val assignmentScore: Int?,
     val memberIds: List<MemberId>,
 )

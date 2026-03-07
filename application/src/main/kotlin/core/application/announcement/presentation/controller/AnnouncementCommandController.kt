@@ -68,6 +68,7 @@ class AnnouncementCommandController(
             announcementId = announcementId,
             memberIds = updateSubmitStatusRequest.memberIds,
             submitStatus = updateSubmitStatusRequest.submitStatus,
+            assignmentScore = updateSubmitStatusRequest.assignmentScore,
         )
         return CustomResponse.ok()
     }
