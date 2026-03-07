@@ -5,4 +5,6 @@ import core.domain.announcement.vo.AnnouncementId
 
 interface AnnouncementQueryUseCase {
     fun getAnnouncementById(announcementId: AnnouncementId): Announcement
+
+    fun getAll(): List<Announcement>
 }

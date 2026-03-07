@@ -51,6 +51,8 @@ class AnnouncementQueryService(
     override fun getAnnouncementById(announcementId: AnnouncementId): Announcement =
         announcementPersistencePort.findAnnouncementById(announcementId) ?: throw AnnouncementNotFoundException()
 
+    override fun getAll(): List<Announcement> = announcementPersistencePort.findAll()
+
     @Transactional(readOnly = false)
     fun getAnnouncementDetail(
         announcementId: AnnouncementId,
@@ -74,6 +76,7 @@ class AnnouncementQueryService(
                 isRead = announcementRead.isRead(),
                 markAsReadCount = announcementReadCount,
             )
+
             AnnouncementType.ASSIGNMENT -> {
                 val assignment: Assignment = assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
 
