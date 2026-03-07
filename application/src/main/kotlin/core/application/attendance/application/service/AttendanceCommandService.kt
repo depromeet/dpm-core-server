@@ -74,7 +74,8 @@ class AttendanceCommandService(
     ) {
         val attendances =
             memberIds.map { memberId ->
-                attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value)
+                attendancePersistencePort
+                    .findAttendanceBy(sessionId.value, memberId.value)
                     ?.apply { updateStatus(attendanceStatus) }
                     ?: throw AttendanceNotFoundException()
             }
@@ -88,7 +89,8 @@ class AttendanceCommandService(
         absentStart: Instant,
     ) {
         val attendances =
-            attendancePersistencePort.findAllBySessionId(sessionId.value)
+            attendancePersistencePort
+                .findAllBySessionId(sessionId.value)
                 .onEach { it.updateStatusByAttendancePolicy(lateStart, absentStart) }
 
         attendancePersistencePort.updateInBatch(attendances)
@@ -116,7 +118,8 @@ class AttendanceCommandService(
         deletedAt: Instant,
     ) {
         val attendances =
-            attendancePersistencePort.findAllBySessionId(sessionId.value)
+            attendancePersistencePort
+                .findAllBySessionId(sessionId.value)
                 .onEach { it.delete(deletedAt) }
 
         attendancePersistencePort.updateInBatch(attendances)
@@ -130,7 +133,9 @@ class AttendanceCommandService(
 
         val attendances =
             cohortSessions
-                .map { session ->
+                .filter { session ->
+                    attendancePersistencePort.findAttendanceBy(session.id!!.value, memberId.value) == null
+                }.map { session ->
                     Attendance.create(
                         AttendanceCreateCommand(
                             sessionId = session.id ?: throw SessionNotFoundException(),
