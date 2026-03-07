@@ -7,6 +7,7 @@ import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.domain.attendance.aggregate.Attendance
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -39,11 +40,14 @@ class SessionQueryService(
         return sessionPersistencePort.findNextSessionBy(startOfToday)
     }
 
-    fun getAllCohortSessions(): List<Session> {
+    fun getAllCurrentCohortSessions(): List<Session> {
         val cohortId = cohortQueryUseCase.getLatestCohortId()
 
         return sessionPersistencePort.findAllCohortSessions(cohortId.value)
     }
+
+    fun getAllCohortSessions(cohortId: CohortId): List<Session> =
+        sessionPersistencePort.findAllCohortSessions(cohortId.value)
 
     fun getSessionById(sessionId: SessionId): Session =
         sessionPersistencePort.findSessionById(sessionId.value)

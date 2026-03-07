@@ -1,0 +1,16 @@
+package core.domain.member.event
+
+import core.domain.cohort.vo.CohortId
+import core.domain.member.vo.MemberId
+
+data class MemberActivatedEvent(
+    val memberId: MemberId,
+    val cohortId: CohortId,
+) {
+    companion object {
+        fun of(memberId: MemberId, cohortId: CohortId): MemberActivatedEvent = MemberActivatedEvent(
+            memberId = memberId,
+            cohortId = cohortId,
+        )
+    }
+}

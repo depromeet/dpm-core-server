@@ -21,8 +21,10 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
+@Transactional
 class AfterPartyCommandService(
     val afterPartyPersistencePort: AfterPartyPersistencePort,
     val afterPartyInviteeCommandUseCase: AfterPartyInviteeCommandUseCase,
@@ -32,7 +34,6 @@ class AfterPartyCommandService(
     val cohortPersistencePort: CohortPersistencePort,
     val roleQueryUseCase: RoleQueryUseCase,
 ) : AfterPartyCommandUseCase {
-    @Transactional
     override fun createAfterParty(
         afterParty: AfterParty,
         afterPartyInviteTags: List<AfterPartyInviteTagEnum>,
@@ -49,7 +50,6 @@ class AfterPartyCommandService(
         createAfterPartyInternal(afterParty, inviteTagSpecs, authorMemberId)
     }
 
-    @Transactional
     override fun createAfterPartyByInviteTagNames(
         afterParty: AfterParty,
         inviteTagNames: List<String>,
@@ -59,9 +59,34 @@ class AfterPartyCommandService(
         createAfterPartyInternal(afterParty, inviteTagSpecs, authorMemberId)
     }
 
-    @Transactional
     override fun updateAfterParty(afterParty: AfterParty) {
         updateAfterPartyInternal(afterParty)
+    }
+
+    override fun initializeForNewCohortMember(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ) {
+//        TODO : 태그 활용해서 init 지정 필요. 한 트랜잭션으로 묶으면 '18기 디퍼'가 insert 되기 전에 태그 조회가 일어나서, 태그 조회 시점에 되려나..?
+        val afterParties: List<AfterParty> = afterPartyPersistencePort.findAll()
+        val member: Member = memberQueryUseCase.getMemberById(memberId)
+
+        afterParties.forEach { afterParty ->
+            val afterPartyInvitee: AfterPartyInvitee =
+                AfterPartyInvitee.create(
+                    afterPartyId = afterParty.id ?: throw AfterPartyNotFoundException(),
+                    memberId = memberId,
+                    invitedAt = Instant.now(),
+                )
+            val authorMember: Member = memberQueryUseCase.getMemberById(afterParty.authorMemberId)
+
+            afterPartyInviteeCommandUseCase.createAfterPartyInvitee(
+                afterPartyInvitee = afterPartyInvitee,
+                afterParty = afterParty,
+                authorMember = authorMember,
+                inviteeMember = member,
+            )
+        }
     }
 
     private fun createAfterPartyInternal(
@@ -146,10 +171,9 @@ class AfterPartyCommandService(
                 canEditAfterApproval = afterParty.canEditAfterApproval,
             )
 
-        val createdAfterParty: AfterParty =
-            afterPartyPersistencePort.update(
-                afterParty = updatedAfterParty,
-            )
+        afterPartyPersistencePort.update(
+            afterParty = updatedAfterParty,
+        )
     }
 
     private fun resolveInviteTagSpecs(inviteTagNames: List<String>): List<InviteTagSpec> =
