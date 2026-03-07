@@ -15,6 +15,7 @@ import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.properties.SecurityProperties
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -25,6 +26,7 @@ import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -97,6 +99,15 @@ class MemberController(
         @Valid @RequestBody request: ConvertDeeperToOrganizerRequest,
     ): CustomResponse<Void> {
         memberCommandService.convertDeeperToOrganizer(request)
+        return CustomResponse.ok()
+    }
+
+    @PostMapping("/authority/cohort/init/{cohortId}/{memberId}")
+    override fun initMemberCohort(
+        @PathVariable memberId: MemberId,
+        @PathVariable cohortId: CohortId,
+    ): CustomResponse<Void> {
+        memberCommandService.initializeForNewCohortMember(memberId, cohortId)
         return CustomResponse.ok()
     }
 
