@@ -198,8 +198,8 @@ class AnnouncementCommandService(
         cohortId: CohortId,
     ) {
         // TODO : 해당 기수의 공지 읽음 이력, 과제 제출 현황에 추가. 지금은 공지/과제가 기수 별로 나눠져 있지 않은 상태라서, 공지 읽음 이력도 기수 별로 나눠야 할듯
-        val announcementIds: List<AnnouncementId> =
-            announcementQueryUseCase.getAll().map { it.id ?: throw AnnouncementNotFoundException() }
+        val announcements: List<Announcement> = announcementQueryUseCase.getAll()
+        val announcementIds: List<AnnouncementId> = announcements.map { it.id ?: throw AnnouncementNotFoundException() }
 
         announcementReadCommandUseCase.initializeForNewCohortMember(
             memberId = memberId,
@@ -208,11 +208,7 @@ class AnnouncementCommandService(
 
         assignmentSubmissionCommandUseCase.initializeForNewCohortMember(
             memberId = memberId,
-            assignments =
-                announcementIds.mapNotNull { announcementId ->
-                    val assignment: Assignment? = assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
-                    assignment
-                },
+            assignments = assignmentQueryUseCase.getAllAssignments(),
         )
     }
 }
