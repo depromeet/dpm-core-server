@@ -11,7 +11,9 @@ import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.authorization.vo.RoleType
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
@@ -30,6 +32,7 @@ class MemberCommandService(
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
     private val memberRoleService: MemberRoleService,
     private val memberAuthorityService: MemberAuthorityService,
+    private val memberActivatedEventListener: MemberActivatedEventListener,
 ) {
     /**
      * 회원 가입 시 멤버별 팀/파트/상태 정보를 주입함. (DEV)
@@ -118,5 +121,17 @@ class MemberCommandService(
         } else {
             throw MemberStatusAlreadyUpdatedException()
         }
+    }
+
+    fun initializeForNewCohortMember(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ) {
+        memberActivatedEventListener.handleMemberActivatedEvent(
+            MemberActivatedEvent.of(
+                memberId = memberId,
+                cohortId = cohortId,
+            ),
+        )
     }
 }
