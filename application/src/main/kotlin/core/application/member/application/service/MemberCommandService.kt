@@ -10,7 +10,6 @@ import core.application.member.presentation.request.ConvertDeeperToOrganizerRequ
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
-import core.domain.authorization.vo.RoleType
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -93,12 +92,13 @@ class MemberCommandService(
     fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest) {
         val memberId = request.memberId
         memberQueryService.getMemberById(memberId)
+        val activeAuthorityIds = memberAuthorityService.getActiveAuthorityIdsByMemberId(memberId)
+        if (activeAuthorityIds.none { it == DEEPER_AUTHORITY_ID }) {
+            return
+        }
 
-        memberRoleService.ensureRoleAssigned(memberId, RoleType.Organizer)
-        memberRoleService.revokeRole(memberId, RoleType.Deeper)
-
-        memberAuthorityService.ensureAuthorityAssigned(memberId, RoleType.Organizer.code)
-        memberAuthorityService.revokeAuthority(memberId, RoleType.Deeper.code)
+        memberAuthorityService.ensureAuthorityAssigned(memberId, ORGANIZER_AUTHORITY_ID)
+        memberAuthorityService.revokeAuthority(memberId, DEEPER_AUTHORITY_ID)
     }
 
     /**

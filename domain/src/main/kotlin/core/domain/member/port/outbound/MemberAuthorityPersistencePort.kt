@@ -21,4 +21,9 @@ interface MemberAuthorityPersistencePort {
         memberId: MemberId,
         authorityName: String,
     )
+
+    fun revokeAuthority(
+        memberId: MemberId,
+        authorityId: Long,
+    )
 }

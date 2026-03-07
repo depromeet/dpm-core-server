@@ -82,7 +82,13 @@ class MemberAuthorityRepository(
         authorityName: String,
     ) {
         val authorityId = findAuthorityIdByName(authorityName)
+        revokeAuthority(memberId, authorityId)
+    }
 
+    override fun revokeAuthority(
+        memberId: MemberId,
+        authorityId: Long,
+    ) {
         dsl
             .update(table(name("member_authorities")))
             .set(field(name("deleted_at"), LocalDateTime::class.java), LocalDateTime.now(ZoneId.of(TIME_ZONE)))
