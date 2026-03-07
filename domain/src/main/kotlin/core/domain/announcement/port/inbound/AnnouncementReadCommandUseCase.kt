@@ -16,4 +16,9 @@ interface AnnouncementReadCommandUseCase {
         announcementId: AnnouncementId,
         memberId: MemberId,
     ): AnnouncementRead
+
+    fun initializeForNewCohortMember(
+        memberId: MemberId,
+        announcementIds: List<AnnouncementId>,
+    )
 }

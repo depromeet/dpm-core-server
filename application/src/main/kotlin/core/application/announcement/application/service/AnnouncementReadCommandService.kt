@@ -41,4 +41,23 @@ class AnnouncementReadCommandService(
         announcementId: AnnouncementId,
         memberId: MemberId,
     ): AnnouncementRead = announcementReadPersistencePort.save(AnnouncementRead.create(announcementId, memberId))
+
+    override fun initializeForNewCohortMember(
+        memberId: MemberId,
+        announcementIds: List<AnnouncementId>,
+    ) {
+        val initializeAnnouncementReads =
+            announcementIds.map { announcementId ->
+                AnnouncementRead.createUnread(
+                    announcementId = announcementId,
+                    memberId = memberId,
+                )
+            }.filter { announcementRead ->
+                announcementReadPersistencePort.findByAnnouncementIdAndMemberId(
+                    announcementId = announcementRead.announcementId,
+                    memberId = announcementRead.memberId,
+                ) == null
+            }
+        announcementReadPersistencePort.saveAll(initializeAnnouncementReads)
+    }
 }
