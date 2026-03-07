@@ -58,8 +58,7 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    //    @PreAuthorize("hasAuthority('create:member')")
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("hasAuthority('update:member')")
     @PatchMapping("/init")
     override fun initMemberDataAndApprove(
         @Valid @RequestBody request: InitMemberDataRequest,
@@ -69,7 +68,7 @@ class MemberController(
     }
 
     //    @PreAuthorize("hasAuthority('create:member')")
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("hasAuthority('create:member')")
     @PatchMapping("/whitelist")
     override fun checkWhiteList(
         @Valid @RequestBody request: WhiteListCheckRequest,
@@ -82,7 +81,7 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    // @PreAuthorize("hasAuthority('create:member')")  // Temporarily disabled for testing
+    @PreAuthorize("hasAuthority('update:member')")
     @PatchMapping("/status")
     override fun updateMemberStatus(
         @Valid @RequestBody request: UpdateMemberStatusRequest,
@@ -91,7 +90,7 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("hasAuthority('update:member')")
     @PatchMapping("/authority/organizer")
     override fun convertDeeperToOrganizer(
         @Valid @RequestBody request: ConvertDeeperToOrganizerRequest,
