@@ -11,4 +11,9 @@ interface AnnouncementReadCommandUseCase {
         announcementId: AnnouncementId,
         memberIds: List<MemberId>,
     )
+
+    fun create(
+        announcementId: AnnouncementId,
+        memberId: MemberId,
+    ): AnnouncementRead
 }

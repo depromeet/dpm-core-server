@@ -30,6 +30,7 @@ interface AnnouncementCommandUseCase {
         announcementId: AnnouncementId,
         memberIds: List<MemberId>,
         submitStatus: SubmitStatus,
+        assignmentScore: Int?,
     )
 
     fun delete(announcementId: AnnouncementId)

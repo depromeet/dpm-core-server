@@ -37,4 +37,13 @@ class AnnouncementReadQueryService(
 
     override fun countByAnnouncementId(announcementId: AnnouncementId): Int =
         announcementReadPersistencePort.countByAnnouncementId(announcementId)
+
+    override fun findByAnnouncementIdAndMemberId(
+        announcementId: AnnouncementId,
+        memberId: MemberId,
+    ): AnnouncementRead? =
+        announcementReadPersistencePort.findByAnnouncementIdAndMemberId(
+            announcementId = announcementId,
+            memberId = memberId,
+        )
 }

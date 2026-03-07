@@ -36,4 +36,9 @@ class AnnouncementReadCommandService(
                 }
         announcementReadPersistencePort.saveAll(initializeAnnouncementReads)
     }
+
+    override fun create(
+        announcementId: AnnouncementId,
+        memberId: MemberId,
+    ): AnnouncementRead = announcementReadPersistencePort.save(AnnouncementRead.create(announcementId, memberId))
 }
