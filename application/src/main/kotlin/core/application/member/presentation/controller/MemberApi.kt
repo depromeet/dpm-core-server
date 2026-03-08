@@ -152,12 +152,10 @@ interface MemberApi {
                                 {
                                     "members": [
                                         {
-                                            "name": "홍길동",
-                                            "signupEmail": "hong@example.com"
+                                            "email": "hong@example.com"
                                         },
                                         {
-                                            "name": "김철수",
-                                            "signupEmail": "kim@example.com"
+                                            "email": "kim@example.com"
                                         }
                                     ]
                                 }

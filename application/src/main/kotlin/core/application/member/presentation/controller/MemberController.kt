@@ -77,7 +77,7 @@ class MemberController(
     ): CustomResponse<Void> {
         request.members.forEach { member ->
             memberQueryService
-                .checkWhiteList(member.name, member.signupEmail)
+                .checkWhiteList(member.email)
                 ?.let { findMember -> memberCommandService.activate(findMember) }
             // If null, OAuth user is already activated - ignore gracefully
         }

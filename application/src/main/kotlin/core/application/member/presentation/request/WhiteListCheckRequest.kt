@@ -17,19 +17,12 @@ data class WhiteListCheckRequest(
 ) {
     data class MemberWhiteListCheckRequest(
         @field:NotBlank
-        @field:Schema(
-            description = "멤버 이름",
-            example = "홍길동",
-            requiredMode = Schema.RequiredMode.REQUIRED,
-        )
-        val name: String,
-        @field:NotBlank
         @field:Email
         @field:Schema(
-            description = "가입 이메일",
+            description = "이메일",
             example = "user@example.com",
             requiredMode = Schema.RequiredMode.REQUIRED,
         )
-        val signupEmail: String,
+        val email: String,
     )
 }
