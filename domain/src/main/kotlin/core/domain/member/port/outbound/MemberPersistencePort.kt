@@ -30,6 +30,8 @@ interface MemberPersistencePort {
 
     fun findAllByCohort(value: String): List<MemberId>
 
+    fun findAllByCohortId(cohortId: CohortId): List<MemberId>
+
     fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
         authorityId: Long,

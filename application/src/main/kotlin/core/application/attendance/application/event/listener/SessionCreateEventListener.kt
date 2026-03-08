@@ -14,6 +14,7 @@ class SessionCreateEventListener(
     fun handle(event: SessionCreateEvent) {
         attendanceCommandService.createAttendances(
             sessionId = event.sessionId,
+            cohortId = event.cohortId,
         )
     }
 }

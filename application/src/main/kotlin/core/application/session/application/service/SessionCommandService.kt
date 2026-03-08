@@ -47,7 +47,12 @@ class SessionCommandService(
 
         val savedSession = sessionPersistencePort.save(newSession)
 
-        eventPublisher.publishEvent(SessionCreateEvent(savedSession.id ?: throw InvalidSessionIdException()))
+        eventPublisher.publishEvent(
+            SessionCreateEvent(
+                sessionId = savedSession.id ?: throw InvalidSessionIdException(),
+                cohortId = savedSession.cohortId,
+            ),
+        )
     }
 
     fun updateSession(command: SessionUpdateCommand) {

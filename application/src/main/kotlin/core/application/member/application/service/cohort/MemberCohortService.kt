@@ -1,6 +1,7 @@
 package core.application.member.application.service.cohort
 
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberCohort
 import core.domain.member.port.outbound.MemberCohortPersistencePort
 import core.domain.member.vo.MemberId
@@ -22,6 +23,15 @@ class MemberCohortService(
     fun addMemberToCohort(memberId: MemberId) {
         memberCohortPersistencePort.save(
             MemberCohort.of(memberId, cohortQueryUseCase.getLatestCohortId()),
+        )
+    }
+
+    fun addMemberToCohort(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ) {
+        memberCohortPersistencePort.save(
+            MemberCohort.of(memberId, cohortId),
         )
     }
 
