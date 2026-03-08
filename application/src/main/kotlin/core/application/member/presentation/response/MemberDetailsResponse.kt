@@ -59,7 +59,8 @@ data class MemberDetailsResponse(
                 email = member.signupEmail,
                 name = member.name,
                 part = member.part?.name,
-                cohort = "17",
+//                TODO : 여러 기수 참여한 인원들 어떻게 처리할 지
+                cohort = "18",
                 teamNumber = teamNumber,
                 isAdmin = authorities.any { it == ADMIN_AUTHORITY },
                 status = member.status.name,
