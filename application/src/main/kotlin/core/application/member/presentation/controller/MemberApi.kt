@@ -138,7 +138,33 @@ interface MemberApi {
 
     @Operation(
         summary = "가입된 이메일인지 체크하는 화이트리스트 API",
-        description = "주어진 이메일이 화이트리스트에 포함되어 있으면 가입 승인 합니다.",
+        description = "주어진 멤버 목록의 이메일이 화이트리스트에 포함되어 있으면 가입 승인 합니다.",
+        requestBody =
+            RequestBody(
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = WhiteListCheckRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "화이트리스트 체크 요청 예시",
+                                value = """
+                                {
+                                    "members": [
+                                        {
+                                            "email": "hong@example.com"
+                                        },
+                                        {
+                                            "email": "kim@example.com"
+                                        }
+                                    ]
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
     )
     @ApiResponse(responseCode = "200", description = "화이트리스트 체크 및 승인 성공")
     fun checkWhiteList(request: WhiteListCheckRequest): CustomResponse<Void>

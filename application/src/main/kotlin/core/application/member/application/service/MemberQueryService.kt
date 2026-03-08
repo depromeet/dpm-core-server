@@ -77,9 +77,8 @@ class MemberQueryService(
             ?: defaultTeamId
 
     fun checkWhiteList(
-        name: String,
-        signupEmail: String,
-    ): Member? = memberPersistencePort.findByNameAndSignupEmail(name, signupEmail)
+        email: String,
+    ): Member? = memberPersistencePort.findBySignupEmail(email)
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 
