@@ -75,10 +75,12 @@ class MemberController(
     override fun checkWhiteList(
         @Valid @RequestBody request: WhiteListCheckRequest,
     ): CustomResponse<Void> {
-        memberQueryService
-            .checkWhiteList(request.name, request.signupEmail)
-            ?.let { member -> memberCommandService.activate(member) }
-        // If null, OAuth user is already activated - ignore gracefully
+        request.members.forEach { member ->
+            memberQueryService
+                .checkWhiteList(member.email)
+                ?.let { findMember -> memberCommandService.activate(findMember) }
+            // If null, OAuth user is already activated - ignore gracefully
+        }
 
         return CustomResponse.ok()
     }
