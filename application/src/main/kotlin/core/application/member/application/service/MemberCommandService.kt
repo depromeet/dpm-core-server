@@ -134,6 +134,8 @@ class MemberCommandService(
         memberId: MemberId,
         cohortId: CohortId,
     ) {
+        memberCohortService.addMemberToCohort(memberId, cohortId)
+
         applicationEventPublisher.publishEvent(
             MemberActivatedEvent.of(
                 memberId = memberId,
