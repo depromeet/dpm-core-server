@@ -8,9 +8,13 @@ data class MemberActivatedEvent(
     val cohortId: CohortId,
 ) {
     companion object {
-        fun of(memberId: MemberId, cohortId: CohortId): MemberActivatedEvent = MemberActivatedEvent(
-            memberId = memberId,
-            cohortId = cohortId,
-        )
+        fun of(
+            memberId: MemberId,
+            cohortId: CohortId,
+        ): MemberActivatedEvent =
+            MemberActivatedEvent(
+                memberId = memberId,
+                cohortId = cohortId,
+            )
     }
 }

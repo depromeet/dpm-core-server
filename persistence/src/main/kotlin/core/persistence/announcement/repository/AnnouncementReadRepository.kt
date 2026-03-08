@@ -38,6 +38,6 @@ class AnnouncementReadRepository(
             .findAllByAnnouncementId(announcementId)
             .map { it.toDomain() }
 
-    override fun countByAnnouncementId(announcementId: AnnouncementId): Int =
-        announcementReadJpaRepository.countByAnnouncementId(announcementId)
+    override fun countByAnnouncementIdAndReadAtIsNotNull(announcementId: AnnouncementId): Int =
+        announcementReadJpaRepository.countByAnnouncementIdAndReadAtIsNotNull(announcementId)
 }
