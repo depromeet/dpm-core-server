@@ -28,15 +28,18 @@ class AnnouncementRepository(
     override fun findAll(): List<Announcement> = announcementJpaRepository.findAll().map { it.toDomain() }
 
     override fun findAnnouncementListItems(): List<AnnouncementListItemQueryModel> =
-        dsl.select(
-            ANNOUNCEMENTS.ANNOUNCEMENT_ID,
-            ANNOUNCEMENTS.TITLE,
-            ANNOUNCEMENTS.ANNOUNCEMENT_TYPE,
-            ASSIGNMENTS.SUBMIT_TYPE,
-            ANNOUNCEMENTS.CREATED_AT,
-            DSL.count(ANNOUNCEMENT_READS.ANNOUNCEMENT_READ_ID).`as`("readMemberCount"),
-        )
-            .from(ANNOUNCEMENTS)
+        dsl
+            .select(
+                ANNOUNCEMENTS.ANNOUNCEMENT_ID,
+                ANNOUNCEMENTS.TITLE,
+                ANNOUNCEMENTS.ANNOUNCEMENT_TYPE,
+                ASSIGNMENTS.SUBMIT_TYPE,
+                ANNOUNCEMENTS.CREATED_AT,
+                DSL
+                    .count(ANNOUNCEMENT_READS.ANNOUNCEMENT_READ_ID)
+                    .filterWhere(ANNOUNCEMENT_READS.READ_AT.isNotNull)
+                    .`as`("readMemberCount"),
+            ).from(ANNOUNCEMENTS)
             .leftJoin(ANNOUNCEMENT_ASSIGNMENTS)
             .on(ANNOUNCEMENTS.ANNOUNCEMENT_ID.eq(ANNOUNCEMENT_ASSIGNMENTS.ANNOUNCEMENT_ID))
             .leftJoin(ASSIGNMENTS)
@@ -50,15 +53,15 @@ class AnnouncementRepository(
                 ANNOUNCEMENTS.ANNOUNCEMENT_TYPE,
                 ASSIGNMENTS.SUBMIT_TYPE,
                 ANNOUNCEMENTS.CREATED_AT,
-            )
-            .fetch { record ->
+            ).fetch { record ->
                 AnnouncementListItemQueryModel(
                     announcementId = AnnouncementId(record.get(ANNOUNCEMENTS.ANNOUNCEMENT_ID)!!),
                     title = record.get(ANNOUNCEMENTS.TITLE)!!,
                     announcementType = AnnouncementType.entries[record.get(ANNOUNCEMENTS.ANNOUNCEMENT_TYPE)!!],
                     submitType = record.get(ASSIGNMENTS.SUBMIT_TYPE)?.let { SubmitType.entries[it] },
                     createdAt =
-                        record.get(ANNOUNCEMENTS.CREATED_AT)!!
+                        record
+                            .get(ANNOUNCEMENTS.CREATED_AT)!!
                             .atZone(ZoneId.of("Asia/Seoul"))
                             .toInstant(),
                     readMemberCount = record.get("readMemberCount", Int::class.java),
@@ -66,7 +69,8 @@ class AnnouncementRepository(
             }
 
     override fun findAnnouncementById(announcementId: AnnouncementId): Announcement? =
-        announcementJpaRepository.findByIdOrNull(announcementId.value)
+        announcementJpaRepository
+            .findByIdOrNull(announcementId.value)
             ?.toDomain()
 
     override fun softDeleteByAnnouncement(announcement: Announcement): Announcement =
