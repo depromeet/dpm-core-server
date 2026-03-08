@@ -35,8 +35,8 @@ class AnnouncementReadQueryService(
     override fun getByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead> =
         announcementReadPersistencePort.findAllByAnnouncementId(announcementId)
 
-    override fun countByAnnouncementId(announcementId: AnnouncementId): Int =
-        announcementReadPersistencePort.countByAnnouncementId(announcementId)
+    override fun readMemberCountByAnnouncementId(announcementId: AnnouncementId): Int =
+        announcementReadPersistencePort.countByAnnouncementIdAndReadAtIsNotNull(announcementId)
 
     override fun findByAnnouncementIdAndMemberId(
         announcementId: AnnouncementId,

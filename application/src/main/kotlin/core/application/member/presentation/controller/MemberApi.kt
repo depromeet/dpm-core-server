@@ -190,7 +190,7 @@ interface MemberApi {
         summary = "신규 기수 참여 회원 init API (dev)",
         description =
             "신규 기수 참여 회원에 대해 초기화 합니다.\n" +
-                    "해당 기수 출석부, 공지/과제, 회식 참여 등에 해당 멤버를 추가합니다.",
+                "해당 기수 출석부, 공지/과제, 회식 참여 등에 해당 멤버를 추가합니다.",
     )
     @ApiResponse(responseCode = "200", description = "신규 기수 참여 회원 init 성공")
     fun initMemberCohort(
