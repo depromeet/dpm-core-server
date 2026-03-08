@@ -7,6 +7,7 @@ import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.security.annotation.CurrentMemberId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -184,4 +185,16 @@ interface MemberApi {
     )
     @ApiResponse(responseCode = "200", description = "권한 변환 성공")
     fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest): CustomResponse<Void>
+
+    @Operation(
+        summary = "신규 기수 참여 회원 init API (dev)",
+        description =
+            "신규 기수 참여 회원에 대해 초기화 합니다.\n" +
+                    "해당 기수 출석부, 공지/과제, 회식 참여 등에 해당 멤버를 추가합니다.",
+    )
+    @ApiResponse(responseCode = "200", description = "신규 기수 참여 회원 init 성공")
+    fun initMemberCohort(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ): CustomResponse<Void>
 }
