@@ -83,6 +83,17 @@ class MemberRepository(
                 MemberId(it)
             }
 
+    override fun findAllByCohortId(cohortId: CohortId): List<MemberId> =
+        dsl
+            .select(MEMBERS.MEMBER_ID)
+            .from(MEMBERS)
+            .join(MEMBER_COHORTS)
+            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+            .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+            .fetch(MEMBERS.MEMBER_ID)
+            .filterNotNull()
+            .map { MemberId(it) }
+
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
         authorityId: Long,

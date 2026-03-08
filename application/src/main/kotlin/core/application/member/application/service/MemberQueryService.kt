@@ -64,6 +64,9 @@ class MemberQueryService(
         memberPersistencePort
             .findAllByCohort(value)
 
+    fun getMembersByCohortId(cohortId: CohortId): List<MemberId> =
+        memberPersistencePort.findAllByCohortId(cohortId)
+
     /**
      * 멤버의 식별자를 기반으로 해당 멤버의 팀 번호를 조회함.
      *
