@@ -65,7 +65,7 @@ class AnnouncementQueryService(
                 ?: announcementReadCommandUseCase.create(announcementId, memberId)
 
         val announcementReadCount: Int =
-            announcementReadQueryUseCase.countByAnnouncementId(announcementId)
+            announcementReadQueryUseCase.readMemberCountByAnnouncementId(announcementId)
         when (announcement.announcementType) {
             AnnouncementType.GENERAL -> return AnnouncementDetailResponse.of(
                 announcementId = announcementId,
