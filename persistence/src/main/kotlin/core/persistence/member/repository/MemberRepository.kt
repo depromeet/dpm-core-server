@@ -141,13 +141,14 @@ class MemberRepository(
             }
 
     override fun findAllOrderedByHighestCohortAndStatus(): List<MemberOverviewQueryModel> {
-        val maxCohortId = max(MEMBER_COHORTS.COHORT_ID).`as`("max_cohort_id")
+        val cohortValueAsNumber = field("CAST({0} AS UNSIGNED)", Int::class.java, COHORTS.VALUE)
+        val maxCohortValue = max(cohortValueAsNumber).`as`("max_cohort_value")
         val maxTeamNumber = max(TEAMS.NUMBER).`as`("max_team_number")
 
         val statusPriority =
             `when`(MEMBERS.STATUS.eq("PENDING"), 0)
-                .`when`(MEMBERS.STATUS.eq("INACTIVE"), 1)
-                .`when`(MEMBERS.STATUS.eq("ACTIVE"), 2)
+                .`when`(MEMBERS.STATUS.eq("ACTIVE"), 1)
+                .`when`(MEMBERS.STATUS.eq("INACTIVE"), 2)
                 .otherwise(3)
 
         return dsl
@@ -155,11 +156,14 @@ class MemberRepository(
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
-                maxCohortId,
+                maxCohortValue,
                 maxTeamNumber,
-            ).from(MEMBERS)
+            )
+            .from(MEMBERS)
             .leftJoin(MEMBER_COHORTS)
             .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .leftJoin(COHORTS)
+            .on(COHORTS.COHORT_ID.eq(MEMBER_COHORTS.COHORT_ID))
             .leftJoin(MEMBER_TEAMS)
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .leftJoin(TEAMS)
@@ -169,11 +173,14 @@ class MemberRepository(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
-            ).orderBy(
-                maxCohortId.desc().nullsLast(),
+                MEMBERS.PART,
+            )
+            .orderBy(
+                maxCohortValue.desc().nullsLast(),
                 statusPriority.asc(),
                 MEMBERS.NAME.asc(),
-            ).fetch { record ->
+            )
+            .fetch { record ->
                 MemberOverviewQueryModel(
                     name = record[MEMBERS.NAME] ?: "",
                     teamNumber = record[maxTeamNumber],
