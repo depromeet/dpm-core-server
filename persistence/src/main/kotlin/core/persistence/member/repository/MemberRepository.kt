@@ -153,6 +153,7 @@ class MemberRepository(
         return dsl
             .select(
                 MEMBERS.NAME,
+                maxCohortId,
                 maxTeamNumber,
             ).from(MEMBERS)
             .leftJoin(MEMBER_COHORTS)
