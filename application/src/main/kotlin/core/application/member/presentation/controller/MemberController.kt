@@ -51,7 +51,7 @@ class MemberController(
     }
 
     @PreAuthorize("hasAuthority('read:member')")
-    @GetMapping("/members")
+    @GetMapping("/overview")
     override fun getMembersOverview(): CustomResponse<MemberOverviewResponse> {
         val response =
             MemberOverviewResponse.of(
