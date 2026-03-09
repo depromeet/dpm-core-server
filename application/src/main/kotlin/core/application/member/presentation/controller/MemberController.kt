@@ -14,6 +14,7 @@ import core.application.member.presentation.request.SetPasswordRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.application.member.presentation.response.MemberOverviewResponse
 import core.application.security.properties.SecurityProperties
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
@@ -46,6 +47,22 @@ class MemberController(
     @GetMapping("/me")
     override fun me(memberId: MemberId): CustomResponse<MemberDetailsResponse> {
         val response: MemberDetailsResponse = memberQueryService.memberMe(memberId)
+        return CustomResponse.ok(response)
+    }
+
+    @PreAuthorize("hasAuthority('read:member')")
+    @GetMapping("/overview")
+    override fun getMembersOverview(): CustomResponse<MemberOverviewResponse> {
+        val response =
+            MemberOverviewResponse.of(
+                memberQueryService.getMembersOverview().map { member ->
+                    MemberOverviewResponse.MemberSummary(
+                        name = member.name,
+                        teamName = member.teamNumber?.let { "${it}팀" } ?: "미배정",
+                    )
+                },
+            )
+
         return CustomResponse.ok(response)
     }
 

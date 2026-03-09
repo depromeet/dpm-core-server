@@ -6,6 +6,7 @@ import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.application.member.presentation.response.MemberOverviewResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
@@ -56,6 +57,46 @@ interface MemberApi {
     fun me(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<MemberDetailsResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버 목록 조회 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "멤버 목록 조회 응답 예시",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "members": [
+                                        {
+                                            "name": "홍길동",
+                                            "teamName": "1팀"
+                                        },
+                                        {
+                                            "name": "김철수",
+                                            "teamName": "2팀"
+                                        }
+                                    ]
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "멤버 목록 조회 API",
+        description = "최신 기수 우선, 상태(PENDING > INACTIVE > ACTIVE > 기타) 우선순위로 멤버 목록을 조회합니다.",
+    )
+    fun getMembersOverview(): CustomResponse<MemberOverviewResponse>
 
     @ApiResponse(
         responseCode = "200",

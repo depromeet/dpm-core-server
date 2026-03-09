@@ -8,6 +8,7 @@ import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -82,6 +83,9 @@ class MemberQueryService(
     fun checkWhiteList(
         email: String,
     ): Member? = memberPersistencePort.findBySignupEmail(email)
+
+    fun getMembersOverview(): List<MemberOverviewQueryModel> =
+        memberPersistencePort.findAllOrderedByHighestCohortAndStatus()
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 
