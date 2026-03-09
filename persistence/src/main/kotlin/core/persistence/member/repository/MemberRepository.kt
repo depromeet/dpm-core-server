@@ -153,6 +153,8 @@ class MemberRepository(
         return dsl
             .select(
                 MEMBERS.NAME,
+                MEMBERS.STATUS,
+                MEMBERS.PART,
                 maxCohortId,
                 maxTeamNumber,
             ).from(MEMBERS)
@@ -175,6 +177,8 @@ class MemberRepository(
                 MemberOverviewQueryModel(
                     name = record[MEMBERS.NAME] ?: "",
                     teamNumber = record[maxTeamNumber],
+                    status = record[MEMBERS.STATUS] ?: "",
+                    part = record[MEMBERS.PART],
                 )
             }
     }

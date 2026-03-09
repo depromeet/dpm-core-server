@@ -11,10 +11,13 @@ data class MemberOverviewResponse(
         val name: String,
         @field:Schema(description = "팀 이름", example = "1팀")
         val teamName: String,
+        @field:Schema(description = "멤버 상태", example = "PENDING")
+        val status: String,
+        @field:Schema(description = "멤버 직무", example = "SERVER")
+        val part: String,
     )
 
     companion object {
         fun of(members: List<MemberSummary>): MemberOverviewResponse = MemberOverviewResponse(members)
     }
 }
-

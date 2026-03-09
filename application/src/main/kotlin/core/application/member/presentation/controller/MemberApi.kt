@@ -77,11 +77,15 @@ interface MemberApi {
                                     "members": [
                                         {
                                             "name": "홍길동",
-                                            "teamName": "1팀"
+                                            "teamName": "1팀",
+                                            "status": "PENDING",
+                                            "part": "UNASSIGNED"
                                         },
                                         {
                                             "name": "김철수",
-                                            "teamName": "2팀"
+                                            "teamName": "2팀",
+                                            "status": "ACTIVE",
+                                            "part": "SERVER"
                                         }
                                     ]
                                 }

@@ -59,6 +59,8 @@ class MemberController(
                     MemberOverviewResponse.MemberSummary(
                         name = member.name,
                         teamName = member.teamNumber?.let { "${it}팀" } ?: "미배정",
+                        status = member.status,
+                        part = member.part ?: "UNASSIGNED",
                     )
                 },
             )
