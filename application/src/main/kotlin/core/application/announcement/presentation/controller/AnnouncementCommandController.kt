@@ -48,6 +48,7 @@ class AnnouncementCommandController(
     override fun markAsRead(
         @CurrentMemberId
         memberId: MemberId,
+        @PathVariable
         announcementId: AnnouncementId,
     ): CustomResponse<Void> {
         announcementCommandService.markAsRead(
