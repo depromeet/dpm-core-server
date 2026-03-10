@@ -97,7 +97,7 @@ class MemberController(
         @Valid @RequestBody request: WhiteListCheckRequest,
     ): CustomResponse<Void> {
         memberQueryService
-            .getMembersByIds(request.members.distinct())
+            .getMembersByRawIds(request.members.distinct())
             .forEach { member ->
                 memberCommandService.activate(member)
             }

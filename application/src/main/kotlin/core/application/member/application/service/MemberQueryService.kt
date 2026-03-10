@@ -87,7 +87,7 @@ class MemberQueryService(
     fun getMembersOverview(): List<MemberOverviewQueryModel> =
         memberPersistencePort.findAllOrderedByHighestCohortAndStatus()
 
-    fun getMembersByIds(memberIds: List<Long>): List<Member> =
+    fun getMembersByRawIds(memberIds: List<Long>): List<Member> =
         memberPersistencePort.findAllByIds(memberIds.map(::MemberId))
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
