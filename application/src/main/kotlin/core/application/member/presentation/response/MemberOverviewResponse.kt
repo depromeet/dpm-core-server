@@ -7,6 +7,10 @@ data class MemberOverviewResponse(
     val members: List<MemberSummary>,
 ) {
     data class MemberSummary(
+        @field:Schema(description = "멤버 ID", example = "1")
+        val memberId: Long,
+        @field:Schema(description = "기수 ID", example = "17")
+        val cohortId: Long?,
         @field:Schema(description = "멤버 이름", example = "홍길동")
         val name: String,
         @field:Schema(description = "팀 이름", example = "1팀")
