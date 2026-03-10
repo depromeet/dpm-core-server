@@ -1,6 +1,5 @@
 package core.application.member.presentation.request
 
-import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 
