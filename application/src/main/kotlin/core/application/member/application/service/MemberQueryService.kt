@@ -8,6 +8,7 @@ import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -64,6 +65,9 @@ class MemberQueryService(
         memberPersistencePort
             .findAllByCohort(value)
 
+    fun getMembersByCohortId(cohortId: CohortId): List<MemberId> =
+        memberPersistencePort.findAllByCohortId(cohortId)
+
     /**
      * 멤버의 식별자를 기반으로 해당 멤버의 팀 번호를 조회함.
      *
@@ -77,9 +81,11 @@ class MemberQueryService(
             ?: defaultTeamId
 
     fun checkWhiteList(
-        name: String,
-        signupEmail: String,
-    ): Member? = memberPersistencePort.findByNameAndSignupEmail(name, signupEmail)
+        email: String,
+    ): Member? = memberPersistencePort.findBySignupEmail(email)
+
+    fun getMembersOverview(): List<MemberOverviewQueryModel> =
+        memberPersistencePort.findAllOrderedByHighestCohortAndStatus()
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 

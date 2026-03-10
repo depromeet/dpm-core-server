@@ -6,6 +6,7 @@ import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.application.member.presentation.response.MemberOverviewResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
@@ -56,6 +57,50 @@ interface MemberApi {
     fun me(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<MemberDetailsResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버 목록 조회 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "멤버 목록 조회 응답 예시",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "members": [
+                                        {
+                                            "name": "홍길동",
+                                            "teamName": "1팀",
+                                            "status": "PENDING",
+                                            "part": "UNASSIGNED"
+                                        },
+                                        {
+                                            "name": "김철수",
+                                            "teamName": "2팀",
+                                            "status": "ACTIVE",
+                                            "part": "SERVER"
+                                        }
+                                    ]
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "멤버 목록 조회 API",
+        description = "최신 기수 우선, 상태(PENDING > INACTIVE > ACTIVE > 기타) 우선순위로 멤버 목록을 조회합니다.",
+    )
+    fun getMembersOverview(): CustomResponse<MemberOverviewResponse>
 
     @ApiResponse(
         responseCode = "200",
@@ -138,7 +183,33 @@ interface MemberApi {
 
     @Operation(
         summary = "가입된 이메일인지 체크하는 화이트리스트 API",
-        description = "주어진 이메일이 화이트리스트에 포함되어 있으면 가입 승인 합니다.",
+        description = "주어진 멤버 목록의 이메일이 화이트리스트에 포함되어 있으면 가입 승인 합니다.",
+        requestBody =
+            RequestBody(
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = WhiteListCheckRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "화이트리스트 체크 요청 예시",
+                                value = """
+                                {
+                                    "members": [
+                                        {
+                                            "email": "hong@example.com"
+                                        },
+                                        {
+                                            "email": "kim@example.com"
+                                        }
+                                    ]
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
     )
     @ApiResponse(responseCode = "200", description = "화이트리스트 체크 및 승인 성공")
     fun checkWhiteList(request: WhiteListCheckRequest): CustomResponse<Void>
