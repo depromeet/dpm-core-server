@@ -76,12 +76,16 @@ interface MemberApi {
                                 "data": {
                                     "members": [
                                         {
+                                            "memberId": 1,
+                                            "cohortId": 17,
                                             "name": "홍길동",
                                             "teamName": "1팀",
                                             "status": "PENDING",
                                             "part": "UNASSIGNED"
                                         },
                                         {
+                                            "memberId": 2,
+                                            "cohortId": 17,
                                             "name": "김철수",
                                             "teamName": "2팀",
                                             "status": "ACTIVE",
