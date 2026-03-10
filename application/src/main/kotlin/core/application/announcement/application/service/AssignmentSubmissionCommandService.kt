@@ -9,7 +9,6 @@ import core.domain.announcement.port.outbound.AssignmentSubmissionPersistencePor
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
-import core.domain.team.vo.TeamId
 import org.springframework.stereotype.Service
 
 @Service
@@ -21,6 +20,24 @@ class AssignmentSubmissionCommandService(
     override fun updateAssignmentSubmission(assignmentSubmission: AssignmentSubmission): AssignmentSubmission =
         assignmentSubmissionPersistencePort.save(assignmentSubmission)
 
+    override fun ensureAssignmentSubmission(
+        assignment: Assignment,
+        memberId: MemberId,
+    ): AssignmentSubmission {
+        val assignmentId = assignment.id ?: throw AssignmentNotFoundException()
+        return assignmentSubmissionPersistencePort.findByAssignmentIdAndMemberId(
+            assignmentId = assignmentId,
+            memberId = memberId,
+        ) ?: assignmentSubmissionPersistencePort.save(
+            AssignmentSubmission.create(
+                assignmentId = assignmentId,
+                memberId = memberId,
+                teamId = memberQueryService.getMemberTeamId(memberId),
+                submitType = assignment.submitType,
+            ),
+        )
+    }
+
     override fun initializeForMembers(assignment: Assignment) {
         val latestCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
         memberQueryService
@@ -28,18 +45,7 @@ class AssignmentSubmissionCommandService(
                 cohortId = latestCohortId,
                 authorityId = 1,
             ).forEach { memberId ->
-                val teamId: TeamId = memberQueryService.getMemberTeamId(memberId)
-                assignmentSubmissionPersistencePort.findByAssignmentIdAndMemberId(
-                    assignmentId = assignment.id ?: throw AssignmentNotFoundException(),
-                    memberId = memberId,
-                ) ?: assignmentSubmissionPersistencePort.save(
-                    AssignmentSubmission.create(
-                        assignmentId = assignment.id ?: throw AssignmentNotFoundException(),
-                        memberId = memberId,
-                        teamId = teamId,
-                        submitType = assignment.submitType,
-                    ),
-                )
+                ensureAssignmentSubmission(assignment, memberId)
             }
     }
 
@@ -48,18 +54,7 @@ class AssignmentSubmissionCommandService(
         assignments: List<Assignment>,
     ) {
         assignments.forEach { assignment ->
-            val teamId: TeamId = memberQueryService.getMemberTeamId(memberId)
-            assignmentSubmissionPersistencePort.findByAssignmentIdAndMemberId(
-                assignmentId = assignment.id ?: throw AssignmentNotFoundException(),
-                memberId = memberId,
-            ) ?: assignmentSubmissionPersistencePort.save(
-                AssignmentSubmission.create(
-                    assignmentId = assignment.id ?: throw AssignmentNotFoundException(),
-                    memberId = memberId,
-                    teamId = teamId,
-                    submitType = assignment.submitType,
-                ),
-            )
+            ensureAssignmentSubmission(assignment, memberId)
         }
     }
 }

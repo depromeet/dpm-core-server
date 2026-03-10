@@ -7,6 +7,11 @@ import core.domain.member.vo.MemberId
 interface AssignmentSubmissionCommandUseCase {
     fun updateAssignmentSubmission(assignmentSubmission: AssignmentSubmission): AssignmentSubmission
 
+    fun ensureAssignmentSubmission(
+        assignment: Assignment,
+        memberId: MemberId,
+    ): AssignmentSubmission
+
     fun initializeForMembers(assignment: Assignment)
 
     fun initializeForNewCohortMember(

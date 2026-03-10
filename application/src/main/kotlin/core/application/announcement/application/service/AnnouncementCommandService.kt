@@ -20,7 +20,6 @@ import core.domain.announcement.port.inbound.AnnouncementReadCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementReadQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
-import core.domain.announcement.port.inbound.AssignmentSubmissionQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
@@ -40,7 +39,6 @@ class AnnouncementCommandService(
     val announcementQueryUseCase: AnnouncementQueryUseCase,
     val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
     val assignmentQueryUseCase: AssignmentQueryUseCase,
-    val assignmentSubmissionQueryUseCase: AssignmentSubmissionQueryUseCase,
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
     val memberQueryService: MemberQueryService,
     val cohortProperties: CohortProperties,
@@ -130,8 +128,8 @@ class AnnouncementCommandService(
 
         memberIds.forEach { memberId ->
             val memberAssignmentSubmission: AssignmentSubmission =
-                assignmentSubmissionQueryUseCase.getByAssignmentIdAndMemberId(
-                    assignmentId = retrievedAssignment.id!!,
+                assignmentSubmissionCommandUseCase.ensureAssignmentSubmission(
+                    assignment = retrievedAssignment,
                     memberId = memberId,
                 )
             val updatedAssignmentSubmission: AssignmentSubmission =
