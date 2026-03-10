@@ -10,5 +10,7 @@ data class WhiteListCheckRequest(
         description = "화이트리스트 체크 대상 멤버 목록",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
-    val members: List<MemberId>,
-)
+    val members: List<Long>,
+) {
+    fun toMemberIds(): List<MemberId> = members.map(::MemberId)
+}
