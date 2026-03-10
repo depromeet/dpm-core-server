@@ -96,11 +96,11 @@ class MemberController(
     override fun checkWhiteList(
         @Valid @RequestBody request: WhiteListCheckRequest,
     ): CustomResponse<Void> {
-        request.toMemberIds().forEach { memberId ->
-            memberCommandService.activate(
-                memberQueryService.getMemberById(memberId),
-            )
-        }
+        memberQueryService
+            .getMembersByIds(request.members.distinct())
+            .forEach { member ->
+                memberCommandService.activate(member)
+            }
 
         return CustomResponse.ok()
     }
