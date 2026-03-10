@@ -14,6 +14,7 @@ import core.application.member.presentation.request.SetPasswordRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.application.member.presentation.response.MemberOverviewResponse
 import core.application.security.properties.SecurityProperties
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
@@ -49,6 +50,24 @@ class MemberController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasAuthority('read:member')")
+    @GetMapping("/overview")
+    override fun getMembersOverview(): CustomResponse<MemberOverviewResponse> {
+        val response =
+            MemberOverviewResponse.of(
+                memberQueryService.getMembersOverview().map { member ->
+                    MemberOverviewResponse.MemberSummary(
+                        name = member.name,
+                        teamName = member.teamNumber?.let { "${it}팀" } ?: "미배정",
+                        status = member.status,
+                        part = member.part ?: "UNASSIGNED",
+                    )
+                },
+            )
+
+        return CustomResponse.ok(response)
+    }
+
     //    @PreAuthorize("hasAuthority('delete:member')")
     @PreAuthorize("permitAll()")
     @PatchMapping("/withdraw")
@@ -75,10 +94,12 @@ class MemberController(
     override fun checkWhiteList(
         @Valid @RequestBody request: WhiteListCheckRequest,
     ): CustomResponse<Void> {
-        memberQueryService
-            .checkWhiteList(request.name, request.signupEmail)
-            ?.let { member -> memberCommandService.activate(member) }
-        // If null, OAuth user is already activated - ignore gracefully
+        request.members.forEach { member ->
+            memberQueryService
+                .checkWhiteList(member.email)
+                ?.let { findMember -> memberCommandService.activate(findMember) }
+            // If null, OAuth user is already activated - ignore gracefully
+        }
 
         return CustomResponse.ok()
     }

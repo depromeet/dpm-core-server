@@ -1,7 +1,6 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
-import core.application.cohort.application.properties.CohortProperties
 import core.application.member.application.exception.CohortMembersNotFoundException
 import core.application.member.application.service.MemberQueryService
 import core.application.session.application.exception.CheckedAttendanceException
@@ -30,7 +29,6 @@ class AttendanceCommandService(
     private val attendancePersistencePort: AttendancePersistencePort,
     private val sessionQueryService: SessionQueryService,
     private val memberService: MemberQueryService,
-    private val cohortProperties: CohortProperties,
     private val sessionValidator: SessionValidator,
 ) {
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
@@ -96,8 +94,11 @@ class AttendanceCommandService(
         attendancePersistencePort.updateInBatch(attendances)
     }
 
-    fun createAttendances(sessionId: SessionId) {
-        val memberIds = memberService.getMembersByCohort(cohortProperties.value)
+    fun createAttendances(
+        sessionId: SessionId,
+        cohortId: CohortId,
+    ) {
+        val memberIds = memberService.getMembersByCohortId(cohortId)
         if (memberIds.isEmpty()) {
             throw CohortMembersNotFoundException()
         }

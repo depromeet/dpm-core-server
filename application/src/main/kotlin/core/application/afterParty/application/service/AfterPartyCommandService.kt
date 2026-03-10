@@ -10,6 +10,7 @@ import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 import core.domain.afterParty.port.inbound.AfterPartyCommandUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteTagQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteeCommandUseCase
+import core.domain.afterParty.port.outbound.AfterPartyInviteePersistencePort
 import core.domain.afterParty.port.outbound.AfterPartyInviteTagPersistencePort
 import core.domain.afterParty.port.outbound.AfterPartyPersistencePort
 import core.domain.authorization.port.inbound.RoleQueryUseCase
@@ -18,6 +19,7 @@ import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
+import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,6 +33,7 @@ class AfterPartyCommandService(
     val afterPartyInviteTagPersistencePort: AfterPartyInviteTagPersistencePort,
     val memberQueryUseCase: MemberQueryUseCase,
     val afterPartyInviteTagQueryUseCase: AfterPartyInviteTagQueryUseCase,
+    val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val cohortPersistencePort: CohortPersistencePort,
     val roleQueryUseCase: RoleQueryUseCase,
 ) : AfterPartyCommandUseCase {
@@ -67,14 +70,39 @@ class AfterPartyCommandService(
         memberId: MemberId,
         cohortId: CohortId,
     ) {
-//        TODO : 태그 활용해서 init 지정 필요. 한 트랜잭션으로 묶으면 '18기 디퍼'가 insert 되기 전에 태그 조회가 일어나서, 태그 조회 시점에 되려나..?
+        val memberRoleIds =
+            memberQueryUseCase
+                .getMemberNameRoleByMemberId(memberId)
+                .mapNotNull(MemberNameRoleQueryModel::role)
+                .mapNotNull { roleName ->
+                    runCatching { roleQueryUseCase.findIdByName(roleName) }.getOrNull()
+                }.toSet()
+
+        if (memberRoleIds.isEmpty()) {
+            return
+        }
+
         val afterParties: List<AfterParty> = afterPartyPersistencePort.findAll()
         val member: Member = memberQueryUseCase.getMemberById(memberId)
 
         afterParties.forEach { afterParty ->
+            val afterPartyId = afterParty.id ?: throw AfterPartyNotFoundException()
+            val inviteTags = afterPartyInviteTagPersistencePort.findByAfterPartyId(afterPartyId)
+            val shouldInvite =
+                inviteTags.any { inviteTag ->
+                    inviteTag.cohortId == cohortId && inviteTag.authorityId in memberRoleIds
+                }
+
+            if (!shouldInvite) {
+                return@forEach
+            }
+            if (afterPartyInviteePersistencePort.findByMemberIdAndAfterPartyId(memberId, afterPartyId) != null) {
+                return@forEach
+            }
+
             val afterPartyInvitee: AfterPartyInvitee =
                 AfterPartyInvitee.create(
-                    afterPartyId = afterParty.id ?: throw AfterPartyNotFoundException(),
+                    afterPartyId = afterPartyId,
                     memberId = memberId,
                     invitedAt = Instant.now(),
                 )
