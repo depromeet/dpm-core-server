@@ -186,8 +186,8 @@ interface MemberApi {
     fun initMemberDataAndApprove(request: InitMemberDataRequest): CustomResponse<Void>
 
     @Operation(
-        summary = "가입된 이메일인지 체크하는 화이트리스트 API",
-        description = "주어진 멤버 목록의 이메일이 화이트리스트에 포함되어 있으면 가입 승인 합니다.",
+        summary = "멤버 승인용 화이트리스트 API",
+        description = "주어진 멤버 ID 목록을 승인합니다.",
         requestBody =
             RequestBody(
                 content = [
@@ -200,12 +200,9 @@ interface MemberApi {
                                 value = """
                                 {
                                     "members": [
-                                        {
-                                            "email": "hong@example.com"
-                                        },
-                                        {
-                                            "email": "kim@example.com"
-                                        }
+                                        1,
+                                        2,
+                                        3
                                     ]
                                 }
                             """,
