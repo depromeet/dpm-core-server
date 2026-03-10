@@ -139,8 +139,8 @@ class EmailPasswordAuthService(
                 ),
             )
 
-        // 2. Create default member role (GUEST)
-        memberRoleService.assignGuestRole(newMember.id!!)
+        // 2. Ensure default member role (GUEST)
+        memberRoleService.ensureGuestRoleAssigned(newMember.id!!)
 
         // 3. Create MemberCredential with encoded password
         val encodedPassword = passwordEncoder.encode(password)
