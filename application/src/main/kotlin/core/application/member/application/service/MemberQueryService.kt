@@ -1,5 +1,6 @@
 package core.application.member.application.service
 
+import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
 import core.application.member.application.service.authority.MemberAuthorityService
@@ -23,7 +24,7 @@ class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberRoleService: MemberRoleService,
     private val memberAuthorityService: MemberAuthorityService,
-    @Value("\${member.default-team-id:8}")
+    @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
 ) : MemberQueryByRoleUseCase,
     MemberQueryUseCase {
@@ -87,8 +88,16 @@ class MemberQueryService(
     fun getMembersOverview(): List<MemberOverviewQueryModel> =
         memberPersistencePort.findAllOrderedByHighestCohortAndStatus()
 
-    fun getMembersByRawIds(memberIds: List<Long>): List<Member> =
-        memberPersistencePort.findAllByIds(memberIds.map(::MemberId))
+    fun getMembersForWhitelist(memberIds: List<Long>): List<Member> =
+        memberIds
+            .distinct()
+            .map { memberId ->
+                getMemberById(MemberId(memberId)).also { member ->
+                    if (member.deletedAt != null) {
+                        throw MemberDeletedException()
+                    }
+                }
+            }
 
     override fun getMembersByIds(memberIds: List<MemberId>) = memberPersistencePort.findAllByIds(memberIds)
 

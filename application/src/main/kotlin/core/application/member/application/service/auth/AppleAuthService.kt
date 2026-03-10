@@ -1,6 +1,7 @@
 package core.application.member.application.service.auth
 
 import core.application.common.constant.Profile
+import core.application.member.application.service.role.MemberRoleService
 import core.application.security.oauth.apple.AppleTokenExchangeService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
@@ -24,6 +25,7 @@ class AppleAuthService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val appleIdTokenValidator: core.application.security.oauth.apple.AppleIdTokenValidator,
     private val environment: Environment,
+    private val memberRoleService: MemberRoleService,
 ) {
     @Transactional
     fun login(
@@ -79,6 +81,8 @@ class AppleAuthService(
                 memberPersistencePort.findById(memberOAuth.memberId)
                     ?: throw IllegalStateException("MemberOAuth exists but Member not found")
             }
+
+        memberRoleService.ensureGuestRoleAssigned(member.id!!)
 
         // 4. Issue App Tokens
         val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())

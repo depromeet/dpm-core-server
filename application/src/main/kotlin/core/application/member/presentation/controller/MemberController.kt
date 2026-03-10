@@ -60,7 +60,7 @@ class MemberController(
                         memberId = member.memberId,
                         cohortId = member.cohortId,
                         name = member.name,
-                        teamName = member.teamNumber?.let { "${it}팀" } ?: "미배정",
+                        teamName = member.teamNumber?.takeIf { it > 0 }?.let { "${it}팀" } ?: "미배정",
                         status = member.status,
                         part = member.part ?: "UNASSIGNED",
                     )
@@ -97,7 +97,7 @@ class MemberController(
         @Valid @RequestBody request: WhiteListCheckRequest,
     ): CustomResponse<Void> {
         memberQueryService
-            .getMembersByRawIds(request.members.distinct())
+            .getMembersForWhitelist(request.members)
             .forEach { member ->
                 memberCommandService.activate(member)
             }
