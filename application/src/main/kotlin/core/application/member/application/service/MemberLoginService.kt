@@ -15,6 +15,7 @@ import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import core.domain.security.oauth.dto.LoginResult
 import core.domain.security.oauth.dto.OAuthAttributes
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -91,21 +92,45 @@ class MemberLoginService(
     }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
+        val existingMembers = memberPersistencePort.findAllBySignupEmail(authAttributes.getEmail())
         val member =
+            if (existingMembers.isNotEmpty()) {
+                selectLoginCandidate(existingMembers)
+            } else {
+                createOrFindMemberBySignupEmail(
+                    email = authAttributes.getEmail(),
+                    name = authAttributes.getName(),
+                )
+            }
+
+        memberOAuthService.addMemberOAuthProvider(member, authAttributes)
+        memberRoleService.ensureGuestRoleAssigned(member.id ?: throw MemberIdRequiredException())
+
+        return handleExistingMemberLogin(
+            requestUrl = securityProperties.redirect.restrictedRedirectUrl,
+            member = member,
+        )
+    }
+
+    private fun selectLoginCandidate(members: List<Member>): Member {
+        val activeCandidates = members.filter { it.isAllowed() }
+        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else members
+        return eligible.maxByOrNull { it.id?.value ?: 0L } ?: throw MemberIdRequiredException()
+    }
+
+    private fun createOrFindMemberBySignupEmail(
+        email: String,
+        name: String,
+    ): Member =
+        try {
             memberPersistencePort.save(
                 Member.create(
-                    authAttributes.getEmail(),
-                    authAttributes.getName(),
+                    email,
+                    name,
                     Profile.get(environment).value,
                 ),
             )
-        memberOAuthService.addMemberOAuthProvider(member, authAttributes)
-
-        memberRoleService.assignGuestRole(member.id!!)
-
-        return generateLoginResult(
-            member.id ?: throw MemberIdRequiredException(),
-            securityProperties.redirect.restrictedRedirectUrl,
-        )
-    }
+        } catch (_: DataIntegrityViolationException) {
+            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
+        }
 }

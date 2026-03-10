@@ -10,6 +10,7 @@ import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -41,39 +42,38 @@ class AppleAuthService(
 
         val member =
             if (memberOAuth == null) {
-                // Initial signup - create new member
                 val email =
                     claims["email"] as? String
                         ?: throw IllegalArgumentException("Invalid ID Token: emailassignments missing")
 
-                val claimName = (claims["name"] as? String)?.trim()?.takeIf { it.isNotBlank() }
-                val name =
+                val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
+                val existingMember = selectLoginCandidate(existingMembers)
+                val memberName =
                     resolveMemberName(
-                        fullName = fullName?.trim()?.takeIf { it.isNotBlank() } ?: claimName,
+                        fullName = fullName?.trim()?.takeIf { it.isNotBlank() }
+                            ?: (claims["name"] as? String)?.trim()?.takeIf { it.isNotBlank() },
                         familyName = familyName,
                         givenName = givenName,
-                    ) ?: throw IllegalArgumentException("Apple name missing for initial signup")
-
-                val newMember =
-                    memberPersistencePort.save(
-                        Member.create(
-                            email = email,
-                            name = name,
-                            activeProfile = Profile.get(environment).value,
-                        ),
+                        email = email,
                     )
 
-                // Create MemberOAuth
+                val targetMember =
+                    existingMember
+                        ?: createOrFindMemberBySignupEmail(
+                            email = email,
+                            name = memberName,
+                        )
+
                 memberOAuthPersistencePort.save(
                     MemberOAuth.of(
                         externalId = externalId,
                         provider = OAuthProvider.APPLE,
-                        memberId = newMember.id!!,
+                        memberId = targetMember.id!!,
                     ),
-                    newMember,
+                    targetMember,
                 )
 
-                newMember
+                targetMember
             } else {
                 // Existing member
                 memberPersistencePort.findById(memberOAuth.memberId)
@@ -98,16 +98,45 @@ class AppleAuthService(
         fullName: String?,
         familyName: String?,
         givenName: String?,
-    ): String? {
+        email: String,
+    ): String {
         val normalizedFamilyName = familyName?.trim().orEmpty()
         val normalizedGivenName = givenName?.trim().orEmpty()
 
         if (normalizedFamilyName.isNotBlank() || normalizedGivenName.isNotBlank()) {
-            return (normalizedFamilyName + normalizedGivenName).ifBlank { null }
+            return normalizedFamilyName + normalizedGivenName
         }
 
         return fullName?.trim()?.takeIf { it.isNotBlank() }
+            ?: email.substringBefore("@").ifBlank { "Apple User" }
     }
+
+    private fun selectLoginCandidate(members: List<Member>): Member? {
+        if (members.isEmpty()) {
+            return null
+        }
+
+        val activeCandidates = members.filter { it.isAllowed() }
+        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else members
+        return eligible.maxByOrNull { it.id?.value ?: 0L }
+    }
+
+    private fun createOrFindMemberBySignupEmail(
+        email: String,
+        name: String,
+    ): Member =
+        try {
+            memberPersistencePort.save(
+                Member.create(
+                    email = email,
+                    name = name,
+                    activeProfile = Profile.get(environment).value,
+                ),
+            )
+        } catch (_: DataIntegrityViolationException) {
+            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
+                ?: throw IllegalStateException("Member creation conflicted but no existing member found")
+        }
 }
 
 data class AuthTokenResponse(

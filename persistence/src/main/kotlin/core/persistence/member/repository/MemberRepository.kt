@@ -153,10 +153,12 @@ class MemberRepository(
 
         return dsl
             .select(
+                MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
                 maxCohortValue,
+                MEMBER_COHORTS.COHORT_ID,
                 maxTeamNumber,
             )
             .from(MEMBERS)
@@ -174,6 +176,7 @@ class MemberRepository(
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
+                MEMBER_COHORTS.COHORT_ID,
             )
             .orderBy(
                 maxCohortValue.desc().nullsLast(),
@@ -182,6 +185,8 @@ class MemberRepository(
             )
             .fetch { record ->
                 MemberOverviewQueryModel(
+                    memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
+                    cohortId = record[MEMBER_COHORTS.COHORT_ID],
                     name = record[MEMBERS.NAME] ?: "",
                     teamNumber = record[maxTeamNumber],
                     status = record[MEMBERS.STATUS] ?: "",
