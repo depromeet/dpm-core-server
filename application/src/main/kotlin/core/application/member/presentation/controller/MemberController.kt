@@ -57,6 +57,8 @@ class MemberController(
             MemberOverviewResponse.of(
                 memberQueryService.getMembersOverview().map { member ->
                     MemberOverviewResponse.MemberSummary(
+                        memberId = member.memberId,
+                        cohortId = member.cohortId,
                         name = member.name,
                         teamName = member.teamNumber?.let { "${it}팀" } ?: "미배정",
                         status = member.status,
