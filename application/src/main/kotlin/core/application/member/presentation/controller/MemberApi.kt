@@ -187,7 +187,7 @@ interface MemberApi {
 
     @Operation(
         summary = "멤버 승인용 화이트리스트 API",
-        description = "주어진 멤버 ID 목록을 승인합니다.",
+        description = "주어진 멤버 ID 숫자 목록을 승인합니다.",
         requestBody =
             RequestBody(
                 content = [
