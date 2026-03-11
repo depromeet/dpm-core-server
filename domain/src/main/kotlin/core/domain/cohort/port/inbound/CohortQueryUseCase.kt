@@ -4,4 +4,6 @@ import core.domain.cohort.vo.CohortId
 
 interface CohortQueryUseCase {
     fun getLatestCohortId(): CohortId
+
+    fun getLatestCohortValue(): String
 }
