@@ -113,4 +113,28 @@ class MemberRoleService(
             assignGuestRole(memberId)
         }
     }
+
+    fun ensureRoleAssignedByName(
+        memberId: MemberId,
+        roleName: String,
+    ) {
+        val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
+        if (roles.none { it == roleName }) {
+            val roleId = roleQueryUseCase.findIdByName(roleName)
+            memberRolePersistencePort.save(
+                MemberRole.of(
+                    memberId = memberId,
+                    roleId = RoleId(roleId),
+                ),
+            )
+        }
+    }
+
+    fun replaceWithSingleRoleByName(
+        memberId: MemberId,
+        roleName: String,
+    ) {
+        val roleId = roleQueryUseCase.findIdByName(roleName)
+        memberRolePersistencePort.upsertSingleActiveRole(memberId.value, roleId)
+    }
 }

@@ -5,6 +5,11 @@ import core.domain.member.aggregate.MemberRole
 interface MemberRolePersistencePort {
     fun save(memberRole: MemberRole)
 
+    fun upsertSingleActiveRole(
+        memberId: Long,
+        roleId: Long,
+    )
+
     fun findRoleNamesByMemberId(memberId: Long): List<String>
 
     fun softDeleteAllByMemberId(memberId: Long)
