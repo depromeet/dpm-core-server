@@ -10,6 +10,7 @@ import core.application.member.presentation.request.ConvertDeeperToOrganizerRequ
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
+import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
@@ -88,12 +89,12 @@ class MemberCommandService(
 
     fun activate(member: Member) {
         val memberId = requireNotNull(member.id) { "Activated member must have id" }
-        val activeAuthorityIds = memberAuthorityService.getActiveAuthorityIdsByMemberId(memberId)
-        if (activeAuthorityIds.isEmpty()) {
-            memberAuthorityService.ensureAuthorityAssigned(memberId, DEEPER_AUTHORITY_ID)
-        } else if (activeAuthorityIds.none { it == DEEPER_AUTHORITY_ID || it == ORGANIZER_AUTHORITY_ID }) {
-            return
-        }
+        val latestCohortValue = cohortQueryUseCase.getLatestCohortValue()
+        val deeperRoleName = "${latestCohortValue}기 ${RoleType.Deeper.aliases.first()}"
+
+        // Whitelist approval must always grant DEEPER authority and keep exactly one active latest cohort DEEPER role.
+        memberAuthorityService.ensureAuthorityAssigned(memberId, DEEPER_AUTHORITY_ID)
+        memberRoleService.replaceWithSingleRoleByName(memberId, deeperRoleName)
 
         member.activate()
         val activatedMember = memberPersistencePort.save(member)
