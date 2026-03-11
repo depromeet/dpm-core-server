@@ -27,6 +27,58 @@ class MemberRoleRepository(
             ).execute()
     }
 
+    override fun upsertSingleActiveRole(
+        memberId: Long,
+        roleId: Long,
+    ) {
+        val now = LocalDateTime.now(ZoneId.of(TIME_ZONE))
+        val activeRoles =
+            dsl
+                .select(MEMBER_ROLES.MEMBER_ROLE_ID, MEMBER_ROLES.ROLE_ID)
+                .from(MEMBER_ROLES)
+                .where(MEMBER_ROLES.MEMBER_ID.eq(memberId))
+                .and(MEMBER_ROLES.DELETED_AT.isNull)
+                .orderBy(MEMBER_ROLES.MEMBER_ROLE_ID.asc())
+                .fetch()
+
+        if (activeRoles.isEmpty()) {
+            dsl
+                .insertInto(MEMBER_ROLES)
+                .set(MEMBER_ROLES.MEMBER_ID, memberId)
+                .set(MEMBER_ROLES.ROLE_ID, roleId)
+                .set(MEMBER_ROLES.GRANTED_AT, now)
+                .execute()
+            return
+        }
+
+        val keptRole =
+            activeRoles.firstOrNull { it[MEMBER_ROLES.ROLE_ID] == roleId }
+                ?: activeRoles.first()
+        val keptRoleId = keptRole[MEMBER_ROLES.MEMBER_ROLE_ID] ?: return
+
+        dsl
+            .update(MEMBER_ROLES)
+            .set(MEMBER_ROLES.ROLE_ID, roleId)
+            .set(MEMBER_ROLES.GRANTED_AT, now)
+            .set(MEMBER_ROLES.DELETED_AT, null as LocalDateTime?)
+            .where(MEMBER_ROLES.MEMBER_ROLE_ID.eq(keptRoleId))
+            .execute()
+
+        val duplicateRoleIds =
+            activeRoles
+                .mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }
+                .filter { it != keptRoleId }
+
+        if (duplicateRoleIds.isNotEmpty()) {
+            dsl
+                .update(MEMBER_ROLES)
+                .set(MEMBER_ROLES.DELETED_AT, now)
+                .where(MEMBER_ROLES.MEMBER_ROLE_ID.`in`(duplicateRoleIds))
+                .and(MEMBER_ROLES.DELETED_AT.isNull)
+                .execute()
+        }
+    }
+
     /**
      * 단순 soft delete를 위해 jOOQ 사용.
      *
