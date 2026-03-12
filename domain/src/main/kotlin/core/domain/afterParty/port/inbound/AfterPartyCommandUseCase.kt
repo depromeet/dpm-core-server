@@ -24,4 +24,6 @@ interface AfterPartyCommandUseCase {
         memberId: MemberId,
         cohortId: CohortId,
     )
+
+    fun compensateMissingInviteesForOpenAfterParties(): Int
 }

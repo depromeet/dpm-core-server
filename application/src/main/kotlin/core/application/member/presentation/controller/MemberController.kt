@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -52,10 +53,12 @@ class MemberController(
 
     @PreAuthorize("hasAuthority('read:member')")
     @GetMapping("/overview")
-    override fun getMembersOverview(): CustomResponse<MemberOverviewResponse> {
+    override fun getMembersOverview(
+        @RequestParam(required = false) cohortNumber: String?,
+    ): CustomResponse<MemberOverviewResponse> {
         val response =
             MemberOverviewResponse.of(
-                memberQueryService.getMembersOverview().map { member ->
+                memberQueryService.getMembersOverview(cohortNumber).map { member ->
                     MemberOverviewResponse.MemberSummary(
                         memberId = member.memberId,
                         cohortId = member.cohortId,

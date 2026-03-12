@@ -40,7 +40,7 @@ interface MemberPersistencePort {
 
     fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel>
 
-    fun findAllOrderedByHighestCohortAndStatus(): List<MemberOverviewQueryModel>
+    fun findAllOrderedByHighestCohortAndStatus(cohortNumber: String?): List<MemberOverviewQueryModel>
 
     fun findMemberTeamByMemberId(memberId: MemberId): Int?
 

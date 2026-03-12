@@ -3,6 +3,7 @@ package core.application.afterParty.presentation.controller
 import core.application.afterParty.presentation.request.CreateAfterPartyByInviteTagNamesRequest
 import core.application.afterParty.presentation.request.CreateAfterPartyRequest
 import core.application.afterParty.presentation.request.UpdateAfterPartyRequest
+import core.application.afterParty.presentation.response.AfterPartyInviteeCompensationResponse
 import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
@@ -82,12 +83,17 @@ class AfterPartyCommandController(
         @CurrentMemberId memberId: MemberId,
         @PathVariable afterPartyId: AfterPartyId,
     ): CustomResponse<Void> {
-        val afterPartyInviteTags: List<AfterPartyInviteTagEnum> =
-            updateAfterPartyRequest.inviteTags.map { it.toDomain() }
         val updateAfterParty: AfterParty = updateAfterPartyRequest.toDomain(afterPartyId)
         afterPartyCommandUseCase.updateAfterParty(
             afterParty = updateAfterParty,
         )
         return CustomResponse.ok()
+    }
+
+    @PreAuthorize("hasAuthority('update:after_party')")
+    @PostMapping("/invitees/compensate")
+    override fun compensateMissingInviteesForOpenAfterParties(): CustomResponse<AfterPartyInviteeCompensationResponse> {
+        val createdInviteeCount = afterPartyCommandUseCase.compensateMissingInviteesForOpenAfterParties()
+        return CustomResponse.ok(AfterPartyInviteeCompensationResponse(createdInviteeCount))
     }
 }
