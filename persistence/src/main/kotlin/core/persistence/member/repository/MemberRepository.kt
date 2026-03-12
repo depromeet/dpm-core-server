@@ -3,6 +3,8 @@ package core.persistence.member.repository
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberPart
+import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
@@ -25,6 +27,7 @@ import org.jooq.impl.DSL.`when`
 import org.jooq.impl.DSL.table
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 @Repository
 class MemberRepository(
@@ -36,7 +39,37 @@ class MemberRepository(
     override fun findAllBySignupEmail(email: String): List<Member> =
         memberJpaRepository.findAllBySignupEmail(email).map { it.toDomain() }
 
-    override fun save(member: Member): Member = memberJpaRepository.save(MemberEntity.from(member)).toDomain()
+    override fun save(member: Member): Member =
+        if (member.id == null) {
+            val now = LocalDateTime.now()
+            val inserted =
+                dsl
+                    .insertInto(MEMBERS)
+                    .set(MEMBERS.NAME, member.name)
+                    .set(MEMBERS.EMAIL, member.email)
+                    .set(MEMBERS.SIGNUP_EMAIL, member.signupEmail)
+                    .set(MEMBERS.PART, member.part?.name)
+                    .set(MEMBERS.STATUS, member.status.name)
+                    .set(MEMBERS.CREATED_AT, now)
+                    .set(MEMBERS.UPDATED_AT, now)
+                    .returning()
+                    .fetchOne()
+                    ?: error("Failed to insert member")
+
+            Member(
+                id = MemberId(requireNotNull(inserted.memberId)),
+                name = requireNotNull(inserted.name),
+                email = inserted.email,
+                signupEmail = requireNotNull(inserted.signupEmail),
+                part = inserted.part?.let(MemberPart::valueOf),
+                status = MemberStatus.valueOf(requireNotNull(inserted.status)),
+                createdAt = inserted.createdAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                updatedAt = inserted.updatedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                deletedAt = inserted.deletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+            )
+        } else {
+            memberJpaRepository.save(MemberEntity.from(member)).toDomain()
+        }
 
     override fun findById(memberId: MemberId): Member? =
         memberJpaRepository.findById(
