@@ -17,8 +17,10 @@ import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
+import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.`when`
 import org.jooq.impl.DSL.table
 import org.springframework.stereotype.Repository
@@ -140,16 +142,36 @@ class MemberRepository(
                 }
             }
 
-    override fun findAllOrderedByHighestCohortAndStatus(cohortNumber: String?): List<MemberOverviewQueryModel> {
+    override fun findAllOrderedByHighestCohortAndStatus(
+        latest: Boolean?,
+        latestCohortId: Long,
+    ): List<MemberOverviewQueryModel> {
         val cohortValueAsNumber = field("CAST({0} AS UNSIGNED)", Int::class.java, COHORTS.VALUE)
         val maxCohortValue = max(cohortValueAsNumber).`as`("max_cohort_value")
+        val maxCohortId = max(MEMBER_COHORTS.COHORT_ID).`as`("max_cohort_id")
         val maxTeamNumber = max(TEAMS.NUMBER).`as`("max_team_number")
+        val latestMemberCohorts = MEMBER_COHORTS.`as`("latest_member_cohorts")
 
         val statusPriority =
             `when`(MEMBERS.STATUS.eq("PENDING"), 0)
                 .`when`(MEMBERS.STATUS.eq("ACTIVE"), 1)
                 .`when`(MEMBERS.STATUS.eq("INACTIVE"), 2)
                 .otherwise(3)
+
+        val hasLatestCohortCondition =
+            exists(
+                selectOne()
+                    .from(latestMemberCohorts)
+                    .where(latestMemberCohorts.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                    .and(latestMemberCohorts.COHORT_ID.eq(latestCohortId)),
+            )
+
+        val filterCondition =
+            when (latest) {
+                true -> hasLatestCohortCondition
+                false -> hasLatestCohortCondition.not()
+                null -> null
+            }
 
         return dsl
             .select(
@@ -158,7 +180,7 @@ class MemberRepository(
                 MEMBERS.STATUS,
                 MEMBERS.PART,
                 maxCohortValue,
-                MEMBER_COHORTS.COHORT_ID,
+                maxCohortId,
                 maxTeamNumber,
             )
             .from(MEMBERS)
@@ -172,14 +194,13 @@ class MemberRepository(
             .on(TEAMS.TEAM_ID.eq(MEMBER_TEAMS.TEAM_ID))
             .where(
                 MEMBERS.DELETED_AT.isNull
-                    .and(cohortNumber?.let { COHORTS.VALUE.eq(it) }),
+                    .and(filterCondition),
             )
             .groupBy(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
-                MEMBER_COHORTS.COHORT_ID,
             )
             .orderBy(
                 maxCohortValue.desc().nullsLast(),
@@ -189,7 +210,7 @@ class MemberRepository(
             .fetch { record ->
                 MemberOverviewQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
-                    cohortId = record[MEMBER_COHORTS.COHORT_ID],
+                    cohortId = record[maxCohortId],
                     name = record[MEMBERS.NAME] ?: "",
                     teamNumber = record[maxTeamNumber],
                     status = record[MEMBERS.STATUS] ?: "",

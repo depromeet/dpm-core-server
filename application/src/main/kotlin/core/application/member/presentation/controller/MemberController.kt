@@ -54,11 +54,11 @@ class MemberController(
     @PreAuthorize("hasAuthority('read:member')")
     @GetMapping("/overview")
     override fun getMembersOverview(
-        @RequestParam(required = false) cohortNumber: String?,
+        @RequestParam(required = false) latest: Boolean?,
     ): CustomResponse<MemberOverviewResponse> {
         val response =
             MemberOverviewResponse.of(
-                memberQueryService.getMembersOverview(cohortNumber).map { member ->
+                memberQueryService.getMembersOverview(latest).map { member ->
                     MemberOverviewResponse.MemberSummary(
                         memberId = member.memberId,
                         cohortId = member.cohortId,

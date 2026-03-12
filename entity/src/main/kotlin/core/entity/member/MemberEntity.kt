@@ -22,7 +22,7 @@ class MemberEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id", nullable = false, updatable = false)
-    val id: Long,
+    val id: Long? = null,
     @Column(nullable = false)
     val name: String,
     @Column(unique = true)
@@ -53,7 +53,7 @@ class MemberEntity(
 ) {
     fun toDomain(): Member =
         Member(
-            id = MemberId(this.id),
+            id = MemberId(requireNotNull(this.id)),
             name = name,
             email = email,
             signupEmail = signupEmail,
@@ -71,7 +71,7 @@ class MemberEntity(
     companion object {
         fun from(domain: Member): MemberEntity =
             MemberEntity(
-                id = domain.id?.value ?: 0L,
+                id = domain.id?.value,
                 name = domain.name,
                 email = domain.email,
                 signupEmail = domain.signupEmail,

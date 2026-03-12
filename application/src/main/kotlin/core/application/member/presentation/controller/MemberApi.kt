@@ -103,14 +103,14 @@ interface MemberApi {
     )
     @Operation(
         summary = "멤버 목록 조회 API",
-        description = "기수로 필터링 가능한 멤버 목록을 조회합니다. 기수를 전달하지 않으면 전체 멤버를 조회합니다.",
+        description = "최신 기수 포함 여부로 멤버 목록을 조회합니다. latest를 전달하지 않으면 전체 멤버를 조회합니다.",
     )
     fun getMembersOverview(
         @Parameter(
-            description = "조회할 기수 값. 예: 17, 18. null이면 전체 조회",
-            example = "18",
+            description = "최신 기수 포함 여부. true면 최신 기수 멤버만, false면 최신 기수가 아닌 멤버만, null이면 전체 조회",
+            example = "true",
         )
-        cohortNumber: String?,
+        latest: Boolean?,
     ): CustomResponse<MemberOverviewResponse>
 
     @ApiResponse(
