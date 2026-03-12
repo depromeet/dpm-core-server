@@ -2,6 +2,7 @@ package core.application.afterParty.application.service
 
 import core.application.afterParty.application.exception.AfterPartyNotFoundException
 import core.application.afterParty.application.exception.InviteTagNameNotFoundException
+import core.application.afterParty.presentation.response.AfterPartyInviteeCompensationResponse
 import core.application.member.application.exception.MemberNotFoundException
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
@@ -18,8 +19,10 @@ import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.aggregate.MemberCohort
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
+import core.domain.member.enums.MemberStatus
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -70,6 +73,32 @@ class AfterPartyCommandService(
         memberId: MemberId,
         cohortId: CohortId,
     ) {
+        inviteOpenAfterPartiesForMember(memberId, cohortId)
+    }
+
+    override fun compensateMissingInviteesForOpenAfterParties(): Int {
+        val members = memberQueryUseCase.getAll()
+
+        return members
+            .asSequence()
+            .filter { it.status == MemberStatus.ACTIVE || it.status == MemberStatus.INACTIVE }
+            .flatMap { member ->
+                val memberId = member.id ?: return@flatMap emptySequence()
+                member.memberCohorts
+                    .asSequence()
+                    .map(MemberCohort::cohortId)
+                    .distinct()
+                    .map { cohortId -> memberId to cohortId }
+            }.sumOf { (memberId, cohortId) ->
+                inviteOpenAfterPartiesForMember(memberId, cohortId)
+            }
+    }
+
+    private fun inviteOpenAfterPartiesForMember(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ): Int {
+        val now = Instant.now()
         val memberRoleIds =
             memberQueryUseCase
                 .getMemberNameRoleByMemberId(memberId)
@@ -79,11 +108,15 @@ class AfterPartyCommandService(
                 }.toSet()
 
         if (memberRoleIds.isEmpty()) {
-            return
+            return 0
         }
 
-        val afterParties: List<AfterParty> = afterPartyPersistencePort.findAll()
+        val afterParties: List<AfterParty> =
+            afterPartyPersistencePort
+                .findAll()
+                .filter { !now.isAfter(it.closedAt) }
         val member: Member = memberQueryUseCase.getMemberById(memberId)
+        var createdInviteeCount = 0
 
         afterParties.forEach { afterParty ->
             val afterPartyId = afterParty.id ?: throw AfterPartyNotFoundException()
@@ -114,7 +147,10 @@ class AfterPartyCommandService(
                 authorMember = authorMember,
                 inviteeMember = member,
             )
+            createdInviteeCount += 1
         }
+
+        return createdInviteeCount
     }
 
     private fun createAfterPartyInternal(

@@ -140,7 +140,7 @@ class MemberRepository(
                 }
             }
 
-    override fun findAllOrderedByHighestCohortAndStatus(): List<MemberOverviewQueryModel> {
+    override fun findAllOrderedByHighestCohortAndStatus(cohortNumber: String?): List<MemberOverviewQueryModel> {
         val cohortValueAsNumber = field("CAST({0} AS UNSIGNED)", Int::class.java, COHORTS.VALUE)
         val maxCohortValue = max(cohortValueAsNumber).`as`("max_cohort_value")
         val maxTeamNumber = max(TEAMS.NUMBER).`as`("max_team_number")
@@ -170,7 +170,10 @@ class MemberRepository(
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .leftJoin(TEAMS)
             .on(TEAMS.TEAM_ID.eq(MEMBER_TEAMS.TEAM_ID))
-            .where(MEMBERS.DELETED_AT.isNull)
+            .where(
+                MEMBERS.DELETED_AT.isNull
+                    .and(cohortNumber?.let { COHORTS.VALUE.eq(it) }),
+            )
             .groupBy(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
@@ -204,6 +207,8 @@ class MemberRepository(
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value))
+            .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
+            .limit(1)
             .fetchOne(TEAMS.NUMBER)
 
     override fun findAll(): List<Member> = memberJpaRepository.findAll().map { it.toDomain() }

@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -102,9 +103,15 @@ interface MemberApi {
     )
     @Operation(
         summary = "멤버 목록 조회 API",
-        description = "최신 기수 우선, 상태(PENDING > INACTIVE > ACTIVE > 기타) 우선순위로 멤버 목록을 조회합니다.",
+        description = "기수로 필터링 가능한 멤버 목록을 조회합니다. 기수를 전달하지 않으면 전체 멤버를 조회합니다.",
     )
-    fun getMembersOverview(): CustomResponse<MemberOverviewResponse>
+    fun getMembersOverview(
+        @Parameter(
+            description = "조회할 기수 값. 예: 17, 18. null이면 전체 조회",
+            example = "18",
+        )
+        cohortNumber: String?,
+    ): CustomResponse<MemberOverviewResponse>
 
     @ApiResponse(
         responseCode = "200",

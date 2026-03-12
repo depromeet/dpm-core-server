@@ -3,6 +3,7 @@ package core.application.afterParty.presentation.controller
 import core.application.afterParty.presentation.request.CreateAfterPartyByInviteTagNamesRequest
 import core.application.afterParty.presentation.request.CreateAfterPartyRequest
 import core.application.afterParty.presentation.request.UpdateAfterPartyRequest
+import core.application.afterParty.presentation.response.AfterPartyInviteeCompensationResponse
 import core.application.common.exception.CustomResponse
 import core.domain.afterParty.vo.AfterPartyId
 import core.domain.member.vo.MemberId
@@ -51,4 +52,14 @@ interface AfterPartyCommandApi {
         memberId: MemberId,
         afterPartyId: AfterPartyId,
     ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "열려 있는 회식 초대 보상 처리 성공",
+    )
+    @Operation(
+        summary = "열려 있는 회식 초대 보상 API (dev)",
+        description = "누락된 after_party_invitees를 보상 생성합니다. closedAt이 지나지 않은 회식만 대상입니다.",
+    )
+    fun compensateMissingInviteesForOpenAfterParties(): CustomResponse<AfterPartyInviteeCompensationResponse>
 }

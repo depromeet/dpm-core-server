@@ -85,8 +85,8 @@ class MemberQueryService(
         email: String,
     ): Member? = memberPersistencePort.findBySignupEmail(email)
 
-    fun getMembersOverview(): List<MemberOverviewQueryModel> =
-        memberPersistencePort.findAllOrderedByHighestCohortAndStatus()
+    fun getMembersOverview(cohortNumber: String?): List<MemberOverviewQueryModel> =
+        memberPersistencePort.findAllOrderedByHighestCohortAndStatus(cohortNumber)
 
     fun getMembersForWhitelist(memberIds: List<Long>): List<Member> =
         memberIds
