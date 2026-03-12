@@ -12,6 +12,9 @@ class MemberTeamRepository(
     private val dsl: DSLContext,
 ) : MemberTeamPersistencePort {
     override fun save(memberTeam: MemberTeam) {
+        // Keep a single active team row per member to avoid duplicate assignments.
+        deleteByMemberId(memberTeam.memberId.value)
+
         dsl
             .insertInto(MEMBER_TEAMS)
             .set(MEMBER_TEAMS.MEMBER_ID, memberTeam.memberId.value)
