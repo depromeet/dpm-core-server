@@ -7,6 +7,7 @@ import core.application.member.application.service.authority.MemberAuthorityServ
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
+import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
@@ -24,6 +25,7 @@ class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberRoleService: MemberRoleService,
     private val memberAuthorityService: MemberAuthorityService,
+    private val cohortQueryUseCase: CohortQueryUseCase,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
 ) : MemberQueryByRoleUseCase,
@@ -85,8 +87,11 @@ class MemberQueryService(
         email: String,
     ): Member? = memberPersistencePort.findBySignupEmail(email)
 
-    fun getMembersOverview(): List<MemberOverviewQueryModel> =
-        memberPersistencePort.findAllOrderedByHighestCohortAndStatus()
+    fun getMembersOverview(latest: Boolean?): List<MemberOverviewQueryModel> =
+        memberPersistencePort.findAllOrderedByHighestCohortAndStatus(
+            latest = latest,
+            latestCohortId = cohortQueryUseCase.getLatestCohortId().value,
+        )
 
     fun getMembersForWhitelist(memberIds: List<Long>): List<Member> =
         memberIds
