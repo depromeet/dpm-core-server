@@ -2,6 +2,7 @@ package core.application.afterParty.application.service
 
 import core.application.afterParty.application.exception.AfterPartyNotFoundException
 import core.application.afterParty.application.exception.InviteTagNameNotFoundException
+import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.afterParty.presentation.response.AfterPartyInviteeCompensationResponse
 import core.application.member.application.exception.MemberNotFoundException
 import core.domain.afterParty.aggregate.AfterParty
@@ -14,14 +15,12 @@ import core.domain.afterParty.port.inbound.AfterPartyInviteeCommandUseCase
 import core.domain.afterParty.port.outbound.AfterPartyInviteePersistencePort
 import core.domain.afterParty.port.outbound.AfterPartyInviteTagPersistencePort
 import core.domain.afterParty.port.outbound.AfterPartyPersistencePort
-import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberCohort
 import core.domain.member.port.inbound.MemberQueryUseCase
-import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.enums.MemberStatus
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -38,7 +37,7 @@ class AfterPartyCommandService(
     val afterPartyInviteTagQueryUseCase: AfterPartyInviteTagQueryUseCase,
     val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val cohortPersistencePort: CohortPersistencePort,
-    val roleQueryUseCase: RoleQueryUseCase,
+    val memberAuthorityService: MemberAuthorityService,
 ) : AfterPartyCommandUseCase {
     override fun createAfterParty(
         afterParty: AfterParty,
@@ -99,15 +98,9 @@ class AfterPartyCommandService(
         cohortId: CohortId,
     ): Int {
         val now = Instant.now()
-        val memberRoleIds =
-            memberQueryUseCase
-                .getMemberNameRoleByMemberId(memberId)
-                .mapNotNull(MemberNameRoleQueryModel::role)
-                .mapNotNull { roleName ->
-                    runCatching { roleQueryUseCase.findIdByName(roleName) }.getOrNull()
-                }.toSet()
+        val memberAuthorityIds = memberAuthorityService.getActiveAuthorityIdsByMemberId(memberId).toSet()
 
-        if (memberRoleIds.isEmpty()) {
+        if (memberAuthorityIds.isEmpty()) {
             return 0
         }
 
@@ -123,7 +116,7 @@ class AfterPartyCommandService(
             val inviteTags = afterPartyInviteTagPersistencePort.findByAfterPartyId(afterPartyId)
             val shouldInvite =
                 inviteTags.any { inviteTag ->
-                    inviteTag.cohortId == cohortId && inviteTag.authorityId in memberRoleIds
+                    inviteTag.cohortId == cohortId && inviteTag.authorityId in memberAuthorityIds
                 }
 
             if (!shouldInvite) {
@@ -272,10 +265,10 @@ class AfterPartyCommandService(
         }
 
         val authorityId =
-            try {
-                roleQueryUseCase.findIdByName(roleType.code)
-            } catch (ex: IllegalArgumentException) {
-                throw InviteTagNameNotFoundException(tagName)
+            when (roleType) {
+                RoleType.Deeper -> DEEPER_AUTHORITY_ID
+                RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
+                RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
             }
 
         return InviteTagSpec(
@@ -306,4 +299,9 @@ class AfterPartyCommandService(
         val authorityId: Long,
         val tagName: String,
     )
+
+    companion object {
+        private const val DEEPER_AUTHORITY_ID = 1L
+        private const val ORGANIZER_AUTHORITY_ID = 2L
+    }
 }
