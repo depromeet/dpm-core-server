@@ -124,10 +124,9 @@ class MemberLoginService(
     ): Member =
         try {
             memberPersistencePort.save(
-                Member.create(
+                Member.createPending(
                     email,
                     name,
-                    Profile.get(environment).value,
                 ),
             )
         } catch (_: DataIntegrityViolationException) {
