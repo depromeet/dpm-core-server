@@ -12,7 +12,6 @@ import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
-import core.domain.session.extension.hasChangedComparedTo
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.port.outbound.SessionPersistencePort
@@ -91,11 +90,9 @@ class SessionQueryService(
         currentPolicy: AttendancePolicy,
         command: SessionAttendancePolicyCommand,
     ): Boolean =
-        currentPolicy.hasChangedComparedTo(
-            command.attendanceStart,
-            command.lateStart,
-            command.absentStart,
-        )
+        currentPolicy.attendanceStart != command.attendanceStart ||
+            currentPolicy.lateStart != command.lateStart ||
+            currentPolicy.absentStart != command.absentStart
 
     private fun classifyAttendancesByPolicyChange(
         attendances: List<Attendance>,
