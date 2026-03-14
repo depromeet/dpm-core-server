@@ -4,7 +4,7 @@ data class MemberDetailAttendanceQueryModel(
     val memberId: Long,
     val memberName: String,
     val teamNumber: Int,
-    val part: String,
+    val part: String?,
     val presentCount: Int,
     val lateCount: Int,
     val excusedAbsentCount: Int,
