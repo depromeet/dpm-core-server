@@ -12,7 +12,6 @@ import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import org.springframework.dao.DataIntegrityViolationException
-import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,7 +23,6 @@ class AppleAuthService(
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val appleIdTokenValidator: core.application.security.oauth.apple.AppleIdTokenValidator,
-    private val environment: Environment,
     private val memberRoleService: MemberRoleService,
 ) {
     @Transactional
@@ -131,10 +129,9 @@ class AppleAuthService(
     ): Member =
         try {
             memberPersistencePort.save(
-                Member.create(
+                Member.createPending(
                     email = email,
                     name = name,
-                    activeProfile = Profile.get(environment).value,
                 ),
             )
         } catch (_: DataIntegrityViolationException) {
