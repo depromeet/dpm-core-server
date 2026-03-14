@@ -4,6 +4,6 @@ data class MemberAttendanceResponse(
     val id: Long,
     val name: String,
     val teamNumber: Int,
-    val part: String,
+    val part: String?,
     val attendanceStatus: String,
 )

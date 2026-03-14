@@ -8,7 +8,6 @@ import core.domain.session.aggregate.Session
 import core.domain.session.event.SessionCreateEvent
 import core.domain.session.event.SessionDeleteEvent
 import core.domain.session.event.SessionUpdateEvent
-import core.domain.session.extension.hasChangedComparedTo
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.outbound.SessionPersistencePort
@@ -94,7 +93,13 @@ class SessionCommandService(
         absentStart: Instant,
         session: Session,
     ) {
-        if (!previous.hasChangedComparedTo(attendanceStart, lateStart, absentStart)) return
+        if (
+            previous.attendanceStart == attendanceStart &&
+            previous.lateStart == lateStart &&
+            previous.absentStart == absentStart
+        ) {
+            return
+        }
 
         val sessionId = session.id ?: throw InvalidSessionIdException()
 
