@@ -16,6 +16,17 @@ class MemberOAuthService(
         externalId: String,
     ): MemberOAuth? = memberOAuthPersistencePort.findByProviderAndExternalId(provider, externalId)
 
+    fun relinkMemberOAuthProvider(
+        member: Member,
+        authAttribute: OAuthAttributes,
+    ) {
+        memberOAuthPersistencePort.relinkToMember(
+            provider = authAttribute.getProvider(),
+            externalId = authAttribute.getExternalId(),
+            member = member,
+        )
+    }
+
     /**
      * 멤버 가입 시, OAuth 클라이언트로부터 전달받은 제공자 정보를 저장함.
      *

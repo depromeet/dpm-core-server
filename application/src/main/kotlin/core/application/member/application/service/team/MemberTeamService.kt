@@ -1,14 +1,19 @@
 package core.application.member.application.service.team
 
 import core.domain.member.aggregate.MemberTeam
+import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberTeamPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamId
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
 class MemberTeamService(
     private val memberTeamPersistencePort: MemberTeamPersistencePort,
+    private val memberPersistencePort: MemberPersistencePort,
+    @Value("\${member.default-team-id:0}")
+    private val defaultTeamId: Int,
 ) {
     /**
      * 팀에 멤버를 추가함.
@@ -21,6 +26,23 @@ class MemberTeamService(
         teamId: TeamId,
     ) {
         memberTeamPersistencePort.save(MemberTeam.of(memberId, teamId))
+    }
+
+    fun ensureMemberTeamInitialized(memberId: MemberId) {
+        if (defaultTeamId <= 0) {
+            return
+        }
+
+        if (memberPersistencePort.findMemberTeamByMemberId(memberId) != null) {
+            return
+        }
+
+        memberTeamPersistencePort.save(
+            MemberTeam.of(
+                memberId = memberId,
+                teamId = TeamId(defaultTeamId.toLong()),
+            ),
+        )
     }
 
     /**
