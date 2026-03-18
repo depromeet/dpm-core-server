@@ -153,6 +153,7 @@ class MemberCommandService(
         }
 
         val memberId = requireNotNull(member.id) { "Active member must have id" }
+        memberTeamService.ensureMemberTeamInitialized(memberId)
         val latestCohortId = cohortQueryUseCase.getLatestCohortId()
         memberCohortService.addMemberToCohort(memberId, latestCohortId)
         publishMemberActivatedEvent(memberId, latestCohortId)

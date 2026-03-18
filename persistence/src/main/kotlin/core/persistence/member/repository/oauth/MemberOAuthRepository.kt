@@ -18,6 +18,25 @@ class MemberOAuthRepository(
         memberOAuthJpaRepository.save(MemberOAuthEntity.of(memberOAuth, member))
     }
 
+    override fun relinkToMember(
+        provider: OAuthProvider,
+        externalId: String,
+        member: Member,
+    ) {
+        val existing =
+            memberOAuthJpaRepository.findByProviderAndExternalId(provider.name, externalId)
+                ?: return
+
+        memberOAuthJpaRepository.save(
+            MemberOAuthEntity(
+                id = existing.id,
+                externalId = existing.externalId,
+                provider = existing.provider,
+                member = core.entity.member.MemberEntity.from(member),
+            ),
+        )
+    }
+
     override fun findByProviderAndExternalId(
         provider: OAuthProvider,
         externalId: String,
