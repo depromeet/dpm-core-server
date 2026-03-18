@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 class SessionQueryController(
     private val sessionQueryService: SessionQueryService,
 ) : SessionQueryApi {
-    @PreAuthorize("hasAuthority('read:session')")
+    @PreAuthorize("permitAll()")
     @GetMapping("/next")
     override fun getNextSession(): CustomResponse<NextSessionResponse> {
         val response =
@@ -34,7 +34,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasAuthority('read:session')")
+    @PreAuthorize("permitAll()")
     @GetMapping
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
         val response =
