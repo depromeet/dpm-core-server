@@ -1,7 +1,7 @@
 package core.application.member.application.service.auth
 
-import core.application.common.constant.Profile
 import core.application.member.application.service.role.MemberRoleService
+import core.application.member.application.service.team.MemberTeamService
 import core.application.security.oauth.apple.AppleTokenExchangeService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
@@ -24,6 +24,7 @@ class AppleAuthService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val appleIdTokenValidator: core.application.security.oauth.apple.AppleIdTokenValidator,
     private val memberRoleService: MemberRoleService,
+    private val memberTeamService: MemberTeamService,
 ) {
     @Transactional
     fun login(
@@ -36,22 +37,23 @@ class AppleAuthService(
 
         val claims = appleIdTokenValidator.verify(tokenResponse.id_token)
         val externalId = claims.subject ?: throw IllegalArgumentException("Invalid ID Token: sub missing")
+        val email =
+            claims["email"] as? String
+                ?: throw IllegalArgumentException("Invalid ID Token: email missing")
 
         val memberOAuth =
             memberOAuthPersistencePort.findByProviderAndExternalId(OAuthProvider.APPLE, externalId)
 
         val member =
             if (memberOAuth == null) {
-                val email =
-                    claims["email"] as? String
-                        ?: throw IllegalArgumentException("Invalid ID Token: emailassignments missing")
-
                 val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
                 val existingMember = selectLoginCandidate(existingMembers)
+                val resolvedFullName =
+                    fullName?.trim()?.takeIf { it.isNotBlank() }
+                        ?: (claims["name"] as? String)?.trim()?.takeIf { it.isNotBlank() }
                 val memberName =
                     resolveMemberName(
-                        fullName = fullName?.trim()?.takeIf { it.isNotBlank() }
-                            ?: (claims["name"] as? String)?.trim()?.takeIf { it.isNotBlank() },
+                        fullName = resolvedFullName,
                         familyName = familyName,
                         givenName = givenName,
                         email = email,
@@ -75,12 +77,22 @@ class AppleAuthService(
 
                 targetMember
             } else {
-                // Existing member
                 memberPersistencePort.findById(memberOAuth.memberId)
-                    ?: throw IllegalStateException("MemberOAuth exists but Member not found")
+                    ?: recoverOrCreateMemberForOrphanedOAuth(
+                        externalId = externalId,
+                        email = email,
+                        name =
+                            resolveMemberName(
+                                fullName = fullName,
+                                familyName = familyName,
+                                givenName = givenName,
+                                email = email,
+                            ),
+                    )
             }
 
         memberRoleService.ensureGuestRoleAssigned(member.id!!)
+        memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
         // 4. Issue App Tokens
         val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())
@@ -114,13 +126,35 @@ class AppleAuthService(
     }
 
     private fun selectLoginCandidate(members: List<Member>): Member? {
-        if (members.isEmpty()) {
+        val availableMembers = members.filter { it.deletedAt == null }
+        if (availableMembers.isEmpty()) {
             return null
         }
 
-        val activeCandidates = members.filter { it.isAllowed() }
-        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else members
+        val activeCandidates = availableMembers.filter { it.isAllowed() }
+        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else availableMembers
         return eligible.maxByOrNull { it.id?.value ?: 0L }
+    }
+
+    private fun recoverOrCreateMemberForOrphanedOAuth(
+        externalId: String,
+        email: String,
+        name: String,
+    ): Member {
+        val targetMember =
+            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
+                ?: createOrFindMemberBySignupEmail(
+                    email = email,
+                    name = name,
+                )
+
+        memberOAuthPersistencePort.relinkToMember(
+            provider = OAuthProvider.APPLE,
+            externalId = externalId,
+            member = targetMember,
+        )
+
+        return targetMember
     }
 
     private fun createOrFindMemberBySignupEmail(

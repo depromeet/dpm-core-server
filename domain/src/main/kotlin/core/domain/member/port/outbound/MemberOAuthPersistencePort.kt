@@ -10,6 +10,12 @@ interface MemberOAuthPersistencePort {
         member: Member,
     )
 
+    fun relinkToMember(
+        provider: OAuthProvider,
+        externalId: String,
+        member: Member,
+    )
+
     fun findByProviderAndExternalId(
         provider: OAuthProvider,
         externalId: String,
