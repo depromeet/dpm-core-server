@@ -4,6 +4,7 @@ import core.application.common.constant.Profile
 import core.application.member.application.exception.MemberIdRequiredException
 import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.application.service.role.MemberRoleService
+import core.application.member.application.service.team.MemberTeamService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.properties.SecurityProperties
 import core.application.security.redirect.handler.LoginRedirectHandler
@@ -15,8 +16,8 @@ import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import core.domain.security.oauth.dto.LoginResult
 import core.domain.security.oauth.dto.OAuthAttributes
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.core.env.Environment
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -30,6 +31,7 @@ class MemberLoginService(
     private val environment: Environment,
     private val redirectHandler: LoginRedirectHandler,
     private val memberRoleService: MemberRoleService,
+    private val memberTeamService: MemberTeamService,
 ) : HandleMemberLoginUseCase {
     @Transactional
     override fun handleLoginSuccess(
@@ -46,7 +48,9 @@ class MemberLoginService(
         if (memberOAuth != null) {
             val member =
                 memberPersistencePort.findById(memberOAuth.memberId)
-                    ?: throw IllegalStateException("MemberOAuth exists but Member not found")
+                    ?: recoverOrCreateMemberForOrphanedOAuth(authAttributes).also {
+                        memberOAuthService.relinkMemberOAuthProvider(it, authAttributes)
+                    }
             return handleExistingMemberLogin(requestUrl, member)
         }
 
@@ -74,6 +78,10 @@ class MemberLoginService(
         member: Member,
     ): LoginResult {
         val memberId = member.id ?: return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
+
+        if (member.deletedAt == null) {
+            memberTeamService.ensureMemberTeamInitialized(memberId)
+        }
 
         if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(memberId.value)) {
             return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
@@ -113,9 +121,22 @@ class MemberLoginService(
     }
 
     private fun selectLoginCandidate(members: List<Member>): Member {
-        val activeCandidates = members.filter { it.isAllowed() }
-        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else members
+        val availableMembers = members.filter { it.deletedAt == null }
+        val activeCandidates = availableMembers.filter { it.isAllowed() }
+        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else availableMembers
         return eligible.maxByOrNull { it.id?.value ?: 0L } ?: throw MemberIdRequiredException()
+    }
+
+    private fun recoverOrCreateMemberForOrphanedOAuth(authAttributes: OAuthAttributes): Member {
+        val existingMembers = memberPersistencePort.findAllBySignupEmail(authAttributes.getEmail())
+        return if (existingMembers.isNotEmpty()) {
+            selectLoginCandidate(existingMembers)
+        } else {
+            createOrFindMemberBySignupEmail(
+                email = authAttributes.getEmail(),
+                name = authAttributes.getName(),
+            )
+        }
     }
 
     private fun createOrFindMemberBySignupEmail(

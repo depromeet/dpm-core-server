@@ -6,6 +6,7 @@ import core.application.member.application.exception.MemberAllowedException
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.role.MemberRoleService
+import core.application.member.application.service.team.MemberTeamService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -33,6 +34,7 @@ class EmailPasswordAuthService(
     private val memberPersistencePort: MemberPersistencePort,
     private val roleQueryService: RoleQueryService,
     private val memberRoleService: MemberRoleService,
+    private val memberTeamService: MemberTeamService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val passwordEncoder: PasswordEncoder,
@@ -96,6 +98,7 @@ class EmailPasswordAuthService(
         validateMemberForLogin(member)
 
         memberRoleService.ensureGuestRoleAssigned(member.id!!)
+        memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
         // Generate JWT tokens
         val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
@@ -141,6 +144,7 @@ class EmailPasswordAuthService(
 
         // 2. Ensure default member role (GUEST)
         memberRoleService.ensureGuestRoleAssigned(newMember.id!!)
+        memberTeamService.ensureMemberTeamInitialized(newMember.id!!)
 
         // 3. Create MemberCredential with encoded password
         val encodedPassword = passwordEncoder.encode(password)
@@ -201,8 +205,9 @@ class EmailPasswordAuthService(
     }
 
     private fun selectLoginCandidate(members: List<Member>): Member {
-        val activeCandidates = members.filter { it.isAllowed() }
-        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else members
+        val availableMembers = members.filter { it.deletedAt == null }
+        val activeCandidates = availableMembers.filter { it.isAllowed() }
+        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else availableMembers
         return eligible.maxByOrNull { it.id?.value ?: 0L } ?: throw MemberNotFoundException()
     }
 
