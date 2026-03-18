@@ -9,6 +9,7 @@ import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.properties.SecurityProperties
 import core.application.security.redirect.handler.LoginRedirectHandler
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -83,11 +84,18 @@ class MemberLoginService(
             memberTeamService.ensureMemberTeamInitialized(memberId)
         }
 
-        if (!member.isAllowed() || memberPersistencePort.existsDeletedMemberById(memberId.value)) {
+        if (memberPersistencePort.existsDeletedMemberById(memberId.value) || member.status == MemberStatus.WITHDRAWN) {
             return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
         }
 
         memberRoleService.ensureGuestRoleAssigned(memberId)
+
+        if (member.status == MemberStatus.PENDING) {
+            return generateLoginResult(
+                memberId,
+                securityProperties.redirect.restrictedRedirectUrl,
+            )
+        }
 
         return generateLoginResult(
             memberId,
