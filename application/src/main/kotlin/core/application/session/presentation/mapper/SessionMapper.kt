@@ -16,8 +16,8 @@ import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
+import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
-import java.time.Instant
 import java.time.LocalDateTime
 
 object SessionMapper {
@@ -73,10 +73,12 @@ object SessionMapper {
             )
         }
 
-    fun toAttendanceTimeResponse(attendanceStartTime: Instant) =
+    fun toAttendanceTimeResponse(attendancePolicy: AttendancePolicy) =
         AttendanceTimeResponse(
             attendanceStartTime =
-                instantToLocalDateTime(attendanceStartTime),
+                instantToLocalDateTime(attendancePolicy.attendanceStart),
+            attendanceLateTime = instantToLocalDateTime(attendancePolicy.lateStart),
+            attendanceAbsentTime = instantToLocalDateTime(attendancePolicy.absentStart),
         )
 
     fun toSessionCreateCommand(request: SessionCreateRequest) =
