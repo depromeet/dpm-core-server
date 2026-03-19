@@ -3,8 +3,8 @@ package core.domain.member.port.outbound
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
-import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
+import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
 
 interface MemberPersistencePort {

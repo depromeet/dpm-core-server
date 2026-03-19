@@ -6,8 +6,8 @@ import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
+import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
 import core.entity.member.MemberEntity
 import org.jooq.DSLContext
@@ -18,13 +18,13 @@ import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.TEAMS
-import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.exists
+import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.selectOne
-import org.jooq.impl.DSL.`when`
 import org.jooq.impl.DSL.table
+import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
