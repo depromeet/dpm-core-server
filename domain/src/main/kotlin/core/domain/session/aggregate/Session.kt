@@ -9,7 +9,6 @@ import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
 import java.time.Instant
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 
 /**
@@ -65,10 +64,8 @@ class Session(
     private fun determineAttendanceStatus(now: Instant): AttendanceResult =
         when {
             now.isBefore(attendancePolicy.attendanceStart) -> AttendanceResult.TooEarly
-            now.isBefore(attendancePolicy.attendanceStart.plus(16, ChronoUnit.MINUTES)) ->
-                AttendanceResult.Success(AttendanceStatus.PRESENT)
-            now.isBefore(attendancePolicy.attendanceStart.plus(31, ChronoUnit.MINUTES)) ->
-                AttendanceResult.Success(AttendanceStatus.LATE)
+            now.isBefore(attendancePolicy.lateStart) -> AttendanceResult.Success(AttendanceStatus.PRESENT)
+            now.isBefore(attendancePolicy.absentStart) -> AttendanceResult.Success(AttendanceStatus.LATE)
             else -> AttendanceResult.Success(AttendanceStatus.ABSENT)
         }
 
