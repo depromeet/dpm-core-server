@@ -52,11 +52,10 @@ class SessionQueryService(
         sessionPersistencePort.findSessionById(sessionId.value)
             ?: throw SessionNotFoundException()
 
-    fun getAttendanceTime(sessionId: SessionId): Instant =
+    fun getAttendancePolicy(sessionId: SessionId): AttendancePolicy =
         sessionPersistencePort
             .findSessionById(sessionId.value)
             ?.attendancePolicy
-            ?.attendanceStart
             ?: throw SessionNotFoundException()
 
     fun getSessionWeeks(): List<SessionWeekQueryModel> {

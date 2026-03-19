@@ -10,11 +10,11 @@ import core.domain.authorization.vo.RoleId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
-import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
+import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamId
 import org.springframework.beans.factory.annotation.Value
@@ -68,8 +68,7 @@ class MemberQueryService(
         memberPersistencePort
             .findAllByCohort(value)
 
-    fun getMembersByCohortId(cohortId: CohortId): List<MemberId> =
-        memberPersistencePort.findAllByCohortId(cohortId)
+    fun getMembersByCohortId(cohortId: CohortId): List<MemberId> = memberPersistencePort.findAllByCohortId(cohortId)
 
     /**
      * 멤버의 식별자를 기반으로 해당 멤버의 팀 번호를 조회함.
@@ -83,9 +82,7 @@ class MemberQueryService(
         memberPersistencePort.findMemberTeamByMemberId(memberId)
             ?: defaultTeamId
 
-    fun checkWhiteList(
-        email: String,
-    ): Member? = memberPersistencePort.findBySignupEmail(email)
+    fun checkWhiteList(email: String): Member? = memberPersistencePort.findBySignupEmail(email)
 
     fun getMembersOverview(latest: Boolean?): List<MemberOverviewQueryModel> =
         memberPersistencePort.findAllOrderedByHighestCohortAndStatus(

@@ -4,4 +4,6 @@ import java.time.LocalDateTime
 
 data class AttendanceTimeResponse(
     val attendanceStartTime: LocalDateTime,
+    val attendanceLateTime: LocalDateTime,
+    val attendanceAbsentTime: LocalDateTime,
 )
