@@ -65,7 +65,7 @@ class SessionQueryController(
     ): CustomResponse<AttendanceTimeResponse> {
         val response =
             sessionQueryService
-                .getAttendanceTime(sessionId)
+                .getAttendancePolicy(sessionId)
                 .let { SessionMapper.toAttendanceTimeResponse(it) }
 
         return CustomResponse.ok(response)
