@@ -28,6 +28,39 @@ class CoreDevMemberQueryService(
 ) : CoreDevMemberQueryUseCase {
     fun getAllMembers(): CoreDevMemberListResponse {
         val allMembers: List<Member> = memberQueryService.getAll()
+
+        return CoreDevMemberListResponse.from(
+            allMembers.map { member ->
+                val memberId: MemberId = member.id ?: throw MemberNotFoundException()
+                val authorities: List<String> = memberAuthorityService.getAuthorityNamesByMemberId(memberId)
+                val teamNumber: Int = getMemberTeamNumber(memberId)
+                val cohortMap: Map<CohortId, Cohort> =
+                    cohortPersistencePort.findAll().associateBy {
+                        it.id ?: throw CohortNotFoundException()
+                    }
+
+                val cohortInfos: List<CohortInfoDetailResponse> =
+                    member.memberCohorts.mapNotNull { memberCohort ->
+                        val cohort = cohortMap[memberCohort.cohortId]
+                        cohort?.let {
+                            CohortInfoDetailResponse.of(
+                                cohort = it.value,
+                                teamNumber = teamNumber,
+                                authorities = authorities,
+                            )
+                        }
+                    }
+
+                CoreDevMemberDetailResponse.of(
+                    member = member,
+                    cohortInfos = cohortInfos,
+                )
+            },
+        )
+    }
+
+    fun getAllMembersNew001(): CoreDevMemberListResponse {
+        val allMembers: List<Member> = memberQueryService.getAll()
         val cohortMap: Map<CohortId, Cohort> =
             cohortPersistencePort.findAll().associateBy {
                 it.id ?: throw CohortNotFoundException()
@@ -38,6 +71,85 @@ class CoreDevMemberQueryService(
                 val memberId: MemberId = member.id ?: throw MemberNotFoundException()
                 val authorities: List<String> = memberAuthorityService.getAuthorityNamesByMemberId(memberId)
                 val teamNumber: Int = getMemberTeamNumber(memberId)
+
+                val cohortInfos: List<CohortInfoDetailResponse> =
+                    member.memberCohorts.mapNotNull { memberCohort ->
+                        val cohort = cohortMap[memberCohort.cohortId]
+                        cohort?.let {
+                            CohortInfoDetailResponse.of(
+                                cohort = it.value,
+                                teamNumber = teamNumber,
+                                authorities = authorities,
+                            )
+                        }
+                    }
+
+                CoreDevMemberDetailResponse.of(
+                    member = member,
+                    cohortInfos = cohortInfos,
+                )
+            },
+        )
+    }
+
+    fun getAllMembersNew002(): CoreDevMemberListResponse {
+        val allMembers: List<Member> = memberQueryService.getAll()
+        val cohortMap: Map<CohortId, Cohort> =
+            cohortPersistencePort.findAll().associateBy {
+                it.id ?: throw CohortNotFoundException()
+            }
+        val authoritiesMap: Map<MemberId, List<String>> =
+            memberAuthorityService
+                .getAuthorityNamesByMemberIds(allMembers.map { it.id ?: throw MemberNotFoundException() })
+
+        return CoreDevMemberListResponse.from(
+            allMembers.map { member ->
+                val memberId: MemberId = member.id ?: throw MemberNotFoundException()
+                val authorities: List<String> = authoritiesMap[memberId] ?: emptyList()
+                val teamNumber: Int = getMemberTeamNumber(memberId)
+
+                val cohortInfos: List<CohortInfoDetailResponse> =
+                    member.memberCohorts.mapNotNull { memberCohort ->
+                        val cohort = cohortMap[memberCohort.cohortId]
+                        cohort?.let {
+                            CohortInfoDetailResponse.of(
+                                cohort = it.value,
+                                teamNumber = teamNumber,
+                                authorities = authorities,
+                            )
+                        }
+                    }
+
+                CoreDevMemberDetailResponse.of(
+                    member = member,
+                    cohortInfos = cohortInfos,
+                )
+            },
+        )
+    }
+
+    fun getAllMembersNew003(): CoreDevMemberListResponse {
+        val allMembers: List<Member> = memberQueryService.getAll()
+        val cohortMap: Map<CohortId, Cohort> =
+            cohortPersistencePort.findAll().associateBy {
+                it.id ?: throw CohortNotFoundException()
+            }
+        val authoritiesMap: Map<MemberId, List<String>> =
+            memberAuthorityService
+                .getAuthorityNamesByMemberIds(allMembers.map { it.id ?: throw MemberNotFoundException() })
+        val teamNumberMap: Map<MemberId, Int> =
+            getMemberTeamsByMemberIds(
+                allMembers.map {
+                    it.id
+                        ?: throw MemberNotFoundException()
+                },
+            )
+
+        return CoreDevMemberListResponse.from(
+            allMembers.map { member ->
+                val memberId: MemberId = member.id ?: throw MemberNotFoundException()
+                val authorities: List<String> = authoritiesMap[memberId] ?: emptyList()
+                val teamNumber: Int = teamNumberMap[memberId] ?: defaultTeamId
 
                 val cohortInfos: List<CohortInfoDetailResponse> =
                     member.memberCohorts.mapNotNull { memberCohort ->
@@ -91,4 +203,8 @@ class CoreDevMemberQueryService(
     fun getMemberTeamNumber(memberId: MemberId): Int =
         memberPersistencePort.findMemberTeamByMemberId(memberId)
             ?: defaultTeamId
+
+    fun getMemberTeamsByMemberIds(memberIds: List<MemberId>): Map<MemberId, Int> =
+        memberPersistencePort
+            .findMemberTeamsByMemberIds(memberIds)
 }

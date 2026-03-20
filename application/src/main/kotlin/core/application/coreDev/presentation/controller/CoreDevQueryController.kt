@@ -26,6 +26,24 @@ class CoreDevQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:core')")
+    @GetMapping("/members/v1")
+    fun allMemberV1(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<CoreDevMemberListResponse> = CustomResponse.ok(coreDevMemberQueryService.getAllMembersNew001())
+
+    @PreAuthorize("hasAuthority('read:core')")
+    @GetMapping("/members/v2")
+    fun allMemberV2(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<CoreDevMemberListResponse> = CustomResponse.ok(coreDevMemberQueryService.getAllMembersNew002())
+
+    @PreAuthorize("hasAuthority('read:core')")
+    @GetMapping("/members/v3")
+    fun allMemberV3(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<CoreDevMemberListResponse> = CustomResponse.ok(coreDevMemberQueryService.getAllMembersNew003())
+
+    @PreAuthorize("hasAuthority('read:core')")
     @GetMapping("/members/{memberEmail}")
     override fun memberInfo(
         @CurrentMemberId memberId: MemberId,
