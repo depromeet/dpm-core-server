@@ -28,14 +28,14 @@ class CoreDevMemberQueryService(
 ) : CoreDevMemberQueryUseCase {
     fun getAllMembers(): CoreDevMemberListResponse {
         val allMembers: List<Member> = memberQueryService.getAll()
+        val cohortMap: Map<CohortId, Cohort> =
+            cohortPersistencePort.findAll().associateBy {
+                it.id ?: throw CohortNotFoundException()
+            }
 
         return CoreDevMemberListResponse.from(
             allMembers.map { member ->
                 val memberId: MemberId = member.id ?: throw MemberNotFoundException()
-                val cohortMap: Map<CohortId, Cohort> =
-                    cohortPersistencePort.findAll().associateBy {
-                        it.id ?: throw CohortNotFoundException()
-                    }
                 val authorities: List<String> = memberAuthorityService.getAuthorityNamesByMemberId(memberId)
                 val teamNumber: Int = getMemberTeamNumber(memberId)
 
