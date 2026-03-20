@@ -14,6 +14,9 @@ class MemberAuthorityService(
     fun getAuthorityNamesByMemberId(memberId: MemberId): List<String> =
         memberAuthorityPersistencePort.findAuthorityNamesByMemberId(memberId)
 
+    fun getAuthorityNamesByMemberIds(memberIds: List<MemberId>): Map<MemberId, List<String>> =
+        memberAuthorityPersistencePort.findAuthorityNamesByMemberIds(memberIds)
+
     fun ensureAuthorityAssigned(
         memberId: MemberId,
         authorityName: String,

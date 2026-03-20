@@ -5,7 +5,6 @@ import core.domain.member.vo.MemberId
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.name
-import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.table
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -27,8 +26,7 @@ class MemberAuthorityRepository(
                     name("ma", "authority_id"),
                     Long::class.java,
                 ).eq(field(name("a", "authority_id"), Long::class.java)),
-            )
-            .where(field(name("ma", "member_id"), Long::class.java).eq(memberId.value))
+            ).where(field(name("ma", "member_id"), Long::class.java).eq(memberId.value))
             .and(field(name("ma", "deleted_at"), LocalDateTime::class.java).isNull)
             .fetch(authorityNameField)
             .filterNotNull()
@@ -101,6 +99,31 @@ class MemberAuthorityRepository(
             .and(field(name("authority_id"), Long::class.java).eq(authorityId))
             .and(field(name("deleted_at"), LocalDateTime::class.java).isNull)
             .execute()
+    }
+
+    override fun findAuthorityNamesByMemberIds(memberIds: List<MemberId>): Map<MemberId, List<String>> {
+        if (memberIds.isEmpty()) return emptyMap()
+
+        val memberIdField = field(name("ma", "member_id"), Long::class.java)
+        val authorityNameField = field(name("a", "name"), String::class.java)
+
+        return dsl
+            .select(memberIdField, authorityNameField)
+            .from(table(name("member_authorities")).`as`("ma"))
+            .join(table(name("authorities")).`as`("a"))
+            .on(
+                field(
+                    name("ma", "authority_id"),
+                    Long::class.java,
+                ).eq(field(name("a", "authority_id"), Long::class.java)),
+            )
+            .where(memberIdField.`in`(memberIds.map { it.value }))
+            .and(field(name("ma", "deleted_at"), LocalDateTime::class.java).isNull)
+            .fetch()
+            .groupBy(
+                { MemberId(it.get(memberIdField)!!) },
+                { it.get(authorityNameField)!! },
+            )
     }
 
     private fun findAuthorityIdByName(authorityName: String): Long {

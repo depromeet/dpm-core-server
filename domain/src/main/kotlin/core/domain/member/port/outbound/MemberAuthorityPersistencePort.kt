@@ -26,4 +26,6 @@ interface MemberAuthorityPersistencePort {
         memberId: MemberId,
         authorityId: Long,
     )
+
+    fun findAuthorityNamesByMemberIds(memberIds: List<MemberId>): Map<MemberId, List<String>>
 }
