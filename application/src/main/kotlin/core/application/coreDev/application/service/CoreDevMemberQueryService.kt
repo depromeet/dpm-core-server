@@ -59,6 +59,35 @@ class CoreDevMemberQueryService(
         )
     }
 
+    fun getEmailMember(memberEmail: String): CoreDevMemberDetailResponse {
+        val retrieveMember: Member = memberQueryService.getMemberByEmail(memberEmail)
+
+        val memberId: MemberId = retrieveMember.id ?: throw MemberNotFoundException()
+        val cohortMap: Map<CohortId, Cohort> =
+            cohortPersistencePort.findAll().associateBy {
+                it.id ?: throw CohortNotFoundException()
+            }
+        val authorities: List<String> = memberAuthorityService.getAuthorityNamesByMemberId(memberId)
+        val teamNumber: Int = getMemberTeamNumber(memberId)
+
+        val cohortInfos: List<CohortInfoDetailResponse> =
+            retrieveMember.memberCohorts.mapNotNull { memberCohort ->
+                val cohort = cohortMap[memberCohort.cohortId]
+                cohort?.let {
+                    CohortInfoDetailResponse.of(
+                        cohort = it.value,
+                        teamNumber = teamNumber,
+                        authorities = authorities,
+                    )
+                }
+            }
+
+        return CoreDevMemberDetailResponse.of(
+            member = retrieveMember,
+            cohortInfos = cohortInfos,
+        )
+    }
+
     fun getMemberTeamNumber(memberId: MemberId): Int =
         memberPersistencePort.findMemberTeamByMemberId(memberId)
             ?: defaultTeamId

@@ -28,4 +28,6 @@ interface MemberQueryUseCase {
         cohortId: CohortId,
         authorityId: Long,
     ): List<MemberId>
+
+    fun getMemberByEmail(memberEmail: String): Member
 }

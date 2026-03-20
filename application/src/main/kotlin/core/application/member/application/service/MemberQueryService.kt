@@ -125,4 +125,7 @@ class MemberQueryService(
             cohortId,
             authorityId,
         )
+
+    override fun getMemberByEmail(memberEmail: String): Member =
+        memberPersistencePort.findBySignupEmail(memberEmail) ?: throw MemberNotFoundException()
 }

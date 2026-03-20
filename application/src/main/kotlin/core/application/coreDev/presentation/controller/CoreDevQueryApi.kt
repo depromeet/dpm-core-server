@@ -1,8 +1,8 @@
 package core.application.coreDev.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.coreDev.presentation.response.CoreDevMemberDetailResponse
 import core.application.coreDev.presentation.response.CoreDevMemberListResponse
-import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -66,8 +66,47 @@ interface CoreDevQueryApi {
             ),
         ],
     )
-    @Operation(summary = "가입한 모든 멤버 조회 API", description = "현재 가입한 모든 멤버의 기본 정보를 조회 합니다.")
-    fun allMember(
-        @CurrentMemberId memberId: MemberId,
-    ): CustomResponse<CoreDevMemberListResponse>
+    @Operation(summary = "가입한 모든 멤버 조회 API", description = "현재 가입한 모든 멤버의 정보를 조회 합니다.")
+    fun allMember(memberId: MemberId): CustomResponse<CoreDevMemberListResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "이메일 멤버 정보 조회 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "이메일 멤버 정보 조회 성공 응답",
+                        value = """
+                            {
+                              "status": "OK",
+                              "message": "요청에 성공했습니다",
+                              "code": "GLOBAL-200-01",
+                              "data": {
+                                "email": "wjdwnsdnjs13@naver.com",
+                                "name": "정준원",
+                                "part": "SERVER",
+                                "cohortInfos": [
+                                  {
+                                    "cohort": "18",
+                                    "teamNumber": 1,
+                                    "isAdmin": true
+                                  }
+                                ],
+                                "status": "ACTIVE"
+                              }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(summary = "이메일 멤버 정보 조회 API", description = "이메일의 멤버 정보를 조회 합니다.")
+    fun memberInfo(
+        memberId: MemberId,
+        memberEmail: String,
+    ): CustomResponse<CoreDevMemberDetailResponse>
 }
