@@ -48,4 +48,6 @@ interface MemberPersistencePort {
     fun findMemberTeamByMemberId(memberId: MemberId): Int?
 
     fun findAll(): List<Member>
+
+    fun findMemberTeamsByMemberIds(memberIds: List<MemberId>): Map<MemberId, Int>
 }

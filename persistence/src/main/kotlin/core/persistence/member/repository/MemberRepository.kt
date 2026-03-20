@@ -72,9 +72,11 @@ class MemberRepository(
         }
 
     override fun findById(memberId: MemberId): Member? =
-        memberJpaRepository.findById(
-            memberId.value,
-        ).orElse(null)?.toDomain()
+        memberJpaRepository
+            .findById(
+                memberId.value,
+            ).orElse(null)
+            ?.toDomain()
 
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
@@ -215,8 +217,7 @@ class MemberRepository(
                 maxCohortValue,
                 maxCohortId,
                 maxTeamNumber,
-            )
-            .from(MEMBERS)
+            ).from(MEMBERS)
             .leftJoin(MEMBER_COHORTS)
             .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .leftJoin(COHORTS)
@@ -228,19 +229,16 @@ class MemberRepository(
             .where(
                 MEMBERS.DELETED_AT.isNull
                     .and(filterCondition),
-            )
-            .groupBy(
+            ).groupBy(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
-            )
-            .orderBy(
+            ).orderBy(
                 maxCohortValue.desc().nullsLast(),
                 statusPriority.asc(),
                 MEMBERS.NAME.asc(),
-            )
-            .fetch { record ->
+            ).fetch { record ->
                 MemberOverviewQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
                     cohortId = record[maxCohortId],
@@ -266,4 +264,19 @@ class MemberRepository(
             .fetchOne(TEAMS.NUMBER)
 
     override fun findAll(): List<Member> = memberJpaRepository.findAll().map { it.toDomain() }
+
+    override fun findMemberTeamsByMemberIds(memberIds: List<MemberId>): Map<MemberId, Int> {
+        if (memberIds.isEmpty()) return emptyMap()
+
+        return dsl
+            .select(MEMBER_TEAMS.MEMBER_ID, TEAMS.NUMBER)
+            .from(MEMBER_TEAMS)
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(MEMBER_TEAMS.MEMBER_ID.`in`(memberIds.map { it.value }))
+            .fetch()
+            .associate { record ->
+                MemberId(record[MEMBER_TEAMS.MEMBER_ID]!!) to record[TEAMS.NUMBER]!!
+            }
+    }
 }
