@@ -4,4 +4,6 @@ import core.domain.cohort.aggregate.Cohort
 
 interface CohortPersistencePort {
     fun findByValue(value: String): Cohort?
+
+    fun findAll(): List<Cohort>
 }

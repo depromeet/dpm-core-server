@@ -9,4 +9,9 @@ class CohortRepository(
     private val cohortJpaRepository: CohortJpaRepository,
 ) : CohortPersistencePort {
     override fun findByValue(value: String): Cohort? = cohortJpaRepository.findByValue(value)?.toDomain()
+
+    override fun findAll(): List<Cohort> =
+        cohortJpaRepository
+            .findAll()
+            .map { it.toDomain() }
 }
