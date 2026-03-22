@@ -176,7 +176,11 @@ class MemberRepository(
                         MemberNameRoleQueryModel(
                             name = name,
                             role = role,
-                            grantedAtEpochMillis = record.get(MEMBER_ROLES.GRANTED_AT)?.toEpochMilli(),
+                            grantedAtEpochMillis =
+                                record.get(MEMBER_ROLES.GRANTED_AT)
+                                    ?.atZone(ZoneId.of("Asia/Seoul"))
+                                    ?.toInstant()
+                                    ?.toEpochMilli(),
                         )
                     }
                 }

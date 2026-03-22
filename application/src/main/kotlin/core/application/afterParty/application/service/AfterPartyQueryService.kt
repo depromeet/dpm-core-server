@@ -195,17 +195,18 @@ class AfterPartyQueryService(
 
     private fun buildLatestInviteTags(): List<AfterPartyInviteTag> {
         val latestCohort = cohortQueryService.getLatestCohort()
+        val latestCohortId = latestCohort.id ?: throw AfterPartyNotFoundException()
         val afterPartyId = AfterPartyId(0L)
         return listOf(
             AfterPartyInviteTag.create(
                 afterPartyId = afterPartyId,
-                cohortId = latestCohort.id ?: throw AfterPartyNotFoundException(),
+                cohortId = latestCohortId,
                 authorityId = DEEPER_AUTHORITY_ID,
                 tagName = "${latestCohort.value}기 디퍼",
             ),
             AfterPartyInviteTag.create(
                 afterPartyId = afterPartyId,
-                cohortId = latestCohort.id,
+                cohortId = latestCohortId,
                 authorityId = ORGANIZER_AUTHORITY_ID,
                 tagName = "${latestCohort.value}기 운영진",
             ),
