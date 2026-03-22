@@ -3,7 +3,6 @@ package core.application.announcement.application.service
 import core.application.announcement.application.exception.AnnouncementNotFoundException
 import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
-import core.application.cohort.application.properties.CohortProperties
 import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
@@ -23,6 +22,7 @@ import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -41,7 +41,7 @@ class AnnouncementCommandService(
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
     val memberQueryService: MemberQueryService,
-    val cohortProperties: CohortProperties,
+    val cohortQueryUseCase: CohortQueryUseCase,
 ) : AnnouncementCommandUseCase {
     override fun create(
         authorId: MemberId,
@@ -94,7 +94,7 @@ class AnnouncementCommandService(
             }
         }
 
-        val memberIds: List<MemberId> = memberQueryService.getMembersByCohort(cohortProperties.value)
+        val memberIds: List<MemberId> = memberQueryService.getMembersByCohortId(cohortQueryUseCase.getLatestCohortId())
         announcementReadCommandUseCase.initializeForMembers(
             announcementId = savedAnnouncement.id!!,
             memberIds = memberIds,

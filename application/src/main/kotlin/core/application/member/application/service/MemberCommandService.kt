@@ -111,6 +111,10 @@ class MemberCommandService(
 
         memberAuthorityService.ensureAuthorityAssigned(memberId, ORGANIZER_AUTHORITY_ID)
         memberAuthorityService.revokeAuthority(memberId, DEEPER_AUTHORITY_ID)
+        memberRoleService.replaceWithSingleRoleByName(
+            memberId = memberId,
+            roleName = "${cohortQueryUseCase.getLatestCohortValue()}기 ${RoleType.Organizer.aliases.first()}",
+        )
     }
 
     /**

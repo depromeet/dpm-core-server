@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CohortJpaRepository : JpaRepository<CohortEntity, Long> {
     fun findByValue(value: String): CohortEntity?
+
+    fun existsByValue(value: String): Boolean
 }

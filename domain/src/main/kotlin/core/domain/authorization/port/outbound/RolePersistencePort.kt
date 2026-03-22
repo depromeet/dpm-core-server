@@ -10,5 +10,19 @@ interface RolePersistencePort {
 
     fun findAllPermissionsByMemberId(memberId: MemberId): List<String>
 
+    fun findAllPermissionsByMemberIdAndRoleNames(
+        memberId: MemberId,
+        roleNames: List<String>,
+    ): List<String>
+
     fun findIdByName(roleName: String): Long
+
+    fun createRoleWithPermissions(
+        roleName: String,
+        permissionIds: List<Long>,
+    ): Long
+
+    fun findPermissionIdsByRoleName(roleName: String): List<Long>
+
+    fun existsByName(roleName: String): Boolean
 }

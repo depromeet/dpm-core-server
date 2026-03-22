@@ -159,18 +159,29 @@ class MemberRepository(
 
     override fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         dsl
-            .select(MEMBERS.NAME, ROLES.NAME)
+            .select(MEMBERS.NAME, ROLES.NAME, MEMBER_ROLES.GRANTED_AT)
             .from(MEMBERS)
             .join(MEMBER_ROLES)
             .on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
             .join(ROLES)
             .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
             .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .and(MEMBER_ROLES.DELETED_AT.isNull)
             .fetch()
-            .mapNotNull { (memberName, roleName) ->
+            .mapNotNull { record ->
+                val memberName = record.get(MEMBERS.NAME)
+                val roleName = record.get(ROLES.NAME)
                 memberName?.let { name ->
                     roleName?.let { role ->
-                        MemberNameRoleQueryModel(name, role)
+                        MemberNameRoleQueryModel(
+                            name = name,
+                            role = role,
+                            grantedAtEpochMillis =
+                                record.get(MEMBER_ROLES.GRANTED_AT)
+                                    ?.atZone(ZoneId.of("Asia/Seoul"))
+                                    ?.toInstant()
+                                    ?.toEpochMilli(),
+                        )
                     }
                 }
             }
@@ -244,6 +255,7 @@ class MemberRepository(
                 MemberOverviewQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
                     cohortId = record[maxCohortId],
+                    cohortValue = record[maxCohortValue]?.toString(),
                     name = record[MEMBERS.NAME] ?: "",
                     teamNumber = record[maxTeamNumber],
                     status = record[MEMBERS.STATUS] ?: "",

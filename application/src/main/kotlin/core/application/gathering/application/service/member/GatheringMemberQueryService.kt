@@ -1,7 +1,9 @@
 package core.application.gathering.application.service.member
 
+import core.application.cohort.application.service.CohortQueryService
 import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.application.validator.GatheringMemberValidator
+import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.domain.bill.port.outbound.query.BillMemberIsInvitationSubmittedQueryModel
 import core.domain.gathering.aggregate.GatheringMember
 import core.domain.gathering.port.inbound.GatheringMemberQueryUseCase
@@ -17,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional
 class GatheringMemberQueryService(
     private val gatheringMemberPersistencePort: GatheringMemberPersistencePort,
     private val gatheringMemberValidator: GatheringMemberValidator,
+    private val cohortQueryService: CohortQueryService,
+    private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) : GatheringMemberQueryUseCase {
     override fun getGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
         gatheringMemberPersistencePort.findByGatheringId(gatheringId)
@@ -37,23 +41,17 @@ class GatheringMemberQueryService(
 
     fun getQueryGatheringMemberIsJoined(gatheringId: GatheringId): List<GatheringMemberIsJoinQueryModel> {
         val memberIds = getMemberIdsByGatheringId(gatheringId)
+        val latestCohortValue = cohortQueryService.getLatestCohortValue()
         return memberIds.map { memberId ->
             val queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsJoinByGatheringIdAndMemberId(gatheringId, memberId)
-                    .let { queryResults ->
-                        // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
-                        if (queryResults.size > 1) {
-                            queryResults.sortedWith(
-                                compareBy {
-                                    if (it.authority.contains("운영진")) 0 else 1
-                                },
-                            )
-                        } else {
-                            queryResults
-                        }
-                    }
-            queryResults.first()
+            val representativeAuthority =
+                currentCohortRoleResolver.selectRepresentativeRole(
+                    roleNames = queryResults.map { it.authority },
+                    latestCohortValue = latestCohortValue,
+                ) ?: queryResults.first().authority
+            queryResults.first { it.authority == representativeAuthority }
         }
     }
 
@@ -61,23 +59,18 @@ class GatheringMemberQueryService(
         gatheringId: GatheringId,
     ): List<BillMemberIsInvitationSubmittedQueryModel> {
         val memberIds = getMemberIdsByGatheringId(gatheringId)
+        val latestCohortValue = cohortQueryService.getLatestCohortValue()
         return memberIds.map { memberId ->
-            var queryResults =
+            val queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(gatheringId, memberId)
-                    .let { queryResults ->
-                        // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
-                        if (queryResults.size > 1) {
-                            queryResults.sortedWith(
-                                compareBy {
-                                    if (it.authority.contains("운영진")) 0 else 1
-                                },
-                            )
-                        } else {
-                            queryResults
-                        }
-                    }
-            queryResults.firstOrNull() ?: throw GatheringMemberNotFoundException()
+            val representativeAuthority =
+                currentCohortRoleResolver.selectRepresentativeRole(
+                    roleNames = queryResults.map { it.authority },
+                    latestCohortValue = latestCohortValue,
+                ) ?: queryResults.first().authority
+            queryResults.firstOrNull { it.authority == representativeAuthority }
+                ?: throw GatheringMemberNotFoundException()
         }
     }
 

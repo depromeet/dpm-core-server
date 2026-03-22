@@ -15,7 +15,7 @@ import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.entity.attendance.AttendanceEntity
-import core.persistence.attendance.extension.toCondition
+import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.ATTENDANCES
 import org.jooq.dsl.tables.references.MEMBERS
@@ -71,7 +71,7 @@ class AttendanceRepository(
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
-                query.toCondition(myTeamNumber),
+                sessionAttendanceConditions(query, myTeamNumber),
             ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
             .limit(query.size)
             .offset((query.page - 1) * query.size)
@@ -121,7 +121,7 @@ class AttendanceRepository(
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(
-                query.toCondition(myTeamNumber),
+                memberAttendanceConditions(query, myTeamNumber),
             ).groupBy(
                 ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
@@ -183,7 +183,7 @@ class AttendanceRepository(
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
-            .where(query.toCondition())
+            .where(detailAttendanceConditions(query))
             .groupBy(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
@@ -267,7 +267,7 @@ class AttendanceRepository(
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
-            .where(query.toCondition())
+            .where(detailMemberAttendanceConditions(query))
             .groupBy(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
@@ -303,7 +303,7 @@ class AttendanceRepository(
             .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .where(query.toCondition())
+            .where(detailMemberAttendanceConditions(query))
             .orderBy(SESSIONS.WEEK.asc(), SESSIONS.DATE.asc())
             .fetch { record ->
                 MemberSessionAttendanceQueryModel(
@@ -329,7 +329,7 @@ class AttendanceRepository(
             .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
             .join(MEMBERS)
             .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .where(query.toCondition())
+            .where(myAttendanceConditions(query))
             .fetchOne {
                 MyDetailAttendanceQueryModel(
                     attendanceStatus = it[ATTENDANCES.STATUS]!!,
@@ -390,7 +390,7 @@ class AttendanceRepository(
             .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
-            .where(query.toCondition(myTeamNumber))
+            .where(sessionAttendanceConditions(query, myTeamNumber))
             .fetchOne(0, Int::class.java) ?: 0
 
     override fun countMemberAttendancesByQuery(
@@ -415,7 +415,7 @@ class AttendanceRepository(
                     .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
                     .join(TEAMS)
                     .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
-                    .where(query.toCondition(myTeamNumber))
+                    .where(memberAttendanceConditions(query, myTeamNumber))
                     .groupBy(
                         ATTENDANCES.MEMBER_ID,
                         MEMBERS.NAME,
@@ -433,4 +433,71 @@ class AttendanceRepository(
         private const val EXCUSED_ABSENT_COUNT = "excused_absent_count"
         private const val EARLY_LEAVE_COUNT = "early_leave_count"
     }
+
+    private fun sessionAttendanceConditions(
+        query: GetAttendancesBySessionWeekQuery,
+        myTeamNumber: Int?,
+    ): List<Condition> {
+        val conditions = mutableListOf<Condition>()
+        conditions += SESSIONS.SESSION_ID.eq(query.sessionId.value)
+        conditions += ATTENDANCES.DELETED_AT.isNull
+
+        query.statuses?.takeIf { it.isNotEmpty() }?.let { statuses ->
+            conditions += ATTENDANCES.STATUS.`in`(statuses)
+        }
+
+        when {
+            query.onlyMyTeam == true -> conditions += TEAMS.NUMBER.eq(myTeamNumber ?: 0)
+            query.teams?.isNotEmpty() == true -> conditions += TEAMS.NUMBER.`in`(query.teams)
+        }
+
+        query.name?.takeIf { it.isNotBlank() }?.let { name ->
+            conditions += MEMBERS.NAME.containsIgnoreCase(name)
+        }
+
+        return conditions
+    }
+
+    private fun memberAttendanceConditions(
+        query: GetMemberAttendancesQuery,
+        myTeamNumber: Int?,
+    ): List<Condition> {
+        val conditions = mutableListOf<Condition>()
+        conditions += ATTENDANCES.DELETED_AT.isNull
+
+        query.statuses?.takeIf { it.isNotEmpty() }?.let { statuses ->
+            conditions += ATTENDANCES.STATUS.`in`(statuses)
+        }
+
+        when {
+            query.onlyMyTeam == true -> conditions += TEAMS.NUMBER.eq(myTeamNumber ?: 0)
+            query.teams?.isNotEmpty() == true -> conditions += TEAMS.NUMBER.`in`(query.teams)
+        }
+
+        query.name?.takeIf { it.isNotBlank() }?.let { name ->
+            conditions += MEMBERS.NAME.containsIgnoreCase(name)
+        }
+
+        return conditions
+    }
+
+    private fun detailAttendanceConditions(query: GetDetailAttendanceBySessionQuery): List<Condition> =
+        listOf(
+            ATTENDANCES.SESSION_ID.eq(query.sessionId.value),
+            ATTENDANCES.MEMBER_ID.eq(query.memberId.value),
+            ATTENDANCES.DELETED_AT.isNull,
+        )
+
+    private fun detailMemberAttendanceConditions(query: GetDetailMemberAttendancesQuery): List<Condition> =
+        listOf(
+            ATTENDANCES.MEMBER_ID.eq(query.memberId.value),
+            ATTENDANCES.DELETED_AT.isNull,
+        )
+
+    private fun myAttendanceConditions(query: GetMyAttendanceBySessionQuery): List<Condition> =
+        listOf(
+            ATTENDANCES.SESSION_ID.eq(query.sessionId.value),
+            ATTENDANCES.MEMBER_ID.eq(query.memberId.value),
+            ATTENDANCES.DELETED_AT.isNull,
+        )
 }
