@@ -1,11 +1,12 @@
 package core.application.gathering.application.service
 
+import core.application.cohort.application.service.CohortQueryService
 import core.application.gathering.application.exception.GatheringNotFoundException
 import core.application.gathering.application.service.member.GatheringMemberQueryService
 import core.application.gathering.application.service.receipt.GatheringReceiptQueryService
 import core.application.gathering.application.validator.GatheringValidator
 import core.application.gathering.presentation.response.GatheringMemberJoinListResponse
-import core.domain.authorization.vo.RoleType
+import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.domain.bill.port.outbound.query.BillMemberIsInvitationSubmittedQueryModel
 import core.domain.bill.vo.BillId
 import core.domain.gathering.aggregate.Gathering
@@ -30,6 +31,8 @@ class GatheringQueryService(
     private val gatheringMemberQueryService: GatheringMemberQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
     private val gatheringValidator: GatheringValidator,
+    private val cohortQueryService: CohortQueryService,
+    private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) : GatheringQueryUseCase {
     override fun getAllGatheringsByBillId(billId: BillId): List<Gathering> =
         gatheringPersistencePort
@@ -87,23 +90,21 @@ class GatheringQueryService(
             }.groupBy({ it.first }, { it.second })
 
     private fun getMemberNameRole(memberId: MemberId): Pair<String, String> {
-        val queryResults =
-            memberQueryUseCase
-                .getMemberNameRoleByMemberId(memberId)
-                .let { queryResults ->
-                    // TODO : 기수 정보가 추가됐을 때 기수 기준 정렬 등의 로직 추가 필요
-                    if (queryResults.size > 1) {
-                        queryResults.sortedWith(
-                            compareBy {
-                                if (RoleType.from(it.role) == RoleType.Organizer) 0 else 1
-                            },
-                        )
-                    } else {
-                        queryResults
-                    }
-                }
+        val latestCohortValue = cohortQueryService.getLatestCohortValue()
+        val queryResults = memberQueryUseCase.getMemberNameRoleByMemberId(memberId)
+        val representativeRole =
+            currentCohortRoleResolver.selectRepresentativeRole(
+                roleNames = queryResults.map { it.role },
+                latestCohortValue = latestCohortValue,
+            ) ?: queryResults.first().role
 
-        return queryResults.first().let { it.name to it.role }
+        val representativeQuery =
+            queryResults
+                .filter { it.role == representativeRole }
+                .maxByOrNull { it.grantedAtEpochMillis ?: Long.MIN_VALUE }
+                ?: queryResults.first()
+
+        return representativeQuery.name to representativeQuery.role
     }
 
     override fun findTotalSplitAmount(gatheringIds: List<GatheringId>): Int? {

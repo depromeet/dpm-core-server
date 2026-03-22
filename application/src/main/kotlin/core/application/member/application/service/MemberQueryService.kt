@@ -43,6 +43,8 @@ class MemberQueryService(
             getMemberById(memberId),
             memberAuthorityService.getAuthorityNamesByMemberId(memberId),
             getMemberTeamNumber(memberId),
+            cohortQueryUseCase.getLatestCohortId().value,
+            cohortQueryUseCase.getLatestCohortValue(),
         )
 
     /**

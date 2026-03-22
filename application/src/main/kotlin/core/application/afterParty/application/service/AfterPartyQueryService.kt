@@ -5,13 +5,13 @@ import core.application.afterParty.presentation.response.AfterPartyDetailRespons
 import core.application.afterParty.presentation.response.AfterPartyInviteTagListResponse
 import core.application.afterParty.presentation.response.AfterPartyInviteTagNameResponse
 import core.application.afterParty.presentation.response.AfterPartyListResponse
+import core.application.cohort.application.service.CohortQueryService
 import core.application.gathering.presentation.response.GatheringV2DetailResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagListResponse
 import core.application.gathering.presentation.response.GatheringV2InviteTagNameResponse
 import core.application.gathering.presentation.response.GatheringV2ListResponse
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
-import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 import core.domain.afterParty.port.inbound.AfterPartyInviteTagQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteeQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyQueryUseCase
@@ -28,11 +28,12 @@ class AfterPartyQueryService(
     val afterPartyPersistencePort: AfterPartyPersistencePort,
     val afterPartyInviteeQueryUseCase: AfterPartyInviteeQueryUseCase,
     val afterPartyInviteTagQueryUseCase: AfterPartyInviteTagQueryUseCase,
+    val cohortQueryService: CohortQueryService,
 ) : AfterPartyQueryUseCase {
     fun getAfterPartyInviteTags(): AfterPartyInviteTagListResponse =
         AfterPartyInviteTagListResponse(
             inviteTags =
-                AfterPartyInviteTagEnum.entries.map {
+                buildLatestInviteTags().map {
                     AfterPartyInviteTagNameResponse.from(it)
                 },
         )
@@ -41,7 +42,7 @@ class AfterPartyQueryService(
     fun getGatheringV2InviteTags(): GatheringV2InviteTagListResponse =
         GatheringV2InviteTagListResponse(
             inviteTags =
-                AfterPartyInviteTagEnum.entries.map {
+                buildLatestInviteTags().map {
                     GatheringV2InviteTagNameResponse.from(it)
                 },
         )
@@ -190,5 +191,30 @@ class AfterPartyQueryService(
             isClosed = afterParty.isClosed(),
             inviteTags = inviteTags,
         )
+    }
+
+    private fun buildLatestInviteTags(): List<AfterPartyInviteTag> {
+        val latestCohort = cohortQueryService.getLatestCohort()
+        val latestCohortId = latestCohort.id ?: throw AfterPartyNotFoundException()
+        val afterPartyId = AfterPartyId(0L)
+        return listOf(
+            AfterPartyInviteTag.create(
+                afterPartyId = afterPartyId,
+                cohortId = latestCohortId,
+                authorityId = DEEPER_AUTHORITY_ID,
+                tagName = "${latestCohort.value}기 디퍼",
+            ),
+            AfterPartyInviteTag.create(
+                afterPartyId = afterPartyId,
+                cohortId = latestCohortId,
+                authorityId = ORGANIZER_AUTHORITY_ID,
+                tagName = "${latestCohort.value}기 운영진",
+            ),
+        )
+    }
+
+    companion object {
+        private const val DEEPER_AUTHORITY_ID = 1L
+        private const val ORGANIZER_AUTHORITY_ID = 2L
     }
 }

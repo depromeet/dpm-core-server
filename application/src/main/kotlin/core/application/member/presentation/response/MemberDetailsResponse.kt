@@ -54,13 +54,19 @@ data class MemberDetailsResponse(
             member: Member,
             authorities: List<String>,
             teamNumber: Int?,
+            latestCohortId: Long,
+            latestCohortValue: String,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = member.signupEmail,
                 name = member.name,
                 part = member.part?.name,
-//                TODO : 여러 기수 참여한 인원들 어떻게 처리할 지
-                cohort = "18",
+                cohort =
+                    if (member.memberCohorts.any { it.cohortId.value == latestCohortId }) {
+                        latestCohortValue
+                    } else {
+                        member.memberCohorts.maxByOrNull { it.cohortId.value }?.cohortId?.value?.toString()
+                    },
                 teamNumber = teamNumber,
                 isAdmin = authorities.any { it == ADMIN_AUTHORITY },
                 status = member.status.name,
