@@ -48,4 +48,10 @@ interface MemberPersistencePort {
     fun findMemberTeamByMemberId(memberId: MemberId): Int?
 
     fun findAll(): List<Member>
+
+    fun anonymizeIdentity(
+        memberId: MemberId,
+        email: String,
+        signupEmail: String,
+    )
 }

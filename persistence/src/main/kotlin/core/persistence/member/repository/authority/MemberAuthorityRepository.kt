@@ -103,6 +103,15 @@ class MemberAuthorityRepository(
             .execute()
     }
 
+    override fun revokeAllByMemberId(memberId: MemberId) {
+        dsl
+            .update(table(name("member_authorities")))
+            .set(field(name("deleted_at"), LocalDateTime::class.java), LocalDateTime.now(ZoneId.of(TIME_ZONE)))
+            .where(field(name("member_id"), Long::class.java).eq(memberId.value))
+            .and(field(name("deleted_at"), LocalDateTime::class.java).isNull)
+            .execute()
+    }
+
     private fun findAuthorityIdByName(authorityName: String): Long {
         val authorityIdField = field(name("authority_id"), Long::class.java)
 
