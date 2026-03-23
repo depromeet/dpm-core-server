@@ -40,7 +40,7 @@ class MemberCredentialRepository(
     override fun deleteByMemberId(memberId: MemberId) {
         val entity =
             memberCredentialJpaRepository.findByMemberId(memberId.value)
-                ?: throw IllegalArgumentException("MemberCredential not found for memberId: $memberId")
+                ?: return
         memberCredentialJpaRepository.delete(entity)
     }
 }

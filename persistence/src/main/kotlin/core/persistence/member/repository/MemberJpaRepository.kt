@@ -8,7 +8,7 @@ interface MemberJpaRepository : JpaRepository<MemberEntity, Long> {
 
     fun findAllBySignupEmail(email: String): List<MemberEntity>
 
-    fun findAllByIdInAndDeletedAtIsNull(ids: List<Long>): List<MemberEntity>
+    fun findAllByDeletedAtIsNull(): List<MemberEntity>
 
     fun existsByIdAndDeletedAtIsNotNull(memberId: Long): Boolean
 

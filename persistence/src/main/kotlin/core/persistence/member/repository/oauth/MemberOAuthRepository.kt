@@ -4,6 +4,7 @@ import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberOAuth
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
+import core.domain.member.vo.MemberId
 import core.entity.member.MemberOAuthEntity
 import org.springframework.stereotype.Repository
 
@@ -42,5 +43,9 @@ class MemberOAuthRepository(
         externalId: String,
     ): MemberOAuth? {
         return memberOAuthJpaRepository.findByProviderAndExternalId(provider.name, externalId)?.toDomain()
+    }
+
+    override fun deleteAllByMemberId(memberId: MemberId) {
+        memberOAuthJpaRepository.deleteAllByMemberId(memberId.value)
     }
 }

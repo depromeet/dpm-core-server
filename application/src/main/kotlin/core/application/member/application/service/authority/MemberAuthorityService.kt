@@ -33,4 +33,6 @@ class MemberAuthorityService(
         memberId: MemberId,
         authorityId: Long,
     ) = memberAuthorityPersistencePort.revokeAuthority(memberId, authorityId)
+
+    fun revokeAllAuthorities(memberId: MemberId) = memberAuthorityPersistencePort.revokeAllByMemberId(memberId)
 }
