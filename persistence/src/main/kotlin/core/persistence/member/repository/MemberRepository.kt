@@ -79,12 +79,7 @@ class MemberRepository(
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
     override fun findAllByIds(ids: List<MemberId>): List<Member> =
-        memberJpaRepository
-            .findAllByIdInAndDeletedAtIsNull(
-                ids.map {
-                    it.value
-                },
-            ).map { it.toDomain() }
+        memberJpaRepository.findAllById(ids.map { it.value }).map { it.toDomain() }
 
     override fun existsDeletedMemberById(memberId: Long): Boolean =
         memberJpaRepository.existsByIdAndDeletedAtIsNotNull(memberId)
@@ -103,6 +98,8 @@ class MemberRepository(
             .join(ROLES)
             .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
             .where(ROLES.ROLE_ID.`in`(roleIds.map { it.value }))
+            .and(MEMBERS.DELETED_AT.isNull)
+            .and(MEMBER_ROLES.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .map { MemberId(it ?: 0L) }
 
@@ -115,6 +112,7 @@ class MemberRepository(
             .join(COHORTS)
             .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
             .where(COHORTS.VALUE.eq(value))
+            .and(MEMBERS.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map {
@@ -128,6 +126,7 @@ class MemberRepository(
             .join(MEMBER_COHORTS)
             .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
             .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+            .and(MEMBERS.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map { MemberId(it) }
@@ -150,6 +149,7 @@ class MemberRepository(
                 .join(memberAuthoritiesTable)
                 .on(MEMBERS.MEMBER_ID.eq(memberAuthoritiesMemberIdField))
                 .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+                .and(MEMBERS.DELETED_AT.isNull)
                 .and(memberAuthoritiesAuthorityIdField.eq(authorityId))
                 .and(memberAuthoritiesDeletedAtField.isNull)
                 .fetch(MEMBERS.MEMBER_ID)
@@ -277,5 +277,19 @@ class MemberRepository(
             .limit(1)
             .fetchOne(TEAMS.NUMBER)
 
-    override fun findAll(): List<Member> = memberJpaRepository.findAll().map { it.toDomain() }
+    override fun anonymizeIdentity(
+        memberId: MemberId,
+        email: String,
+        signupEmail: String,
+    ) {
+        dsl
+            .update(MEMBERS)
+            .set(MEMBERS.EMAIL, email)
+            .set(MEMBERS.SIGNUP_EMAIL, signupEmail)
+            .set(MEMBERS.UPDATED_AT, LocalDateTime.now())
+            .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .execute()
+    }
+
+    override fun findAll(): List<Member> = memberJpaRepository.findAllByDeletedAtIsNull().map { it.toDomain() }
 }
