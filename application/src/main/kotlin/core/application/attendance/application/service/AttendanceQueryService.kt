@@ -34,7 +34,7 @@ class AttendanceQueryService(
     fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
         val myTeamNumber: TeamNumber =
             query.onlyMyTeam
-                .let { memberQueryService.getMemberTeamNumber(query.memberId) }
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber(0)
 
         val queryResult =
             attendancePersistencePort
@@ -60,7 +60,7 @@ class AttendanceQueryService(
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
         val myTeamNumber =
             query.onlyMyTeam
-                .let { memberQueryService.getMemberTeamNumber(query.memberId) }
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber(0)
 
         val queryResult =
             attendancePersistencePort
