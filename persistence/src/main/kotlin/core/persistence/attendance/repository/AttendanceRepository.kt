@@ -14,6 +14,7 @@ import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.team.vo.TeamNumber
 import core.entity.attendance.AttendanceEntity
 import org.jooq.Condition
@@ -49,10 +50,11 @@ class AttendanceRepository(
         sessionId: Long,
         memberId: Long,
     ): Attendance? =
-        attendanceJpaRepository.findBySessionIdAndMemberIdAndDeletedAtIsNull(
-            sessionId,
-            memberId,
-        )?.toDomain()
+        attendanceJpaRepository
+            .findBySessionIdAndMemberIdAndDeletedAtIsNull(
+                sessionId,
+                memberId,
+            )?.toDomain()
 
     override fun findAllBySessionId(sessionId: Long): List<Attendance> =
         attendanceJpaRepository.findAllBySessionIdAndDeletedAtIsNull(sessionId).map { it.toDomain() }
@@ -480,8 +482,7 @@ class AttendanceRepository(
                     MEMBERS.NAME,
                     TEAMS.NUMBER,
                     MEMBERS.PART,
-                )
-                    .from(ATTENDANCES)
+                ).from(ATTENDANCES)
                     .join(MEMBERS)
                     .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
                     .join(SESSIONS)
@@ -497,8 +498,7 @@ class AttendanceRepository(
                         TEAMS.NUMBER,
                         MEMBERS.PART,
                     ),
-            )
-            .fetchOne(0, Int::class.java) ?: 0
+            ).fetchOne(0, Int::class.java) ?: 0
 
     companion object {
         private const val LATE_COUNT = "late_count"
@@ -507,7 +507,6 @@ class AttendanceRepository(
         private const val PRESENT_COUNT = "present_count"
         private const val EXCUSED_ABSENT_COUNT = "excused_absent_count"
         private const val EARLY_LEAVE_COUNT = "early_leave_count"
-        private const val ORGANIZER_AUTHORITY_ID = 2L
     }
 
     private fun sessionAttendanceConditions(

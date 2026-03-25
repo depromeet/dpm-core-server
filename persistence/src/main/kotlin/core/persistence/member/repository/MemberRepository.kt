@@ -3,6 +3,7 @@ package core.persistence.member.repository
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -278,10 +279,6 @@ class MemberRepository(
                     part = record[MEMBERS.PART],
                 )
             }
-    }
-
-    companion object {
-        private const val ORGANIZER_AUTHORITY_ID = 2L
     }
 
     override fun findMemberTeamNumberByMemberId(memberId: MemberId): Int? =
