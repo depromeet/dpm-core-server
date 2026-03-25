@@ -5,6 +5,7 @@ import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamId
+import core.domain.team.vo.TeamNumber
 
 interface MemberQueryUseCase {
     /**
@@ -19,6 +20,8 @@ interface MemberQueryUseCase {
     fun getMembersByIds(memberIds: List<MemberId>): List<Member>
 
     fun getAll(): List<Member>
+
+    fun getMemberTeamNumber(memberId: MemberId): TeamNumber
 
     fun getMemberById(memberId: MemberId): Member
 
