@@ -1,6 +1,7 @@
 package core.application.member.presentation.response
 
 import core.domain.member.aggregate.Member
+import core.domain.team.vo.TeamNumber
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class MemberDetailsResponse(
@@ -35,7 +36,7 @@ data class MemberDetailsResponse(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
         nullable = true,
     )
-    val teamNumber: Int? = null,
+    val teamNumber: TeamNumber,
     @field:Schema(
         description = "어드민 여부",
         example = "false",
@@ -53,7 +54,7 @@ data class MemberDetailsResponse(
         fun of(
             member: Member,
             authorities: List<String>,
-            teamNumber: Int?,
+            teamNumber: TeamNumber,
             latestCohortId: Long,
             latestCohortValue: String,
         ): MemberDetailsResponse =

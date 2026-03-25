@@ -45,7 +45,7 @@ interface MemberPersistencePort {
         latestCohortId: Long,
     ): List<MemberOverviewQueryModel>
 
-    fun findMemberTeamByMemberId(memberId: MemberId): Int?
+    fun findMemberTeamNumberByMemberId(memberId: MemberId): Int?
 
     fun findAll(): List<Member>
 

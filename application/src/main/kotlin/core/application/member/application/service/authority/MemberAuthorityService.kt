@@ -35,4 +35,11 @@ class MemberAuthorityService(
     ) = memberAuthorityPersistencePort.revokeAuthority(memberId, authorityId)
 
     fun revokeAllAuthorities(memberId: MemberId) = memberAuthorityPersistencePort.revokeAllByMemberId(memberId)
+
+    fun isAdmin(memberId: MemberId): Boolean =
+        memberAuthorityPersistencePort.findActiveAuthorityIdsByMemberId(memberId).contains(ORGANIZER_AUTHORITY_ID)
+
+    companion object {
+        private const val ORGANIZER_AUTHORITY_ID = 2L
+    }
 }

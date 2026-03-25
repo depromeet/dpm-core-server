@@ -8,6 +8,7 @@ import core.domain.gathering.port.outbound.query.GatheringMemberIsJoinQueryModel
 import core.domain.gathering.vo.GatheringId
 import core.domain.gathering.vo.GatheringMemberId
 import core.domain.member.vo.MemberId
+import core.domain.team.vo.TeamNumber
 import core.entity.gathering.GatheringMemberEntity
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.GATHERING_MEMBERS
@@ -138,7 +139,7 @@ class GatheringMemberRepository(
                 if (name != null && authority != null && isJoined != null) {
                     GatheringMemberIsJoinQueryModel(
                         name = name,
-                        teamNumber = record.get(TEAMS.NUMBER) ?: 0,
+                        teamNumber = TeamNumber(record.get(TEAMS.NUMBER) ?: 0),
                         part = record.get(MEMBERS.PART),
                         authority = authority,
                         isJoined = isJoined,
@@ -195,7 +196,7 @@ class GatheringMemberRepository(
                 if (name != null && authority != null && isSubmitted != null) {
                     BillMemberIsInvitationSubmittedQueryModel(
                         name = name,
-                        teamNumber = record.get(TEAMS.NUMBER) ?: 0,
+                        teamNumber = TeamNumber(record.get(TEAMS.NUMBER) ?: 0),
                         part = record.get(MEMBERS.PART),
                         authority = authority,
                         isInvitationSubmitted = isSubmitted,
