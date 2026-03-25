@@ -15,6 +15,8 @@ import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberStatus
 import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -61,7 +63,7 @@ class MemberCommandService(
                         updateStatus(it.status)
                     },
                 )
-            memberTeamService.addMemberToTeam(it.memberId, it.team)
+            memberTeamService.addMemberToTeam(it.memberId, it.teamId)
             memberCohortService.addMemberToCohort(it.memberId)
             initializeMemberDataForActiveMember(updatedMember)
         }
@@ -195,10 +197,5 @@ class MemberCommandService(
             email = anonymizedEmail,
             signupEmail = anonymizedEmail,
         )
-    }
-
-    companion object {
-        private const val DEEPER_AUTHORITY_ID = 1L
-        private const val ORGANIZER_AUTHORITY_ID = 2L
     }
 }

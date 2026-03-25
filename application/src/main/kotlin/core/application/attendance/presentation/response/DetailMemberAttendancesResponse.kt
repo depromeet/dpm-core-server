@@ -1,5 +1,6 @@
 package core.application.attendance.presentation.response
 
+import core.domain.team.vo.TeamNumber
 import java.time.LocalDateTime
 
 data class DetailMemberAttendancesResponse(
@@ -11,7 +12,8 @@ data class DetailMemberAttendancesResponse(
 data class DetailMemberInfo(
     val id: Long,
     val name: String,
-    val teamNumber: Int,
+    val teamNumber: TeamNumber,
+    val isAdmin: Boolean,
     val part: String?,
     val attendanceStatus: String,
 )

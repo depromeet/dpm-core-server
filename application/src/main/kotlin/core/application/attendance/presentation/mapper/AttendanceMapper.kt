@@ -24,6 +24,7 @@ import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
+import core.domain.team.vo.TeamNumber
 import java.time.Instant
 
 object AttendanceMapper {
@@ -39,7 +40,7 @@ object AttendanceMapper {
     fun toSessionAttendancesResponse(
         members: List<SessionAttendanceQueryModel>,
         onlyMyTeam: Boolean,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber?,
         hasNext: Boolean,
         totalElements: Int,
     ): SessionAttendancesResponse =
@@ -50,6 +51,7 @@ object AttendanceMapper {
                         id = member.id,
                         name = member.name,
                         teamNumber = member.teamNumber,
+                        isAdmin = member.isAdmin,
                         part = member.part,
                         attendanceStatus = member.attendanceStatus,
                     )
@@ -62,7 +64,7 @@ object AttendanceMapper {
     fun toMemberAttendancesResponse(
         members: List<MemberAttendanceResponse>,
         onlyMyTeam: Boolean,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber?,
         hasNext: Boolean,
         totalElements: Int,
     ): MemberAttendancesResponse =
@@ -94,6 +96,7 @@ object AttendanceMapper {
                     id = model.memberId,
                     name = model.memberName,
                     teamNumber = model.teamNumber,
+                    isAdmin = model.isAdmin,
                     part = model.part,
                     attendanceStatus = evaluation,
                 ),
@@ -123,6 +126,7 @@ object AttendanceMapper {
                     id = memberAttendanceModel.memberId,
                     name = memberAttendanceModel.memberName,
                     teamNumber = memberAttendanceModel.teamNumber,
+                    isAdmin = memberAttendanceModel.isAdmin,
                     part = memberAttendanceModel.part,
                     attendanceStatus = evaluation,
                 ),

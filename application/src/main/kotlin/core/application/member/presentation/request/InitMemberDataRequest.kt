@@ -15,13 +15,13 @@ data class InitMemberDataRequest(
                 {
                     "memberId": 1,
                     "memberPart": "SERVER",
-                    "team": 1,
+                    "teamId": 1,
                     "status": "ACTIVE"
                 },
                 {
                     "memberId": 2,
                     "memberPart": "WEB",
-                    "team": 2,
+                    "teamId": 2,
                     "status": "INACTIVE"
                 }
             ]
@@ -51,7 +51,7 @@ data class InitMemberDataRequest(
             example = "1",
             requiredMode = Schema.RequiredMode.REQUIRED,
         )
-        val team: TeamId,
+        val teamId: TeamId,
         @field:NotNull
         @field:Schema(
             description = "멤버 상태",

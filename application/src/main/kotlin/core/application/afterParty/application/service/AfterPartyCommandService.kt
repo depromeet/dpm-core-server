@@ -19,6 +19,8 @@ import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberCohort
+import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -298,9 +300,4 @@ class AfterPartyCommandService(
         val authorityId: Long,
         val tagName: String,
     )
-
-    companion object {
-        private const val DEEPER_AUTHORITY_ID = 1L
-        private const val ORGANIZER_AUTHORITY_ID = 2L
-    }
 }
