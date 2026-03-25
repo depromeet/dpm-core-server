@@ -80,7 +80,8 @@ interface MemberApi {
                                             "memberId": 1,
                                             "cohortId": 17,
                                             "name": "홍길동",
-                                            "teamName": "1팀",
+                                            "teamNumber": 1,
+                                            "isAdmin": false,
                                             "status": "PENDING",
                                             "part": "UNASSIGNED"
                                         },
@@ -88,7 +89,8 @@ interface MemberApi {
                                             "memberId": 2,
                                             "cohortId": 17,
                                             "name": "김철수",
-                                            "teamName": "2팀",
+                                            "teamName": 2,
+                                            "isAdmin": false,
                                             "status": "ACTIVE",
                                             "part": "SERVER"
                                         }
