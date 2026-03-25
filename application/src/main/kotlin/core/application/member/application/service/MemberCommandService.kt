@@ -61,7 +61,7 @@ class MemberCommandService(
                         updateStatus(it.status)
                     },
                 )
-            memberTeamService.addMemberToTeam(it.memberId, it.team)
+            memberTeamService.addMemberToTeam(it.memberId, it.teamId)
             memberCohortService.addMemberToCohort(it.memberId)
             initializeMemberDataForActiveMember(updatedMember)
         }

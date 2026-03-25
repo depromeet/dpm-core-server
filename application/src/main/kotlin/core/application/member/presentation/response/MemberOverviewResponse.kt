@@ -14,7 +14,7 @@ data class MemberOverviewResponse(
         val cohortId: Long?,
         @field:Schema(description = "멤버 이름", example = "홍길동")
         val name: String,
-        @field:Schema(description = "팀 이름", example = "1")
+        @field:Schema(description = "팀 넘버", example = "1")
         val teamNumber: TeamNumber,
         @field:Schema(description = "운영진 여부", example = "false")
         val isAdmin: Boolean,
