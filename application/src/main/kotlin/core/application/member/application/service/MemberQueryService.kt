@@ -89,7 +89,7 @@ class MemberQueryService(
 
     override fun getMemberTeamId(memberId: MemberId): TeamId =
         TeamId(
-            memberPersistencePort.findMemberTeamNumberByMemberId(memberId)?.toLong()
+            memberPersistencePort.findMemberTeamIdByMemberId(memberId)
                 ?: defaultTeamId.toLong(),
         )
 
