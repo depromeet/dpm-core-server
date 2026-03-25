@@ -5,7 +5,8 @@ data class MemberOverviewQueryModel(
     val cohortId: Long?,
     val cohortValue: String?,
     val name: String,
-    val teamNumber: Int?,
+    val teamNumber: Int,
+    val isAdmin: Boolean,
     val status: String,
     val part: String?,
 )
