@@ -73,9 +73,11 @@ class MemberRepository(
         }
 
     override fun findById(memberId: MemberId): Member? =
-        memberJpaRepository.findById(
-            memberId.value,
-        ).orElse(null)?.toDomain()
+        memberJpaRepository
+            .findById(
+                memberId.value,
+            ).orElse(null)
+            ?.toDomain()
 
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
@@ -178,7 +180,8 @@ class MemberRepository(
                             name = name,
                             role = role,
                             grantedAtEpochMillis =
-                                record.get(MEMBER_ROLES.GRANTED_AT)
+                                record
+                                    .get(MEMBER_ROLES.GRANTED_AT)
                                     ?.atZone(ZoneId.of("Asia/Seoul"))
                                     ?.toInstant()
                                     ?.toEpochMilli(),
@@ -242,8 +245,7 @@ class MemberRepository(
                 maxCohortId,
                 maxTeamNumber,
                 isAdminField,
-            )
-            .from(MEMBERS)
+            ).from(MEMBERS)
             .leftJoin(MEMBER_COHORTS)
             .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .leftJoin(COHORTS)
@@ -255,19 +257,16 @@ class MemberRepository(
             .where(
                 MEMBERS.DELETED_AT.isNull
                     .and(filterCondition),
-            )
-            .groupBy(
+            ).groupBy(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
-            )
-            .orderBy(
+            ).orderBy(
                 maxCohortValue.desc().nullsLast(),
                 statusPriority.asc(),
                 MEMBERS.NAME.asc(),
-            )
-            .fetch { record ->
+            ).fetch { record ->
                 MemberOverviewQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
                     cohortId = record[maxCohortId],
@@ -297,6 +296,20 @@ class MemberRepository(
             .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
             .limit(1)
             .fetchOne(TEAMS.NUMBER)
+
+    override fun findMemberTeamIdByMemberId(memberId: MemberId): Long? =
+        dsl
+            .select(TEAMS.TEAM_ID)
+            .from(MEMBER_TEAMS)
+            .join(MEMBERS)
+            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value))
+            .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
+            .limit(1)
+            .fetchOne(TEAMS.NUMBER)
+            ?.toLong()
 
     override fun anonymizeIdentity(
         memberId: MemberId,
