@@ -1,8 +1,10 @@
 package core.domain.gathering.port.outbound.query
 
+import core.domain.team.vo.TeamNumber
+
 data class GatheringMemberIsJoinQueryModel(
     val name: String,
-    val teamNumber: Int,
+    val teamNumber: TeamNumber,
     val authority: String,
     val part: String?,
     val isJoined: Boolean?,
@@ -10,7 +12,7 @@ data class GatheringMemberIsJoinQueryModel(
     companion object {
         fun of(
             name: String,
-            teamNumber: Int,
+            teamNumber: TeamNumber,
             authority: String,
             part: String?,
             isJoined: Boolean?,

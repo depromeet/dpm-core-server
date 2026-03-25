@@ -17,6 +17,7 @@ import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamId
+import core.domain.team.vo.TeamNumber
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
@@ -80,9 +81,17 @@ class MemberQueryService(
      * @author its-sky
      * @since 2025.07.27
      */
-    fun getMemberTeamNumber(memberId: MemberId): Int =
-        memberPersistencePort.findMemberTeamByMemberId(memberId)
-            ?: defaultTeamId
+    override fun getMemberTeamNumber(memberId: MemberId): TeamNumber =
+        TeamNumber(
+            memberPersistencePort.findMemberTeamNumberByMemberId(memberId)
+                ?: defaultTeamId,
+        )
+
+    override fun getMemberTeamId(memberId: MemberId): TeamId =
+        TeamId(
+            memberPersistencePort.findMemberTeamNumberByMemberId(memberId)?.toLong()
+                ?: defaultTeamId.toLong(),
+        )
 
     fun checkWhiteList(email: String): Member? = memberPersistencePort.findBySignupEmail(email)
 
@@ -113,11 +122,6 @@ class MemberQueryService(
         memberPersistencePort.findMemberNameAndRoleByMemberId(memberId)
 
     override fun getAll(): List<Member> = memberPersistencePort.findAll()
-
-    override fun getMemberTeamId(memberId: MemberId): TeamId =
-        TeamId(
-            memberPersistencePort.findMemberTeamByMemberId(memberId)?.toLong() ?: defaultTeamId.toLong(),
-        )
 
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,

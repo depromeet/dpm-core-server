@@ -1,11 +1,13 @@
 package core.domain.attendance.port.outbound.query
 
+import core.domain.team.vo.TeamNumber
 import java.time.Instant
 
 data class SessionDetailAttendanceQueryModel(
     val memberId: Long,
     val memberName: String,
-    val teamNumber: Int,
+    val teamNumber: TeamNumber,
+    val isAdmin: Boolean,
     val part: String?,
     val lateCount: Int,
     val onlineAbsentCount: Int,

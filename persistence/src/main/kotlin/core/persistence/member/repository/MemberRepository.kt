@@ -9,6 +9,7 @@ import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
+import core.domain.team.vo.TeamNumber
 import core.entity.member.MemberEntity
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.COHORTS
@@ -196,6 +197,20 @@ class MemberRepository(
         val maxTeamNumber = max(TEAMS.NUMBER).`as`("max_team_number")
         val latestMemberCohorts = MEMBER_COHORTS.`as`("latest_member_cohorts")
 
+        val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
+        val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
+        val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
+        val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+
+        val isAdminField =
+            exists(
+                selectOne()
+                    .from(memberAuthoritiesTable)
+                    .where(memberAuthoritiesMemberIdField.eq(MEMBERS.MEMBER_ID))
+                    .and(memberAuthoritiesAuthorityIdField.eq(ORGANIZER_AUTHORITY_ID))
+                    .and(memberAuthoritiesDeletedAtField.isNull),
+            ).`as`("is_admin")
+
         val statusPriority =
             `when`(MEMBERS.STATUS.eq("PENDING"), 0)
                 .`when`(MEMBERS.STATUS.eq("ACTIVE"), 1)
@@ -226,6 +241,7 @@ class MemberRepository(
                 maxCohortValue,
                 maxCohortId,
                 maxTeamNumber,
+                isAdminField,
             )
             .from(MEMBERS)
             .leftJoin(MEMBER_COHORTS)
@@ -257,14 +273,19 @@ class MemberRepository(
                     cohortId = record[maxCohortId],
                     cohortValue = record[maxCohortValue]?.toString(),
                     name = record[MEMBERS.NAME] ?: "",
-                    teamNumber = record[maxTeamNumber],
+                    teamNumber = TeamNumber(record[maxTeamNumber] ?: 0),
+                    isAdmin = record[isAdminField] ?: false,
                     status = record[MEMBERS.STATUS] ?: "",
                     part = record[MEMBERS.PART],
                 )
             }
     }
 
-    override fun findMemberTeamByMemberId(memberId: MemberId): Int? =
+    companion object {
+        private const val ORGANIZER_AUTHORITY_ID = 2L
+    }
+
+    override fun findMemberTeamNumberByMemberId(memberId: MemberId): Int? =
         dsl
             .select(TEAMS.NUMBER)
             .from(MEMBER_TEAMS)

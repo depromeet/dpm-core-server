@@ -3,12 +3,13 @@ package core.application.announcement.presentation.response
 import core.domain.announcement.enums.SubmitStatus
 import core.domain.member.enums.MemberPart
 import core.domain.member.vo.MemberId
-import core.domain.team.vo.TeamId
+import core.domain.team.vo.TeamNumber
 
 data class AssignmentStatusMemberListItemResponse(
     val memberId: MemberId,
     val name: String,
-    val teamId: TeamId,
+    val teamNumber: TeamNumber,
+    val isAdmin: Boolean,
     val part: MemberPart?,
     val submitStatus: SubmitStatus,
     val score: Int?,
@@ -17,7 +18,8 @@ data class AssignmentStatusMemberListItemResponse(
         fun of(
             memberId: MemberId,
             name: String,
-            teamId: TeamId,
+            teamNumber: TeamNumber,
+            isAdmin: Boolean,
             part: MemberPart?,
             submitStatus: SubmitStatus,
             score: Int?,
@@ -25,7 +27,8 @@ data class AssignmentStatusMemberListItemResponse(
             AssignmentStatusMemberListItemResponse(
                 memberId = memberId,
                 name = name,
-                teamId = teamId,
+                teamNumber = teamNumber,
+                isAdmin = isAdmin,
                 part = part,
                 submitStatus = submitStatus,
                 score = score,

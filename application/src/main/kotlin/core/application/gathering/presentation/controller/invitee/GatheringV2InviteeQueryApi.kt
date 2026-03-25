@@ -34,14 +34,16 @@ interface GatheringV2InviteeQueryApi {
                                   "memberId": 1,
                                   "name": "준원카카오",
                                   "part": "SERVER",
-                                  "team": 1,
+                                  "teamNumber": 1,
+                                  "isAdmin": true,
                                   "rsvpStatus": true
                                 },
                                 {
                                   "memberId": 2,
                                   "name": "신민철",
                                   "part": "SERVER",
-                                  "team": 1,
+                                  "teamNumber": 1,
+                                  "isAdmin": false,
                                   "rsvpStatus": false
                                 }
                               ]
