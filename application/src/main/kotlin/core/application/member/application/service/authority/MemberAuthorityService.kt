@@ -1,5 +1,6 @@
 package core.application.member.application.service.authority
 
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.port.outbound.MemberAuthorityPersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -38,8 +39,4 @@ class MemberAuthorityService(
 
     fun isAdmin(memberId: MemberId): Boolean =
         memberAuthorityPersistencePort.findActiveAuthorityIdsByMemberId(memberId).contains(ORGANIZER_AUTHORITY_ID)
-
-    companion object {
-        private const val ORGANIZER_AUTHORITY_ID = 2L
-    }
 }

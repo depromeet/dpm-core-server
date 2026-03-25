@@ -14,6 +14,8 @@ import core.domain.afterParty.port.inbound.AfterPartyQueryUseCase
 import core.domain.afterParty.port.outbound.AfterPartyPersistencePort
 import core.domain.afterParty.vo.AfterPartyId
 import core.domain.cohort.vo.CohortId
+import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -124,10 +126,5 @@ class AfterPartyQueryService(
                 tagName = "${latestCohort.value}기 운영진",
             ),
         )
-    }
-
-    companion object {
-        private const val DEEPER_AUTHORITY_ID = 1L
-        private const val ORGANIZER_AUTHORITY_ID = 2L
     }
 }
