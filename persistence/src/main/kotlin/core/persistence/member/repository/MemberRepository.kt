@@ -305,7 +305,7 @@ class MemberRepository(
             .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value))
             .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
             .limit(1)
-            .fetchOne(TEAMS.NUMBER)
+            .fetchOne(TEAMS.TEAM_ID)
             ?.toLong()
 
     override fun anonymizeIdentity(
