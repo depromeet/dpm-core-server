@@ -164,13 +164,13 @@ interface MemberApi {
                                         {
                                             "memberId": "1",
                                             "memberPart": "SERVER",
-                                            "team": "1",
+                                            "teamId": "1",
                                             "status": "ACTIVE"
                                         },
                                         {
                                             "memberId": "2",
                                             "memberPart": "DESIGN",
-                                            "team": "2",
+                                            "teamId": "2",
                                             "status": "INACTIVE"
                                         }
                                     ]
