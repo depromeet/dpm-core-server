@@ -46,6 +46,7 @@ interface AttendanceQueryApi {
                                                     "id": 1,
                                                     "name": "신민철",
                                                     "teamNumber": 1,
+                                                    "isAdmin": false,
                                                     "part": "SERVER",
                                                     "attendanceStatus": "PRESENT"
                                                 },
@@ -53,6 +54,7 @@ interface AttendanceQueryApi {
                                                     "id": 2,
                                                     "name": "이정호",
                                                     "teamNumber": 2,
+                                                    "isAdmin": false,
                                                     "part": "WEB",
                                                     "attendanceStatus": "LATE"
                                                 }
@@ -112,6 +114,7 @@ interface AttendanceQueryApi {
                                                     "id": 1,
                                                     "name": "신민철",
                                                     "teamNumber": 1,
+                                                    "isAdmin": false,
                                                     "part": "SERVER",
                                                     "attendanceStatus": "AT_RISK"
                                                 },
@@ -119,6 +122,7 @@ interface AttendanceQueryApi {
                                                     "id": 1,
                                                     "name": "이정호",
                                                     "teamNumber": 2,
+                                                    "isAdmin": false,
                                                     "part": "WEB",
                                                     "attendanceStatus": "NORMAL"
                                                 }
@@ -176,6 +180,7 @@ interface AttendanceQueryApi {
                                                 "id": 1,
                                                 "name": "신민철",
                                                 "teamNumber": 2,
+                                                "isAdmin": false,
                                                 "part": "SERVER",
                                                 "attendanceStatus": "NORMAL"
                                             },
@@ -278,6 +283,7 @@ interface AttendanceQueryApi {
                                                 "id": 1,
                                                 "name": "신민철",
                                                 "teamNumber": 2,
+                                                "isAdmin": false,
                                                 "part": "SERVER",
                                                 "attendanceStatus": "NORMAL"
                                             },
@@ -342,6 +348,7 @@ interface AttendanceQueryApi {
                                                 "id": 1,
                                                 "name": "신민철",
                                                 "teamNumber": 2,
+                                                "isAdmin": false,
                                                 "part": "SERVER",
                                                 "attendanceStatus": "NORMAL"
                                             },

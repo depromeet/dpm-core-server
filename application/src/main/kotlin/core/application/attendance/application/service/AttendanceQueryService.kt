@@ -9,6 +9,7 @@ import core.application.attendance.presentation.response.MemberAttendancesRespon
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.member.application.service.MemberQueryService
+import core.application.member.application.service.authority.MemberAuthorityService
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
@@ -17,6 +18,7 @@ import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.session.vo.SessionId
+import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import kotlin.math.ceil
@@ -25,13 +27,14 @@ import kotlin.math.ceil
 @Transactional(readOnly = true)
 class AttendanceQueryService(
     private val memberQueryService: MemberQueryService,
+    private val memberAuthorityService: MemberAuthorityService,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
 ) {
     fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
-        val myTeamNumber =
+        val myTeamNumber: TeamNumber =
             query.onlyMyTeam
-                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) }
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber(0)
 
         val queryResult =
             attendancePersistencePort
@@ -57,12 +60,12 @@ class AttendanceQueryService(
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
         val myTeamNumber =
             query.onlyMyTeam
-                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) }
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber(0)
 
         val queryResult =
             attendancePersistencePort
                 .findMemberAttendancesByQuery(query, myTeamNumber)
-                .sortedBy { it.teamNumber }
+                .sortedBy { it.teamNumber.value }
 
         val totalElements =
             attendancePersistencePort.countMemberAttendancesByQuery(query, myTeamNumber)
@@ -80,6 +83,7 @@ class AttendanceQueryService(
                             id = member.id,
                             name = member.name,
                             teamNumber = member.teamNumber,
+                            isAdmin = member.isAdmin,
                             part = member.part,
                             attendanceStatus =
                                 attendanceGraduationEvaluator.evaluate(
@@ -89,7 +93,7 @@ class AttendanceQueryService(
                                 ),
                         )
                     }.toList(),
-            onlyMyTeam = (query.teams?.contains(myTeamNumber) == true) || (query.onlyMyTeam ?: false),
+            onlyMyTeam = (query.teams?.contains(myTeamNumber.value) == true) || (query.onlyMyTeam ?: false),
             myTeamNumber = myTeamNumber,
             hasNext = hasNext,
             totalElements = totalElements,
