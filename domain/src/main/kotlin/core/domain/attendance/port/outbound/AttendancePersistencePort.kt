@@ -12,6 +12,7 @@ import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.team.vo.TeamNumber
 
 interface AttendancePersistencePort {
     fun findAttendanceBy(
@@ -23,12 +24,12 @@ interface AttendancePersistencePort {
 
     fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): List<SessionAttendanceQueryModel>
 
     fun findMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): List<MemberAttendanceQueryModel>
 
     fun findDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): SessionDetailAttendanceQueryModel?
@@ -45,12 +46,12 @@ interface AttendancePersistencePort {
 
     fun countSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): Int
 
     fun countMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): Int
 
     fun findAllBySessionId(sessionId: Long): List<Attendance>

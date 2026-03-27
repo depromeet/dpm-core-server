@@ -11,6 +11,7 @@ import core.application.announcement.presentation.response.AnnouncementViewMembe
 import core.application.announcement.presentation.response.AssignmentStatusMemberListItemResponse
 import core.application.announcement.presentation.response.AssignmentStatusMemberListResponse
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
+import core.application.member.application.service.authority.MemberAuthorityService
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.aggregate.Assignment
@@ -27,7 +28,7 @@ import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
-import core.domain.team.vo.TeamId
+import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -40,6 +41,7 @@ class AnnouncementQueryService(
     val assignmentSubmissionQueryUseCase: AssignmentSubmissionQueryUseCase,
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val memberQueryUseCase: MemberQueryUseCase,
+    val memberAuthorityService: MemberAuthorityService,
 ) : AnnouncementQueryUseCase {
     fun getAllAnnouncements(): AnnouncementListResponse {
         val announcementListItemQueryModels: List<AnnouncementListItemQueryModel> =
@@ -108,8 +110,9 @@ class AnnouncementQueryService(
         val readMembers: List<Member> = memberQueryUseCase.getMembersByIds(readMemberIds)
         val readMemberItems: List<AnnouncementViewMemberListItemResponse> =
             readMembers.map { readMember ->
-                val teamId: TeamId = memberQueryUseCase.getMemberTeamId(readMember.id!!)
-                AnnouncementViewMemberListItemResponse.of(readMember, teamId)
+                val teamNumber: TeamNumber = memberQueryUseCase.getMemberTeamNumber(readMember.id!!)
+                val isAdmin: Boolean = memberAuthorityService.isAdmin(readMember.id!!)
+                AnnouncementViewMemberListItemResponse.of(readMember, teamNumber, isAdmin)
             }
 
         val unreadMemberIds: List<MemberId> =
@@ -117,8 +120,9 @@ class AnnouncementQueryService(
         val unreadMembers: List<Member> = memberQueryUseCase.getMembersByIds(unreadMemberIds)
         val unreadMemberItems: List<AnnouncementViewMemberListItemResponse> =
             unreadMembers.map { unreadMember ->
-                val teamId: TeamId = memberQueryUseCase.getMemberTeamId(unreadMember.id!!)
-                AnnouncementViewMemberListItemResponse.of(unreadMember, teamId)
+                val teamNumber: TeamNumber = memberQueryUseCase.getMemberTeamNumber(unreadMember.id!!)
+                val isAdmin: Boolean = memberAuthorityService.isAdmin(unreadMember.id!!)
+                AnnouncementViewMemberListItemResponse.of(unreadMember, teamNumber, isAdmin)
             }
 
         return AnnouncementViewMemberListResponse.of(
@@ -143,10 +147,13 @@ class AnnouncementQueryService(
         val assignmentStatusMemberListItemResponses: List<AssignmentStatusMemberListItemResponse> =
             assignmentSubmissions.map { assignmentSubmission ->
                 val member: Member = memberQueryUseCase.getMemberById(assignmentSubmission.memberId)
+                val teamNumber: TeamNumber = memberQueryUseCase.getMemberTeamNumber(member.id!!)
+                val isAdmin: Boolean = memberAuthorityService.isAdmin(member.id!!)
                 AssignmentStatusMemberListItemResponse.of(
                     memberId = member.id!!,
                     name = member.name,
-                    teamId = memberQueryUseCase.getMemberTeamId(member.id!!),
+                    teamNumber = teamNumber,
+                    isAdmin = isAdmin,
                     part = member.part,
                     submitStatus = assignmentSubmission.submitStatus,
                     score = assignmentSubmission.score,

@@ -14,6 +14,8 @@ import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
+import core.domain.team.vo.TeamNumber
 import core.entity.attendance.AttendanceEntity
 import org.jooq.Condition
 import org.jooq.DSLContext
@@ -23,10 +25,16 @@ import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.dsl.tables.references.SESSIONS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
+import org.jooq.impl.DSL.exists
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.select
+import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.sum
+import org.jooq.impl.DSL.table
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Repository
@@ -42,23 +50,39 @@ class AttendanceRepository(
         sessionId: Long,
         memberId: Long,
     ): Attendance? =
-        attendanceJpaRepository.findBySessionIdAndMemberIdAndDeletedAtIsNull(
-            sessionId,
-            memberId,
-        )?.toDomain()
+        attendanceJpaRepository
+            .findBySessionIdAndMemberIdAndDeletedAtIsNull(
+                sessionId,
+                memberId,
+            )?.toDomain()
 
     override fun findAllBySessionId(sessionId: Long): List<Attendance> =
         attendanceJpaRepository.findAllBySessionIdAndDeletedAtIsNull(sessionId).map { it.toDomain() }
 
     override fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: Int?,
-    ): List<SessionAttendanceQueryModel> =
-        dsl
+        myTeamNumber: TeamNumber,
+    ): List<SessionAttendanceQueryModel> {
+        val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
+        val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
+        val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
+        val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+
+        val isAdminField =
+            exists(
+                selectOne()
+                    .from(memberAuthoritiesTable)
+                    .where(memberAuthoritiesMemberIdField.eq(MEMBERS.MEMBER_ID))
+                    .and(memberAuthoritiesAuthorityIdField.eq(ORGANIZER_AUTHORITY_ID))
+                    .and(memberAuthoritiesDeletedAtField.isNull),
+            ).`as`("is_admin")
+
+        return dsl
             .select(
                 ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
+                isAdminField,
                 MEMBERS.PART,
                 ATTENDANCES.STATUS,
             ).from(ATTENDANCES)
@@ -79,21 +103,38 @@ class AttendanceRepository(
                 SessionAttendanceQueryModel(
                     id = record[ATTENDANCES.MEMBER_ID]!!,
                     name = record[MEMBERS.NAME]!!,
-                    teamNumber = record[TEAMS.NUMBER]!!,
+                    teamNumber = TeamNumber(record[TEAMS.NUMBER]!!),
+                    isAdmin = record[isAdminField] ?: false,
                     part = record[MEMBERS.PART],
                     attendanceStatus = record[ATTENDANCES.STATUS]!!,
                 )
             }
+    }
 
     override fun findMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
-        myTeamNumber: Int?,
-    ): List<MemberAttendanceQueryModel> =
-        dsl
+        myTeamNumber: TeamNumber,
+    ): List<MemberAttendanceQueryModel> {
+        val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
+        val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
+        val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
+        val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+
+        val isAdminField =
+            exists(
+                selectOne()
+                    .from(memberAuthoritiesTable)
+                    .where(memberAuthoritiesMemberIdField.eq(MEMBERS.MEMBER_ID))
+                    .and(memberAuthoritiesAuthorityIdField.eq(ORGANIZER_AUTHORITY_ID))
+                    .and(memberAuthoritiesDeletedAtField.isNull),
+            ).`as`("is_admin")
+
+        return dsl
             .select(
                 ATTENDANCES.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
+                isAdminField,
                 MEMBERS.PART,
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
@@ -134,22 +175,39 @@ class AttendanceRepository(
                 MemberAttendanceQueryModel(
                     id = record[ATTENDANCES.MEMBER_ID]!!,
                     name = record[MEMBERS.NAME]!!,
-                    teamNumber = record[TEAMS.NUMBER]!!,
+                    teamNumber = TeamNumber(record[TEAMS.NUMBER]!!),
+                    isAdmin = record[isAdminField] ?: false,
                     part = record[MEMBERS.PART],
                     lateCount = record.get(LATE_COUNT, Int::class.java) ?: 0,
                     onlineAbsentCount = record.get(ONLINE_ABSENT_COUNT, Int::class.java) ?: 0,
                     offlineAbsentCount = record.get(OFFLINE_ABSENT_COUNT, Int::class.java) ?: 0,
                 )
             }
+    }
 
     override fun findDetailAttendanceBySession(
         query: GetDetailAttendanceBySessionQuery,
-    ): SessionDetailAttendanceQueryModel? =
-        dsl
+    ): SessionDetailAttendanceQueryModel? {
+        val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
+        val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
+        val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
+        val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+
+        val isAdminField =
+            exists(
+                selectOne()
+                    .from(memberAuthoritiesTable)
+                    .where(memberAuthoritiesMemberIdField.eq(MEMBERS.MEMBER_ID))
+                    .and(memberAuthoritiesAuthorityIdField.eq(ORGANIZER_AUTHORITY_ID))
+                    .and(memberAuthoritiesDeletedAtField.isNull),
+            ).`as`("is_admin")
+
+        return dsl
             .select(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
+                isAdminField,
                 MEMBERS.PART,
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name), DSL.inline(1))
@@ -200,7 +258,8 @@ class AttendanceRepository(
                 SessionDetailAttendanceQueryModel(
                     memberId = it[MEMBERS.MEMBER_ID]!!,
                     memberName = it[MEMBERS.NAME]!!,
-                    teamNumber = it[TEAMS.NUMBER]!!,
+                    teamNumber = TeamNumber(it[TEAMS.NUMBER]!!),
+                    isAdmin = it[isAdminField] ?: false,
                     part = it[MEMBERS.PART],
                     lateCount = it.get(LATE_COUNT, Int::class.java) ?: 0,
                     onlineAbsentCount = it.get(ONLINE_ABSENT_COUNT, Int::class.java) ?: 0,
@@ -220,15 +279,31 @@ class AttendanceRepository(
                             ?.toInstant(),
                 )
             }
+    }
 
     override fun findDetailMemberAttendance(
         query: GetDetailMemberAttendancesQuery,
-    ): MemberDetailAttendanceQueryModel? =
-        dsl
+    ): MemberDetailAttendanceQueryModel? {
+        val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
+        val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
+        val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
+        val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+
+        val isAdminField =
+            exists(
+                selectOne()
+                    .from(memberAuthoritiesTable)
+                    .where(memberAuthoritiesMemberIdField.eq(MEMBERS.MEMBER_ID))
+                    .and(memberAuthoritiesAuthorityIdField.eq(ORGANIZER_AUTHORITY_ID))
+                    .and(memberAuthoritiesDeletedAtField.isNull),
+            ).`as`("is_admin")
+
+        return dsl
             .select(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 TEAMS.NUMBER,
+                isAdminField,
                 MEMBERS.PART,
                 sum(
                     `when`(ATTENDANCES.STATUS.eq(AttendanceStatus.PRESENT.name), DSL.inline(1))
@@ -277,7 +352,8 @@ class AttendanceRepository(
                 MemberDetailAttendanceQueryModel(
                     memberId = it[MEMBERS.MEMBER_ID]!!,
                     memberName = it[MEMBERS.NAME]!!,
-                    teamNumber = it[TEAMS.NUMBER]!!,
+                    teamNumber = TeamNumber(it[TEAMS.NUMBER]!!),
+                    isAdmin = it[isAdminField] ?: false,
                     part = it[MEMBERS.PART],
                     presentCount = it.get(PRESENT_COUNT, Int::class.java) ?: 0,
                     lateCount = it.get(LATE_COUNT, Int::class.java) ?: 0,
@@ -287,6 +363,7 @@ class AttendanceRepository(
                     earlyLeaveCount = it.get(EARLY_LEAVE_COUNT, Int::class.java) ?: 0,
                 )
             }
+    }
 
     override fun findMemberSessionAttendances(
         query: GetDetailMemberAttendancesQuery,
@@ -377,7 +454,7 @@ class AttendanceRepository(
 
     override fun countSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): Int =
         dsl
             .selectCount()
@@ -395,7 +472,7 @@ class AttendanceRepository(
 
     override fun countMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): Int =
         dsl
             .selectCount()
@@ -405,8 +482,7 @@ class AttendanceRepository(
                     MEMBERS.NAME,
                     TEAMS.NUMBER,
                     MEMBERS.PART,
-                )
-                    .from(ATTENDANCES)
+                ).from(ATTENDANCES)
                     .join(MEMBERS)
                     .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
                     .join(SESSIONS)
@@ -422,8 +498,7 @@ class AttendanceRepository(
                         TEAMS.NUMBER,
                         MEMBERS.PART,
                     ),
-            )
-            .fetchOne(0, Int::class.java) ?: 0
+            ).fetchOne(0, Int::class.java) ?: 0
 
     companion object {
         private const val LATE_COUNT = "late_count"
@@ -436,7 +511,7 @@ class AttendanceRepository(
 
     private fun sessionAttendanceConditions(
         query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): List<Condition> {
         val conditions = mutableListOf<Condition>()
         conditions += SESSIONS.SESSION_ID.eq(query.sessionId.value)
@@ -447,7 +522,7 @@ class AttendanceRepository(
         }
 
         when {
-            query.onlyMyTeam == true -> conditions += TEAMS.NUMBER.eq(myTeamNumber ?: 0)
+            query.onlyMyTeam == true -> conditions += TEAMS.NUMBER.eq(myTeamNumber.value)
             query.teams?.isNotEmpty() == true -> conditions += TEAMS.NUMBER.`in`(query.teams)
         }
 
@@ -460,7 +535,7 @@ class AttendanceRepository(
 
     private fun memberAttendanceConditions(
         query: GetMemberAttendancesQuery,
-        myTeamNumber: Int?,
+        myTeamNumber: TeamNumber,
     ): List<Condition> {
         val conditions = mutableListOf<Condition>()
         conditions += ATTENDANCES.DELETED_AT.isNull
@@ -470,7 +545,7 @@ class AttendanceRepository(
         }
 
         when {
-            query.onlyMyTeam == true -> conditions += TEAMS.NUMBER.eq(myTeamNumber ?: 0)
+            query.onlyMyTeam == true -> conditions += TEAMS.NUMBER.eq(myTeamNumber.value)
             query.teams?.isNotEmpty() == true -> conditions += TEAMS.NUMBER.`in`(query.teams)
         }
 
