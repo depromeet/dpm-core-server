@@ -45,7 +45,15 @@ interface MemberPersistencePort {
         latestCohortId: Long,
     ): List<MemberOverviewQueryModel>
 
-    fun findMemberTeamByMemberId(memberId: MemberId): Int?
+    fun findMemberTeamNumberByMemberId(memberId: MemberId): Int?
+
+    fun findMemberTeamIdByMemberId(memberId: MemberId): Long?
 
     fun findAll(): List<Member>
+
+    fun anonymizeIdentity(
+        memberId: MemberId,
+        email: String,
+        signupEmail: String,
+    )
 }

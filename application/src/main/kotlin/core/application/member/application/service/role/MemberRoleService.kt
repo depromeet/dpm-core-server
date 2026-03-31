@@ -1,5 +1,6 @@
 package core.application.member.application.service.role
 
+import core.application.cohort.application.service.CohortQueryService
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleId
 import core.domain.authorization.vo.RoleType
@@ -13,6 +14,8 @@ import java.time.Instant
 class MemberRoleService(
     private val memberRolePersistencePort: MemberRolePersistencePort,
     private val roleQueryUseCase: RoleQueryUseCase,
+    private val cohortQueryService: CohortQueryService,
+    private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) {
     /**
      * 멤버 식별자로 해당 멤버가 소유한 권한 이름 목록을 조회함.
@@ -46,22 +49,10 @@ class MemberRoleService(
             memberRolePersistencePort
                 .findRoleNamesByMemberId(memberId.value)
 
-        if (roles.isEmpty()) {
-            return RoleType.Guest
-        }
-
-        val roleTypes = roles.map { RoleType.from(it) }
-        return ROLE_PRIORITY.firstOrNull { it in roleTypes }
-            ?: RoleType.Guest
-    }
-
-    companion object {
-        private val ROLE_PRIORITY: List<RoleType> =
-            listOf(
-                RoleType.Core,
-                RoleType.Organizer,
-                RoleType.Deeper,
-            )
+        return currentCohortRoleResolver.findPrimaryRoleType(
+            roleNames = roles,
+            latestCohortValue = cohortQueryService.getLatestCohortValue(),
+        )
     }
 
     fun assignGuestRole(memberId: MemberId) {
@@ -108,7 +99,11 @@ class MemberRoleService(
     }
 
     fun ensureGuestRoleAssigned(memberId: MemberId) {
-        val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
+        val roles =
+            currentCohortRoleResolver.filterCurrentRoles(
+                memberRolePersistencePort.findRoleNamesByMemberId(memberId.value),
+                cohortQueryService.getLatestCohortValue(),
+            )
         if (roles.isEmpty()) {
             assignGuestRole(memberId)
         }

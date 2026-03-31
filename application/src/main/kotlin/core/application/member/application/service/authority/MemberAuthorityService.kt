@@ -1,5 +1,6 @@
 package core.application.member.application.service.authority
 
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.port.outbound.MemberAuthorityPersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -33,4 +34,9 @@ class MemberAuthorityService(
         memberId: MemberId,
         authorityId: Long,
     ) = memberAuthorityPersistencePort.revokeAuthority(memberId, authorityId)
+
+    fun revokeAllAuthorities(memberId: MemberId) = memberAuthorityPersistencePort.revokeAllByMemberId(memberId)
+
+    fun isAdmin(memberId: MemberId): Boolean =
+        memberAuthorityPersistencePort.findActiveAuthorityIdsByMemberId(memberId).contains(ORGANIZER_AUTHORITY_ID)
 }

@@ -10,6 +10,7 @@ enum class CohortExceptionCode(
 ) : ExceptionCode {
     COHORT_NOT_FOUND(HttpStatus.NOT_FOUND, "COHORT-404-1", "기수를 찾을 수 없습니다"),
     COHORT_ALREADY_EXISTS(HttpStatus.CONFLICT, "COHORT-409-1", "이미 존재하는 기수입니다"),
+    COHORT_REFERENCED(HttpStatus.CONFLICT, "COHORT-409-2", "연관 데이터가 있는 기수는 삭제할 수 없습니다"),
     INVALID_COHORT_STATE(HttpStatus.BAD_REQUEST, "COHORT-400-1", "유효하지 않은 기수 상태입니다"),
     ;
 

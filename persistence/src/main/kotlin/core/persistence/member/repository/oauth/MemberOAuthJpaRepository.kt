@@ -8,4 +8,6 @@ interface MemberOAuthJpaRepository : JpaRepository<MemberOAuthEntity, Long> {
         provider: String,
         externalId: String,
     ): MemberOAuthEntity?
+
+    fun deleteAllByMemberId(memberId: Long)
 }

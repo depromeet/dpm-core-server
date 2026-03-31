@@ -63,7 +63,8 @@ class MemberController(
                         memberId = member.memberId,
                         cohortId = member.cohortId,
                         name = member.name,
-                        teamName = member.teamNumber?.takeIf { it > 0 }?.let { "${it}팀" } ?: "미배정",
+                        teamNumber = member.teamNumber,
+                        isAdmin = member.isAdmin,
                         status = member.status,
                         part = member.part ?: "UNASSIGNED",
                     )
