@@ -2,12 +2,12 @@ package core.application.afterParty.application.service
 
 import core.application.afterParty.application.exception.AfterPartyNotFoundException
 import core.application.afterParty.application.exception.InviteTagNameNotFoundException
+import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.authority.MemberAuthorityService
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
 import core.domain.afterParty.aggregate.AfterPartyInvitee
-import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 import core.domain.afterParty.port.inbound.AfterPartyCommandUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteTagQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteeCommandUseCase
@@ -19,6 +19,8 @@ import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberCohort
+import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -37,10 +39,11 @@ class AfterPartyCommandService(
     val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val cohortPersistencePort: CohortPersistencePort,
     val memberAuthorityService: MemberAuthorityService,
+    val cohortQueryService: CohortQueryService,
 ) : AfterPartyCommandUseCase {
     override fun createAfterParty(
         afterParty: AfterParty,
-        afterPartyInviteTags: List<AfterPartyInviteTagEnum>,
+        afterPartyInviteTags: List<core.domain.afterParty.enums.AfterPartyInviteTagEnum>,
         authorMemberId: MemberId,
     ) {
         val inviteTagSpecs =
@@ -238,15 +241,6 @@ class AfterPartyCommandService(
         }
 
     private fun resolveInviteTagSpec(tagName: String): InviteTagSpec {
-        val enumTag = AfterPartyInviteTagEnum.entries.firstOrNull { it.tagName == tagName }
-        if (enumTag != null) {
-            return InviteTagSpec(
-                cohortId = enumTag.cohortId,
-                authorityId = enumTag.authorityId,
-                tagName = enumTag.tagName,
-            )
-        }
-
         val storedTag =
             afterPartyInviteTagQueryUseCase.findDistinctByTagName(tagName).firstOrNull()
         if (storedTag != null) {
@@ -273,7 +267,7 @@ class AfterPartyCommandService(
         return InviteTagSpec(
             cohortId = cohortId,
             authorityId = authorityId,
-            tagName = tagName,
+            tagName = buildTagName(cohortId.value, roleType),
         )
     }
 
@@ -293,14 +287,17 @@ class AfterPartyCommandService(
         return cohort.id
     }
 
+    private fun buildTagName(
+        cohortId: Long,
+        roleType: RoleType,
+    ): String {
+        val latestCohort = cohortQueryService.getCohort(CohortId(cohortId))
+        return "${latestCohort.value}기 ${roleType.aliases.first()}"
+    }
+
     private data class InviteTagSpec(
         val cohortId: CohortId,
         val authorityId: Long,
         val tagName: String,
     )
-
-    companion object {
-        private const val DEEPER_AUTHORITY_ID = 1L
-        private const val ORGANIZER_AUTHORITY_ID = 2L
-    }
 }

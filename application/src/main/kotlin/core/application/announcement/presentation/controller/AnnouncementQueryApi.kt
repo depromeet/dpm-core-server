@@ -124,7 +124,8 @@ interface AnnouncementQueryApi {
                                   {
                                     "memberId": 1,
                                     "name": "준원카카오",
-                                    "teamId": 1,
+                                    "teamNumber": 1,
+                                    "isAdmin": true,
                                     "part": "SERVER"
                                   }
                                 ],
@@ -132,13 +133,15 @@ interface AnnouncementQueryApi {
                                   {
                                     "memberId": 2,
                                     "name": "신민철",
-                                    "teamId": 1,
+                                    "teamNumber": 1,
+                                    "isAdmin": false,
                                     "part": "SERVER"
                                   },
                                   {
                                     "memberId": 3,
                                     "name": "이한음",
-                                    "teamId": 1,
+                                    "teamNumber": 1,
+                                    "isAdmin": false,
                                     "part": "SERVER"
                                   }
                                 ]
@@ -178,7 +181,8 @@ interface AnnouncementQueryApi {
                                   {
                                     "memberId": 1,
                                     "name": "준원카카오",
-                                    "teamId": 1,
+                                    "teamNumber": 1,
+                                    "isAdmin": true,
                                     "part": "SERVER",
                                     "submitStatus": "SUBMITTED",
                                     "score": 10

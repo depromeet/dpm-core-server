@@ -1,5 +1,6 @@
 package core.application.member.application.service.auth
 
+import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.security.oauth.apple.AppleTokenExchangeService
@@ -91,6 +92,7 @@ class AppleAuthService(
                     )
             }
 
+        validateMemberForLogin(member)
         memberRoleService.ensureGuestRoleAssigned(member.id!!)
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
@@ -172,6 +174,12 @@ class AppleAuthService(
             selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
                 ?: throw IllegalStateException("Member creation conflicted but no existing member found")
         }
+
+    private fun validateMemberForLogin(member: Member) {
+        if (member.deletedAt != null || member.status == core.domain.member.enums.MemberStatus.WITHDRAWN) {
+            throw MemberDeletedException()
+        }
+    }
 }
 
 data class AuthTokenResponse(

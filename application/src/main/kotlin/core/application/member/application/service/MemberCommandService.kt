@@ -4,6 +4,7 @@ import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
 import core.application.member.application.service.authority.MemberAuthorityService
 import core.application.member.application.service.cohort.MemberCohortService
+import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
@@ -14,15 +15,19 @@ import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberStatus
 import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
+import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 @Transactional
@@ -35,6 +40,8 @@ class MemberCommandService(
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
     private val memberRoleService: MemberRoleService,
     private val memberAuthorityService: MemberAuthorityService,
+    private val memberOAuthService: MemberOAuthService,
+    private val memberCredentialPersistencePort: MemberCredentialPersistencePort,
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
@@ -56,7 +63,7 @@ class MemberCommandService(
                         updateStatus(it.status)
                     },
                 )
-            memberTeamService.addMemberToTeam(it.memberId, it.team)
+            memberTeamService.addMemberToTeam(it.memberId, it.teamId)
             memberCohortService.addMemberToCohort(it.memberId)
             initializeMemberDataForActiveMember(updatedMember)
         }
@@ -77,14 +84,19 @@ class MemberCommandService(
         tokenInjector.invalidateRefreshToken(response)
         refreshTokenInvalidator.destroyRefreshToken(memberId)
 
-        memberQueryService
-            .getMemberById(memberId)
-            .apply { softDelete() }
-            .also { memberPersistencePort.save(it) }
+        val withdrawnMember =
+            memberQueryService
+                .getMemberById(memberId)
+                .apply { softDelete() }
+                .also { memberPersistencePort.save(it) }
 
         memberTeamService.deleteMemberFromTeam(memberId)
         memberCohortService.deleteMemberFromCohort(memberId)
         memberRoleService.revokeAllRoles(memberId)
+        memberAuthorityService.revokeAllAuthorities(memberId)
+        memberOAuthService.deleteAllByMemberId(memberId)
+        memberCredentialPersistencePort.deleteByMemberId(memberId)
+        anonymizeWithdrawnMemberIdentity(withdrawnMember)
     }
 
     fun activate(member: Member) {
@@ -111,6 +123,10 @@ class MemberCommandService(
 
         memberAuthorityService.ensureAuthorityAssigned(memberId, ORGANIZER_AUTHORITY_ID)
         memberAuthorityService.revokeAuthority(memberId, DEEPER_AUTHORITY_ID)
+        memberRoleService.replaceWithSingleRoleByName(
+            memberId = memberId,
+            roleName = "${cohortQueryUseCase.getLatestCohortValue()}기 ${RoleType.Organizer.aliases.first()}",
+        )
     }
 
     /**
@@ -171,8 +187,15 @@ class MemberCommandService(
         )
     }
 
-    companion object {
-        private const val DEEPER_AUTHORITY_ID = 1L
-        private const val ORGANIZER_AUTHORITY_ID = 2L
+    private fun anonymizeWithdrawnMemberIdentity(member: Member) {
+        val memberId = requireNotNull(member.id) { "Withdrawn member must have id" }
+        val uniqueSuffix = "${memberId.value}-${Instant.now().toEpochMilli()}"
+        val anonymizedEmail = "withdrawn+$uniqueSuffix@withdrawn.local"
+
+        memberPersistencePort.anonymizeIdentity(
+            memberId = memberId,
+            email = anonymizedEmail,
+            signupEmail = anonymizedEmail,
+        )
     }
 }

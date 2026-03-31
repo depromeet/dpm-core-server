@@ -3,12 +3,14 @@ package core.persistence.member.repository
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
+import core.domain.team.vo.TeamNumber
 import core.entity.member.MemberEntity
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.COHORTS
@@ -72,19 +74,16 @@ class MemberRepository(
         }
 
     override fun findById(memberId: MemberId): Member? =
-        memberJpaRepository.findById(
-            memberId.value,
-        ).orElse(null)?.toDomain()
+        memberJpaRepository
+            .findById(
+                memberId.value,
+            ).orElse(null)
+            ?.toDomain()
 
     override fun existsById(memberId: Long): Boolean = memberJpaRepository.existsById(memberId)
 
     override fun findAllByIds(ids: List<MemberId>): List<Member> =
-        memberJpaRepository
-            .findAllByIdInAndDeletedAtIsNull(
-                ids.map {
-                    it.value
-                },
-            ).map { it.toDomain() }
+        memberJpaRepository.findAllById(ids.map { it.value }).map { it.toDomain() }
 
     override fun existsDeletedMemberById(memberId: Long): Boolean =
         memberJpaRepository.existsByIdAndDeletedAtIsNotNull(memberId)
@@ -103,6 +102,8 @@ class MemberRepository(
             .join(ROLES)
             .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
             .where(ROLES.ROLE_ID.`in`(roleIds.map { it.value }))
+            .and(MEMBERS.DELETED_AT.isNull)
+            .and(MEMBER_ROLES.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .map { MemberId(it ?: 0L) }
 
@@ -115,6 +116,7 @@ class MemberRepository(
             .join(COHORTS)
             .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
             .where(COHORTS.VALUE.eq(value))
+            .and(MEMBERS.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map {
@@ -128,6 +130,7 @@ class MemberRepository(
             .join(MEMBER_COHORTS)
             .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
             .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+            .and(MEMBERS.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map { MemberId(it) }
@@ -150,6 +153,7 @@ class MemberRepository(
                 .join(memberAuthoritiesTable)
                 .on(MEMBERS.MEMBER_ID.eq(memberAuthoritiesMemberIdField))
                 .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+                .and(MEMBERS.DELETED_AT.isNull)
                 .and(memberAuthoritiesAuthorityIdField.eq(authorityId))
                 .and(memberAuthoritiesDeletedAtField.isNull)
                 .fetch(MEMBERS.MEMBER_ID)
@@ -159,18 +163,30 @@ class MemberRepository(
 
     override fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         dsl
-            .select(MEMBERS.NAME, ROLES.NAME)
+            .select(MEMBERS.NAME, ROLES.NAME, MEMBER_ROLES.GRANTED_AT)
             .from(MEMBERS)
             .join(MEMBER_ROLES)
             .on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
             .join(ROLES)
             .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
             .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .and(MEMBER_ROLES.DELETED_AT.isNull)
             .fetch()
-            .mapNotNull { (memberName, roleName) ->
+            .mapNotNull { record ->
+                val memberName = record.get(MEMBERS.NAME)
+                val roleName = record.get(ROLES.NAME)
                 memberName?.let { name ->
                     roleName?.let { role ->
-                        MemberNameRoleQueryModel(name, role)
+                        MemberNameRoleQueryModel(
+                            name = name,
+                            role = role,
+                            grantedAtEpochMillis =
+                                record
+                                    .get(MEMBER_ROLES.GRANTED_AT)
+                                    ?.atZone(ZoneId.of("Asia/Seoul"))
+                                    ?.toInstant()
+                                    ?.toEpochMilli(),
+                        )
                     }
                 }
             }
@@ -184,6 +200,20 @@ class MemberRepository(
         val maxCohortId = max(MEMBER_COHORTS.COHORT_ID).`as`("max_cohort_id")
         val maxTeamNumber = max(TEAMS.NUMBER).`as`("max_team_number")
         val latestMemberCohorts = MEMBER_COHORTS.`as`("latest_member_cohorts")
+
+        val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
+        val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
+        val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
+        val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+
+        val isAdminField =
+            exists(
+                selectOne()
+                    .from(memberAuthoritiesTable)
+                    .where(memberAuthoritiesMemberIdField.eq(MEMBERS.MEMBER_ID))
+                    .and(memberAuthoritiesAuthorityIdField.eq(ORGANIZER_AUTHORITY_ID))
+                    .and(memberAuthoritiesDeletedAtField.isNull),
+            ).`as`("is_admin")
 
         val statusPriority =
             `when`(MEMBERS.STATUS.eq("PENDING"), 0)
@@ -215,8 +245,8 @@ class MemberRepository(
                 maxCohortValue,
                 maxCohortId,
                 maxTeamNumber,
-            )
-            .from(MEMBERS)
+                isAdminField,
+            ).from(MEMBERS)
             .leftJoin(MEMBER_COHORTS)
             .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .leftJoin(COHORTS)
@@ -228,31 +258,30 @@ class MemberRepository(
             .where(
                 MEMBERS.DELETED_AT.isNull
                     .and(filterCondition),
-            )
-            .groupBy(
+            ).groupBy(
                 MEMBERS.MEMBER_ID,
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
-            )
-            .orderBy(
+            ).orderBy(
                 maxCohortValue.desc().nullsLast(),
                 statusPriority.asc(),
                 MEMBERS.NAME.asc(),
-            )
-            .fetch { record ->
+            ).fetch { record ->
                 MemberOverviewQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
                     cohortId = record[maxCohortId],
+                    cohortValue = record[maxCohortValue]?.toString(),
                     name = record[MEMBERS.NAME] ?: "",
-                    teamNumber = record[maxTeamNumber],
+                    teamNumber = TeamNumber(record[maxTeamNumber] ?: 0),
+                    isAdmin = record[isAdminField] ?: false,
                     status = record[MEMBERS.STATUS] ?: "",
                     part = record[MEMBERS.PART],
                 )
             }
     }
 
-    override fun findMemberTeamByMemberId(memberId: MemberId): Int? =
+    override fun findMemberTeamNumberByMemberId(memberId: MemberId): Int? =
         dsl
             .select(TEAMS.NUMBER)
             .from(MEMBER_TEAMS)
@@ -265,5 +294,33 @@ class MemberRepository(
             .limit(1)
             .fetchOne(TEAMS.NUMBER)
 
-    override fun findAll(): List<Member> = memberJpaRepository.findAll().map { it.toDomain() }
+    override fun findMemberTeamIdByMemberId(memberId: MemberId): Long? =
+        dsl
+            .select(TEAMS.TEAM_ID)
+            .from(MEMBER_TEAMS)
+            .join(MEMBERS)
+            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value))
+            .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
+            .limit(1)
+            .fetchOne(TEAMS.TEAM_ID)
+            ?.toLong()
+
+    override fun anonymizeIdentity(
+        memberId: MemberId,
+        email: String,
+        signupEmail: String,
+    ) {
+        dsl
+            .update(MEMBERS)
+            .set(MEMBERS.EMAIL, email)
+            .set(MEMBERS.SIGNUP_EMAIL, signupEmail)
+            .set(MEMBERS.UPDATED_AT, LocalDateTime.now())
+            .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .execute()
+    }
+
+    override fun findAll(): List<Member> = memberJpaRepository.findAllByDeletedAtIsNull().map { it.toDomain() }
 }

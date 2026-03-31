@@ -4,6 +4,7 @@ import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberOAuth
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
+import core.domain.member.vo.MemberId
 import core.domain.security.oauth.dto.OAuthAttributes
 import org.springframework.stereotype.Service
 
@@ -46,4 +47,6 @@ class MemberOAuthService(
             member,
         )
     }
+
+    fun deleteAllByMemberId(memberId: MemberId) = memberOAuthPersistencePort.deleteAllByMemberId(memberId)
 }

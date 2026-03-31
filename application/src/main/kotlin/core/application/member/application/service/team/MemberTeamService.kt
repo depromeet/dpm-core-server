@@ -33,7 +33,7 @@ class MemberTeamService(
             return
         }
 
-        if (memberPersistencePort.findMemberTeamByMemberId(memberId) != null) {
+        if (memberPersistencePort.findMemberTeamNumberByMemberId(memberId) != null) {
             return
         }
 
