@@ -1,11 +1,17 @@
 package core.persistence.expo
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import core.domain.notification.aggregate.NotificationExpoMessage
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.http.codec.json.Jackson2JsonDecoder
+import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
@@ -26,7 +32,18 @@ class ExpoPushClient(
             .builder()
             .baseUrl(expoPushUrl)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .apply {
+            .exchangeStrategies(
+                ExchangeStrategies
+                    .builder()
+                    .codecs { configurer ->
+                        val objectMapper =
+                            ObjectMapper()
+                                .registerKotlinModule()
+                                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                        configurer.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper))
+                        configurer.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper))
+                    }.build(),
+            ).apply {
                 if (!expoAccessToken.isNullOrBlank()) {
                     it.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $expoAccessToken")
                 }
@@ -42,7 +59,7 @@ class ExpoPushClient(
         badge: Int? = null,
     ): ExpoPushTicket? =
         try {
-            val message =
+            val message: NotificationExpoMessage =
                 NotificationExpoMessage(
                     to = token,
                     title = title,
@@ -90,7 +107,7 @@ class ExpoPushClient(
         }
 
         return try {
-            val messages =
+            val messages: List<NotificationExpoMessage> =
                 tokens.map { token ->
                     NotificationExpoMessage(
                         to = token,
@@ -111,7 +128,7 @@ class ExpoPushClient(
         }
     }
 
-    fun sendMessage(message: Any): ExpoPushResponse? =
+    fun sendMessage(message: List<NotificationExpoMessage>): ExpoPushResponse? =
         webClient
             .post()
             .bodyValue(message)
