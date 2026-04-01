@@ -1,7 +1,12 @@
 package core.application.notification.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.notification.presentation.request.DeletePushTokenRequest
+import core.application.notification.presentation.request.MessageTypeNotificationRequest
 import core.application.notification.presentation.request.NotificationRequest
+import core.application.notification.presentation.request.RegisterPushTokenRequest
+import core.application.security.annotation.CurrentMemberId
+import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
@@ -14,14 +19,49 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
-        description = "FCM알림 테스트 성공",
+        description = "푸시 토큰 등록 성공",
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
                 schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
-                        name = "FCM 알림 성공 응답",
+                        name = "푸시 토큰 등록 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "id": 1,
+                                    "memberId": 13,
+                                    "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+                                    "createdAt": "2026-03-27T00:00:00Z",
+                                    "updatedAt": "2026-03-27T00:00:00Z"
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(summary = "푸시 토큰 등록 API", description = "멤버의 푸시 토큰을 등록하거나 갱신합니다")
+    fun registerPushToken(
+        memberId: MemberId,
+        request: RegisterPushTokenRequest,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "푸시 토큰 삭제 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "푸시 토큰 삭제 성공 응답",
                         value = """
                             {
                                 "status": "OK",
@@ -34,6 +74,88 @@ interface NotificationApi {
             ),
         ],
     )
-    @Operation(summary = "FCM 알림 테스트 API", description = "FCM 알림을 테스트합니다.")
+    @Operation(summary = "푸시 토큰 삭제 API", description = "멤버의 푸시 토큰을 삭제합니다 (로그아웃 시)")
+    fun deletePushToken(
+        @CurrentMemberId memberId: MemberId,
+        request: DeletePushTokenRequest,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "모든 푸시 토큰 삭제 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "모든 푸시 토큰 삭제 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다"
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(summary = "모든 푸시 토큰 삭제 API", description = "멤버의 모든 푸시 토큰을 삭제합니다 (회원 탈퇴 시)")
+    fun deleteAllPushTokens(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "Expo 커스텀 알림 테스트 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "Expo 커스텀 알림 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다"
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(summary = "Expo 커스텀 알림 테스트 API", description = "Expo 커스텀 알림을 테스트합니다.")
     fun testSendNotification(notificationRequest: NotificationRequest): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "Expo 알림 테스트 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "Expo 알림 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다"
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(summary = "Expo 알림 테스트 API", description = "Expo 알림을 테스트합니다.")
+    fun testSendMessageTypeNotification(
+        messageTypeNotificationRequest: MessageTypeNotificationRequest,
+    ): CustomResponse<Void>
 }
