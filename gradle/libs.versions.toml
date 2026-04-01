@@ -58,6 +58,7 @@ jooq = { id = "nu.studer.jooq", version.ref = "jooq" }
 
 # Spring Boot Starter
 spring_boot_starter_web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_boot" }
+spring_boot_starter_webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring_boot" }
 spring_boot_starter_data_jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring_boot" }
 spring_boot_starter_validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring_boot" }
 spring_boot_starter_actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring_boot" }
