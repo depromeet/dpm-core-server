@@ -17,12 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/v1/notifications")
+@RequestMapping("/v1/notifications")
 class NotificationController(
     val notificationService: NotificationCommandService,
 ) : NotificationApi {
-    @PreAuthorize("permitAll()")
-    @PostMapping
+    @PreAuthorize("hasAuthority('read:member')")
+    @PostMapping("/tokens")
     override fun registerPushToken(
         @CurrentMemberId memberId: MemberId,
         @Valid @RequestBody request: RegisterPushTokenRequest,
@@ -35,8 +35,8 @@ class NotificationController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("permitAll()")
-    @DeleteMapping
+    @PreAuthorize("hasAuthority('read:member')")
+    @DeleteMapping("/tokens")
     override fun deletePushToken(
         @CurrentMemberId memberId: MemberId,
         @Valid @RequestBody request: DeletePushTokenRequest,
@@ -49,8 +49,8 @@ class NotificationController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("permitAll()")
-    @DeleteMapping("/all")
+    @PreAuthorize("hasAuthority('read:member')")
+    @DeleteMapping("/tokens/all")
     override fun deleteAllPushTokens(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
@@ -58,7 +58,7 @@ class NotificationController(
         return CustomResponse.ok()
     }
 
-    @PostMapping("/test")
+    @PreAuthorize("hasAuthority('read:member')")
     override fun testSendNotification(
         @RequestBody notificationRequest: NotificationRequest,
     ): CustomResponse<Void> {
@@ -71,7 +71,7 @@ class NotificationController(
         return CustomResponse.ok()
     }
 
-    @PostMapping("/test-message-type")
+    @PreAuthorize("hasAuthority('read:member')")
     override fun testSendMessageTypeNotification(
         @RequestBody messageTypeNotificationRequest: MessageTypeNotificationRequest,
     ): CustomResponse<Void> {

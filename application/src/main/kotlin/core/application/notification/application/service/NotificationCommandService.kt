@@ -111,9 +111,8 @@ class NotificationCommandService(
         body: String,
         data: Map<String, Any>?,
     ) {
-        val tokens =
+        val tokens: List<NotificationToken> =
             notificationRepository.findByMemberId(memberId)
-                ?: throw NotificationTokenNotFoundException()
 
         tokens.forEach { pushToken ->
             expoPushClient.send(
