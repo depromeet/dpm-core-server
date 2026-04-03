@@ -10,7 +10,9 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.jooq)
+    implementation(libs.spring.boot.starter.webflux)
 
+    implementation(libs.jackson.module.kotlin)
     implementation(libs.firebase.admin)
 
     runtimeOnly(libs.mysql.connector)
