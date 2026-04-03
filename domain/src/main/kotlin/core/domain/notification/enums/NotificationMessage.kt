@@ -21,9 +21,54 @@ enum class NotificationMessage(
         description = "새 공지사항 등록 시 알림",
     ),
     AFTER_PARTY_INVITATION(
-        title = "회식 생성",
-        bodyTemplate = "{eventName} 회식에 초대되었습니다.",
+        title = "새로운 회식이 열렸어요.",
+        bodyTemplate = "{eventName}",
         description = "회식 생성 시 디퍼 알림 발송",
+    ),
+    AFTER_PARTY_REMIND(
+        title = "{customTitle}",
+        bodyTemplate = "{customBody}",
+        description = "회식 미제출자 리마인드 알림",
+    ),
+    ANNOUNCEMENT_REMIND(
+        title = "아직 읽지 않은 공지가 있어요.",
+        bodyTemplate = "{title}",
+        description = "공지 미열람자 리마인드 알림",
+    ),
+    ASSIGNMENT_NEW(
+        title = "새로운 과제가 등록됐어요.",
+        bodyTemplate = "{title}",
+        description = "과제 등록 시 알림",
+    ),
+    ASSIGNMENT_SUBMIT_REQUEST(
+        title = "아직 제출하지 않은 과제가 있어요.",
+        bodyTemplate = "{title}",
+        description = "과제 미제출자 제출요청 알림",
+    ),
+    ASSIGNMENT_DUE_24H(
+        title = "과제 제출까지 하루 남았어요.",
+        bodyTemplate = "잊으신 건 아니죠? 내일 이 시간은 과제 제출 마감이에요. 미리 확인해 보세요!",
+        description = "과제 제출 24시간 전 알림",
+    ),
+    ASSIGNMENT_DUE_12H(
+        title = "과제 제출까지 하루도 남지 않았어요.",
+        bodyTemplate = "아직 과제를 작성 중이신가요? 12시간 뒤면 제출 창이 닫히니 조금만 더 힘내세요!",
+        description = "과제 제출 12시간 전 알림",
+    ),
+    ASSIGNMENT_DUE_1H(
+        title = "제출까지 한시간도 남지 않았어요",
+        bodyTemplate = "지금 바로 제출하지 않으면 링크가 막혀요! 완성한 과제를 확인해주세요!",
+        description = "과제 제출 1시간 전 알림",
+    ),
+    ATTENDANCE_STARTED(
+        title = "출석체크가 시작됐어요.",
+        bodyTemplate = "코드를 확인하고 출석을 완료해주세요.",
+        description = "출석체크 시작 시 알림",
+    ),
+    SESSION_DAY_BEFORE(
+        title = "내일 진행되는 세션 정보를 확인해주세요.",
+        bodyTemplate = "{sessionName}",
+        description = "세션 24시간 전 알림",
     ),
     ;
 
@@ -35,5 +80,11 @@ enum class NotificationMessage(
         return result
     }
 
-    fun formatWithTitle(variables: Map<String, Any>): Pair<String, String> = title to format(variables)
+    fun formatWithTitle(variables: Map<String, Any>): Pair<String, String> {
+        var formattedTitle = title
+        variables.forEach { (key, value) ->
+            formattedTitle = formattedTitle.replace("{$key}", value.toString())
+        }
+        return formattedTitle to format(variables)
+    }
 }
