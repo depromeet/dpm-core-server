@@ -62,6 +62,7 @@ class NotificationController(
     }
 
     @PreAuthorize("hasAuthority('read:member')")
+    @PostMapping("/custom-test")
     override fun testSendNotification(
         @RequestBody notificationRequest: NotificationRequest,
     ): CustomResponse<Void> {
@@ -75,6 +76,7 @@ class NotificationController(
     }
 
     @PreAuthorize("hasAuthority('read:member')")
+    @PostMapping("/type-test")
     override fun testSendMessageTypeNotification(
         @RequestBody messageTypeNotificationRequest: MessageTypeNotificationRequest,
     ): CustomResponse<Void> {
