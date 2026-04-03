@@ -5,6 +5,7 @@ import core.application.notification.presentation.request.DeletePushTokenRequest
 import core.application.notification.presentation.request.MessageTypeNotificationRequest
 import core.application.notification.presentation.request.NotificationRequest
 import core.application.notification.presentation.request.RegisterPushTokenRequest
+import core.application.notification.presentation.response.NotificationTypeResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
@@ -158,4 +159,37 @@ interface NotificationApi {
     fun testSendMessageTypeNotification(
         messageTypeNotificationRequest: MessageTypeNotificationRequest,
     ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "알림 타입 목록 조회 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "알림 타입 목록 조회 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": [
+                                    {
+                                        "name": "SESSION_START_SOON",
+                                        "title": "세션 시작 30분 전 알림",
+                                        "bodyTemplate": "{sessionName} 세션이 30분 후 시작됩니다!",
+                                        "description": "세션 시작 30분 전 알림"
+                                    }
+                                ]
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(summary = "알림 타입 목록 조회 API", description = "모든 알림 타입(NotificationMessage)을 조회합니다.")
+    fun getNotificationTypes(): CustomResponse<List<NotificationTypeResponse>>
 }
