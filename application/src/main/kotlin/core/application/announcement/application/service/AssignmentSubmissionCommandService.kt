@@ -7,6 +7,7 @@ import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.port.inbound.AssignmentSubmissionCommandUseCase
 import core.domain.announcement.port.outbound.AssignmentSubmissionPersistencePort
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -43,7 +44,7 @@ class AssignmentSubmissionCommandService(
         memberQueryService
             .findAllMemberIdsByCohortIdAndAuthorityId(
                 cohortId = latestCohortId,
-                authorityId = 1,
+                authorityId = AuthorityId(1L),
             ).forEach { memberId ->
                 ensureAssignmentSubmission(assignment, memberId)
             }

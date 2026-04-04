@@ -13,6 +13,7 @@ import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
@@ -105,7 +106,7 @@ class MemberCommandService(
         val deeperRoleName = "${latestCohortValue}기 ${RoleType.Deeper.aliases.first()}"
 
         // Whitelist approval must always grant DEEPER authority and keep exactly one active latest cohort DEEPER role.
-        memberAuthorityService.ensureAuthorityAssigned(memberId, DEEPER_AUTHORITY_ID)
+        memberAuthorityService.ensureAuthorityAssigned(memberId, AuthorityId(DEEPER_AUTHORITY_ID))
         memberRoleService.replaceWithSingleRoleByName(memberId, deeperRoleName)
 
         member.activate()
@@ -121,8 +122,8 @@ class MemberCommandService(
             return
         }
 
-        memberAuthorityService.ensureAuthorityAssigned(memberId, ORGANIZER_AUTHORITY_ID)
-        memberAuthorityService.revokeAuthority(memberId, DEEPER_AUTHORITY_ID)
+        memberAuthorityService.ensureAuthorityAssigned(memberId, AuthorityId(ORGANIZER_AUTHORITY_ID))
+        memberAuthorityService.revokeAuthority(memberId, AuthorityId(DEEPER_AUTHORITY_ID))
         memberRoleService.replaceWithSingleRoleByName(
             memberId = memberId,
             roleName = "${cohortQueryUseCase.getLatestCohortValue()}기 ${RoleType.Organizer.aliases.first()}",

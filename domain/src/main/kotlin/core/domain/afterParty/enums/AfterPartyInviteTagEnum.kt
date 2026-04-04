@@ -1,22 +1,23 @@
 package core.domain.afterParty.enums
 
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 
 enum class AfterPartyInviteTagEnum(
     val cohortId: CohortId,
-    val authorityId: Long,
+    val authorityId: AuthorityId,
     val tagName: String,
 ) {
-    DEEPER_17TH(CohortId(1L), 1L, "17기 디퍼"),
-    ORGANIZER_17TH(CohortId(1L), 2L, "17기 운영진"),
-    DEEPER_18TH(CohortId(2L), 1L, "18기 디퍼"),
-    ORGANIZER_18TH(CohortId(2L), 2L, "18기 운영진"),
+    DEEPER_17TH(CohortId(1L), AuthorityId(1L), "17기 디퍼"),
+    ORGANIZER_17TH(CohortId(1L), AuthorityId(2L), "17기 운영진"),
+    DEEPER_18TH(CohortId(2L), AuthorityId(1L), "18기 디퍼"),
+    ORGANIZER_18TH(CohortId(2L), AuthorityId(2L), "18기 운영진"),
     ;
 
     companion object {
         fun from(
             cohortId: CohortId,
-            authorityId: Long,
+            authorityId: AuthorityId,
         ): AfterPartyInviteTagEnum =
             AfterPartyInviteTagEnum.entries.find {
                 it.cohortId == cohortId && it.authorityId == authorityId

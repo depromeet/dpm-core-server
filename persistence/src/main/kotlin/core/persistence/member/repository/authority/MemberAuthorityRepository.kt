@@ -1,11 +1,11 @@
 package core.persistence.member.repository.authority
 
+import core.domain.cohort.vo.AuthorityId
 import core.domain.member.port.outbound.MemberAuthorityPersistencePort
 import core.domain.member.vo.MemberId
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.name
-import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.table
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -27,8 +27,7 @@ class MemberAuthorityRepository(
                     name("ma", "authority_id"),
                     Long::class.java,
                 ).eq(field(name("a", "authority_id"), Long::class.java)),
-            )
-            .where(field(name("ma", "member_id"), Long::class.java).eq(memberId.value))
+            ).where(field(name("ma", "member_id"), Long::class.java).eq(memberId.value))
             .and(field(name("ma", "deleted_at"), LocalDateTime::class.java).isNull)
             .fetch(authorityNameField)
             .filterNotNull()
@@ -50,13 +49,13 @@ class MemberAuthorityRepository(
         memberId: MemberId,
         authorityName: String,
     ) {
-        val authorityId = findAuthorityIdByName(authorityName)
+        val authorityId = AuthorityId(findAuthorityIdByName(authorityName))
         ensureAuthorityAssigned(memberId, authorityId)
     }
 
     override fun ensureAuthorityAssigned(
         memberId: MemberId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     ) {
         val memberIdField = field(name("member_id"), Long::class.java)
         val authorityIdField = field(name("authority_id"), Long::class.java)
@@ -68,7 +67,7 @@ class MemberAuthorityRepository(
                     .selectOne()
                     .from(table(name("member_authorities")))
                     .where(memberIdField.eq(memberId.value))
-                    .and(authorityIdField.eq(authorityId))
+                    .and(authorityIdField.eq(authorityId.value))
                     .and(deletedAtField.isNull),
             )
 
@@ -76,7 +75,7 @@ class MemberAuthorityRepository(
             dsl
                 .insertInto(table(name("member_authorities")))
                 .set(memberIdField, memberId.value)
-                .set(authorityIdField, authorityId)
+                .set(authorityIdField, authorityId.value)
                 .set(field(name("granted_at"), LocalDateTime::class.java), LocalDateTime.now(ZoneId.of(TIME_ZONE)))
                 .execute()
         }
@@ -86,19 +85,19 @@ class MemberAuthorityRepository(
         memberId: MemberId,
         authorityName: String,
     ) {
-        val authorityId = findAuthorityIdByName(authorityName)
+        val authorityId: AuthorityId = AuthorityId(findAuthorityIdByName(authorityName))
         revokeAuthority(memberId, authorityId)
     }
 
     override fun revokeAuthority(
         memberId: MemberId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     ) {
         dsl
             .update(table(name("member_authorities")))
             .set(field(name("deleted_at"), LocalDateTime::class.java), LocalDateTime.now(ZoneId.of(TIME_ZONE)))
             .where(field(name("member_id"), Long::class.java).eq(memberId.value))
-            .and(field(name("authority_id"), Long::class.java).eq(authorityId))
+            .and(field(name("authority_id"), Long::class.java).eq(authorityId.value))
             .and(field(name("deleted_at"), LocalDateTime::class.java).isNull)
             .execute()
     }

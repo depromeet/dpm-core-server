@@ -16,7 +16,9 @@ import core.domain.afterParty.port.outbound.AfterPartyInviteePersistencePort
 import core.domain.afterParty.port.outbound.AfterPartyPersistencePort
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
+import core.domain.member.aggregate.InviteTagSpec
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberCohort
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
@@ -118,7 +120,7 @@ class AfterPartyCommandService(
             val inviteTags = afterPartyInviteTagPersistencePort.findByAfterPartyId(afterPartyId)
             val shouldInvite =
                 inviteTags.any { inviteTag ->
-                    inviteTag.cohortId == cohortId && inviteTag.authorityId in memberAuthorityIds
+                    inviteTag.cohortId == cohortId && inviteTag.authorityId.value in memberAuthorityIds
                 }
 
             if (!shouldInvite) {
@@ -244,7 +246,7 @@ class AfterPartyCommandService(
         val storedTag =
             afterPartyInviteTagQueryUseCase.findDistinctByTagName(tagName).firstOrNull()
         if (storedTag != null) {
-            return InviteTagSpec(
+            return InviteTagSpec.of(
                 cohortId = storedTag.cohortId,
                 authorityId = storedTag.authorityId,
                 tagName = storedTag.tagName,
@@ -258,11 +260,13 @@ class AfterPartyCommandService(
         }
 
         val authorityId =
-            when (roleType) {
-                RoleType.Deeper -> DEEPER_AUTHORITY_ID
-                RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
-                RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
-            }
+            AuthorityId(
+                when (roleType) {
+                    RoleType.Deeper -> DEEPER_AUTHORITY_ID
+                    RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
+                    RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
+                },
+            )
 
         return InviteTagSpec(
             cohortId = cohortId,
@@ -294,10 +298,4 @@ class AfterPartyCommandService(
         val latestCohort = cohortQueryService.getCohort(CohortId(cohortId))
         return "${latestCohort.value}기 ${roleType.aliases.first()}"
     }
-
-    private data class InviteTagSpec(
-        val cohortId: CohortId,
-        val authorityId: Long,
-        val tagName: String,
-    )
 }
