@@ -79,7 +79,7 @@ class NotificationCommandService(
         messageType: NotificationMessage,
         variables: Map<String, Any> = emptyMap(),
         data: Map<String, Any>? = null,
-        expoPriority: ExpoPriority,
+        expoPriority: ExpoPriority = ExpoPriority.NORMAL,
     ) {
         if (memberIds.size == 0) {
             logger.error("알림 발송에 입력된 멤버 수가 0명입니다.")
