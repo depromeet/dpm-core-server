@@ -8,6 +8,7 @@ import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
@@ -125,7 +126,7 @@ class MemberQueryService(
 
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     ): List<MemberId> =
         memberPersistencePort.findAllMemberIdsByCohortIdAndAuthorityId(
             cohortId,

@@ -3,6 +3,7 @@ package core.persistence.afterParty.repository
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.port.outbound.AfterPartyPersistencePort
 import core.domain.afterParty.vo.AfterPartyId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.entity.afterParty.AfterPartyEntity
@@ -43,7 +44,7 @@ class AfterPartyRepository(
 
     override fun findByInviteTagFilters(
         cohortId: CohortId?,
-        authorityId: Long?,
+        authorityId: AuthorityId?,
     ): List<AfterParty> {
         val gatheringIds = afterPartyInviteTagRepository.findAfterPartyIdsByInviteTag(cohortId, authorityId)
         return afterPartyJpaRepository
