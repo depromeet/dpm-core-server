@@ -2,6 +2,7 @@ package core.application.afterParty.presentation.controller
 
 import core.application.afterParty.presentation.request.CreateAfterPartyByInviteTagNamesRequest
 import core.application.afterParty.presentation.request.CreateAfterPartyRequest
+import core.application.afterParty.presentation.request.SendNotificationUnMarkedRsvpRequest
 import core.application.afterParty.presentation.request.UpdateAfterPartyRequest
 import core.application.afterParty.presentation.response.AfterPartyInviteeCompensationResponse
 import core.application.common.converter.TimeMapper.localDateTimeToInstant
@@ -95,5 +96,19 @@ class AfterPartyCommandController(
     override fun compensateMissingInviteesForOpenAfterParties(): CustomResponse<AfterPartyInviteeCompensationResponse> {
         val createdInviteeCount = afterPartyCommandUseCase.compensateMissingInviteesForOpenAfterParties()
         return CustomResponse.ok(AfterPartyInviteeCompensationResponse(createdInviteeCount))
+    }
+
+    @PreAuthorize("hasAuthority('update:after_party')")
+    @PostMapping("/notifications/{afterPartyId}/un-marked-rsvp")
+    override fun sendNotificationUnMarkedRsvp(
+        @PathVariable afterPartyId: AfterPartyId,
+        @RequestBody sendNotificationUnMarkedRsvpRequest: SendNotificationUnMarkedRsvpRequest,
+    ): CustomResponse<Void> {
+        afterPartyCommandUseCase.sendNotificationUnMarkedRsvp(
+            afterPartyId = afterPartyId,
+            title = sendNotificationUnMarkedRsvpRequest.title,
+            body = sendNotificationUnMarkedRsvpRequest.content,
+        )
+        return CustomResponse.ok()
     }
 }
