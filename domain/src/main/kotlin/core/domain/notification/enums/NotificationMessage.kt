@@ -22,11 +22,11 @@ enum class NotificationMessage(
     ),
     AFTER_PARTY_INVITATION(
         title = "새로운 회식이 열렸어요.",
-        bodyTemplate = "{eventName}",
+        bodyTemplate = "{title}",
         description = "회식 생성 시 디퍼 알림 발송",
     ),
     AFTER_PARTY_REMIND(
-        title = "{customTitle}",
+        title = "{title}",
         bodyTemplate = "{customBody}",
         description = "회식 미제출자 리마인드 알림",
     ),
