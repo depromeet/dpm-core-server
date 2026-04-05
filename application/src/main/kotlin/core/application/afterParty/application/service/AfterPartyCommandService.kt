@@ -5,7 +5,6 @@ import core.application.afterParty.application.exception.InviteTagNameNotFoundEx
 import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.authority.MemberAuthorityService
-import core.application.notification.application.service.NotificationCommandService
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
 import core.domain.afterParty.aggregate.AfterPartyInvitee
@@ -30,6 +29,7 @@ import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
+import core.domain.notification.port.inbound.NotificationCommandUseCase
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -48,7 +48,7 @@ class AfterPartyCommandService(
     val cohortPersistencePort: CohortPersistencePort,
     val memberAuthorityService: MemberAuthorityService,
     val cohortQueryService: CohortQueryService,
-    val notificationCommandService: NotificationCommandService,
+    val notificationCommandUseCase: NotificationCommandUseCase,
     val eventPublisher: ApplicationEventPublisher,
 ) : AfterPartyCommandUseCase {
     override fun createAfterParty(
@@ -119,7 +119,7 @@ class AfterPartyCommandService(
                 ).map {
                     it.memberId
                 }
-        notificationCommandService.sendCustomPushNotificationToMembers(
+        notificationCommandUseCase.sendCustomPushNotificationToMembers(
             memberIds = unMarkedRsvpMemberIds,
             title = title,
             body = body,
