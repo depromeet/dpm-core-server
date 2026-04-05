@@ -12,6 +12,7 @@ import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
+import core.domain.announcement.event.AnnouncementCreatedEvent
 import core.domain.announcement.port.inbound.AnnouncementAssignmentCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
@@ -25,6 +26,7 @@ import core.domain.announcement.vo.AnnouncementId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -42,6 +44,7 @@ class AnnouncementCommandService(
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
     val memberQueryService: MemberQueryService,
     val cohortQueryUseCase: CohortQueryUseCase,
+    val eventPublisher: ApplicationEventPublisher,
 ) : AnnouncementCommandUseCase {
     override fun create(
         authorId: MemberId,
@@ -96,9 +99,22 @@ class AnnouncementCommandService(
 
         val memberIds: List<MemberId> = memberQueryService.getMembersByCohortId(cohortQueryUseCase.getLatestCohortId())
         announcementReadCommandUseCase.initializeForMembers(
-            announcementId = savedAnnouncement.id!!,
+            announcementId = savedAnnouncement.id ?: throw AnnouncementNotFoundException(),
             memberIds = memberIds,
         )
+
+//        TODO : 공지 작성 시점에 기수 별로 공지가 나눠져 있지 않은 상태라서, 일단은 최신 기수에 속한 멤버들에게만 읽음 이력을 초기화. 추후에 공지를 기수 별로 나누거나, 공지 읽음 이력을 기수 별로 나눌 때, 해당 부분도 같이 수정 필요
+//        TODO : 게시물 예약 작성 기능
+        if (shouldSendNotification) {
+            eventPublisher.publishEvent(
+                AnnouncementCreatedEvent.of(
+                    announcementId = savedAnnouncement.id ?: throw AnnouncementNotFoundException(),
+                    announcementType = announcementType,
+                    title = title,
+                    cohortId = cohortQueryUseCase.getLatestCohortId(),
+                ),
+            )
+        }
     }
 
     override fun markAsRead(

@@ -1,7 +1,7 @@
-package core.application.notification.application.service
+package core.application.notification.application.event
 
 import core.application.member.application.service.MemberQueryService
-import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.application.notification.application.service.NotificationCommandService
 import core.domain.member.vo.MemberId
 import core.domain.notification.event.InviteTagNotificationEvent
 import core.domain.notification.event.NotificationByMemberEvent
@@ -11,10 +11,9 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
-class NotificationScheduler(
+class NotificationListener(
     val notificationCommandService: NotificationCommandService,
     val memberQueryUseCase: MemberQueryService,
-    val cohortQueryUseCase: CohortQueryUseCase,
 ) {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
