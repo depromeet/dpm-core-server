@@ -7,7 +7,6 @@ import core.domain.announcement.event.AnnouncementCreatedEvent
 import core.domain.cohort.vo.AuthorityId
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
 import core.domain.notification.enums.NotificationMessage
-import core.persistence.expo.ExpoPriority
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
@@ -38,7 +37,6 @@ class AnnouncementNotificationListener(
             messageType = messageType,
             variables = mapOf("title" to announcementCreatedEvent.title),
             data = mapOf("announcementId" to announcementCreatedEvent.announcementId.value),
-            expoPriority = ExpoPriority.NORMAL,
         )
     }
 }

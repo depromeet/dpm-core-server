@@ -73,6 +73,7 @@ class NotificationCommandService(
         sendPushNotificationInternal(memberId, title, body, data)
     }
 
+    @Async
     fun sendCustomPushNotificationToMembers(
         memberIds: List<MemberId>,
         title: String,
@@ -122,10 +123,10 @@ class NotificationCommandService(
         memberIds: List<MemberId>,
         title: String,
         body: String,
-        data: Map<String, Any>?,
-        expoPriority: ExpoPriority,
+        data: Map<String, Any>? = null,
+        expoPriority: ExpoPriority = ExpoPriority.NORMAL,
     ) {
-        if (memberIds.size == 0) {
+        if (memberIds.isEmpty()) {
             logger.error("알림 발송에 입력된 멤버 수가 0명입니다.")
             return
         }
