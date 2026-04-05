@@ -84,16 +84,15 @@ class NotificationCommandService(
     }
 
     @Async
-    fun sendPushNotificationToMembers(
+    override fun sendPushNotificationToMembers(
         memberIds: List<MemberId>,
         messageType: NotificationMessage,
-        variables: Map<String, Any> = emptyMap(),
-        data: Map<String, Any>? = null,
-        expoPriority: ExpoPriority = ExpoPriority.NORMAL,
+        variables: Map<String, Any>,
+        data: Map<String, Any>?,
     ) {
         val (title, body) = messageType.formatWithTitle(variables)
 
-        sendPushNotificationInternalToMembers(memberIds, title, body, data, expoPriority)
+        sendPushNotificationInternalToMembers(memberIds, title, body, data, ExpoPriority.NORMAL)
     }
 
     private fun sendPushNotificationInternal(

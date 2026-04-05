@@ -5,6 +5,7 @@ import core.application.notification.application.service.NotificationCommandServ
 import core.domain.member.vo.MemberId
 import core.domain.notification.event.InviteTagNotificationEvent
 import core.domain.notification.event.NotificationByMemberEvent
+import core.domain.notification.port.inbound.NotificationCommandUseCase
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
@@ -12,6 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
 class NotificationListener(
+    val notificationCommandUseCase: NotificationCommandUseCase,
     val notificationCommandService: NotificationCommandService,
     val memberQueryUseCase: MemberQueryService,
 ) {
@@ -36,7 +38,7 @@ class NotificationListener(
                     )
                 }.distinct()
 
-        notificationCommandService.sendPushNotificationToMembers(
+        notificationCommandUseCase.sendPushNotificationToMembers(
             memberIds = inviteeMemberIds,
             messageType = inviteTagNotificationEvent.notificationMessage,
         )

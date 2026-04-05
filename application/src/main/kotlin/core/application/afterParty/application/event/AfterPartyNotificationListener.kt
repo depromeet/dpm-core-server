@@ -1,7 +1,7 @@
 package core.application.afterParty.application.event
 
-import core.application.notification.application.service.NotificationCommandService
 import core.domain.afterParty.event.AfterPartyCreatedEvent
+import core.domain.notification.port.inbound.NotificationCommandUseCase
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
@@ -9,12 +9,12 @@ import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
 class AfterPartyNotificationListener(
-    val notificationCommandService: NotificationCommandService,
+    val notificationCommandUseCase: NotificationCommandUseCase,
 ) {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun createdEventHandle(afterPartyCreatedEvent: AfterPartyCreatedEvent) {
-        notificationCommandService.sendPushNotificationToMembers(
+        notificationCommandUseCase.sendPushNotificationToMembers(
             memberIds = afterPartyCreatedEvent.invitedMemberIds,
             messageType = afterPartyCreatedEvent.messageType,
             variables = mapOf("title" to afterPartyCreatedEvent.title),

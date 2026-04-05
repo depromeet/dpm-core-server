@@ -1,12 +1,12 @@
 package core.application.announcement.application.event
 
 import core.application.member.application.service.MemberQueryService
-import core.application.notification.application.service.NotificationCommandService
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.event.AnnouncementCreatedEvent
 import core.domain.cohort.vo.AuthorityId
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
 import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.port.inbound.NotificationCommandUseCase
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
@@ -14,7 +14,7 @@ import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
 class AnnouncementNotificationListener(
-    val notificationCommandService: NotificationCommandService,
+    val notificationCommandUseCase: NotificationCommandUseCase,
     val memberQueryService: MemberQueryService,
 ) {
     @Async
@@ -32,7 +32,7 @@ class AnnouncementNotificationListener(
                 authorityId = AuthorityId(DEEPER_AUTHORITY_ID),
             )
 
-        notificationCommandService.sendPushNotificationToMembers(
+        notificationCommandUseCase.sendPushNotificationToMembers(
             memberIds = memberIds,
             messageType = messageType,
             variables = mapOf("title" to announcementCreatedEvent.title),
