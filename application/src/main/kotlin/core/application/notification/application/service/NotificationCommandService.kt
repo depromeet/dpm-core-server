@@ -74,14 +74,13 @@ class NotificationCommandService(
     }
 
     @Async
-    fun sendCustomPushNotificationToMembers(
+    override fun sendCustomPushNotificationToMembers(
         memberIds: List<MemberId>,
         title: String,
         body: String,
-        data: Map<String, Any>? = null,
-        expoPriority: ExpoPriority = ExpoPriority.NORMAL,
+        data: Map<String, Any>?,
     ) {
-        sendPushNotificationInternalToMembers(memberIds, title, body, data, expoPriority)
+        sendPushNotificationInternalToMembers(memberIds, title, body, data, ExpoPriority.NORMAL)
     }
 
     @Async

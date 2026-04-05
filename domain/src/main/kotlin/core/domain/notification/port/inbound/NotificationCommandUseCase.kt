@@ -15,4 +15,11 @@ interface NotificationCommandUseCase {
     )
 
     fun deleteAllPushTokens(memberId: MemberId)
+
+    fun sendCustomPushNotificationToMembers(
+        memberIds: List<MemberId>,
+        title: String,
+        body: String,
+        data: Map<String, Any>? = null,
+    )
 }

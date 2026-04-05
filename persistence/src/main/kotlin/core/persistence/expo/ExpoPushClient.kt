@@ -83,7 +83,7 @@ class ExpoPushClient(
                 else -> {
                     logger.error(
                         "푸시 알림 발송 실패 : message=${ticket?.message}, " +
-                                "details=${ticket?.details}, token=$token",
+                            "details=${ticket?.details}, token=$token",
                     )
                     ticket
                 }
