@@ -20,7 +20,7 @@ class AnnouncementNotificationListener(
 ) {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun createEventHandle(announcementCreatedEvent: AnnouncementCreatedEvent) {
+    fun createdEventHandle(announcementCreatedEvent: AnnouncementCreatedEvent) {
         val messageType: NotificationMessage =
             when (announcementCreatedEvent.announcementType) {
                 AnnouncementType.GENERAL -> NotificationMessage.ANNOUNCEMENT_NEW
