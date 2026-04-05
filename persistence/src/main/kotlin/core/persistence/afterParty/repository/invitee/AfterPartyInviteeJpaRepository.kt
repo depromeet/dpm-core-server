@@ -12,4 +12,6 @@ interface AfterPartyInviteeJpaRepository : JpaRepository<AfterPartyInviteeEntity
         memberId: MemberId,
         afterPartyId: AfterPartyId,
     ): AfterPartyInviteeEntity?
+
+    fun findByAfterPartyIdAndRsvpStatusIsNull(afterPartyId: AfterPartyId): List<AfterPartyInviteeEntity>
 }
