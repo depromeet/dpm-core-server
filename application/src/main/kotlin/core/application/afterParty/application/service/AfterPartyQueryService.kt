@@ -128,4 +128,8 @@ class AfterPartyQueryService(
             ),
         )
     }
+
+    override fun getById(afterPartyId: AfterPartyId): AfterParty =
+        afterPartyPersistencePort.findById(afterPartyId)
+            ?: throw AfterPartyNotFoundException()
 }

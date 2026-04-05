@@ -26,8 +26,8 @@ enum class NotificationMessage(
         description = "회식 생성 시 디퍼 알림 발송",
     ),
     AFTER_PARTY_REMIND(
-        title = "{title}",
-        bodyTemplate = "{customBody}",
+        title = "회식에 참여 여부를 남기지 않았어요.",
+        bodyTemplate = "{title}",
         description = "회식 미제출자 리마인드 알림",
     ),
     ANNOUNCEMENT_REMIND(

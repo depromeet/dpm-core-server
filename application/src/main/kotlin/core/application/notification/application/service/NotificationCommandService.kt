@@ -73,6 +73,34 @@ class NotificationCommandService(
         sendPushNotificationInternal(memberId, title, body, data)
     }
 
+    fun sendCustomPushNotificationToMembers(
+        memberIds: List<MemberId>,
+        title: String,
+        body: String,
+        data: Map<String, Any>? = null,
+        expoPriority: ExpoPriority = ExpoPriority.NORMAL,
+    ) {
+        if (memberIds.size == 0) {
+            logger.error("알림 발송에 입력된 멤버 수가 0명입니다.")
+            return
+        }
+
+        val allTokens = notificationRepository.findByMemberIdIn(memberIds).map { it.token }
+
+        if (allTokens.isEmpty()) {
+            logger.error("조회된 토큰이 없습니다.")
+            return
+        }
+
+        expoPushClient.sendBatch(
+            tokens = allTokens,
+            title = title,
+            body = body,
+            data = data,
+            priority = expoPriority,
+        )
+    }
+
     @Async
     fun sendPushNotificationToMembers(
         memberIds: List<MemberId>,
@@ -85,7 +113,6 @@ class NotificationCommandService(
             logger.error("알림 발송에 입력된 멤버 수가 0명입니다.")
             return
         }
-        val (title, body) = messageType.formatWithTitle(variables)
 
         val allTokens = notificationRepository.findByMemberIdIn(memberIds).map { it.token }
 
@@ -93,6 +120,8 @@ class NotificationCommandService(
             logger.error("조회된 토큰이 없습니다.")
             return
         }
+
+        val (title, body) = messageType.formatWithTitle(variables)
 
         expoPushClient.sendBatch(
             tokens = allTokens,
