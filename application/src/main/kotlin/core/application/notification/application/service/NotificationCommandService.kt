@@ -80,25 +80,7 @@ class NotificationCommandService(
         data: Map<String, Any>? = null,
         expoPriority: ExpoPriority = ExpoPriority.NORMAL,
     ) {
-        if (memberIds.size == 0) {
-            logger.error("알림 발송에 입력된 멤버 수가 0명입니다.")
-            return
-        }
-
-        val allTokens = notificationRepository.findByMemberIdIn(memberIds).map { it.token }
-
-        if (allTokens.isEmpty()) {
-            logger.error("조회된 토큰이 없습니다.")
-            return
-        }
-
-        expoPushClient.sendBatch(
-            tokens = allTokens,
-            title = title,
-            body = body,
-            data = data,
-            priority = expoPriority,
-        )
+        sendPushNotificationInternalToMembers(memberIds, title, body, data, expoPriority)
     }
 
     @Async
@@ -109,29 +91,9 @@ class NotificationCommandService(
         data: Map<String, Any>? = null,
         expoPriority: ExpoPriority = ExpoPriority.NORMAL,
     ) {
-        if (memberIds.size == 0) {
-            logger.error("알림 발송에 입력된 멤버 수가 0명입니다.")
-            return
-        }
-
-        val allTokens = notificationRepository.findByMemberIdIn(memberIds).map { it.token }
-
-        if (allTokens.isEmpty()) {
-            logger.error("조회된 토큰이 없습니다.")
-            return
-        }
-
         val (title, body) = messageType.formatWithTitle(variables)
 
-        expoPushClient.sendBatch(
-            tokens = allTokens,
-            title = title,
-            body = body,
-            data = data,
-            priority = expoPriority,
-        )
-
-        logger.info("Push notifications sent to ${allTokens.size} device(s)")
+        sendPushNotificationInternalToMembers(memberIds, title, body, data, expoPriority)
     }
 
     private fun sendPushNotificationInternal(
@@ -154,5 +116,33 @@ class NotificationCommandService(
         }
 
         logger.info("Push notifications sent to ${tokens.size} device(s) for member ${memberId.value}")
+    }
+
+    private fun sendPushNotificationInternalToMembers(
+        memberIds: List<MemberId>,
+        title: String,
+        body: String,
+        data: Map<String, Any>?,
+        expoPriority: ExpoPriority,
+    ) {
+        if (memberIds.size == 0) {
+            logger.error("알림 발송에 입력된 멤버 수가 0명입니다.")
+            return
+        }
+
+        val allTokens = notificationRepository.findByMemberIdIn(memberIds).map { it.token }
+
+        if (allTokens.isEmpty()) {
+            logger.error("조회된 토큰이 없습니다.")
+            return
+        }
+
+        expoPushClient.sendBatch(
+            tokens = allTokens,
+            title = title,
+            body = body,
+            data = data,
+            priority = expoPriority,
+        )
     }
 }
