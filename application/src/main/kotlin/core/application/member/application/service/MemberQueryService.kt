@@ -131,5 +131,5 @@ class MemberQueryService(
         memberPersistencePort.findAllMemberIdsByCohortIdAndAuthorityId(
             cohortId,
             authorityId,
-        )
+        ).distinct()
 }

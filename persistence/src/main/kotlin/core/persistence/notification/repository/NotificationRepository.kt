@@ -38,7 +38,7 @@ class NotificationRepository(
 
     @Transactional
     override fun deleteByMemberId(memberId: MemberId) {
-        pushTokenJpaRepository.deleteByMemberId(memberId)
+        pushTokenJpaRepository.deleteByMemberId(memberId.value)
     }
 
     override fun findById(id: NotificationTokenId): NotificationToken? =
@@ -49,6 +49,6 @@ class NotificationRepository(
 
     override fun findByMemberIdIn(memberIds: List<MemberId>): List<NotificationToken> =
         pushTokenJpaRepository
-            .findByMemberIdIn(memberIds)
+            .findByMemberIdIn(memberIds.map { it.value })
             .map { it.toDomain() }
 }
