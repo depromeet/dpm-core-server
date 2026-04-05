@@ -16,7 +16,7 @@ enum class NotificationMessage(
         description = "세션 시작 시 알림",
     ),
     ANNOUNCEMENT_NEW(
-        title = "새 공지사항",
+        title = "새로운 공지가 등록됐어요.",
         bodyTemplate = "{title}",
         description = "새 공지사항 등록 시 알림",
     ),
@@ -77,6 +77,12 @@ enum class NotificationMessage(
         variables.forEach { (key, value) ->
             result = result.replace("{$key}", value.toString())
         }
+
+        val unresolvedPlaceholders = Regex("\\{\\w+}").findAll(result).map { it.value }.toList()
+        require(unresolvedPlaceholders.isEmpty()) {
+            "미치환 플레이스홀더가 남아있습니다: $unresolvedPlaceholders (messageType=$name)"
+        }
+
         return result
     }
 
