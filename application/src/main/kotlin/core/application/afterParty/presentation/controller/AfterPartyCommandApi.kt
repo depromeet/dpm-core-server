@@ -2,6 +2,7 @@ package core.application.afterParty.presentation.controller
 
 import core.application.afterParty.presentation.request.CreateAfterPartyByInviteTagNamesRequest
 import core.application.afterParty.presentation.request.CreateAfterPartyRequest
+import core.application.afterParty.presentation.request.SendNotificationUnMarkedRsvpRequest
 import core.application.afterParty.presentation.request.UpdateAfterPartyRequest
 import core.application.afterParty.presentation.response.AfterPartyInviteeCompensationResponse
 import core.application.common.exception.CustomResponse
@@ -62,4 +63,17 @@ interface AfterPartyCommandApi {
         description = "누락된 after_party_invitees를 보상 생성합니다. closedAt이 지나지 않은 회식만 대상입니다.",
     )
     fun compensateMissingInviteesForOpenAfterParties(): CustomResponse<AfterPartyInviteeCompensationResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "회식 참여 여부 미제출자 알림 발송 성공",
+    )
+    @Operation(
+        summary = "회식 참여 여부 미제출자 알림 발송 API",
+        description = "회식 참여 여부 미제출자에 대해서 알림 발송을 발송합니다.",
+    )
+    fun sendNotificationUnMarkedRsvp(
+        afterPartyId: AfterPartyId,
+        sendNotificationUnMarkedRsvpRequest: SendNotificationUnMarkedRsvpRequest,
+    ): CustomResponse<Void>
 }
