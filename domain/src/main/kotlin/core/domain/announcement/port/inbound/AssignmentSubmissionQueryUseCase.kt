@@ -11,4 +11,6 @@ interface AssignmentSubmissionQueryUseCase {
     ): AssignmentSubmission
 
     fun getByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmission>
+
+    fun findUnsubmittedByAssignmentIdAndSubmitStatus(assignmentId: AssignmentId): List<AssignmentSubmission>
 }
