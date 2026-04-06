@@ -10,6 +10,7 @@ import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.ANNOUNCEMENT_ASSIGNMENTS
 import org.jooq.dsl.tables.references.ASSIGNMENTS
 import org.springframework.stereotype.Repository
+import java.time.Instant
 import java.time.ZoneId
 
 @Repository
@@ -21,6 +22,11 @@ class AssignmentRepository(
         assignmentJpaRepository.save(AssignmentEntity.from(assignment)).toDomain()
 
     override fun findAll(): List<Assignment> = assignmentJpaRepository.findAll().map { it.toDomain() }
+
+    override fun findByDueAtBetween(
+        start: Instant,
+        end: Instant,
+    ): List<Assignment> = assignmentJpaRepository.findByDueAtBetweenAndDeletedAtIsNull(start, end).map { it.toDomain() }
 
     override fun findByAnnouncementId(announcementId: AnnouncementId): Assignment? =
         dsl

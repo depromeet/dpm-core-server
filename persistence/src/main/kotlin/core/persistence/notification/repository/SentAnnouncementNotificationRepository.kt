@@ -4,15 +4,35 @@ import core.domain.announcement.vo.AssignmentId
 import core.domain.notification.aggregate.SentAnnouncementNotification
 import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.outbound.SentAnnouncementNotificationPersistencePort
+import core.entity.notification.SentAnnouncementNotificationEntity
 import org.springframework.stereotype.Repository
 
 @Repository
-class SentAnnouncementNotificationRepository() : SentAnnouncementNotificationPersistencePort {
+class SentAnnouncementNotificationRepository(
+    val sentAnnouncementNotificationJpaRepository: SentAnnouncementNotificationJpaRepository,
+) : SentAnnouncementNotificationPersistencePort {
+    override fun findAll(): List<SentAnnouncementNotification> =
+        sentAnnouncementNotificationJpaRepository.findAll().map { it.toDomain() }
+
     override fun findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
         assignmentId: AssignmentId,
         notificationType: NotificationMessageType,
-    ): List<SentAnnouncementNotification> {
-        TODO("Not yet implemented")
+    ): List<SentAnnouncementNotification> =
+        sentAnnouncementNotificationJpaRepository
+            .findByAnnouncementIdAndNotificationMessageType(assignmentId.value, notificationType)
+            .map { it.toDomain() }
+
+    override fun save(sentAnnouncementNotification: SentAnnouncementNotification): SentAnnouncementNotification {
+        val entity = SentAnnouncementNotificationEntity.from(sentAnnouncementNotification)
+        val savedEntity = sentAnnouncementNotificationJpaRepository.save(entity)
+        return savedEntity.toDomain()
     }
-//    TODO : 1분 스케줄러 짜서 알림 발송 로직 구현
+
+    override fun updateSentAt(
+        sentAnnouncementNotification: SentAnnouncementNotification,
+    ): SentAnnouncementNotification {
+        val entity = SentAnnouncementNotificationEntity.from(sentAnnouncementNotification)
+        val updatedEntity = sentAnnouncementNotificationJpaRepository.save(entity)
+        return updatedEntity.toDomain()
+    }
 }

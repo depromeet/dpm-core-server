@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service
 class SentAnnouncementNotificationQueryService(
     val sentAnnouncementNotificationPersistencePort: SentAnnouncementNotificationPersistencePort,
 ) : SentAnnouncementNotificationQueryUseCase {
+    override fun findAll(): List<SentAnnouncementNotification> = sentAnnouncementNotificationPersistencePort.findAll()
+
     override fun getSentAnnouncementNotificationByAssignmentIdAndNotificationType(
         assignmentId: AssignmentId,
         notificationType: NotificationMessageType,
