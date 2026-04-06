@@ -1,6 +1,6 @@
 package core.domain.notification.enums
 
-enum class NotificationMessage(
+enum class NotificationMessageType(
     val title: String,
     val bodyTemplate: String,
     val description: String,

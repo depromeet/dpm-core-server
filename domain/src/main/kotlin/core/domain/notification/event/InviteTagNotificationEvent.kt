@@ -1,19 +1,19 @@
 package core.domain.notification.event
 
 import core.domain.member.aggregate.InviteTagSpec
-import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.enums.NotificationMessageType
 
 data class InviteTagNotificationEvent(
-    val notificationMessage: NotificationMessage,
+    val notificationMessageType: NotificationMessageType,
     val inviteTags: List<InviteTagSpec>,
 ) {
     companion object {
         fun of(
-            notificationMessage: NotificationMessage,
+            notificationMessageType: NotificationMessageType,
             inviteTags: List<InviteTagSpec>,
         ): InviteTagNotificationEvent =
             InviteTagNotificationEvent(
-                notificationMessage = notificationMessage,
+                notificationMessageType = notificationMessageType,
                 inviteTags = inviteTags,
             )
     }

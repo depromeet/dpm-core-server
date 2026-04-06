@@ -2,7 +2,7 @@ package core.entity.notification
 
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.notification.aggregate.SentAnnouncementNotification
-import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.vo.SentAnnouncementNotificationId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -34,7 +34,7 @@ class SentAnnouncementNotificationEntity(
     val announcementId: Long,
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_message", nullable = false, length = 30)
-    val notificationMessage: NotificationMessage,
+    val notificationMessageType: NotificationMessageType,
     @Column(name = "sent_at", nullable = false, updatable = false)
     val sentAt: LocalDateTime,
 ) {
@@ -43,7 +43,7 @@ class SentAnnouncementNotificationEntity(
             SentAnnouncementNotificationEntity(
                 id = sentAnnouncementNotification.sentAnnouncementNotificationId.value,
                 announcementId = sentAnnouncementNotification.announcementId.value,
-                notificationMessage = sentAnnouncementNotification.notificationMessage,
+                notificationMessageType = sentAnnouncementNotification.notificationMessageType,
                 sentAt = sentAnnouncementNotification.sentAt,
             )
     }
@@ -52,7 +52,7 @@ class SentAnnouncementNotificationEntity(
         SentAnnouncementNotification(
             sentAnnouncementNotificationId = SentAnnouncementNotificationId(id),
             announcementId = AnnouncementId(announcementId),
-            notificationMessage = notificationMessage,
+            notificationMessageType = notificationMessageType,
             sentAt = sentAt,
         )
 }

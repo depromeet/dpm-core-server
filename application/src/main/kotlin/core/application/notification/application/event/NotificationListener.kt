@@ -22,7 +22,7 @@ class NotificationListener(
     fun sendScheduledNotificationsByMemberId(notificationByMemberEvent: NotificationByMemberEvent) {
         notificationCommandService.sendPushNotification(
             memberId = notificationByMemberEvent.memberId,
-            messageType = notificationByMemberEvent.notificationMessage,
+            messageType = notificationByMemberEvent.notificationMessageType,
         )
     }
 
@@ -40,7 +40,7 @@ class NotificationListener(
 
         notificationCommandUseCase.sendPushNotificationToMembers(
             memberIds = inviteeMemberIds,
-            messageType = inviteTagNotificationEvent.notificationMessage,
+            messageType = inviteTagNotificationEvent.notificationMessageType,
         )
     }
 }

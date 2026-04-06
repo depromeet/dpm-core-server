@@ -6,6 +6,7 @@ import core.domain.announcement.event.AnnouncementCreatedEvent
 import core.domain.cohort.vo.AuthorityId
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
 import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.inbound.NotificationCommandUseCase
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -20,10 +21,10 @@ class AnnouncementNotificationListener(
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun createdEventHandle(announcementCreatedEvent: AnnouncementCreatedEvent) {
-        val messageType: NotificationMessage =
+        val messageType: NotificationMessageType =
             when (announcementCreatedEvent.announcementType) {
-                AnnouncementType.GENERAL -> NotificationMessage.ANNOUNCEMENT_NEW
-                AnnouncementType.ASSIGNMENT -> NotificationMessage.ASSIGNMENT_NEW
+                AnnouncementType.GENERAL -> NotificationMessageType.ANNOUNCEMENT_NEW
+                AnnouncementType.ASSIGNMENT -> NotificationMessageType.ASSIGNMENT_NEW
             }
 
         val memberIds =

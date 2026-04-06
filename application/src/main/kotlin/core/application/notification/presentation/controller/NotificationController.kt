@@ -9,7 +9,7 @@ import core.application.notification.presentation.request.RegisterPushTokenReque
 import core.application.notification.presentation.response.NotificationTypeResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
-import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.enums.NotificationMessageType
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -92,7 +92,7 @@ class NotificationController(
     @PreAuthorize("hasAuthority('read:member')")
     @GetMapping("/types")
     override fun getNotificationTypes(): CustomResponse<List<NotificationTypeResponse>> {
-        val types = NotificationMessage.entries.map { NotificationTypeResponse.from(it) }
+        val types = NotificationMessageType.entries.map { NotificationTypeResponse.from(it) }
         return CustomResponse.ok(types)
     }
 }

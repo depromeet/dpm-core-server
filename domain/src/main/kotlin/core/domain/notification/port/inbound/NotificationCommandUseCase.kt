@@ -2,7 +2,7 @@ package core.domain.notification.port.inbound
 
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.NotificationToken
-import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.enums.NotificationMessageType
 
 interface NotificationCommandUseCase {
     fun registerPushToken(
@@ -26,7 +26,7 @@ interface NotificationCommandUseCase {
 
     fun sendPushNotificationToMembers(
         memberIds: List<MemberId>,
-        messageType: NotificationMessage,
+        messageType: NotificationMessageType,
         variables: Map<String, Any> = emptyMap(),
         data: Map<String, Any>? = null,
     )
