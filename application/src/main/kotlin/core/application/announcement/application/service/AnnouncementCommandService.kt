@@ -27,6 +27,10 @@ import core.domain.announcement.vo.AnnouncementId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
+import core.domain.notification.aggregate.SentAnnouncementNotification
+import core.domain.notification.enums.NotificationMessageType
+import core.domain.notification.port.inbound.SentAnnouncementNotificationCommandUseCase
+import core.domain.notification.vo.SentAnnouncementNotificationId
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -45,6 +49,7 @@ class AnnouncementCommandService(
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
     val memberQueryService: MemberQueryService,
     val cohortQueryUseCase: CohortQueryUseCase,
+    val sentAnnouncementNotificationCommandUseCase: SentAnnouncementNotificationCommandUseCase,
     val eventPublisher: ApplicationEventPublisher,
 ) : AnnouncementCommandUseCase {
     override fun create(
@@ -95,6 +100,22 @@ class AnnouncementCommandService(
                     announcementAssignment = announcementAssignment,
                     assignment = savedAssignment,
                 )
+
+                // 과제 리마인드 알림 레코드 3개 생성 (24H, 12H, 1H)
+                listOf(
+                    NotificationMessageType.ASSIGNMENT_DUE_24H,
+                    NotificationMessageType.ASSIGNMENT_DUE_12H,
+                    NotificationMessageType.ASSIGNMENT_DUE_1H,
+                ).forEach { messageType ->
+                    sentAnnouncementNotificationCommandUseCase.save(
+                        SentAnnouncementNotification(
+                            sentAnnouncementNotificationId = SentAnnouncementNotificationId(0L),
+                            announcementId = core.domain.announcement.vo.AnnouncementId(savedAssignment.id!!.value),
+                            notificationMessageType = messageType,
+                            sentAt = null,
+                        ),
+                    )
+                }
             }
         }
 
