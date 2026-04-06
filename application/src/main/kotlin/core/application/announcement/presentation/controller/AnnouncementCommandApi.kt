@@ -77,4 +77,14 @@ interface AnnouncementCommandApi {
         updateAnnouncementRequest: UpdateAnnouncementRequest,
         memberId: MemberId,
     ): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "공지/과제 리마인드 알림 성공",
+    )
+    @Operation(
+        summary = "공지/과제 리마인드 알림 API",
+        description = "공지나 과제의 리마인드 알림을 발송하는 API입니다",
+    )
+    fun remindNotification(announcementId: AnnouncementId): CustomResponse<Void>
 }

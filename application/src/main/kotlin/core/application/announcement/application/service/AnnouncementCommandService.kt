@@ -13,6 +13,7 @@ import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.event.AnnouncementCreatedEvent
+import core.domain.announcement.event.AnnouncementRemindEvent
 import core.domain.announcement.port.inbound.AnnouncementAssignmentCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
@@ -223,6 +224,16 @@ class AnnouncementCommandService(
         assignmentSubmissionCommandUseCase.initializeForNewCohortMember(
             memberId = memberId,
             assignments = assignmentQueryUseCase.getAllAssignments(),
+        )
+    }
+
+    override fun remindNotification(announcementId: AnnouncementId) {
+        val targetAnnouncement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        eventPublisher.publishEvent(
+            AnnouncementRemindEvent.of(
+                announcement = targetAnnouncement,
+                cohortId = cohortQueryUseCase.getLatestCohortId(),
+            ),
         )
     }
 }
