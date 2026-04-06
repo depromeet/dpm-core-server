@@ -3,7 +3,7 @@ package core.application.notification.application.service
 import core.application.notification.application.exception.NotificationTokenNotFoundException
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.NotificationToken
-import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.inbound.NotificationCommandUseCase
 import core.domain.notification.port.outbound.NotificationPersistencePort
 import core.persistence.expo.ExpoPriority
@@ -56,7 +56,7 @@ class NotificationCommandService(
 
     fun sendPushNotification(
         memberId: MemberId,
-        messageType: NotificationMessage,
+        messageType: NotificationMessageType,
         variables: Map<String, Any> = emptyMap(),
         data: Map<String, Any>? = null,
     ) {
@@ -86,7 +86,7 @@ class NotificationCommandService(
     @Async
     override fun sendPushNotificationToMembers(
         memberIds: List<MemberId>,
-        messageType: NotificationMessage,
+        messageType: NotificationMessageType,
         variables: Map<String, Any>,
         data: Map<String, Any>?,
     ) {
