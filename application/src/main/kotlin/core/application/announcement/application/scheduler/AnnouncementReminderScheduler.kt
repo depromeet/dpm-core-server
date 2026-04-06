@@ -2,7 +2,9 @@ package core.application.announcement.application.scheduler
 
 import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Assignment
+import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
+import core.domain.announcement.vo.AnnouncementId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
@@ -20,6 +22,7 @@ import java.time.Instant
 @Component
 class AnnouncementReminderScheduler(
     val assignmentQueryUseCase: AssignmentQueryUseCase,
+    val announcementQueryUseCase: AnnouncementQueryUseCase,
     val sentAnnouncementNotificationQueryUseCase: SentAnnouncementNotificationQueryUseCase,
     val sentAnnouncementNotificationCommandUseCase: SentAnnouncementNotificationCommandUseCase,
     val memberQueryService: MemberQueryService,
@@ -27,11 +30,23 @@ class AnnouncementReminderScheduler(
     val notificationCommandUseCase: NotificationCommandUseCase,
 ) {
     @Scheduled(cron = "0 * * * * *")
-    fun sendAssignmentReminders() {
+    fun sendAssignmentDue24HReminder() {
         val now = Instant.now()
 
         checkAndSendReminders(now, Duration.ofHours(24), NotificationMessageType.ASSIGNMENT_DUE_24H)
+    }
+
+    @Scheduled(cron = "10 * * * * *")
+    fun sendAssignmentDue12HReminder() {
+        val now = Instant.now()
+
         checkAndSendReminders(now, Duration.ofHours(12), NotificationMessageType.ASSIGNMENT_DUE_12H)
+    }
+
+    @Scheduled(cron = "20 * * * * *")
+    fun sendAssignmentDue1HReminder() {
+        val now = Instant.now()
+
         checkAndSendReminders(now, Duration.ofHours(1), NotificationMessageType.ASSIGNMENT_DUE_1H)
     }
 
@@ -45,7 +60,6 @@ class AnnouncementReminderScheduler(
         val start = now.plus(duration).minus(bufferTime)
         val end = now.plus(duration).plus(bufferTime)
 
-        // due_at이 duration 범위 내에 있는 assignment 조회
         val targetAssignments: List<Assignment> = assignmentQueryUseCase.findByDueAtBetween(start, end)
 
         if (targetAssignments.isEmpty()) return
@@ -56,35 +70,30 @@ class AnnouncementReminderScheduler(
 
         // 각 assignment에 대해 발송 이력 확인 및 알림 발송
         targetAssignments.forEach { assignment ->
-            // 발송 이력 확인 (sentAt이 null인 레코드 찾기)
-            val sentNotifications =
+            val announcementId: AnnouncementId =
+                announcementQueryUseCase.findAnnouncementByAssignmentId(assignment.id!!)?.id ?: return@forEach
+
+            val sentNotifications: SentAnnouncementNotification =
                 sentAnnouncementNotificationQueryUseCase
-                    .getSentAnnouncementNotificationByAssignmentIdAndNotificationType(
-                        assignmentId = assignment.id!!,
+                    .findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
+                        announcementId = announcementId,
                         notificationType = messageType,
-                    )
+                    ) ?: return@forEach
+            if (sentNotifications.sentAt != null) return@forEach
 
-            // sentAt이 null인 알림 레코드 찾기 (아직 발송되지 않은 알림)
-            val unsentNotification = sentNotifications.firstOrNull { it.sentAt == null }
+            notificationCommandUseCase.sendPushNotificationToMembers(
+                memberIds = targetMemberIds,
+                messageType = messageType,
+            )
 
-            // 미발송 알림이 있는 경우에만 알림 발송 및 발송 시간 업데이트
-            if (unsentNotification != null) {
-                // 알림 발송
-                notificationCommandUseCase.sendPushNotificationToMembers(
-                    memberIds = targetMemberIds,
-                    messageType = messageType,
+            val updatedNotification =
+                SentAnnouncementNotification(
+                    sentAnnouncementNotificationId = sentNotifications.sentAnnouncementNotificationId,
+                    announcementId = sentNotifications.announcementId,
+                    notificationMessageType = sentNotifications.notificationMessageType,
+                    sentAt = Instant.now(),
                 )
-
-                // 발송 시간 업데이트
-                val updatedNotification =
-                    SentAnnouncementNotification(
-                        sentAnnouncementNotificationId = unsentNotification.sentAnnouncementNotificationId,
-                        announcementId = unsentNotification.announcementId,
-                        notificationMessageType = unsentNotification.notificationMessageType,
-                        sentAt = Instant.now(),
-                    )
-                sentAnnouncementNotificationCommandUseCase.updateSentAt(updatedNotification)
-            }
+            sentAnnouncementNotificationCommandUseCase.updateSentAt(updatedNotification)
         }
     }
 }
