@@ -1,22 +1,21 @@
 package core.application.security.oauth.handler
 
 import core.application.security.oauth.exception.OAuthExceptionCode
-import core.application.security.redirect.model.LoginIntent
-import core.application.security.redirect.model.RedirectContext
-import core.application.security.redirect.strategy.CompositeRedirectStrategy
-import core.domain.authorization.vo.RoleType
+import core.application.security.properties.SecurityProperties
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import org.springframework.stereotype.Component
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Component
 class CustomAuthenticationFailureHandler(
-    private val strategy: CompositeRedirectStrategy,
+    private val securityProperties: SecurityProperties,
 ) : AuthenticationFailureHandler {
     /**
-     * 소셜 로그인 인증 실패 시 호출되는 메서드로, 사용자를 오류 페이지로 리다이렉트 합니다.
+     * 소셜 로그인 인증 실패 시 호출되며, 프론트엔드가 오류를 해석할 수 있도록 단일 리다이렉트 URL로 이동시킵니다.
      *
      * @author LeeHanEum
      * @since 2025.07.12
@@ -26,15 +25,13 @@ class CustomAuthenticationFailureHandler(
         response: HttpServletResponse?,
         exception: AuthenticationException?,
     ) {
-        val context =
-            RedirectContext(
-                role = RoleType.Guest,
-                intent = LoginIntent.DIRECT,
-                error = OAuthExceptionCode.AUTHENTICATION_FAILED.name,
-            )
-
         response?.sendRedirect(
-            strategy.resolve(context),
+            buildErrorRedirectUrl(OAuthExceptionCode.AUTHENTICATION_FAILED.name),
         )
     }
+
+    private fun buildErrorRedirectUrl(error: String): String =
+        securityProperties.redirect.redirectUrl +
+            "?error=true&exception=" +
+            URLEncoder.encode(error, StandardCharsets.UTF_8)
 }
