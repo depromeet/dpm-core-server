@@ -19,7 +19,7 @@ class SentAnnouncementNotificationRepository(
         notificationType: NotificationMessageType,
     ): SentAnnouncementNotification? =
         sentAnnouncementNotificationJpaRepository
-            .findByAnnouncementIdAndNotificationMessageType(announcementId.value, notificationType)
+            .findByAnnouncementIdAndNotificationMessageType(announcementId.value, notificationType.name)
             ?.toDomain()
 
     override fun save(sentAnnouncementNotification: SentAnnouncementNotification): SentAnnouncementNotification {
