@@ -22,4 +22,6 @@ interface AnnouncementReadPersistencePort {
     fun findAllByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead>
 
     fun countByAnnouncementIdAndReadAtIsNotNull(announcementId: AnnouncementId): Int
+
+    fun findByAnnouncementIdAndReadAtIsNull(announcementId: AnnouncementId): List<AnnouncementRead>
 }
