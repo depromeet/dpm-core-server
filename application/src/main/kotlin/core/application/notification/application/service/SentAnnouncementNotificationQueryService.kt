@@ -1,6 +1,6 @@
 package core.application.notification.application.service
 
-import core.domain.announcement.vo.AssignmentId
+import core.domain.announcement.vo.AnnouncementId
 import core.domain.notification.aggregate.SentAnnouncementNotification
 import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.inbound.SentAnnouncementNotificationQueryUseCase
@@ -13,12 +13,12 @@ class SentAnnouncementNotificationQueryService(
 ) : SentAnnouncementNotificationQueryUseCase {
     override fun findAll(): List<SentAnnouncementNotification> = sentAnnouncementNotificationPersistencePort.findAll()
 
-    override fun getSentAnnouncementNotificationByAssignmentIdAndNotificationType(
-        assignmentId: AssignmentId,
+    override fun findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
+        announcementId: AnnouncementId,
         notificationType: NotificationMessageType,
-    ): List<SentAnnouncementNotification> =
+    ): SentAnnouncementNotification? =
         sentAnnouncementNotificationPersistencePort.findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
-            assignmentId = assignmentId,
+            announcementId = announcementId,
             notificationType,
         )
 }

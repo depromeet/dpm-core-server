@@ -25,6 +25,7 @@ import core.domain.announcement.port.inbound.AssignmentSubmissionQueryUseCase
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.announcement.vo.AssignmentId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -52,6 +53,9 @@ class AnnouncementQueryService(
 
     override fun getAnnouncementById(announcementId: AnnouncementId): Announcement =
         announcementPersistencePort.findAnnouncementById(announcementId) ?: throw AnnouncementNotFoundException()
+
+    override fun findAnnouncementByAssignmentId(assignmentId: AssignmentId): Announcement? =
+        announcementPersistencePort.findByAssignmentId(assignmentId)
 
     override fun getAll(): List<Announcement> = announcementPersistencePort.findAll()
 
