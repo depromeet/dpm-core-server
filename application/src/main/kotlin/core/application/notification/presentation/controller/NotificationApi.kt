@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
-@Tag(name = "Notification", description = "FCM 알림 API")
+@Tag(name = "Notification", description = "알림 API")
 interface NotificationApi {
     @ApiResponse(
         responseCode = "200",

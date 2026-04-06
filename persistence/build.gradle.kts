@@ -13,7 +13,6 @@ dependencies {
     implementation(libs.spring.boot.starter.webflux)
 
     implementation(libs.jackson.module.kotlin)
-    implementation(libs.firebase.admin)
 
     runtimeOnly(libs.mysql.connector)
 
