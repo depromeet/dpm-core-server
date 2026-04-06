@@ -12,4 +12,9 @@ interface AssignmentSubmissionJpaRepository : JpaRepository<AssignmentSubmission
     ): AssignmentSubmissionEntity?
 
     fun findByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmissionEntity>
+
+    fun findUnsubmittedByAssignmentIdAndSubmitStatus(
+        assignmentId: AssignmentId,
+        submitStatus: Int = 0,
+    ): List<AssignmentSubmissionEntity>
 }
