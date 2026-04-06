@@ -12,4 +12,9 @@ class NotificationQueryService(
 ) : NotificationQueryUseCase {
     override fun getPushTokensByMemberId(memberId: MemberId): List<NotificationToken> =
         notificationPersistencePort.findByMemberId(memberId)
+
+    override fun findPushTokensByMemberIdAndToken(
+        memberId: MemberId,
+        token: String,
+    ): NotificationToken? = notificationPersistencePort.findByMemberIdAndToken(memberId, token)
 }
