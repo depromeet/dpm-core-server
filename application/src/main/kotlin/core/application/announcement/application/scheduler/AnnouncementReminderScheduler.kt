@@ -56,7 +56,7 @@ class AnnouncementReminderScheduler(
         duration: Duration,
         messageType: NotificationMessageType,
     ) {
-        val bufferTime: Duration = Duration.ofMinutes(5)
+        val bufferTime: Duration = Duration.ofMinutes(10)
         val start = now.plus(duration).minus(bufferTime)
         val end = now.plus(duration).plus(bufferTime)
 

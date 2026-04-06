@@ -6,8 +6,6 @@ import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.vo.SentAnnouncementNotificationId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -32,10 +30,9 @@ class SentAnnouncementNotificationEntity(
     val id: Long = 0L,
     @Column(name = "announcement_id", nullable = false)
     val announcementId: Long,
-    @Enumerated(EnumType.STRING)
     @Column(name = "notification_message", nullable = false, length = 30)
-    val notificationMessageType: NotificationMessageType,
-    @Column(name = "sent_at", updatable = false)
+    val notificationMessageType: String,
+    @Column(name = "sent_at")
     val sentAt: Instant? = null,
 ) {
     companion object {
@@ -43,7 +40,7 @@ class SentAnnouncementNotificationEntity(
             SentAnnouncementNotificationEntity(
                 id = sentAnnouncementNotification.sentAnnouncementNotificationId.value,
                 announcementId = sentAnnouncementNotification.announcementId.value,
-                notificationMessageType = sentAnnouncementNotification.notificationMessageType,
+                notificationMessageType = sentAnnouncementNotification.notificationMessageType.name,
                 sentAt = sentAnnouncementNotification.sentAt,
             )
     }
@@ -52,7 +49,7 @@ class SentAnnouncementNotificationEntity(
         SentAnnouncementNotification(
             sentAnnouncementNotificationId = SentAnnouncementNotificationId(id),
             announcementId = AnnouncementId(announcementId),
-            notificationMessageType = notificationMessageType,
+            notificationMessageType = NotificationMessageType.valueOf(notificationMessageType),
             sentAt = sentAt,
         )
 }
