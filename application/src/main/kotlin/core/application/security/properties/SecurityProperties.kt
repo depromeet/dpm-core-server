@@ -16,9 +16,6 @@ data class SecurityProperties(
     )
 
     data class Redirect(
-        val swaggerUrl: String,
-        val coreRedirectUrl: String,
-        val adminRedirectUrl: String,
-        val restrictedRedirectUrl: String,
+        val redirectUrl: String,
     )
 }

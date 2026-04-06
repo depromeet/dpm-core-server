@@ -24,10 +24,7 @@ spring:
     logout-url: ${LOGOUT_URL:/logout}
 
     redirect:
-      swagger-url: ${SWAGGER_URL:http://localhost:8080/swagger-ui/index.html}
-      core-redirect-url: ${REDIRECT_URL}
-      admin-redirect-url: ${ADMIN_REDIRECT_URL}
-      restricted-redirect-url: ${RESTRICTED_REDIRECT_URL}
+      redirect-url: ${REDIRECT_URL}
 
     cookie:
       domain: ${COOKIE_DOMAIN:localhost}
