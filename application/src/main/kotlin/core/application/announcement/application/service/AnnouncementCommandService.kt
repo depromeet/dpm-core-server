@@ -64,9 +64,8 @@ class AnnouncementCommandService(
         scheduledAt: Instant?,
         shouldSendNotification: Boolean,
     ) {
-//        TODO : 스케쥴, 알림 구현
-//            scheduledAt: Instant?,
-//            shouldSendNotification: Boolean,
+//        TODO : 공지 예약 구현
+//            scheduledAt: Instant?
 
 //        announcement 작성
         val announcement =
@@ -110,7 +109,7 @@ class AnnouncementCommandService(
                     sentAnnouncementNotificationCommandUseCase.save(
                         SentAnnouncementNotification(
                             sentAnnouncementNotificationId = SentAnnouncementNotificationId(0L),
-                            announcementId = core.domain.announcement.vo.AnnouncementId(savedAssignment.id!!.value),
+                            announcementId = savedAnnouncement.id!!,
                             notificationMessageType = messageType,
                             sentAt = null,
                         ),

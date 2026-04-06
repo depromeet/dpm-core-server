@@ -8,5 +8,5 @@ interface SentAnnouncementNotificationJpaRepository : JpaRepository<SentAnnounce
     fun findByAnnouncementIdAndNotificationMessageType(
         announcementId: Long,
         notificationMessageType: NotificationMessageType,
-    ): List<SentAnnouncementNotificationEntity>
+    ): SentAnnouncementNotificationEntity?
 }
