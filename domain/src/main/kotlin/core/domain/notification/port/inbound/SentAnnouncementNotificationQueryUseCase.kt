@@ -5,6 +5,8 @@ import core.domain.notification.aggregate.SentAnnouncementNotification
 import core.domain.notification.enums.NotificationMessageType
 
 interface SentAnnouncementNotificationQueryUseCase {
+    fun findAll(): List<SentAnnouncementNotification>
+
     fun getSentAnnouncementNotificationByAssignmentIdAndNotificationType(
         assignmentId: AssignmentId,
         notificationType: NotificationMessageType,

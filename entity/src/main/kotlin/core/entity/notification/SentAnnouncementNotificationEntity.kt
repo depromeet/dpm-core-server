@@ -13,7 +13,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Entity
 @Table(
@@ -35,8 +35,8 @@ class SentAnnouncementNotificationEntity(
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_message", nullable = false, length = 30)
     val notificationMessageType: NotificationMessageType,
-    @Column(name = "sent_at", nullable = false, updatable = false)
-    val sentAt: LocalDateTime,
+    @Column(name = "sent_at", updatable = false)
+    val sentAt: Instant? = null,
 ) {
     companion object {
         fun from(sentAnnouncementNotification: SentAnnouncementNotification): SentAnnouncementNotificationEntity =
