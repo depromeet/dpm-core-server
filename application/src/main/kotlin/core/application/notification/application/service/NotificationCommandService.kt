@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class NotificationCommandService(
     private val expoPushClient: ExpoPushClient,
-    private val notificationRepository: NotificationPersistencePort,
+    private val notificationPersistencePort: NotificationPersistencePort,
 ) : NotificationCommandUseCase {
     companion object {
         private val logger = LoggerFactory.getLogger(NotificationCommandService::class.java)
@@ -28,7 +28,12 @@ class NotificationCommandService(
         token: String,
     ): NotificationToken {
         val notificationToken = NotificationToken.create(memberId = memberId, token = token)
-        val savedToken = notificationRepository.save(notificationToken)
+        val existingToken =
+            notificationPersistencePort.findByMemberIdAndToken(memberId, token)
+        if (existingToken != null) {
+            return existingToken
+        }
+        val savedToken = notificationPersistencePort.save(notificationToken)
 
         return savedToken
     }
@@ -39,16 +44,16 @@ class NotificationCommandService(
         token: String,
     ) {
         val existingToken =
-            notificationRepository.findByMemberIdAndToken(memberId, token)
+            notificationPersistencePort.findByMemberIdAndToken(memberId, token)
                 ?: throw NotificationTokenNotFoundException()
-        notificationRepository.deleteByToken(token)
+        notificationPersistencePort.deleteByToken(token)
     }
 
     @Transactional
     override fun deleteAllPushTokens(memberId: MemberId) {
-        val tokens = notificationRepository.findByMemberId(memberId)
+        val tokens = notificationPersistencePort.findByMemberId(memberId)
         if (tokens.isNotEmpty()) {
-            notificationRepository.deleteByMemberId(memberId)
+            notificationPersistencePort.deleteByMemberId(memberId)
         } else {
             throw NotificationTokenNotFoundException()
         }
@@ -102,7 +107,7 @@ class NotificationCommandService(
         data: Map<String, Any>?,
     ) {
         val tokens: List<NotificationToken> =
-            notificationRepository.findByMemberId(memberId)
+            notificationPersistencePort.findByMemberId(memberId)
 
         tokens.forEach { pushToken ->
             expoPushClient.send(
@@ -129,7 +134,7 @@ class NotificationCommandService(
             return
         }
 
-        val allTokens = notificationRepository.findByMemberIdIn(memberIds).map { it.token }
+        val allTokens = notificationPersistencePort.findByMemberIdIn(memberIds).map { it.token }
 
         if (allTokens.isEmpty()) {
             logger.error("조회된 토큰이 없습니다.")
