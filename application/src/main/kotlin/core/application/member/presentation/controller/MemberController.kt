@@ -7,9 +7,11 @@ import core.application.member.application.service.MemberQueryService
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.member.application.service.auth.EmailPasswordAuthService
+import core.application.member.application.service.auth.OAuthAccountLinkService
 import core.application.member.presentation.controller.MemberLoginController.AppleLoginRequest
 import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.OAuthAccountLinkRequest
 import core.application.member.presentation.request.SetPasswordRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
@@ -25,6 +27,7 @@ import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -41,6 +44,7 @@ class MemberController(
     private val memberCommandService: MemberCommandService,
     private val appleAuthService: AppleAuthService,
     private val emailPasswordAuthService: EmailPasswordAuthService,
+    private val oAuthAccountLinkService: OAuthAccountLinkService,
     private val securityProperties: SecurityProperties,
 ) : MemberApi {
     //    @PreAuthorize("hasAuthority('read:member')")
@@ -189,6 +193,40 @@ class MemberController(
             memberId = memberId,
             oldPassword = request.oldPassword,
             newPassword = request.newPassword,
+        )
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/me/login-methods/apple/link/complete")
+    @Operation(
+        summary = "Apple login method link complete",
+        description = "현재 로그인한 멤버에 Apple OAuth 로그인 수단을 연동합니다.",
+    )
+    fun linkAppleLoginMethod(
+        authentication: Authentication,
+        @Valid @RequestBody request: OAuthAccountLinkRequest,
+    ): CustomResponse<Void> {
+        oAuthAccountLinkService.linkApple(
+            memberId = MemberId(authentication.name.toLong()),
+            authorizationCode = request.authorizationCode,
+        )
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/me/login-methods/kakao/link/complete")
+    @Operation(
+        summary = "Kakao login method link complete",
+        description = "현재 로그인한 멤버에 Kakao OAuth 로그인 수단을 연동합니다.",
+    )
+    fun linkKakaoLoginMethod(
+        authentication: Authentication,
+        @Valid @RequestBody request: OAuthAccountLinkRequest,
+    ): CustomResponse<Void> {
+        oAuthAccountLinkService.linkKakao(
+            memberId = MemberId(authentication.name.toLong()),
+            authorizationCode = request.authorizationCode,
         )
         return CustomResponse.ok()
     }

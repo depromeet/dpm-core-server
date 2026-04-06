@@ -41,6 +41,25 @@ class MemberRepository(
     override fun findAllBySignupEmail(email: String): List<Member> =
         memberJpaRepository.findAllBySignupEmail(email).map { it.toDomain() }
 
+    override fun findAllByEmailOrSignupEmail(email: String): List<Member> =
+        dsl
+            .selectFrom(MEMBERS)
+            .where(MEMBERS.EMAIL.eq(email).or(MEMBERS.SIGNUP_EMAIL.eq(email)))
+            .and(MEMBERS.DELETED_AT.isNull)
+            .fetch { record ->
+                Member(
+                    id = MemberId(requireNotNull(record.memberId)),
+                    name = requireNotNull(record.name),
+                    email = record.email,
+                    signupEmail = requireNotNull(record.signupEmail),
+                    part = record.part?.let(MemberPart::valueOf),
+                    status = MemberStatus.valueOf(requireNotNull(record.status)),
+                    createdAt = record.createdAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                    updatedAt = record.updatedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                    deletedAt = record.deletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                )
+            }
+
     override fun save(member: Member): Member =
         if (member.id == null) {
             val now = LocalDateTime.now()
@@ -318,6 +337,31 @@ class MemberRepository(
             .set(MEMBERS.EMAIL, email)
             .set(MEMBERS.SIGNUP_EMAIL, signupEmail)
             .set(MEMBERS.UPDATED_AT, LocalDateTime.now())
+            .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .execute()
+    }
+
+    override fun updateOAuthIdentity(
+        memberId: MemberId,
+        name: String?,
+        email: String,
+        signupEmail: String,
+    ) {
+        val update =
+            dsl
+                .update(MEMBERS)
+                .set(MEMBERS.EMAIL, email)
+                .set(MEMBERS.SIGNUP_EMAIL, signupEmail)
+                .set(MEMBERS.UPDATED_AT, LocalDateTime.now())
+
+        val updateWithName =
+            if (name.isNullOrBlank()) {
+                update
+            } else {
+                update.set(MEMBERS.NAME, name)
+            }
+
+        updateWithName
             .where(MEMBERS.MEMBER_ID.eq(memberId.value))
             .execute()
     }

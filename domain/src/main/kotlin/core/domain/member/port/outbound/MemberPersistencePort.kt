@@ -14,6 +14,8 @@ interface MemberPersistencePort {
 
     fun findAllBySignupEmail(email: String): List<Member>
 
+    fun findAllByEmailOrSignupEmail(email: String): List<Member>
+
     fun findById(memberId: MemberId): Member?
 
     fun findAllByIds(ids: List<MemberId>): List<Member>
@@ -53,6 +55,13 @@ interface MemberPersistencePort {
 
     fun anonymizeIdentity(
         memberId: MemberId,
+        email: String,
+        signupEmail: String,
+    )
+
+    fun updateOAuthIdentity(
+        memberId: MemberId,
+        name: String?,
         email: String,
         signupEmail: String,
     )

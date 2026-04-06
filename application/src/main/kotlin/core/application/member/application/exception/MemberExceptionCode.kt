@@ -21,6 +21,11 @@ enum class MemberExceptionCode(
     INVALID_EMAIL_PASSWORD(HttpStatus.UNAUTHORIZED, "MEMBER-401-01", "이메일 또는 비밀번호가 올바르지 않습니다"),
     MEMBER_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MEMBER-403-01", "로그인이 제한된 회원입니다"),
     MEMBER_DELETED(HttpStatus.UNAUTHORIZED, "MEMBER-401-02", "탈퇴한 회원입니다"),
+    MEMBER_LOGIN_METHOD_ALREADY_LINKED(
+        HttpStatus.CONFLICT,
+        "MEMBER-409-01",
+        "이미 다른 멤버에 연결된 로그인 수단입니다",
+    ),
     ;
 
     override fun getStatus(): HttpStatus = status

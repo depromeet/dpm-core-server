@@ -22,5 +22,7 @@ interface MemberOAuthPersistencePort {
         externalId: String,
     ): MemberOAuth?
 
+    fun findAllByMemberId(memberId: MemberId): List<MemberOAuth>
+
     fun deleteAllByMemberId(memberId: MemberId)
 }

@@ -45,6 +45,9 @@ class MemberOAuthRepository(
         return memberOAuthJpaRepository.findByProviderAndExternalId(provider.name, externalId)?.toDomain()
     }
 
+    override fun findAllByMemberId(memberId: MemberId): List<MemberOAuth> =
+        memberOAuthJpaRepository.findAllByMemberId(memberId.value).map { it.toDomain() }
+
     override fun deleteAllByMemberId(memberId: MemberId) {
         memberOAuthJpaRepository.deleteAllByMemberId(memberId.value)
     }

@@ -47,7 +47,7 @@ class AppleAuthService(
 
         val member =
             if (memberOAuth == null) {
-                val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
+                val existingMembers = memberPersistencePort.findAllByEmailOrSignupEmail(email)
                 val existingMember = selectLoginCandidate(existingMembers)
                 val resolvedFullName =
                     fullName?.trim()?.takeIf { it.isNotBlank() }
@@ -144,7 +144,7 @@ class AppleAuthService(
         name: String,
     ): Member {
         val targetMember =
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
+            selectLoginCandidate(memberPersistencePort.findAllByEmailOrSignupEmail(email))
                 ?: createOrFindMemberBySignupEmail(
                     email = email,
                     name = name,
@@ -171,7 +171,7 @@ class AppleAuthService(
                 ),
             )
         } catch (_: DataIntegrityViolationException) {
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
+            selectLoginCandidate(memberPersistencePort.findAllByEmailOrSignupEmail(email))
                 ?: throw IllegalStateException("Member creation conflicted but no existing member found")
         }
 

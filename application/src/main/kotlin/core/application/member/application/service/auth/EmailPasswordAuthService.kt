@@ -55,7 +55,7 @@ class EmailPasswordAuthService(
         val member =
             if (credential == null) {
                 // 신규 회원 가입 (Signup) 또는 기존 회원 연동
-                val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
+                val existingMembers = memberPersistencePort.findAllByEmailOrSignupEmail(email)
                 if (existingMembers.isEmpty()) {
                     return signupNewMember(email, password)
                 }
@@ -84,7 +84,7 @@ class EmailPasswordAuthService(
                 if (existingMember != null) {
                     existingMember
                 } else {
-                    val membersByEmail = memberPersistencePort.findAllBySignupEmail(email)
+                    val membersByEmail = memberPersistencePort.findAllByEmailOrSignupEmail(email)
                     if (membersByEmail.isEmpty()) {
                         throw MemberNotFoundException()
                     }

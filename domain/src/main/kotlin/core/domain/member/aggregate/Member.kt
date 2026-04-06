@@ -22,7 +22,7 @@ import java.time.Instant
  */
 class Member(
     val id: MemberId? = null,
-    val name: String,
+    name: String,
     email: String? = null,
     val signupEmail: String,
     part: MemberPart? = null,
@@ -36,6 +36,9 @@ class Member(
     val memberTeams: List<MemberTeam> = emptyList(),
     val memberOAuths: List<MemberOAuth> = emptyList(),
 ) {
+    var name: String = name
+        private set
+
     var email: String? = email
         private set
 
@@ -76,6 +79,11 @@ class Member(
 
     fun updateEmail(newEmail: String) {
         email = newEmail
+        updatedAt = Instant.now()
+    }
+
+    fun updateName(newName: String) {
+        name = newName
         updatedAt = Instant.now()
     }
 

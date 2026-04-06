@@ -93,7 +93,7 @@ class MemberLoginService(
     }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
-        val existingMembers = memberPersistencePort.findAllBySignupEmail(authAttributes.getEmail())
+        val existingMembers = memberPersistencePort.findAllByEmailOrSignupEmail(authAttributes.getEmail())
         val member =
             if (existingMembers.isNotEmpty()) {
                 selectLoginCandidate(existingMembers)
@@ -118,7 +118,7 @@ class MemberLoginService(
     }
 
     private fun recoverOrCreateMemberForOrphanedOAuth(authAttributes: OAuthAttributes): Member {
-        val existingMembers = memberPersistencePort.findAllBySignupEmail(authAttributes.getEmail())
+        val existingMembers = memberPersistencePort.findAllByEmailOrSignupEmail(authAttributes.getEmail())
         return if (existingMembers.isNotEmpty()) {
             selectLoginCandidate(existingMembers)
         } else {
@@ -141,6 +141,6 @@ class MemberLoginService(
                 ),
             )
         } catch (_: DataIntegrityViolationException) {
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
+            selectLoginCandidate(memberPersistencePort.findAllByEmailOrSignupEmail(email))
         }
 }
