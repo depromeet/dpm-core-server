@@ -55,6 +55,20 @@ class AnnouncementQueryService(
 
     override fun getAll(): List<Announcement> = announcementPersistencePort.findAll()
 
+    override fun findUnreadByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead> =
+        announcementReadQueryUseCase.findUnreadByAnnouncementId(
+            announcementId,
+        )
+
+    override fun findUnsubmittedByAssignmentIdAndSubmitStatus(
+        announcementId: AnnouncementId,
+    ): List<AssignmentSubmission> {
+        val assignment: Assignment = assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
+        return assignmentSubmissionQueryUseCase.findUnsubmittedByAssignmentIdAndSubmitStatus(
+            assignment.id ?: throw AnnouncementNotFoundException(),
+        )
+    }
+
     @Transactional(readOnly = false)
     fun getAnnouncementDetail(
         announcementId: AnnouncementId,
