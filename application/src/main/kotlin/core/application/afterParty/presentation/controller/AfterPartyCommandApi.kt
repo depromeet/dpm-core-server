@@ -70,7 +70,7 @@ interface AfterPartyCommandApi {
     )
     @Operation(
         summary = "회식 참여 여부 미제출자 알림 발송 API",
-        description = "회식 참여 여부 미제출자에 대해서 알림 발송을 발송합니다.",
+        description = "회식 참여 여부 미제출자에 대해서 알림을 발송합니다.",
     )
     fun sendNotificationUnMarkedRsvp(
         afterPartyId: AfterPartyId,

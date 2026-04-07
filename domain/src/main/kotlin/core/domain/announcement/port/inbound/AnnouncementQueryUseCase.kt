@@ -15,5 +15,5 @@ interface AnnouncementQueryUseCase {
 
     fun findUnreadByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead>
 
-    fun findUnsubmittedByAssignmentIdAndSubmitStatus(announcementId: AnnouncementId): List<AssignmentSubmission>
+    fun findUnsubmittedByAnnouncementIdAndSubmitStatus(announcementId: AnnouncementId): List<AssignmentSubmission>
 }

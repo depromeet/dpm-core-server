@@ -60,7 +60,7 @@ class AnnouncementNotificationListener(
                         .map { it.memberId }
                 AnnouncementType.ASSIGNMENT ->
                     announcementQueryService
-                        .findUnsubmittedByAssignmentIdAndSubmitStatus(announcementId)
+                        .findUnsubmittedByAnnouncementIdAndSubmitStatus(announcementId)
                         .map { it.memberId }
             }
 

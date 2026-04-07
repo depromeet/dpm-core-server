@@ -64,12 +64,12 @@ class AnnouncementQueryService(
             announcementId,
         )
 
-    override fun findUnsubmittedByAssignmentIdAndSubmitStatus(
+    override fun findUnsubmittedByAnnouncementIdAndSubmitStatus(
         announcementId: AnnouncementId,
     ): List<AssignmentSubmission> {
         val assignment: Assignment = assignmentQueryUseCase.getAssignmentByAnnouncementId(announcementId)
         return assignmentSubmissionQueryUseCase.findUnsubmittedByAssignmentIdAndSubmitStatus(
-            assignment.id ?: throw AnnouncementNotFoundException(),
+            assignment.id ?: throw AssignmentNotFoundException(),
         )
     }
 

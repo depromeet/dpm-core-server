@@ -13,11 +13,11 @@ class SentAnnouncementNotificationQueryService(
 ) : SentAnnouncementNotificationQueryUseCase {
     override fun findAll(): List<SentAnnouncementNotification> = sentAnnouncementNotificationPersistencePort.findAll()
 
-    override fun findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
+    override fun findSentAnnouncementNotificationByAnnouncementIdAndNotificationType(
         announcementId: AnnouncementId,
         notificationType: NotificationMessageType,
     ): SentAnnouncementNotification? =
-        sentAnnouncementNotificationPersistencePort.findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
+        sentAnnouncementNotificationPersistencePort.findSentAnnouncementNotificationByAnnouncementIdAndNotificationType(
             announcementId = announcementId,
             notificationType,
         )
