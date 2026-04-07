@@ -1,12 +1,12 @@
 package core.application.announcement.application.scheduler
 
-import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
 import core.domain.announcement.port.inbound.AssignmentQueryUseCase
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.SentAnnouncementNotification
 import core.domain.notification.enums.NotificationMessageType
@@ -25,7 +25,7 @@ class AnnouncementReminderScheduler(
     val announcementQueryUseCase: AnnouncementQueryUseCase,
     val sentAnnouncementNotificationQueryUseCase: SentAnnouncementNotificationQueryUseCase,
     val sentAnnouncementNotificationCommandUseCase: SentAnnouncementNotificationCommandUseCase,
-    val memberQueryService: MemberQueryService,
+    val memberQueryUseCase: MemberQueryUseCase,
     val cohortQueryUseCase: CohortQueryUseCase,
     val notificationCommandUseCase: NotificationCommandUseCase,
 ) {
@@ -66,7 +66,7 @@ class AnnouncementReminderScheduler(
 
         // TODO : 미제출 디퍼로 변경
         val currentCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
-        val targetMemberIds: List<MemberId> = memberQueryService.getMembersByCohortId(currentCohortId)
+        val targetMemberIds: List<MemberId> = memberQueryUseCase.getMemberIdsByCohortId(currentCohortId)
 
         // 각 assignment에 대해 발송 이력 확인 및 알림 발송
         targetAssignments.forEach { assignment ->
