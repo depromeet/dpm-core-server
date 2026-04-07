@@ -47,27 +47,26 @@ class SessionReminderScheduler(
             return
         }
 
-        // 각 세션에 대해 발송 이력 확인 및 알림 발송
+        val sessionIds = sessionsToNotify.mapNotNull { it.id }
+        val sentNotificationsMap =
+            sentSessionNotificationQueryUseCase
+                .findSentSessionNotificationsBySessionIdsAndNotificationType(
+                    sessionIds = sessionIds,
+                    notificationType = NotificationMessageType.ATTENDANCE_STARTED,
+                ).associateBy { it.sessionId }
+
         sessionsToNotify.forEach { session ->
             val sessionId = session.id ?: return@forEach
 
-            val sentNotification: SentSessionNotification? =
-                sentSessionNotificationQueryUseCase
-                    .findSentSessionNotificationBySessionIdAndNotificationType(
-                        sessionId = sessionId,
-                        notificationType = NotificationMessageType.ATTENDANCE_STARTED,
-                    )
+            val sentNotification: SentSessionNotification? = sentNotificationsMap[sessionId]
 
-            // 이미 발송된 경우 스킵
             if (sentNotification?.sentAt != null) return@forEach
 
-            // 알림 발송
             notificationCommandUseCase.sendPushNotificationToMembers(
                 memberIds = currentCohortMemberIds,
                 messageType = NotificationMessageType.ATTENDANCE_STARTED,
             )
 
-            // 발송 이력 업데이트 또는 생성
             if (sentNotification != null) {
                 val updatedNotification =
                     SentSessionNotification(
@@ -111,27 +110,26 @@ class SessionReminderScheduler(
             return
         }
 
-        // 각 세션에 대해 발송 이력 확인 및 알림 발송
+        val sessionIds = sessionsToNotify.mapNotNull { it.id }
+        val sentNotificationsMap =
+            sentSessionNotificationQueryUseCase
+                .findSentSessionNotificationsBySessionIdsAndNotificationType(
+                    sessionIds = sessionIds,
+                    notificationType = NotificationMessageType.SESSION_DAY_BEFORE,
+                ).associateBy { it.sessionId }
+
         sessionsToNotify.forEach { session ->
             val sessionId = session.id ?: return@forEach
 
-            val sentNotification: SentSessionNotification? =
-                sentSessionNotificationQueryUseCase
-                    .findSentSessionNotificationBySessionIdAndNotificationType(
-                        sessionId = sessionId,
-                        notificationType = NotificationMessageType.SESSION_DAY_BEFORE,
-                    )
+            val sentNotification: SentSessionNotification? = sentNotificationsMap[sessionId]
 
-            // 이미 발송된 경우 스킵
             if (sentNotification?.sentAt != null) return@forEach
 
-            // 알림 발송
             notificationCommandUseCase.sendPushNotificationToMembers(
                 memberIds = currentCohortMemberIds,
                 messageType = NotificationMessageType.SESSION_DAY_BEFORE,
             )
 
-            // 발송 이력 업데이트 또는 생성
             if (sentNotification != null) {
                 val updatedNotification =
                     SentSessionNotification(

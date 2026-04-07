@@ -9,4 +9,9 @@ interface SentSessionNotificationQueryUseCase {
         sessionId: SessionId,
         notificationType: NotificationMessageType,
     ): SentSessionNotification?
+
+    fun findSentSessionNotificationsBySessionIdsAndNotificationType(
+        sessionIds: List<SessionId>,
+        notificationType: NotificationMessageType,
+    ): List<SentSessionNotification>
 }
