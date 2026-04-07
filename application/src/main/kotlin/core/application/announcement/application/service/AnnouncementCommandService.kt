@@ -100,7 +100,6 @@ class AnnouncementCommandService(
                     assignment = savedAssignment,
                 )
 
-                // 과제 리마인드 알림 레코드 3개 생성 (24H, 12H, 1H)
                 listOf(
                     NotificationMessageType.ASSIGNMENT_DUE_24H,
                     NotificationMessageType.ASSIGNMENT_DUE_12H,
