@@ -64,7 +64,6 @@ class AnnouncementReminderScheduler(
 
         if (targetAssignments.isEmpty()) return
 
-        // TODO : 미제출 디퍼로 변경
         val currentCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
         val targetMemberIds: List<MemberId> = memberQueryUseCase.getMemberIdsByCohortId(currentCohortId)
 
