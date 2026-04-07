@@ -14,7 +14,7 @@ class SentAnnouncementNotificationRepository(
     override fun findAll(): List<SentAnnouncementNotification> =
         sentAnnouncementNotificationJpaRepository.findAll().map { it.toDomain() }
 
-    override fun findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
+    override fun findSentAnnouncementNotificationByAnnouncementIdAndNotificationType(
         announcementId: AnnouncementId,
         notificationType: NotificationMessageType,
     ): SentAnnouncementNotification? =

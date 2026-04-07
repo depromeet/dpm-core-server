@@ -7,7 +7,7 @@ import core.domain.notification.enums.NotificationMessageType
 interface SentAnnouncementNotificationPersistencePort {
     fun findAll(): List<SentAnnouncementNotification>
 
-    fun findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
+    fun findSentAnnouncementNotificationByAnnouncementIdAndNotificationType(
         announcementId: AnnouncementId,
         notificationType: NotificationMessageType,
     ): SentAnnouncementNotification?

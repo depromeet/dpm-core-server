@@ -76,7 +76,7 @@ class AnnouncementReminderScheduler(
 
             val sentNotifications: SentAnnouncementNotification =
                 sentAnnouncementNotificationQueryUseCase
-                    .findSentAnnouncementNotificationByAssignmentIdAndNotificationType(
+                    .findSentAnnouncementNotificationByAnnouncementIdAndNotificationType(
                         announcementId = announcementId,
                         notificationType = messageType,
                     ) ?: return@forEach
