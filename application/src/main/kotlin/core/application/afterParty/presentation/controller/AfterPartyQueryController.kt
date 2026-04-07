@@ -7,6 +7,8 @@ import core.application.afterParty.presentation.response.AfterPartyListResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.afterParty.vo.AfterPartyId
+import core.domain.cohort.vo.AuthorityId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -31,8 +33,8 @@ class AfterPartyQueryController(
     @GetMapping
     override fun getAfterPartyList(
         @CurrentMemberId memberId: MemberId,
-        @RequestParam(required = false) inviteTagCohortId: Long?,
-        @RequestParam(required = false) inviteTagAuthorityId: Long?,
+        @RequestParam(required = false) inviteTagCohortId: CohortId?,
+        @RequestParam(required = false) inviteTagAuthorityId: AuthorityId?,
     ): CustomResponse<List<AfterPartyListResponse>> =
         CustomResponse.ok(
             afterPartyQueryService.getAllAfterPartys(

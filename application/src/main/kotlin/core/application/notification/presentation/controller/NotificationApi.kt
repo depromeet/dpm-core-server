@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
-@Tag(name = "Notification", description = "FCM 알림 API")
+@Tag(name = "Notification", description = "알림 API")
 interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
@@ -32,14 +32,7 @@ interface NotificationApi {
                             {
                                 "status": "OK",
                                 "code": "G000",
-                                "message": "요청에 성공했습니다",
-                                "data": {
-                                    "id": 1,
-                                    "memberId": 13,
-                                    "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-                                    "createdAt": "2026-03-27T00:00:00Z",
-                                    "updatedAt": "2026-03-27T00:00:00Z"
-                                }
+                                "message": "요청에 성공했습니다"
                             }
                         """,
                     ),

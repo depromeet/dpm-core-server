@@ -13,6 +13,7 @@ import core.domain.afterParty.port.inbound.AfterPartyInviteeQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyQueryUseCase
 import core.domain.afterParty.port.outbound.AfterPartyPersistencePort
 import core.domain.afterParty.vo.AfterPartyId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
 import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
@@ -38,14 +39,14 @@ class AfterPartyQueryService(
 
     fun getAllAfterPartys(
         memberId: MemberId,
-        inviteTagCohortId: Long? = null,
-        inviteTagAuthorityId: Long? = null,
+        inviteTagCohortId: CohortId? = null,
+        inviteTagAuthorityId: AuthorityId? = null,
     ): List<AfterPartyListResponse> {
         val afterParties: List<AfterParty> =
             if (inviteTagCohortId == null && inviteTagAuthorityId == null) {
                 afterPartyPersistencePort.findAll()
             } else {
-                val cohortId = inviteTagCohortId?.let { CohortId(it) }
+                val cohortId = inviteTagCohortId?.let { it }
                 afterPartyPersistencePort.findByInviteTagFilters(
                     cohortId = cohortId,
                     authorityId = inviteTagAuthorityId,
@@ -116,15 +117,19 @@ class AfterPartyQueryService(
             AfterPartyInviteTag.create(
                 afterPartyId = afterPartyId,
                 cohortId = latestCohortId,
-                authorityId = DEEPER_AUTHORITY_ID,
+                authorityId = AuthorityId(DEEPER_AUTHORITY_ID),
                 tagName = "${latestCohort.value}기 디퍼",
             ),
             AfterPartyInviteTag.create(
                 afterPartyId = afterPartyId,
                 cohortId = latestCohortId,
-                authorityId = ORGANIZER_AUTHORITY_ID,
+                authorityId = AuthorityId(ORGANIZER_AUTHORITY_ID),
                 tagName = "${latestCohort.value}기 운영진",
             ),
         )
     }
+
+    override fun getById(afterPartyId: AfterPartyId): AfterParty =
+        afterPartyPersistencePort.findById(afterPartyId)
+            ?: throw AfterPartyNotFoundException()
 }

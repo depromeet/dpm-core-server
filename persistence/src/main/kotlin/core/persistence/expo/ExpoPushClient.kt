@@ -79,6 +79,7 @@ class ExpoPushClient(
                     logger.info("푸시 알림 발송 성공 : id=${ticket.id}, token=$token")
                     ticket
                 }
+
                 else -> {
                     logger.error(
                         "푸시 알림 발송 실패 : message=${ticket?.message}, " +
@@ -134,15 +135,15 @@ class ExpoPushClient(
             .bodyValue(message)
             .retrieve()
             .bodyToMono(ExpoPushResponse::class.java)
+            .retryWhen(
+                Retry
+                    .backoff(3, Duration.ofMillis(100))
+                    .maxBackoff(Duration.ofSeconds(2)),
+            )
             .onErrorResume { error ->
                 if (error is WebClientResponseException) {
                     logger.error("Expo API 상세 응답: ${error.responseBodyAsString}")
                 }
                 Mono.error(error)
-            }
-            .retryWhen(
-                Retry
-                    .backoff(3, Duration.ofMillis(100))
-                    .maxBackoff(Duration.ofSeconds(2)),
-            ).block(Duration.ofSeconds(10))
+            }.block(Duration.ofSeconds(10))
 }

@@ -3,6 +3,7 @@ package core.entity.afterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
 import core.domain.afterParty.vo.AfterPartyId
 import core.domain.afterParty.vo.AfterPartyInviteTagId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import jakarta.persistence.Column
 import jakarta.persistence.ConstraintMode
@@ -45,7 +46,7 @@ class AfterPartyInviteTagEntity(
                 id = afterPartyInviteTag.id?.value ?: 0,
                 afterParty = afterPartyEntity,
                 cohortId = afterPartyInviteTag.cohortId.value,
-                authorityId = afterPartyInviteTag.authorityId,
+                authorityId = afterPartyInviteTag.authorityId.value,
                 tagName = afterPartyInviteTag.tagName,
                 createdAt = afterPartyInviteTag.createdAt ?: Instant.now(),
             )
@@ -56,7 +57,7 @@ class AfterPartyInviteTagEntity(
             id = AfterPartyInviteTagId(this.id),
             afterPartyId = AfterPartyId(this.afterParty.id),
             cohortId = CohortId(this.cohortId),
-            authorityId = this.authorityId,
+            authorityId = AuthorityId(this.authorityId),
             tagName = this.tagName,
             createdAt = this.createdAt,
         )

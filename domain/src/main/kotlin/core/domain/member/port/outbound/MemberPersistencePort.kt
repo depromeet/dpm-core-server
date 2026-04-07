@@ -1,6 +1,7 @@
 package core.domain.member.port.outbound
 
 import core.domain.authorization.vo.RoleId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
@@ -35,7 +36,7 @@ interface MemberPersistencePort {
 
     fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     ): List<MemberId>
 
     fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel>

@@ -108,4 +108,12 @@ class AnnouncementCommandController(
         )
         return CustomResponse.ok()
     }
+
+    @PostMapping("/{announcementId}/remind-notification")
+    override fun remindNotification(
+        @PathVariable announcementId: AnnouncementId,
+    ): CustomResponse<Void> {
+        announcementCommandService.remindNotification(announcementId)
+        return CustomResponse.ok()
+    }
 }
