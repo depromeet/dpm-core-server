@@ -7,12 +7,12 @@ enum class NotificationMessageType(
 ) {
     SESSION_START_SOON(
         title = "세션 시작 30분 전 알림",
-        bodyTemplate = "{sessionName} 세션이 30분 후 시작됩니다!",
+        bodyTemplate = "{title} 세션이 30분 후 시작됩니다!",
         description = "세션 시작 30분 전 알림",
     ),
     SESSION_STARTED(
         title = "세션 시작",
-        bodyTemplate = "{sessionName} 세션이 시작되었습니다. 출석해주세요!",
+        bodyTemplate = "{title} 세션이 시작되었습니다. 출석해주세요!",
         description = "세션 시작 시 알림",
     ),
     ANNOUNCEMENT_NEW(
@@ -67,7 +67,7 @@ enum class NotificationMessageType(
     ),
     SESSION_DAY_BEFORE(
         title = "내일 진행되는 세션 정보를 확인해주세요.",
-        bodyTemplate = "{sessionName}",
+        bodyTemplate = "{title}",
         description = "세션 24시간 전 알림",
     ),
     ;

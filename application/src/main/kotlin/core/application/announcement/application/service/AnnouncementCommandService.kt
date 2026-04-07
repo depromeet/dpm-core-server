@@ -3,7 +3,6 @@ package core.application.announcement.application.service
 import core.application.announcement.application.exception.AnnouncementNotFoundException
 import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
-import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.AnnouncementRead
@@ -26,6 +25,7 @@ import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.SentAnnouncementNotification
 import core.domain.notification.enums.NotificationMessageType
@@ -47,7 +47,7 @@ class AnnouncementCommandService(
     val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
-    val memberQueryService: MemberQueryService,
+    val memberQueryUseCase: MemberQueryUseCase,
     val cohortQueryUseCase: CohortQueryUseCase,
     val sentAnnouncementNotificationCommandUseCase: SentAnnouncementNotificationCommandUseCase,
     val eventPublisher: ApplicationEventPublisher,
@@ -118,7 +118,10 @@ class AnnouncementCommandService(
             }
         }
 
-        val memberIds: List<MemberId> = memberQueryService.getMembersByCohortId(cohortQueryUseCase.getLatestCohortId())
+        val memberIds: List<MemberId> =
+            memberQueryUseCase.getMemberIdsByCohortId(
+                cohortQueryUseCase.getLatestCohortId(),
+            )
         announcementReadCommandUseCase.initializeForMembers(
             announcementId = savedAnnouncement.id ?: throw AnnouncementNotFoundException(),
             memberIds = memberIds,

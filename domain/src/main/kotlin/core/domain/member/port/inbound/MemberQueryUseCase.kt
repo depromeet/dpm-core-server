@@ -32,4 +32,6 @@ interface MemberQueryUseCase {
         cohortId: CohortId,
         authorityId: AuthorityId,
     ): List<MemberId>
+
+    fun getMemberIdsByCohortId(cohortId: CohortId): List<MemberId>
 }

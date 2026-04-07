@@ -2,7 +2,6 @@ package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
 import core.application.member.application.exception.CohortMembersNotFoundException
-import core.application.member.application.service.MemberQueryService
 import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.exception.TooEarlyAttendanceException
@@ -16,6 +15,7 @@ import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.vo.AttendanceResult
 import core.domain.cohort.vo.CohortId
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.vo.SessionId
@@ -28,7 +28,7 @@ import java.time.Instant
 class AttendanceCommandService(
     private val attendancePersistencePort: AttendancePersistencePort,
     private val sessionQueryService: SessionQueryService,
-    private val memberService: MemberQueryService,
+    private val memberQueryUseCase: MemberQueryUseCase,
     private val sessionValidator: SessionValidator,
 ) {
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
@@ -98,7 +98,7 @@ class AttendanceCommandService(
         sessionId: SessionId,
         cohortId: CohortId,
     ) {
-        val memberIds = memberService.getMembersByCohortId(cohortId)
+        val memberIds: List<MemberId> = memberQueryUseCase.getMemberIdsByCohortId(cohortId)
         if (memberIds.isEmpty()) {
             throw CohortMembersNotFoundException()
         }
