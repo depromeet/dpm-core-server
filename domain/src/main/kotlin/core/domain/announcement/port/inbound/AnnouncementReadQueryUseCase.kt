@@ -23,4 +23,6 @@ interface AnnouncementReadQueryUseCase {
         announcementId: AnnouncementId,
         memberId: MemberId,
     ): AnnouncementRead?
+
+    fun findUnreadByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead>
 }

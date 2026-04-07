@@ -2,6 +2,7 @@ package core.domain.afterParty.port.outbound
 
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.vo.AfterPartyId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 
@@ -19,6 +20,6 @@ interface AfterPartyPersistencePort {
 
     fun findByInviteTagFilters(
         cohortId: CohortId?,
-        authorityId: Long?,
+        authorityId: AuthorityId?,
     ): List<AfterParty>
 }

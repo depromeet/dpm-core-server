@@ -1,6 +1,6 @@
 package core.application.notification.presentation.response
 
-import core.domain.notification.enums.NotificationMessage
+import core.domain.notification.enums.NotificationMessageType
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "알림 타입 응답")
@@ -15,7 +15,7 @@ data class NotificationTypeResponse(
     val description: String,
 ) {
     companion object {
-        fun from(message: NotificationMessage): NotificationTypeResponse =
+        fun from(message: NotificationMessageType): NotificationTypeResponse =
             NotificationTypeResponse(
                 name = message.name,
                 title = message.title,

@@ -1,6 +1,7 @@
 package core.persistence.member.repository
 
 import core.domain.authorization.vo.RoleId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
@@ -137,7 +138,7 @@ class MemberRepository(
 
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     ): List<MemberId> =
         run {
             val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
@@ -154,7 +155,7 @@ class MemberRepository(
                 .on(MEMBERS.MEMBER_ID.eq(memberAuthoritiesMemberIdField))
                 .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
                 .and(MEMBERS.DELETED_AT.isNull)
-                .and(memberAuthoritiesAuthorityIdField.eq(authorityId))
+                .and(memberAuthoritiesAuthorityIdField.eq(authorityId.value))
                 .and(memberAuthoritiesDeletedAtField.isNull)
                 .fetch(MEMBERS.MEMBER_ID)
                 .filterNotNull()

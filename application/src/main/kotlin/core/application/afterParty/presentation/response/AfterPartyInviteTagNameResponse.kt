@@ -2,11 +2,12 @@ package core.application.afterParty.presentation.response
 
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
 import core.domain.afterParty.enums.AfterPartyInviteTagEnum
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 
 data class AfterPartyInviteTagNameResponse(
     val cohortId: CohortId,
-    val authorityId: Long,
+    val authorityId: AuthorityId,
     val tagName: String,
 ) {
     companion object {

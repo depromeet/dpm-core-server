@@ -5,6 +5,8 @@ import core.application.afterParty.presentation.response.AfterPartyInviteTagList
 import core.application.afterParty.presentation.response.AfterPartyListResponse
 import core.application.common.exception.CustomResponse
 import core.domain.afterParty.vo.AfterPartyId
+import core.domain.cohort.vo.AuthorityId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -105,9 +107,9 @@ interface AfterPartyQueryApi {
     fun getAfterPartyList(
         memberId: MemberId,
         @Parameter(description = "초대 태그로 필터링할 기수 ID", required = false)
-        inviteTagCohortId: Long?,
+        inviteTagCohortId: CohortId?,
         @Parameter(description = "초대 태그로 필터링할 권한 ID", required = false)
-        inviteTagAuthorityId: Long?,
+        inviteTagAuthorityId: AuthorityId?,
     ): CustomResponse<List<AfterPartyListResponse>>
 
     @ApiResponse(

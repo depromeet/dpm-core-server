@@ -1,6 +1,5 @@
 package core.persistence.notification.repository
 
-import core.domain.member.vo.MemberId
 import core.entity.notification.NotificationTokenEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
@@ -14,7 +13,7 @@ interface PushTokenJpaRepository : JpaRepository<NotificationTokenEntity, Long> 
 
     fun deleteByToken(token: String)
 
-    fun deleteByMemberId(memberId: MemberId)
+    fun deleteByMemberId(memberId: Long)
 
-    fun findByMemberIdIn(memberIds: List<MemberId>): List<NotificationTokenEntity>
+    fun findByMemberIdIn(memberIds: List<Long>): List<NotificationTokenEntity>
 }

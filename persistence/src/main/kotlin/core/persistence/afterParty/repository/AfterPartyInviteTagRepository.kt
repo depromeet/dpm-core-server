@@ -4,6 +4,7 @@ import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
 import core.domain.afterParty.port.outbound.AfterPartyInviteTagPersistencePort
 import core.domain.afterParty.vo.AfterPartyId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -29,7 +30,7 @@ class AfterPartyInviteTagRepository(
             jpaRepository.findByAfterPartyId(afterPartyId).any { existing ->
                 existing.tagName == afterPartyInviteTag.tagName &&
                     existing.cohortId == afterPartyInviteTag.cohortId.value &&
-                    existing.authorityId == afterPartyInviteTag.authorityId
+                    existing.authorityId == afterPartyInviteTag.authorityId.value
             }
 
         if (exists) {
@@ -42,7 +43,7 @@ class AfterPartyInviteTagRepository(
                 DSL.field("after_party_id"),
                 afterPartyId,
             ).set(DSL.field("cohort_id"), afterPartyInviteTag.cohortId.value)
-            .set(DSL.field("authority_id"), afterPartyInviteTag.authorityId)
+            .set(DSL.field("authority_id"), afterPartyInviteTag.authorityId.value)
             .set(DSL.field("tag_name"), afterPartyInviteTag.tagName)
             .set(DSL.field("created_at"), afterPartyInviteTag.createdAt ?: Instant.now())
             .execute()
@@ -53,7 +54,7 @@ class AfterPartyInviteTagRepository(
 
     override fun findAfterPartyIdsByInviteTag(
         cohortId: CohortId?,
-        authorityId: Long?,
+        authorityId: AuthorityId?,
     ): List<AfterPartyId> {
         if (cohortId == null && authorityId == null) {
             return emptyList()
@@ -68,7 +69,7 @@ class AfterPartyInviteTagRepository(
         }
         if (authorityId != null) {
             conditions.add("authority_id = ?")
-            values.add(authorityId)
+            values.add(authorityId.value)
         }
 
         val whereClause = conditions.joinToString(" AND ")
@@ -106,7 +107,7 @@ class AfterPartyInviteTagRepository(
                 id = null,
                 afterPartyId = placeholderGatheringId,
                 cohortId = CohortId(record.get("cohort_id", Long::class.java) ?: 0),
-                authorityId = record.get("authority_id", Long::class.java) ?: 0,
+                authorityId = AuthorityId(record.get("authority_id", Long::class.java) ?: 0),
                 tagName = record.get("tag_name", String::class.java) ?: "",
                 createdAt = null,
             )
@@ -134,7 +135,7 @@ class AfterPartyInviteTagRepository(
                 id = null,
                 afterPartyId = placeholderGatheringId,
                 cohortId = CohortId(record.get("cohort_id", Long::class.java) ?: 0),
-                authorityId = record.get("authority_id", Long::class.java) ?: 0,
+                authorityId = AuthorityId(record.get("authority_id", Long::class.java) ?: 0),
                 tagName = record.get("tag_name", String::class.java) ?: "",
                 createdAt = null,
             )

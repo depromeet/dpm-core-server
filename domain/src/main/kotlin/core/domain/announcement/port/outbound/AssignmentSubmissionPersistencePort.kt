@@ -13,4 +13,6 @@ interface AssignmentSubmissionPersistencePort {
     ): AssignmentSubmission?
 
     fun findByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmission>
+
+    fun findUnsubmittedByAssignmentIdAndSubmitStatus(assignmentId: AssignmentId): List<AssignmentSubmission>
 }

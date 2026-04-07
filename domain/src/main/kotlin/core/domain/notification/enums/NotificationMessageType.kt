@@ -1,33 +1,33 @@
 package core.domain.notification.enums
 
-enum class NotificationMessage(
+enum class NotificationMessageType(
     val title: String,
     val bodyTemplate: String,
     val description: String,
 ) {
     SESSION_START_SOON(
         title = "세션 시작 30분 전 알림",
-        bodyTemplate = "{sessionName} 세션이 30분 후 시작됩니다!",
+        bodyTemplate = "{title} 세션이 30분 후 시작됩니다!",
         description = "세션 시작 30분 전 알림",
     ),
     SESSION_STARTED(
         title = "세션 시작",
-        bodyTemplate = "{sessionName} 세션이 시작되었습니다. 출석해주세요!",
+        bodyTemplate = "{title} 세션이 시작되었습니다. 출석해주세요!",
         description = "세션 시작 시 알림",
     ),
     ANNOUNCEMENT_NEW(
-        title = "새 공지사항",
+        title = "새로운 공지가 등록됐어요.",
         bodyTemplate = "{title}",
         description = "새 공지사항 등록 시 알림",
     ),
     AFTER_PARTY_INVITATION(
         title = "새로운 회식이 열렸어요.",
-        bodyTemplate = "{eventName}",
+        bodyTemplate = "{title}",
         description = "회식 생성 시 디퍼 알림 발송",
     ),
     AFTER_PARTY_REMIND(
-        title = "{customTitle}",
-        bodyTemplate = "{customBody}",
+        title = "회식에 참여 여부를 남기지 않았어요.",
+        bodyTemplate = "{title}",
         description = "회식 미제출자 리마인드 알림",
     ),
     ANNOUNCEMENT_REMIND(
@@ -67,7 +67,7 @@ enum class NotificationMessage(
     ),
     SESSION_DAY_BEFORE(
         title = "내일 진행되는 세션 정보를 확인해주세요.",
-        bodyTemplate = "{sessionName}",
+        bodyTemplate = "{title}",
         description = "세션 24시간 전 알림",
     ),
     ;
@@ -77,6 +77,12 @@ enum class NotificationMessage(
         variables.forEach { (key, value) ->
             result = result.replace("{$key}", value.toString())
         }
+
+        val unresolvedPlaceholders = Regex("\\{\\w+}").findAll(result).map { it.value }.toList()
+        require(unresolvedPlaceholders.isEmpty()) {
+            "미치환 플레이스홀더가 남아있습니다: $unresolvedPlaceholders (messageType=$name)"
+        }
+
         return result
     }
 

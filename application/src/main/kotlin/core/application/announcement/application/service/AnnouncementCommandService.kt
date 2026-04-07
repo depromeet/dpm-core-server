@@ -3,7 +3,6 @@ package core.application.announcement.application.service
 import core.application.announcement.application.exception.AnnouncementNotFoundException
 import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
-import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.AnnouncementRead
@@ -12,6 +11,8 @@ import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
+import core.domain.announcement.event.AnnouncementCreatedEvent
+import core.domain.announcement.event.AnnouncementRemindEvent
 import core.domain.announcement.port.inbound.AnnouncementAssignmentCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
@@ -24,7 +25,13 @@ import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
+import core.domain.notification.aggregate.SentAnnouncementNotification
+import core.domain.notification.enums.NotificationMessageType
+import core.domain.notification.port.inbound.SentAnnouncementNotificationCommandUseCase
+import core.domain.notification.vo.SentAnnouncementNotificationId
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -40,8 +47,10 @@ class AnnouncementCommandService(
     val announcementReadQueryUseCase: AnnouncementReadQueryUseCase,
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val assignmentSubmissionCommandUseCase: AssignmentSubmissionCommandUseCase,
-    val memberQueryService: MemberQueryService,
+    val memberQueryUseCase: MemberQueryUseCase,
     val cohortQueryUseCase: CohortQueryUseCase,
+    val sentAnnouncementNotificationCommandUseCase: SentAnnouncementNotificationCommandUseCase,
+    val eventPublisher: ApplicationEventPublisher,
 ) : AnnouncementCommandUseCase {
     override fun create(
         authorId: MemberId,
@@ -55,9 +64,8 @@ class AnnouncementCommandService(
         scheduledAt: Instant?,
         shouldSendNotification: Boolean,
     ) {
-//        TODO : 스케쥴, 알림 구현
-//            scheduledAt: Instant?,
-//            shouldSendNotification: Boolean,
+//        TODO : 공지 예약 구현
+//            scheduledAt: Instant?
 
 //        announcement 작성
         val announcement =
@@ -91,14 +99,45 @@ class AnnouncementCommandService(
                     announcementAssignment = announcementAssignment,
                     assignment = savedAssignment,
                 )
+
+                listOf(
+                    NotificationMessageType.ASSIGNMENT_DUE_24H,
+                    NotificationMessageType.ASSIGNMENT_DUE_12H,
+                    NotificationMessageType.ASSIGNMENT_DUE_1H,
+                ).forEach { messageType ->
+                    sentAnnouncementNotificationCommandUseCase.save(
+                        SentAnnouncementNotification(
+                            sentAnnouncementNotificationId = SentAnnouncementNotificationId(0L),
+                            announcementId = savedAnnouncement.id!!,
+                            notificationMessageType = messageType,
+                            sentAt = null,
+                        ),
+                    )
+                }
             }
         }
 
-        val memberIds: List<MemberId> = memberQueryService.getMembersByCohortId(cohortQueryUseCase.getLatestCohortId())
+        val memberIds: List<MemberId> =
+            memberQueryUseCase.getMemberIdsByCohortId(
+                cohortQueryUseCase.getLatestCohortId(),
+            )
         announcementReadCommandUseCase.initializeForMembers(
-            announcementId = savedAnnouncement.id!!,
+            announcementId = savedAnnouncement.id ?: throw AnnouncementNotFoundException(),
             memberIds = memberIds,
         )
+
+//        TODO : 공지 작성 시점에 기수 별로 공지가 나눠져 있지 않은 상태라서, 일단은 최신 기수에 속한 멤버들에게만 읽음 이력을 초기화. 추후에 공지를 기수 별로 나누거나, 공지 읽음 이력을 기수 별로 나눌 때, 해당 부분도 같이 수정 필요
+//        TODO : 게시물 예약 작성 기능
+        if (shouldSendNotification) {
+            eventPublisher.publishEvent(
+                AnnouncementCreatedEvent.of(
+                    announcementId = savedAnnouncement.id ?: throw AnnouncementNotFoundException(),
+                    announcementType = announcementType,
+                    title = title,
+                    cohortId = cohortQueryUseCase.getLatestCohortId(),
+                ),
+            )
+        }
     }
 
     override fun markAsRead(
@@ -207,6 +246,16 @@ class AnnouncementCommandService(
         assignmentSubmissionCommandUseCase.initializeForNewCohortMember(
             memberId = memberId,
             assignments = assignmentQueryUseCase.getAllAssignments(),
+        )
+    }
+
+    override fun remindNotification(announcementId: AnnouncementId) {
+        val targetAnnouncement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        eventPublisher.publishEvent(
+            AnnouncementRemindEvent.of(
+                announcement = targetAnnouncement,
+                cohortId = cohortQueryUseCase.getLatestCohortId(),
+            ),
         )
     }
 }

@@ -66,4 +66,9 @@ class AfterPartyInviteeRepository(
                 memberId = memberId,
                 afterPartyId = afterPartyId,
             )?.toDomain()
+
+    override fun findWithUnMarkedRsvp(afterPartyId: AfterPartyId): List<AfterPartyInvitee> =
+        afterPartyInviteeJpaRepository
+            .findByAfterPartyIdAndRsvpStatusIsNull(afterPartyId)
+            .map { it.toDomain() }
 }

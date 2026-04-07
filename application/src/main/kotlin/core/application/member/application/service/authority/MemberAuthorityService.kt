@@ -1,5 +1,6 @@
 package core.application.member.application.service.authority
 
+import core.domain.cohort.vo.AuthorityId
 import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.port.outbound.MemberAuthorityPersistencePort
 import core.domain.member.vo.MemberId
@@ -22,7 +23,7 @@ class MemberAuthorityService(
 
     fun ensureAuthorityAssigned(
         memberId: MemberId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     ) = memberAuthorityPersistencePort.ensureAuthorityAssigned(memberId, authorityId)
 
     fun revokeAuthority(
@@ -32,7 +33,7 @@ class MemberAuthorityService(
 
     fun revokeAuthority(
         memberId: MemberId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     ) = memberAuthorityPersistencePort.revokeAuthority(memberId, authorityId)
 
     fun revokeAllAuthorities(memberId: MemberId) = memberAuthorityPersistencePort.revokeAllByMemberId(memberId)
