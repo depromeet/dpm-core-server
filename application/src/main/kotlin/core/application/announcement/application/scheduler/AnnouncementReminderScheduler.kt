@@ -30,6 +30,7 @@ class AnnouncementReminderScheduler(
     val notificationCommandUseCase: NotificationCommandUseCase,
 ) {
     @Scheduled(cron = "0 0/10 * * * *")
+    @Transactional
     fun sendAssignmentDue24HReminder() {
         val now = Instant.now()
 
@@ -37,6 +38,7 @@ class AnnouncementReminderScheduler(
     }
 
     @Scheduled(cron = "10 0/10 * * * *")
+    @Transactional
     fun sendAssignmentDue12HReminder() {
         val now = Instant.now()
 
@@ -44,13 +46,13 @@ class AnnouncementReminderScheduler(
     }
 
     @Scheduled(cron = "20 0/10 * * * *")
+    @Transactional
     fun sendAssignmentDue1HReminder() {
         val now = Instant.now()
 
         checkAndSendReminders(now, Duration.ofHours(1), NotificationMessageType.ASSIGNMENT_DUE_1H)
     }
 
-    @Transactional
     fun checkAndSendReminders(
         now: Instant,
         duration: Duration,

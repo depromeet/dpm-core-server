@@ -32,14 +32,7 @@ interface NotificationApi {
                             {
                                 "status": "OK",
                                 "code": "G000",
-                                "message": "요청에 성공했습니다",
-                                "data": {
-                                    "id": 1,
-                                    "memberId": 13,
-                                    "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-                                    "createdAt": "2026-03-27T00:00:00Z",
-                                    "updatedAt": "2026-03-27T00:00:00Z"
-                                }
+                                "message": "요청에 성공했습니다"
                             }
                         """,
                     ),
