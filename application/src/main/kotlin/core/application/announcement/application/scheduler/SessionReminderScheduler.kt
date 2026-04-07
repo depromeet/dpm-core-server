@@ -26,14 +26,14 @@ class SessionReminderScheduler(
     val sentSessionNotificationQueryUseCase: SentSessionNotificationQueryUseCase,
     val sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase,
 ) {
-    @Scheduled(cron = "0 0/1 * * * *")
+    @Scheduled(cron = "0 0/10 * * * *")
     @Transactional
     fun sendStartAttendanceReminder() {
         val currentCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
         val currentCohortMemberIds: List<MemberId> = memberQueryUseCase.getMemberIdsByCohortId(currentCohortId)
 
         val now = Instant.now()
-        val bufferTime: Duration = Duration.ofMinutes(10)
+        val bufferTime: Duration = Duration.ofMinutes(15)
         val startTime = now.minus(bufferTime)
 
         val sessionsToNotify =
@@ -128,6 +128,8 @@ class SessionReminderScheduler(
             notificationCommandUseCase.sendPushNotificationToMembers(
                 memberIds = currentCohortMemberIds,
                 messageType = NotificationMessageType.SESSION_DAY_BEFORE,
+                variables = mapOf("title" to session.eventName),
+                data = mapOf("sessionId" to session.id!!.value),
             )
 
             if (sentNotification != null) {
