@@ -10,5 +10,10 @@ interface SentSessionNotificationPersistencePort {
         notificationType: NotificationMessageType,
     ): SentSessionNotification?
 
+    fun findBySessionIdsAndNotificationType(
+        sessionIds: List<SessionId>,
+        notificationType: NotificationMessageType,
+    ): List<SentSessionNotification>
+
     fun save(sentSessionNotification: SentSessionNotification): SentSessionNotification
 }

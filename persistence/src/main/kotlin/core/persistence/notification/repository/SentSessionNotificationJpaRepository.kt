@@ -8,4 +8,9 @@ interface SentSessionNotificationJpaRepository : JpaRepository<SentSessionNotifi
         sessionId: Long,
         notificationMessageType: String,
     ): SentSessionNotificationEntity?
+
+    fun findBySessionIdInAndNotificationMessageType(
+        sessionIds: List<Long>,
+        notificationMessageType: String,
+    ): List<SentSessionNotificationEntity>
 }

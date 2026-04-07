@@ -19,4 +19,13 @@ class SentSessionNotificationQueryService(
             sessionId = sessionId,
             notificationType = notificationType,
         )
+
+    override fun findSentSessionNotificationsBySessionIdsAndNotificationType(
+        sessionIds: List<SessionId>,
+        notificationType: NotificationMessageType,
+    ): List<SentSessionNotification> =
+        sentSessionNotificationPersistencePort.findBySessionIdsAndNotificationType(
+            sessionIds = sessionIds,
+            notificationType = notificationType,
+        )
 }
