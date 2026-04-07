@@ -7,8 +7,6 @@ import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.event.AnnouncementCreatedEvent
 import core.domain.announcement.event.AnnouncementRemindEvent
 import core.domain.announcement.vo.AnnouncementId
-import core.domain.cohort.vo.AuthorityId
-import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
 import core.domain.member.vo.MemberId
 import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.inbound.NotificationCommandUseCase
@@ -32,11 +30,8 @@ class AnnouncementNotificationListener(
                 AnnouncementType.ASSIGNMENT -> NotificationMessageType.ASSIGNMENT_NEW
             }
 
-        val memberIds =
-            memberQueryService.findAllMemberIdsByCohortIdAndAuthorityId(
-                cohortId = announcementCreatedEvent.cohortId,
-                authorityId = AuthorityId(DEEPER_AUTHORITY_ID),
-            )
+        val memberIds: List<MemberId> =
+            memberQueryService.getMemberIdsByCohortId(announcementCreatedEvent.cohortId)
 
         notificationCommandUseCase.sendPushNotificationToMembers(
             memberIds = memberIds,
