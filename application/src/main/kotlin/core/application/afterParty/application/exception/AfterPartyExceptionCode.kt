@@ -15,6 +15,7 @@ enum class AfterPartyExceptionCode(
     AFTER_PARTY_ID_REQUIRED(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-03", "회식 ID는 필수로 존재해야합니다."),
     AFTER_PARTY_NOT_PARTICIPANT_MEMBER(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-05", "정산에 참여하지 않은 멤버입니다."),
     INVITE_TAG_NAME_NOT_FOUND(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-06", "초대 태그 이름과 매칭되는 태그를 찾을 수 없습니다."),
+    INVITE_TAG_NOT_FOUND(HttpStatus.BAD_REQUEST, "AFTER_PARTY-400-07", "일치하는 초대 태그를 찾을 수 없습니다."),
     ;
 
     override fun getStatus(): HttpStatus = status

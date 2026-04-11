@@ -18,11 +18,9 @@ enum class AfterPartyInviteTagEnum(
         fun from(
             cohortId: CohortId,
             authorityId: AuthorityId,
-        ): AfterPartyInviteTagEnum =
+        ): AfterPartyInviteTagEnum? =
             AfterPartyInviteTagEnum.entries.find {
                 it.cohortId == cohortId && it.authorityId == authorityId
-            } ?: throw IllegalArgumentException(
-                "일치하는 태그를 찾을 수 없습니다: cohortId=${cohortId.value}, authorityId=$authorityId",
-            )
+            }
     }
 }

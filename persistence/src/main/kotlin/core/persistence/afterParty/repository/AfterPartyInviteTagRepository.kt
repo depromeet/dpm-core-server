@@ -22,9 +22,7 @@ class AfterPartyInviteTagRepository(
         afterPartyInviteTag: AfterPartyInviteTag,
         afterParty: AfterParty,
     ) {
-        val afterPartyId =
-            afterParty.id?.value
-                ?: throw IllegalArgumentException("AfterParty id cannot be null")
+        val afterPartyId = afterParty.id!!.value
 
         val exists =
             jpaRepository.findByAfterPartyId(afterPartyId).any { existing ->

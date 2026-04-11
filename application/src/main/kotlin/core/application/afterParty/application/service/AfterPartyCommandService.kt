@@ -1,5 +1,6 @@
 package core.application.afterParty.application.service
 
+import core.application.afterParty.application.exception.AfterPartyIdRequiredException
 import core.application.afterParty.application.exception.AfterPartyNotFoundException
 import core.application.afterParty.application.exception.InviteTagNameNotFoundException
 import core.application.cohort.application.service.CohortQueryService
@@ -197,11 +198,13 @@ class AfterPartyCommandService(
             return
         }
 
+        val createdAfterPartyId = createdAfterParty.id ?: throw AfterPartyIdRequiredException()
+
         normalizedInviteTagSpecs.forEach { tag ->
             afterPartyInviteTagPersistencePort.save(
                 afterPartyInviteTag =
                     AfterPartyInviteTag.create(
-                        afterPartyId = createdAfterParty.id ?: throw AfterPartyNotFoundException(),
+                        afterPartyId = createdAfterPartyId,
                         cohortId = tag.cohortId,
                         authorityId = tag.authorityId,
                         tagName = tag.tagName,
@@ -228,7 +231,7 @@ class AfterPartyCommandService(
         val inviteeList: List<AfterPartyInvitee> =
             inviteeMembers.map { member ->
                 AfterPartyInvitee.create(
-                    afterPartyId = createdAfterParty.id ?: throw AfterPartyNotFoundException(),
+                    afterPartyId = createdAfterPartyId,
                     memberId = member.id ?: throw MemberNotFoundException(),
                     invitedAt = createdAfterParty.createdAt ?: throw AfterPartyNotFoundException(),
                 )
@@ -247,7 +250,7 @@ class AfterPartyCommandService(
 
         eventPublisher.publishEvent(
             AfterPartyCreatedEvent.of(
-                afterPartyId = createdAfterParty.id ?: throw AfterPartyNotFoundException(),
+                afterPartyId = createdAfterPartyId,
                 title = createdAfterParty.title,
                 invitedMemberIds = inviteeMemberIds,
             ),
