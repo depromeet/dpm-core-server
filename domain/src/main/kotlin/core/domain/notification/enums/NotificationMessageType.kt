@@ -77,14 +77,11 @@ enum class NotificationMessageType(
         variables.forEach { (key, value) ->
             result = result.replace("{$key}", value.toString())
         }
-
-        val unresolvedPlaceholders = Regex("\\{\\w+}").findAll(result).map { it.value }.toList()
-        require(unresolvedPlaceholders.isEmpty()) {
-            "미치환 플레이스홀더가 남아있습니다: $unresolvedPlaceholders (messageType=$name)"
-        }
-
         return result
     }
+
+    fun findUnresolvedPlaceholders(formattedBody: String): List<String> =
+        Regex("\\{\\w+}").findAll(formattedBody).map { it.value }.toList()
 
     fun formatWithTitle(variables: Map<String, Any>): Pair<String, String> {
         var formattedTitle = title

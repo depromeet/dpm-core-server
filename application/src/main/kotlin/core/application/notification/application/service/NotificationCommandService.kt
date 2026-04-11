@@ -1,6 +1,7 @@
 package core.application.notification.application.service
 
 import core.application.notification.application.exception.NotificationTokenNotFoundException
+import core.application.notification.application.exception.UnresolvedPlaceholderException
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.NotificationToken
 import core.domain.notification.enums.NotificationMessageType
@@ -66,6 +67,7 @@ class NotificationCommandService(
         data: Map<String, Any>? = null,
     ) {
         val (title, body) = messageType.formatWithTitle(variables)
+        validateNoUnresolvedPlaceholders(messageType, body)
         sendPushNotificationInternal(memberId, title, body, data)
     }
 
@@ -96,8 +98,19 @@ class NotificationCommandService(
         data: Map<String, Any>?,
     ) {
         val (title, body) = messageType.formatWithTitle(variables)
+        validateNoUnresolvedPlaceholders(messageType, body)
 
         sendPushNotificationInternalToMembers(memberIds, title, body, data, ExpoPriority.NORMAL)
+    }
+
+    private fun validateNoUnresolvedPlaceholders(
+        messageType: NotificationMessageType,
+        body: String,
+    ) {
+        val unresolved = messageType.findUnresolvedPlaceholders(body)
+        if (unresolved.isNotEmpty()) {
+            throw UnresolvedPlaceholderException(unresolved, messageType.name)
+        }
     }
 
     private fun sendPushNotificationInternal(

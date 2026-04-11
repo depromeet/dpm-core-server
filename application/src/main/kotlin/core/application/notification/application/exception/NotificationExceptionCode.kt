@@ -11,6 +11,7 @@ enum class NotificationExceptionCode(
     NOTIFICATION_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION-404-01", "푸시 토큰을 찾을 수 없습니다"),
     INVALID_NOTIFICATION_TOKEN(HttpStatus.BAD_REQUEST, "NOTIFICATION-400-01", "유효하지 않은 푸시 토큰입니다"),
     NOTIFICATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "NOTIFICATION-500-01", "알림 발송에 실패했습니다"),
+    UNRESOLVED_PLACEHOLDER(HttpStatus.INTERNAL_SERVER_ERROR, "NOTIFICATION-500-02", "알림 메시지 템플릿에 미치환 플레이스홀더가 남아있습니다"),
     ;
 
     override fun getStatus(): HttpStatus = this.status
