@@ -132,4 +132,17 @@ class MemberRoleService(
         val roleId = roleQueryUseCase.findIdByName(roleName)
         memberRolePersistencePort.upsertSingleActiveRole(memberId.value, roleId)
     }
+
+    fun replaceCohortRoleByName(
+        memberId: MemberId,
+        roleName: String,
+        cohortRolePrefix: String,
+    ) {
+        val roleId = roleQueryUseCase.findIdByName(roleName)
+        memberRolePersistencePort.upsertCohortRole(
+            memberId = memberId.value,
+            roleId = roleId,
+            cohortRolePrefix = cohortRolePrefix,
+        )
+    }
 }
