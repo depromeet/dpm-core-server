@@ -73,18 +73,18 @@ jooq {
                             listOf(
                                 ForcedType().apply {
                                     name = "INSTANT"
-                                    expression = ".*\\.date"
-                                    types = "timestamp.*"
+                                    includeExpression = ".*\\.date"
+                                    includeTypes = "timestamp.*"
                                 },
                                 ForcedType().apply {
                                     name = "INSTANT"
-                                    expression = ".*\\.attendance_start"
-                                    types = "timestamp.*"
+                                    includeExpression = ".*\\.attendance_start"
+                                    includeTypes = "timestamp.*"
                                 },
                                 ForcedType().apply {
                                     name = "INSTANT"
-                                    expression = ".*\\.attended_at"
-                                    types = "timestamp.*"
+                                    includeExpression = ".*\\.attended_at"
+                                    includeTypes = "timestamp.*"
                                 },
                             ),
                         )
