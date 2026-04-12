@@ -3,6 +3,7 @@ package core.application.authorization.presentation.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
 
 data class UpdateMemberRoleRequest(
     @field:NotNull
@@ -13,6 +14,7 @@ data class UpdateMemberRoleRequest(
     )
     val isAdmin: Boolean,
     @field:NotBlank
+    @field:Pattern(regexp = "\\d+기?", message = "cohort must be numeric (e.g. 17 or 17기)")
     @field:Schema(
         description = "역할을 변경할 기수 값. 17 또는 17기 형식을 허용합니다.",
         example = "17",

@@ -28,6 +28,9 @@ class RoleCommandService(
         memberQueryService.getMemberById(memberId)
 
         val cohortValue = normalizeCohortValue(request.cohort)
+        require(cohortValue.all(Char::isDigit)) {
+            "cohort must be numeric (e.g. 17 or 17기)"
+        }
         val roleType =
             if (request.isAdmin) {
                 RoleType.Organizer
