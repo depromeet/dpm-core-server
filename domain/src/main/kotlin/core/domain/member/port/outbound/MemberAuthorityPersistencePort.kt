@@ -1,5 +1,6 @@
 package core.domain.member.port.outbound
 
+import core.domain.cohort.vo.AuthorityId
 import core.domain.member.vo.MemberId
 
 interface MemberAuthorityPersistencePort {
@@ -14,7 +15,7 @@ interface MemberAuthorityPersistencePort {
 
     fun ensureAuthorityAssigned(
         memberId: MemberId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     )
 
     fun revokeAuthority(
@@ -24,7 +25,7 @@ interface MemberAuthorityPersistencePort {
 
     fun revokeAuthority(
         memberId: MemberId,
-        authorityId: Long,
+        authorityId: AuthorityId,
     )
 
     fun revokeAllByMemberId(memberId: MemberId)

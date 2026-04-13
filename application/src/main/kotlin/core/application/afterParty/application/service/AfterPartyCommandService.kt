@@ -8,15 +8,20 @@ import core.application.member.application.service.authority.MemberAuthorityServ
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
 import core.domain.afterParty.aggregate.AfterPartyInvitee
+import core.domain.afterParty.event.AfterPartyCreatedEvent
 import core.domain.afterParty.port.inbound.AfterPartyCommandUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteTagQueryUseCase
 import core.domain.afterParty.port.inbound.AfterPartyInviteeCommandUseCase
+import core.domain.afterParty.port.inbound.AfterPartyQueryUseCase
 import core.domain.afterParty.port.outbound.AfterPartyInviteTagPersistencePort
 import core.domain.afterParty.port.outbound.AfterPartyInviteePersistencePort
 import core.domain.afterParty.port.outbound.AfterPartyPersistencePort
+import core.domain.afterParty.vo.AfterPartyId
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
+import core.domain.member.aggregate.InviteTagSpec
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberCohort
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
@@ -24,6 +29,8 @@ import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
+import core.domain.notification.port.inbound.NotificationCommandUseCase
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -32,6 +39,7 @@ import java.time.Instant
 @Transactional
 class AfterPartyCommandService(
     val afterPartyPersistencePort: AfterPartyPersistencePort,
+    val afterPartyQueryUseCase: AfterPartyQueryUseCase,
     val afterPartyInviteeCommandUseCase: AfterPartyInviteeCommandUseCase,
     val afterPartyInviteTagPersistencePort: AfterPartyInviteTagPersistencePort,
     val memberQueryUseCase: MemberQueryUseCase,
@@ -40,6 +48,8 @@ class AfterPartyCommandService(
     val cohortPersistencePort: CohortPersistencePort,
     val memberAuthorityService: MemberAuthorityService,
     val cohortQueryService: CohortQueryService,
+    val notificationCommandUseCase: NotificationCommandUseCase,
+    val eventPublisher: ApplicationEventPublisher,
 ) : AfterPartyCommandUseCase {
     override fun createAfterParty(
         afterParty: AfterParty,
@@ -95,6 +105,27 @@ class AfterPartyCommandService(
             }
     }
 
+    override fun sendNotificationUnMarkedRsvp(
+        afterPartyId: AfterPartyId,
+        title: String,
+        body: String,
+    ) {
+        val retrieveAfterParty: AfterParty = afterPartyQueryUseCase.getById(afterPartyId)
+
+        val unMarkedRsvpMemberIds: List<MemberId> =
+            afterPartyInviteePersistencePort
+                .findWithUnMarkedRsvp(
+                    retrieveAfterParty.id ?: throw AfterPartyNotFoundException(),
+                ).map {
+                    it.memberId
+                }
+        notificationCommandUseCase.sendCustomPushNotificationToMembers(
+            memberIds = unMarkedRsvpMemberIds,
+            title = title,
+            body = body,
+        )
+    }
+
     private fun inviteOpenAfterPartiesForMember(
         memberId: MemberId,
         cohortId: CohortId,
@@ -118,7 +149,7 @@ class AfterPartyCommandService(
             val inviteTags = afterPartyInviteTagPersistencePort.findByAfterPartyId(afterPartyId)
             val shouldInvite =
                 inviteTags.any { inviteTag ->
-                    inviteTag.cohortId == cohortId && inviteTag.authorityId in memberAuthorityIds
+                    inviteTag.cohortId == cohortId && inviteTag.authorityId.value in memberAuthorityIds
                 }
 
             if (!shouldInvite) {
@@ -213,6 +244,14 @@ class AfterPartyCommandService(
                 inviteeMember = inviteeMember,
             )
         }
+
+        eventPublisher.publishEvent(
+            AfterPartyCreatedEvent.of(
+                afterPartyId = createdAfterParty.id ?: throw AfterPartyNotFoundException(),
+                title = createdAfterParty.title,
+                invitedMemberIds = inviteeMemberIds,
+            ),
+        )
     }
 
     private fun updateAfterPartyInternal(afterParty: AfterParty) {
@@ -244,7 +283,7 @@ class AfterPartyCommandService(
         val storedTag =
             afterPartyInviteTagQueryUseCase.findDistinctByTagName(tagName).firstOrNull()
         if (storedTag != null) {
-            return InviteTagSpec(
+            return InviteTagSpec.of(
                 cohortId = storedTag.cohortId,
                 authorityId = storedTag.authorityId,
                 tagName = storedTag.tagName,
@@ -258,11 +297,13 @@ class AfterPartyCommandService(
         }
 
         val authorityId =
-            when (roleType) {
-                RoleType.Deeper -> DEEPER_AUTHORITY_ID
-                RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
-                RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
-            }
+            AuthorityId(
+                when (roleType) {
+                    RoleType.Deeper -> DEEPER_AUTHORITY_ID
+                    RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
+                    RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
+                },
+            )
 
         return InviteTagSpec(
             cohortId = cohortId,
@@ -294,10 +335,4 @@ class AfterPartyCommandService(
         val latestCohort = cohortQueryService.getCohort(CohortId(cohortId))
         return "${latestCohort.value}기 ${roleType.aliases.first()}"
     }
-
-    private data class InviteTagSpec(
-        val cohortId: CohortId,
-        val authorityId: Long,
-        val tagName: String,
-    )
 }

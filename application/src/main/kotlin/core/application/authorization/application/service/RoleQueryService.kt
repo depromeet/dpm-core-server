@@ -19,15 +19,31 @@ class RoleQueryService(
 ) : RoleQueryUseCase {
     override fun getAllRoles(): List<Role> {
         val latestCohortValue = cohortQueryService.getLatestCohortValue()
+        return getRolesByCohort(latestCohortValue)
+    }
+
+    override fun getRolesByCohort(cohort: String): List<Role> {
+        val cohortValue = normalizeCohortValue(cohort)
         return rolePersistencePort
             .findAll()
             .filter { role ->
                 val roleType = RoleType.from(role.name)
                 when (roleType) {
-                    RoleType.Deeper, RoleType.Organizer -> role.name.startsWith("${latestCohortValue}기 ")
+                    RoleType.Deeper, RoleType.Organizer -> role.name.startsWith("${cohortValue}기 ")
                     else -> true
                 }
             }
+    }
+
+    override fun getRoleNamesByMemberId(memberId: MemberId): List<String> =
+        memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
+
+    override fun getRoleNamesByMemberIds(memberIds: List<MemberId>): Map<MemberId, List<String>> {
+        val roleNamesByMemberId =
+            memberRolePersistencePort.findRoleNamesByMemberIds(
+                memberIds.map { it.value },
+            )
+        return memberIds.associateWith { memberId -> roleNamesByMemberId[memberId.value].orEmpty() }
     }
 
     override fun getRolesByExternalId(externalId: String): List<String> =
@@ -50,4 +66,6 @@ class RoleQueryService(
     }
 
     override fun findIdByName(roleName: String): Long = rolePersistencePort.findIdByName(roleName)
+
+    private fun normalizeCohortValue(cohort: String): String = cohort.trim().removeSuffix("기")
 }

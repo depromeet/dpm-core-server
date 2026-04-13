@@ -40,4 +40,9 @@ class AnnouncementReadRepository(
 
     override fun countByAnnouncementIdAndReadAtIsNotNull(announcementId: AnnouncementId): Int =
         announcementReadJpaRepository.countByAnnouncementIdAndReadAtIsNotNull(announcementId)
+
+    override fun findByAnnouncementIdAndReadAtIsNull(announcementId: AnnouncementId): List<AnnouncementRead> =
+        announcementReadJpaRepository
+            .findByAnnouncementIdAndReadAtIsNull(announcementId)
+            .map { it.toDomain() }
 }

@@ -22,4 +22,6 @@ interface AfterPartyInviteePersistencePort {
         memberId: MemberId,
         afterPartyId: AfterPartyId,
     ): AfterPartyInvitee?
+
+    fun findWithUnMarkedRsvp(afterPartyId: AfterPartyId): List<AfterPartyInvitee>
 }

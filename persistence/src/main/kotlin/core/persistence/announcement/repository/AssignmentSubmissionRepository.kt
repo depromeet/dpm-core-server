@@ -26,4 +26,9 @@ class AssignmentSubmissionRepository(
         assignmentSubmissionJpaRepository
             .findByAssignmentId(assignmentId)
             .map { it.toDomain() }
+
+    override fun findUnsubmittedByAssignmentIdAndSubmitStatus(assignmentId: AssignmentId): List<AssignmentSubmission> =
+        assignmentSubmissionJpaRepository
+            .findUnsubmittedByAssignmentIdAndSubmitStatus(assignmentId)
+            .map { it.toDomain() }
 }

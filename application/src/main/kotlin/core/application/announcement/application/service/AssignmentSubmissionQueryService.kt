@@ -23,4 +23,7 @@ class AssignmentSubmissionQueryService(
 
     override fun getByAssignmentId(assignmentId: AssignmentId): List<AssignmentSubmission> =
         assignmentSubmissionPersistencePort.findByAssignmentId(assignmentId)
+
+    override fun findUnsubmittedByAssignmentIdAndSubmitStatus(assignmentId: AssignmentId): List<AssignmentSubmission> =
+        assignmentSubmissionPersistencePort.findUnsubmittedByAssignmentIdAndSubmitStatus(assignmentId)
 }

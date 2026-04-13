@@ -6,6 +6,8 @@ import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.announcement.vo.AssignmentId
+import core.domain.member.vo.MemberId
 import core.entity.announcement.AnnouncementEntity
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.ANNOUNCEMENTS
@@ -78,4 +80,42 @@ class AnnouncementRepository(
 
     override fun update(announcement: Announcement): Announcement =
         announcementJpaRepository.save(AnnouncementEntity.from(announcement)).toDomain()
+
+    override fun findByAssignmentId(assignmentId: AssignmentId): Announcement? =
+        dsl
+            .select(
+                ANNOUNCEMENTS.ANNOUNCEMENT_ID,
+                ANNOUNCEMENTS.ANNOUNCEMENT_TYPE,
+                ANNOUNCEMENTS.TITLE,
+                ANNOUNCEMENTS.CONTENT,
+                ANNOUNCEMENTS.AUTHOR_ID,
+                ANNOUNCEMENTS.CREATED_AT,
+                ANNOUNCEMENTS.UPDATED_AT,
+                ANNOUNCEMENTS.DELETED_AT,
+            ).from(ANNOUNCEMENT_ASSIGNMENTS)
+            .join(ANNOUNCEMENTS)
+            .on(ANNOUNCEMENT_ASSIGNMENTS.ANNOUNCEMENT_ID.eq(ANNOUNCEMENTS.ANNOUNCEMENT_ID))
+            .where(ANNOUNCEMENT_ASSIGNMENTS.ASSIGNMENT_ID.eq(assignmentId.value))
+            .and(ANNOUNCEMENTS.DELETED_AT.isNull())
+            .fetchOne { record ->
+                Announcement(
+                    id = AnnouncementId(record[ANNOUNCEMENTS.ANNOUNCEMENT_ID]!!),
+                    announcementType = AnnouncementType.entries[record[ANNOUNCEMENTS.ANNOUNCEMENT_TYPE]!!],
+                    title = record[ANNOUNCEMENTS.TITLE]!!,
+                    content = record[ANNOUNCEMENTS.CONTENT],
+                    authorId = MemberId(record[ANNOUNCEMENTS.AUTHOR_ID]!!),
+                    createdAt =
+                        record[ANNOUNCEMENTS.CREATED_AT]!!
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toInstant(),
+                    updatedAt =
+                        record[ANNOUNCEMENTS.UPDATED_AT]!!
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toInstant(),
+                    deletedAt =
+                        record[ANNOUNCEMENTS.DELETED_AT]
+                            ?.atZone(ZoneId.of("Asia/Seoul"))
+                            ?.toInstant(),
+                )
+            }
 }

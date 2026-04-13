@@ -2,6 +2,7 @@ package core.application.announcement.presentation.controller
 
 import core.application.announcement.application.service.AnnouncementCommandService
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
+import core.application.announcement.presentation.request.RemindNotificationToMembersRequest
 import core.application.announcement.presentation.request.UpdateAnnouncementRequest
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.converter.TimeMapper.localDateTimeToInstant
@@ -105,6 +106,26 @@ class AnnouncementCommandController(
             dueAt = localDateTimeToInstant(updateAnnouncementRequest.assignment?.dueAt),
             scheduledAt = localDateTimeToInstant(updateAnnouncementRequest.scheduledAt),
             shouldSendNotification = updateAnnouncementRequest.shouldSendNotification,
+        )
+        return CustomResponse.ok()
+    }
+
+    @PostMapping("/{announcementId}/remind-notification")
+    override fun remindNotification(
+        @PathVariable announcementId: AnnouncementId,
+    ): CustomResponse<Void> {
+        announcementCommandService.remindNotification(announcementId)
+        return CustomResponse.ok()
+    }
+
+    @PostMapping("/{announcementId}/remind-notification-to-members")
+    override fun remindNotificationToMembers(
+        @PathVariable announcementId: AnnouncementId,
+        @RequestBody remindNotificationToMembersRequest: RemindNotificationToMembersRequest,
+    ): CustomResponse<Void> {
+        announcementCommandService.remindNotificationToMembers(
+            announcementId = announcementId,
+            memberIds = remindNotificationToMembersRequest.memberIds,
         )
         return CustomResponse.ok()
     }

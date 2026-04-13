@@ -1,13 +1,11 @@
 package core.application.member.application.service
 
-import core.application.common.constant.Profile
 import core.application.member.application.exception.MemberIdRequiredException
 import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.properties.SecurityProperties
-import core.application.security.redirect.handler.LoginRedirectHandler
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
@@ -17,7 +15,6 @@ import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import core.domain.security.oauth.dto.LoginResult
 import core.domain.security.oauth.dto.OAuthAttributes
-import org.springframework.core.env.Environment
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,16 +26,11 @@ class MemberLoginService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val securityProperties: SecurityProperties,
     private val tokenProvider: JwtTokenProvider,
-    private val environment: Environment,
-    private val redirectHandler: LoginRedirectHandler,
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
 ) : HandleMemberLoginUseCase {
     @Transactional
-    override fun handleLoginSuccess(
-        requestUrl: String,
-        authAttributes: OAuthAttributes,
-    ): LoginResult {
+    override fun handleLoginSuccess(authAttributes: OAuthAttributes): LoginResult {
         val provider = authAttributes.getProvider()
         val externalId = authAttributes.getExternalId()
 
@@ -52,7 +44,7 @@ class MemberLoginService(
                     ?: recoverOrCreateMemberForOrphanedOAuth(authAttributes).also {
                         memberOAuthService.relinkMemberOAuthProvider(it, authAttributes)
                     }
-            return handleExistingMemberLogin(requestUrl, member)
+            return handleExistingMemberLogin(member)
         }
 
         // 2. OAuth 연동 없음 → 신규 회원 플로우
@@ -74,18 +66,15 @@ class MemberLoginService(
         return LoginResult(savedToken, redirectUrl)
     }
 
-    private fun handleExistingMemberLogin(
-        requestUrl: String,
-        member: Member,
-    ): LoginResult {
-        val memberId = member.id ?: return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
+    private fun handleExistingMemberLogin(member: Member): LoginResult {
+        val memberId = member.id ?: return LoginResult(null, securityProperties.redirect.redirectUrl)
 
         if (member.deletedAt == null) {
             memberTeamService.ensureMemberTeamInitialized(memberId)
         }
 
         if (memberPersistencePort.existsDeletedMemberById(memberId.value) || member.status == MemberStatus.WITHDRAWN) {
-            return LoginResult(null, securityProperties.redirect.restrictedRedirectUrl)
+            return LoginResult(null, securityProperties.redirect.redirectUrl)
         }
 
         memberRoleService.ensureGuestRoleAssigned(memberId)
@@ -93,17 +82,13 @@ class MemberLoginService(
         if (member.status == MemberStatus.PENDING) {
             return generateLoginResult(
                 memberId,
-                securityProperties.redirect.restrictedRedirectUrl,
+                securityProperties.redirect.redirectUrl,
             )
         }
 
         return generateLoginResult(
             memberId,
-            redirectHandler.determineRedirectUrl(
-                requestUrl,
-                memberRoleService.resolvePrimaryRoleType(memberId),
-                Profile.get(environment),
-            ),
+            securityProperties.redirect.redirectUrl,
         )
     }
 
@@ -122,10 +107,7 @@ class MemberLoginService(
         memberOAuthService.addMemberOAuthProvider(member, authAttributes)
         memberRoleService.ensureGuestRoleAssigned(member.id ?: throw MemberIdRequiredException())
 
-        return handleExistingMemberLogin(
-            requestUrl = securityProperties.redirect.restrictedRedirectUrl,
-            member = member,
-        )
+        return handleExistingMemberLogin(member)
     }
 
     private fun selectLoginCandidate(members: List<Member>): Member {
