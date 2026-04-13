@@ -3,6 +3,7 @@ package core.application.announcement.application.service
 import core.application.announcement.application.exception.AnnouncementNotFoundException
 import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
+import core.application.announcement.application.exception.NotAnAssignmentException
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.AnnouncementRead
@@ -13,6 +14,7 @@ import core.domain.announcement.enums.SubmitStatus
 import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.event.AnnouncementCreatedEvent
 import core.domain.announcement.event.AnnouncementRemindEvent
+import core.domain.announcement.event.AnnouncementRemindToMembersEvent
 import core.domain.announcement.port.inbound.AnnouncementAssignmentCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementCommandUseCase
 import core.domain.announcement.port.inbound.AnnouncementQueryUseCase
@@ -255,6 +257,21 @@ class AnnouncementCommandService(
             AnnouncementRemindEvent.of(
                 announcement = targetAnnouncement,
                 cohortId = cohortQueryUseCase.getLatestCohortId(),
+            ),
+        )
+    }
+
+    override fun remindNotificationToMembers(
+        announcementId: AnnouncementId,
+        memberIds: List<MemberId>,
+    ) {
+        val targetAnnouncement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        if (targetAnnouncement.announcementType != AnnouncementType.ASSIGNMENT) throw NotAnAssignmentException()
+
+        eventPublisher.publishEvent(
+            AnnouncementRemindToMembersEvent.of(
+                announcement = targetAnnouncement,
+                memberIds = memberIds,
             ),
         )
     }

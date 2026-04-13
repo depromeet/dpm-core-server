@@ -55,4 +55,9 @@ interface AnnouncementCommandUseCase {
     )
 
     fun remindNotification(announcementId: AnnouncementId)
+
+    fun remindNotificationToMembers(
+        announcementId: AnnouncementId,
+        memberIds: List<MemberId>,
+    )
 }

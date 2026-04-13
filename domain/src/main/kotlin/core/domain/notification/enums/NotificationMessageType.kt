@@ -45,6 +45,11 @@ enum class NotificationMessageType(
         bodyTemplate = "{title}",
         description = "과제 미제출자 제출요청 알림",
     ),
+    ASSIGNMENT_SUBMIT_REQUEST_TO_MEMBERS(
+        title = "과제를 제출해주세요!",
+        bodyTemplate = "{title}",
+        description = "선택한 멤버 과제 제출요청 알림",
+    ),
     ASSIGNMENT_DUE_24H(
         title = "과제 제출까지 하루 남았어요.",
         bodyTemplate = "잊으신 건 아니죠? 내일 이 시간은 과제 제출 마감이에요. 미리 확인해 보세요!",
