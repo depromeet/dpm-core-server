@@ -6,6 +6,7 @@ import core.application.member.application.service.MemberQueryService
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.event.AnnouncementCreatedEvent
 import core.domain.announcement.event.AnnouncementRemindEvent
+import core.domain.announcement.event.AnnouncementRemindToMembersEvent
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
 import core.domain.notification.enums.NotificationMessageType
@@ -43,7 +44,7 @@ class AnnouncementNotificationListener(
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    fun createdEventHandle(announcementRemindEvent: AnnouncementRemindEvent) {
+    fun remindEventHandle(announcementRemindEvent: AnnouncementRemindEvent) {
         val messageType: NotificationMessageType =
             when (announcementRemindEvent.announcement.announcementType) {
                 AnnouncementType.GENERAL -> NotificationMessageType.ANNOUNCEMENT_REMIND
@@ -69,6 +70,17 @@ class AnnouncementNotificationListener(
             messageType = messageType,
             variables = mapOf("title" to announcementRemindEvent.announcement.title),
             data = mapOf("announcementId" to announcementRemindEvent.announcement.id!!.value),
+        )
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun remindToMembersEventHandle(announcementRemindToMembersEvent: AnnouncementRemindToMembersEvent) {
+        notificationCommandUseCase.sendPushNotificationToMembers(
+            memberIds = announcementRemindToMembersEvent.memberIds,
+            messageType = NotificationMessageType.ASSIGNMENT_SUBMIT_REQUEST_TO_MEMBERS,
+            variables = mapOf("title" to announcementRemindToMembersEvent.announcement.title),
+            data = mapOf("announcementId" to announcementRemindToMembersEvent.announcement.id!!.value),
         )
     }
 }
