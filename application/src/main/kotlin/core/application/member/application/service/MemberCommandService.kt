@@ -100,6 +100,11 @@ class MemberCommandService(
         anonymizeWithdrawnMemberIdentity(withdrawnMember)
     }
 
+    fun hardDelete(memberId: MemberId) {
+        memberQueryService.getMemberById(memberId)
+        memberPersistencePort.hardDeleteById(memberId)
+    }
+
     fun activate(member: Member) {
         val memberId = requireNotNull(member.id) { "Activated member must have id" }
         val latestCohortValue = cohortQueryUseCase.getLatestCohortValue()
