@@ -1,6 +1,7 @@
 package core.application.announcement.presentation.controller
 
 import core.application.announcement.presentation.request.CreateAnnouncementRequest
+import core.application.announcement.presentation.request.RemindNotificationToMembersRequest
 import core.application.announcement.presentation.request.UpdateAnnouncementRequest
 import core.application.announcement.presentation.request.UpdateSubmitStatusRequest
 import core.application.common.exception.CustomResponse
@@ -87,4 +88,17 @@ interface AnnouncementCommandApi {
         description = "공지나 과제의 리마인드 알림을 발송하는 API입니다",
     )
     fun remindNotification(announcementId: AnnouncementId): CustomResponse<Void>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "지정된 디퍼들에게 공지/과제 리마인드 알림 성공",
+    )
+    @Operation(
+        summary = "지정된 디퍼들에게 공지/과제 리마인드 알림 API",
+        description = "지정된 디퍼들에게 공지나 과제의 리마인드 알림을 발송하는 API입니다",
+    )
+    fun remindNotificationToMembers(
+        announcementId: AnnouncementId,
+        remindNotificationToMembersRequest: RemindNotificationToMembersRequest,
+    ): CustomResponse<Void>
 }
