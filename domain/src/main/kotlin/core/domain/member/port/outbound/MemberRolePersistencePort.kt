@@ -10,7 +10,15 @@ interface MemberRolePersistencePort {
         roleId: Long,
     )
 
+    fun upsertCohortRole(
+        memberId: Long,
+        roleId: Long,
+        cohortRolePrefix: String,
+    )
+
     fun findRoleNamesByMemberId(memberId: Long): List<String>
+
+    fun findRoleNamesByMemberIds(memberIds: List<Long>): Map<Long, List<String>>
 
     fun softDeleteAllByMemberId(memberId: Long)
 

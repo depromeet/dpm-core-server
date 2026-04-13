@@ -2,6 +2,7 @@ package core.domain.announcement.port.outbound
 
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.vo.AnnouncementId
+import java.time.Instant
 
 interface AssignmentPersistencePort {
     fun save(assignment: Assignment): Assignment
@@ -9,4 +10,9 @@ interface AssignmentPersistencePort {
     fun findAll(): List<Assignment>
 
     fun findByAnnouncementId(announcementId: AnnouncementId): Assignment?
+
+    fun findByDueAtBetween(
+        start: Instant,
+        end: Instant,
+    ): List<Assignment>
 }

@@ -29,9 +29,6 @@ jjwt = "0.12.6"
 # MySQL
 mysql = "8.0.33"
 
-# FCM
-firebase_admin = "9.5.0"
-
 
 [plugins]
 
@@ -58,6 +55,7 @@ jooq = { id = "nu.studer.jooq", version.ref = "jooq" }
 
 # Spring Boot Starter
 spring_boot_starter_web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_boot" }
+spring_boot_starter_webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring_boot" }
 spring_boot_starter_data_jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring_boot" }
 spring_boot_starter_validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring_boot" }
 spring_boot_starter_actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring_boot" }
@@ -91,6 +89,3 @@ jooq = { module = "org.jooq:jooq", version.ref = "jooq_generator" }
 jooq_meta = { module = "org.jooq:jooq-meta", version.ref = "jooq_generator" }
 jooq_codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq_generator" }
 jooq_meta_extensions_hibernate = { module = "org.jooq:jooq-meta-extensions-hibernate", version.ref = "jooq_generator" }
-
-# FCM
-firebase_admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase_admin" }

@@ -7,6 +7,7 @@ import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 @Transactional(readOnly = true)
@@ -20,4 +21,13 @@ class AssignmentQueryService(
 
     override fun findAssignmentByAnnouncementId(announcementId: AnnouncementId): Assignment? =
         assignmentPersistencePort.findByAnnouncementId(announcementId)
+
+    override fun findByDueAtBetween(
+        start: Instant,
+        end: Instant,
+    ): List<Assignment> =
+        assignmentPersistencePort.findByDueAtBetween(
+            start = start,
+            end = end,
+        )
 }

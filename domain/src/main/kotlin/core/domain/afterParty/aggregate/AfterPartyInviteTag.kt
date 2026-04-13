@@ -2,6 +2,7 @@ package core.domain.afterParty.aggregate
 
 import core.domain.afterParty.vo.AfterPartyId
 import core.domain.afterParty.vo.AfterPartyInviteTagId
+import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import java.time.Instant
 
@@ -9,7 +10,7 @@ class AfterPartyInviteTag(
     val id: AfterPartyInviteTagId? = null,
     val afterPartyId: AfterPartyId,
     val cohortId: CohortId,
-    val authorityId: Long,
+    val authorityId: AuthorityId,
     val tagName: String,
     val createdAt: Instant? = null,
 ) {
@@ -17,7 +18,7 @@ class AfterPartyInviteTag(
         fun create(
             afterPartyId: AfterPartyId,
             cohortId: CohortId,
-            authorityId: Long,
+            authorityId: AuthorityId,
             tagName: String,
         ): AfterPartyInviteTag =
             AfterPartyInviteTag(

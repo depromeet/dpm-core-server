@@ -46,4 +46,9 @@ class AnnouncementReadQueryService(
             announcementId = announcementId,
             memberId = memberId,
         )
+
+    override fun findUnreadByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead> =
+        announcementReadPersistencePort.findByAnnouncementIdAndReadAtIsNull(
+            announcementId,
+        )
 }
