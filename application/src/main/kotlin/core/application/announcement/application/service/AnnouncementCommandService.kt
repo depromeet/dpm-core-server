@@ -3,6 +3,7 @@ package core.application.announcement.application.service
 import core.application.announcement.application.exception.AnnouncementNotFoundException
 import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
+import core.application.announcement.application.exception.NotAnAssignmentException
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.AnnouncementRead
@@ -265,6 +266,8 @@ class AnnouncementCommandService(
         memberIds: List<MemberId>,
     ) {
         val targetAnnouncement: Announcement = announcementQueryUseCase.getAnnouncementById(announcementId)
+        if (targetAnnouncement.announcementType != AnnouncementType.ASSIGNMENT) throw NotAnAssignmentException()
+
         eventPublisher.publishEvent(
             AnnouncementRemindToMembersEvent.of(
                 announcement = targetAnnouncement,
