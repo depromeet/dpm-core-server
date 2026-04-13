@@ -57,4 +57,6 @@ interface MemberPersistencePort {
         email: String,
         signupEmail: String,
     )
+
+    fun hardDeleteById(memberId: MemberId)
 }

@@ -14,12 +14,32 @@ import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamNumber
 import core.entity.member.MemberEntity
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.AFTER_PARTY
+import org.jooq.dsl.tables.references.AFTER_PARTY_INVITEES
+import org.jooq.dsl.tables.references.AFTER_PARTY_INVITE_TAGS
+import org.jooq.dsl.tables.references.ANNOUNCEMENTS
+import org.jooq.dsl.tables.references.ANNOUNCEMENT_ASSIGNMENTS
+import org.jooq.dsl.tables.references.ANNOUNCEMENT_READS
+import org.jooq.dsl.tables.references.ASSIGNMENTS
+import org.jooq.dsl.tables.references.ASSIGNMENT_SUBMISSIONS
+import org.jooq.dsl.tables.references.ATTENDANCES
+import org.jooq.dsl.tables.references.BILLS
 import org.jooq.dsl.tables.references.COHORTS
+import org.jooq.dsl.tables.references.GATHERINGS
+import org.jooq.dsl.tables.references.GATHERING_MEMBERS
+import org.jooq.dsl.tables.references.GATHERING_RECEIPTS
+import org.jooq.dsl.tables.references.GATHERING_RECEIPT_PHOTOS
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_COHORTS
+import org.jooq.dsl.tables.references.MEMBER_CREDENTIALS
+import org.jooq.dsl.tables.references.MEMBER_OAUTH
+import org.jooq.dsl.tables.references.MEMBER_PERMISSIONS
 import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
+import org.jooq.dsl.tables.references.NOTIFICATION_TOKENS
+import org.jooq.dsl.tables.references.REFRESH_TOKENS
 import org.jooq.dsl.tables.references.ROLES
+import org.jooq.dsl.tables.references.SENT_ANNOUNCEMENT_NOTIFICATIONS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
@@ -320,6 +340,182 @@ class MemberRepository(
             .set(MEMBERS.SIGNUP_EMAIL, signupEmail)
             .set(MEMBERS.UPDATED_AT, LocalDateTime.now())
             .where(MEMBERS.MEMBER_ID.eq(memberId.value))
+            .execute()
+    }
+
+    override fun hardDeleteById(memberId: MemberId) {
+        val value = memberId.value
+        val authoredAnnouncementIds =
+            dsl
+                .select(ANNOUNCEMENTS.ANNOUNCEMENT_ID)
+                .from(ANNOUNCEMENTS)
+                .where(ANNOUNCEMENTS.AUTHOR_ID.eq(value))
+                .fetch(ANNOUNCEMENTS.ANNOUNCEMENT_ID)
+                .filterNotNull()
+        val authoredAssignmentIds =
+            if (authoredAnnouncementIds.isEmpty()) {
+                emptyList()
+            } else {
+                dsl
+                    .select(ANNOUNCEMENT_ASSIGNMENTS.ASSIGNMENT_ID)
+                    .from(ANNOUNCEMENT_ASSIGNMENTS)
+                    .where(ANNOUNCEMENT_ASSIGNMENTS.ANNOUNCEMENT_ID.`in`(authoredAnnouncementIds))
+                    .fetch(ANNOUNCEMENT_ASSIGNMENTS.ASSIGNMENT_ID)
+                    .filterNotNull()
+            }
+        val ownedAfterPartyIds =
+            dsl
+                .select(AFTER_PARTY.AFTER_PARTY_ID)
+                .from(AFTER_PARTY)
+                .where(AFTER_PARTY.MEMBER_ID.eq(value))
+                .fetch(AFTER_PARTY.AFTER_PARTY_ID)
+                .filterNotNull()
+        val hostedBillIds =
+            dsl
+                .select(BILLS.BILL_ID)
+                .from(BILLS)
+                .where(BILLS.HOST_USER_ID.eq(value))
+                .fetch(BILLS.BILL_ID)
+                .filterNotNull()
+        val hostedGatheringIds =
+            dsl
+                .select(GATHERINGS.GATHERING_ID)
+                .from(GATHERINGS)
+                .where(GATHERINGS.HOST_USER_ID.eq(value))
+                .fetch(GATHERINGS.GATHERING_ID)
+                .filterNotNull()
+        val billGatheringIds =
+            if (hostedBillIds.isEmpty()) {
+                emptyList()
+            } else {
+                dsl
+                    .select(GATHERINGS.GATHERING_ID)
+                    .from(GATHERINGS)
+                    .where(GATHERINGS.BILL_ID.`in`(hostedBillIds))
+                    .fetch(GATHERINGS.GATHERING_ID)
+                    .filterNotNull()
+            }
+        val gatheringIdsToDelete = (hostedGatheringIds + billGatheringIds).distinct()
+        val receiptIdsToDelete =
+            if (gatheringIdsToDelete.isEmpty()) {
+                emptyList()
+            } else {
+                dsl
+                    .select(GATHERING_RECEIPTS.RECEIPT_ID)
+                    .from(GATHERING_RECEIPTS)
+                    .where(GATHERING_RECEIPTS.GATHERING_ID.`in`(gatheringIdsToDelete))
+                    .fetch(GATHERING_RECEIPTS.RECEIPT_ID)
+                    .filterNotNull()
+            }
+
+        if (ownedAfterPartyIds.isNotEmpty()) {
+            dsl.deleteFrom(AFTER_PARTY_INVITE_TAGS)
+                .where(AFTER_PARTY_INVITE_TAGS.AFTER_PARTY_ID.`in`(ownedAfterPartyIds))
+                .execute()
+            dsl.deleteFrom(AFTER_PARTY_INVITEES)
+                .where(AFTER_PARTY_INVITEES.AFTER_PARTY_ID.`in`(ownedAfterPartyIds))
+                .execute()
+        }
+        dsl.deleteFrom(AFTER_PARTY_INVITEES)
+            .where(AFTER_PARTY_INVITEES.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(AFTER_PARTY)
+            .where(AFTER_PARTY.MEMBER_ID.eq(value))
+            .execute()
+
+        if (authoredAnnouncementIds.isNotEmpty()) {
+            dsl.deleteFrom(SENT_ANNOUNCEMENT_NOTIFICATIONS)
+                .where(SENT_ANNOUNCEMENT_NOTIFICATIONS.ANNOUNCEMENT_ID.`in`(authoredAnnouncementIds))
+                .execute()
+            dsl.deleteFrom(ANNOUNCEMENT_READS)
+                .where(ANNOUNCEMENT_READS.ANNOUNCEMENT_ID.`in`(authoredAnnouncementIds))
+                .execute()
+        }
+        dsl.deleteFrom(ANNOUNCEMENT_READS)
+            .where(ANNOUNCEMENT_READS.MEMBER_ID.eq(value))
+            .execute()
+        if (authoredAssignmentIds.isNotEmpty()) {
+            dsl.deleteFrom(ASSIGNMENT_SUBMISSIONS)
+                .where(ASSIGNMENT_SUBMISSIONS.ASSIGNMENT_ID.`in`(authoredAssignmentIds))
+                .execute()
+        }
+        dsl.deleteFrom(ASSIGNMENT_SUBMISSIONS)
+            .where(ASSIGNMENT_SUBMISSIONS.MEMBER_ID.eq(value))
+            .execute()
+        if (authoredAnnouncementIds.isNotEmpty()) {
+            dsl.deleteFrom(ANNOUNCEMENT_ASSIGNMENTS)
+                .where(ANNOUNCEMENT_ASSIGNMENTS.ANNOUNCEMENT_ID.`in`(authoredAnnouncementIds))
+                .execute()
+        }
+        if (authoredAssignmentIds.isNotEmpty()) {
+            dsl.deleteFrom(ASSIGNMENTS)
+                .where(ASSIGNMENTS.ASSIGNMENT_ID.`in`(authoredAssignmentIds))
+                .execute()
+        }
+        dsl.deleteFrom(ANNOUNCEMENTS)
+            .where(ANNOUNCEMENTS.AUTHOR_ID.eq(value))
+            .execute()
+
+        dsl.deleteFrom(ATTENDANCES)
+            .where(ATTENDANCES.MEMBER_ID.eq(value))
+            .execute()
+
+        if (gatheringIdsToDelete.isNotEmpty()) {
+            dsl.deleteFrom(GATHERING_MEMBERS)
+                .where(GATHERING_MEMBERS.GATHERING_ID.`in`(gatheringIdsToDelete))
+                .execute()
+        }
+        dsl.deleteFrom(GATHERING_MEMBERS)
+            .where(GATHERING_MEMBERS.MEMBER_ID.eq(value))
+            .execute()
+        if (receiptIdsToDelete.isNotEmpty()) {
+            dsl.deleteFrom(GATHERING_RECEIPT_PHOTOS)
+                .where(GATHERING_RECEIPT_PHOTOS.RECEIPT_ID.`in`(receiptIdsToDelete))
+                .execute()
+        }
+        if (gatheringIdsToDelete.isNotEmpty()) {
+            dsl.deleteFrom(GATHERING_RECEIPTS)
+                .where(GATHERING_RECEIPTS.GATHERING_ID.`in`(gatheringIdsToDelete))
+                .execute()
+            dsl.deleteFrom(GATHERINGS)
+                .where(GATHERINGS.GATHERING_ID.`in`(gatheringIdsToDelete))
+                .execute()
+        }
+        if (hostedBillIds.isNotEmpty()) {
+            dsl.deleteFrom(BILLS)
+                .where(BILLS.BILL_ID.`in`(hostedBillIds))
+                .execute()
+        }
+
+        dsl.deleteFrom(NOTIFICATION_TOKENS)
+            .where(NOTIFICATION_TOKENS.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBER_CREDENTIALS)
+            .where(MEMBER_CREDENTIALS.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(table(name("member_authorities")))
+            .where(field(name("member_id"), Long::class.java).eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBER_PERMISSIONS)
+            .where(MEMBER_PERMISSIONS.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBER_ROLES)
+            .where(MEMBER_ROLES.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBER_TEAMS)
+            .where(MEMBER_TEAMS.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBER_COHORTS)
+            .where(MEMBER_COHORTS.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBER_OAUTH)
+            .where(MEMBER_OAUTH.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(REFRESH_TOKENS)
+            .where(REFRESH_TOKENS.MEMBERID.eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBERS)
+            .where(MEMBERS.MEMBER_ID.eq(value))
             .execute()
     }
 

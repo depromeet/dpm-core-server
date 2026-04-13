@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -63,6 +64,11 @@ class GlobalExceptionHandler {
             }
         return CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, message)
     }
+
+    @ExceptionHandler(NoResourceFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    protected fun handleNoResourceFoundException(exception: NoResourceFoundException): CustomResponse<Void> =
+        CustomResponse.error(GlobalExceptionCode.NOT_FOUND)
 
     @ExceptionHandler(Exception::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

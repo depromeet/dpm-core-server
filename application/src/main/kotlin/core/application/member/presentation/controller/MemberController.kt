@@ -25,6 +25,7 @@ import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -82,6 +83,15 @@ class MemberController(
         response: HttpServletResponse,
     ): CustomResponse<Void> {
         memberCommandService.withdraw(memberId, response)
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("hasAuthority('delete:member')")
+    @DeleteMapping("/{memberId}/hard-delete")
+    override fun hardDelete(
+        @PathVariable memberId: MemberId,
+    ): CustomResponse<Void> {
+        memberCommandService.hardDelete(memberId)
         return CustomResponse.ok()
     }
 

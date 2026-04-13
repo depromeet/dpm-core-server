@@ -147,6 +147,16 @@ interface MemberApi {
     ): CustomResponse<Void>
 
     @Operation(
+        summary = "멤버 하드 삭제 API (admin)",
+        description = "memberId를 기준으로 멤버와 연관된 데이터를 실제 DB에서 삭제합니다.",
+    )
+    @ApiResponse(responseCode = "200", description = "멤버 하드 삭제 성공")
+    fun hardDelete(
+        @Parameter(description = "하드 삭제 대상 멤버 식별자", example = "1")
+        memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @Operation(
         summary = "멤버 데이터 주입 및 승인 API (dev)",
         description = "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다.",
         requestBody =

@@ -11,10 +11,10 @@ import core.domain.member.vo.MemberId
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
@@ -65,7 +65,7 @@ class RoleController(
         )
 
     @PreAuthorize("hasAuthority('update:authorization')")
-    @PatchMapping("/members/{memberId}")
+    @RequestMapping("/members/{memberId}", method = [RequestMethod.PATCH, RequestMethod.PUT])
     override fun updateMemberRole(
         @PathVariable memberId: MemberId,
         @Valid @RequestBody request: UpdateMemberRoleRequest,
