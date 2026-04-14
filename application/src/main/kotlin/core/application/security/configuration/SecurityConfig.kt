@@ -2,6 +2,7 @@ package core.application.security.configuration
 
 import core.application.security.handler.CustomAuthenticationEntryPoint
 import core.application.security.oauth.client.CustomOAuth2AccessTokenResponseClient
+import core.application.security.oauth.resolver.HttpsOAuth2AuthorizationRequestResolver
 import core.application.security.oauth.token.JwtAuthenticationFilter
 import core.application.security.properties.SecurityProperties
 import org.springframework.context.annotation.Bean
@@ -33,6 +34,7 @@ class SecurityConfig(
     private val logoutSuccessHandler: LogoutSuccessHandler,
     private val customOAuth2AccessTokenResponseClient: CustomOAuth2AccessTokenResponseClient,
     private val customAuthenticationEntryPoint: CustomAuthenticationEntryPoint,
+    private val httpsOAuth2AuthorizationRequestResolver: HttpsOAuth2AuthorizationRequestResolver,
 ) {
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
@@ -97,6 +99,7 @@ class SecurityConfig(
                     .tokenEndpoint {
                         it.accessTokenResponseClient(customOAuth2AccessTokenResponseClient)
                     }.authorizationEndpoint {
+                        it.authorizationRequestResolver(httpsOAuth2AuthorizationRequestResolver)
                         it.authorizationRequestRepository(authorizationRequestRepository)
                     }.userInfoEndpoint {
                         it.userService(defaultOAuth2UserService)
