@@ -4,5 +4,4 @@ import core.domain.refreshToken.aggregate.RefreshToken
 
 data class LoginResult(
     val refreshToken: RefreshToken?,
-    val redirectUrl: String,
 )
