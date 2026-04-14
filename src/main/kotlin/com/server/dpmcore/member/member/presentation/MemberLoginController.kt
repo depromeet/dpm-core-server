@@ -1,18 +1,14 @@
 package com.server.dpmcore.member.member.presentation
 
+import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RestController
 
-@RestController
+@Controller
 class MemberLoginController {
     companion object {
-        const val KAKAO_AUTHORIZATION_PATH = "/oauth2/authorization/kakao"
+        const val KAKAO_REDIRECT_URL = "redirect:/oauth2/authorization/kakao"
     }
 
     @GetMapping("/login/kakao")
-    fun login(): OAuthAuthorizationPathResponse = OAuthAuthorizationPathResponse(KAKAO_AUTHORIZATION_PATH)
-
-    data class OAuthAuthorizationPathResponse(
-        val authorizationPath: String,
-    )
+    fun login(): String = KAKAO_REDIRECT_URL
 }
