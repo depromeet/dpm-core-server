@@ -35,4 +35,9 @@ class MemberLoginController {
         val familyName: String? = null,
         val givenName: String? = null,
     )
+
+    data class KakaoLoginRequest(
+        val authorizationCode: String,
+        val redirectUri: String? = null,
+    )
 }

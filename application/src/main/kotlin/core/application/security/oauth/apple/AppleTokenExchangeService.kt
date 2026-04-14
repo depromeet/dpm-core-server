@@ -13,7 +13,10 @@ class AppleTokenExchangeService(
 ) {
     private val restClient = RestClient.create()
 
-    fun getTokens(authorizationCode: String): AppleTokenResponse {
+    fun getTokens(
+        authorizationCode: String,
+        redirectUri: String? = null,
+    ): AppleTokenResponse {
         val clientSecret = appleClientSecretGenerator.generateClientSecret()
 
         val formData =
@@ -22,7 +25,7 @@ class AppleTokenExchangeService(
                 add("client_secret", clientSecret)
                 add("code", authorizationCode)
                 add("grant_type", "authorization_code")
-                add("redirect_uri", appleProperties.redirectUri)
+                add("redirect_uri", redirectUri ?: appleProperties.redirectUri)
             }
 
         return restClient.post()

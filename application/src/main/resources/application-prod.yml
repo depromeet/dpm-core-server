@@ -14,7 +14,7 @@ spring:
           apple:
             client-id: ${PROD_APPLE_CLIENT_ID}
             client-secret: ${PROD_APPLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/apple"
+            redirect-uri: ${PROD_APPLE_REDIRECT_URI}
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             scope:
