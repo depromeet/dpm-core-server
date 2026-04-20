@@ -47,7 +47,6 @@ import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.selectOne
-import org.jooq.impl.DSL.table
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -327,7 +326,6 @@ class MemberRepository(
             .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
             .limit(1)
             .fetchOne(TEAMS.TEAM_ID)
-            ?.toLong()
 
     override fun anonymizeIdentity(
         memberId: MemberId,
@@ -493,9 +491,6 @@ class MemberRepository(
         dsl.deleteFrom(MEMBER_CREDENTIALS)
             .where(MEMBER_CREDENTIALS.MEMBER_ID.eq(value))
             .execute()
-        dsl.deleteFrom(table(name("member_authorities")))
-            .where(field(name("member_id"), Long::class.java).eq(value))
-            .execute()
         dsl.deleteFrom(MEMBER_PERMISSIONS)
             .where(MEMBER_PERMISSIONS.MEMBER_ID.eq(value))
             .execute()
@@ -512,7 +507,7 @@ class MemberRepository(
             .where(MEMBER_OAUTH.MEMBER_ID.eq(value))
             .execute()
         dsl.deleteFrom(REFRESH_TOKENS)
-            .where(REFRESH_TOKENS.MEMBERID.eq(value))
+            .where(field(name("member_id"), Long::class.java).eq(value))
             .execute()
         dsl.deleteFrom(MEMBERS)
             .where(MEMBERS.MEMBER_ID.eq(value))
