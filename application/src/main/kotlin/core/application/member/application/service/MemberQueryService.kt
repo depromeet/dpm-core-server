@@ -3,8 +3,7 @@ package core.application.member.application.service
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
-import core.application.member.application.service.authority.MemberAuthorityService
-import core.application.member.application.service.role.MemberRoleService
+import core.application.member.application.service.access.MemberAccessService
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
@@ -25,8 +24,7 @@ import org.springframework.stereotype.Service
 @Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
-    private val memberRoleService: MemberRoleService,
-    private val memberAuthorityService: MemberAuthorityService,
+    private val memberAccessService: MemberAccessService,
     private val cohortQueryUseCase: CohortQueryUseCase,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
@@ -43,7 +41,7 @@ class MemberQueryService(
     fun memberMe(memberId: MemberId): MemberDetailsResponse =
         MemberDetailsResponse.of(
             getMemberById(memberId),
-            memberAuthorityService.getAuthorityNamesByMemberId(memberId),
+            memberAccessService.isAdmin(memberId),
             getMemberTeamNumber(memberId),
             cohortQueryUseCase.getLatestCohortId().value,
             cohortQueryUseCase.getLatestCohortValue(),

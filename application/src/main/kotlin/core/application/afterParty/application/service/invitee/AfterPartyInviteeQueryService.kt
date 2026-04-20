@@ -3,7 +3,7 @@ package core.application.afterParty.application.service.invitee
 import core.application.afterParty.application.exception.member.AfterPartyMemberNotFoundException
 import core.application.afterParty.presentation.response.AfterPartyRsvpMemberResponse
 import core.application.member.application.service.MemberQueryService
-import core.application.member.application.service.authority.MemberAuthorityService
+import core.application.member.application.service.access.MemberAccessService
 import core.domain.afterParty.aggregate.AfterPartyInvitee
 import core.domain.afterParty.port.inbound.AfterPartyInviteeQueryUseCase
 import core.domain.afterParty.port.outbound.AfterPartyInviteePersistencePort
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service
 class AfterPartyInviteeQueryService(
     val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val memberQueryService: MemberQueryService,
-    val memberAuthorityService: MemberAuthorityService,
+    val memberAccessService: MemberAccessService,
 ) : AfterPartyInviteeQueryUseCase {
     override fun getInviteesByAfterPartyId(afterPartyId: AfterPartyId): List<AfterPartyInvitee> =
         afterPartyInviteePersistencePort.findByAfterPartyId(afterPartyId)
@@ -36,7 +36,7 @@ class AfterPartyInviteeQueryService(
         getInviteesByAfterPartyId(afterPartyId).map { invitee ->
             val rsvpMember: Member = memberQueryService.getMemberById(invitee.memberId)
             val rsvpMemberTeamNumber: TeamNumber = memberQueryService.getMemberTeamNumber(invitee.memberId)
-            val isAdmin: Boolean = memberAuthorityService.isAdmin(invitee.memberId)
+            val isAdmin: Boolean = memberAccessService.isAdmin(invitee.memberId)
             AfterPartyRsvpMemberResponse(
                 memberId = rsvpMember.id ?: throw AfterPartyMemberNotFoundException(),
                 name = rsvpMember.name,

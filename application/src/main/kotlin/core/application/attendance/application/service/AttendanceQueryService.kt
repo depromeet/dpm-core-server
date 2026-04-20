@@ -9,7 +9,6 @@ import core.application.attendance.presentation.response.MemberAttendancesRespon
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.member.application.service.MemberQueryService
-import core.application.member.application.service.authority.MemberAuthorityService
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
@@ -27,7 +26,6 @@ import kotlin.math.ceil
 @Transactional(readOnly = true)
 class AttendanceQueryService(
     private val memberQueryService: MemberQueryService,
-    private val memberAuthorityService: MemberAuthorityService,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
 ) {
