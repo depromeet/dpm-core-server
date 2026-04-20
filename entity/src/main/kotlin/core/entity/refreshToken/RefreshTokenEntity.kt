@@ -12,6 +12,7 @@ import jakarta.persistence.Table
 @Table(name = "refresh_tokens")
 class RefreshTokenEntity(
     @Id
+    @Column(name = "member_id")
     val memberId: Long,
     @Lob
     @Column(columnDefinition = "TEXT")
