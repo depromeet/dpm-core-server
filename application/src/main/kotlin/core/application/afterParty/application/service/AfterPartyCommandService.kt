@@ -4,7 +4,7 @@ import core.application.afterParty.application.exception.AfterPartyNotFoundExcep
 import core.application.afterParty.application.exception.InviteTagNameNotFoundException
 import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.exception.MemberNotFoundException
-import core.application.member.application.service.authority.MemberAuthorityService
+import core.application.member.application.service.access.MemberAccessService
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
 import core.domain.afterParty.aggregate.AfterPartyInvitee
@@ -46,7 +46,7 @@ class AfterPartyCommandService(
     val afterPartyInviteTagQueryUseCase: AfterPartyInviteTagQueryUseCase,
     val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val cohortPersistencePort: CohortPersistencePort,
-    val memberAuthorityService: MemberAuthorityService,
+    val memberAccessService: MemberAccessService,
     val cohortQueryService: CohortQueryService,
     val notificationCommandUseCase: NotificationCommandUseCase,
     val eventPublisher: ApplicationEventPublisher,
@@ -131,11 +131,12 @@ class AfterPartyCommandService(
         cohortId: CohortId,
     ): Int {
         val now = Instant.now()
-        val memberAuthorityIds = memberAuthorityService.getActiveAuthorityIdsByMemberId(memberId).toSet()
-
-        if (memberAuthorityIds.isEmpty()) {
-            return 0
-        }
+        val memberRoleType =
+            memberAccessService.getRoleType(
+                memberId = memberId,
+                cohortValue = cohortQueryService.getCohort(cohortId).value,
+            )
+        val memberAuthorityId = legacyAuthorityIdForInviteTag(memberRoleType) ?: return 0
 
         val afterParties: List<AfterParty> =
             afterPartyPersistencePort
@@ -149,7 +150,7 @@ class AfterPartyCommandService(
             val inviteTags = afterPartyInviteTagPersistencePort.findByAfterPartyId(afterPartyId)
             val shouldInvite =
                 inviteTags.any { inviteTag ->
-                    inviteTag.cohortId == cohortId && inviteTag.authorityId.value in memberAuthorityIds
+                    inviteTag.cohortId == cohortId && inviteTag.authorityId.value == memberAuthorityId
                 }
 
             if (!shouldInvite) {
@@ -335,4 +336,11 @@ class AfterPartyCommandService(
         val latestCohort = cohortQueryService.getCohort(CohortId(cohortId))
         return "${latestCohort.value}기 ${roleType.aliases.first()}"
     }
+
+    private fun legacyAuthorityIdForInviteTag(roleType: RoleType): Long? =
+        when (roleType) {
+            RoleType.Deeper -> DEEPER_AUTHORITY_ID
+            RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
+            RoleType.Core, RoleType.Guest -> null
+        }
 }

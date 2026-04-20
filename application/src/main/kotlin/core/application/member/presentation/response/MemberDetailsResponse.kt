@@ -53,7 +53,7 @@ data class MemberDetailsResponse(
     companion object {
         fun of(
             member: Member,
-            authorities: List<String>,
+            isAdmin: Boolean,
             teamNumber: TeamNumber,
             latestCohortId: Long,
             latestCohortValue: String,
@@ -69,10 +69,8 @@ data class MemberDetailsResponse(
                         member.memberCohorts.maxByOrNull { it.cohortId.value }?.cohortId?.value?.toString()
                     },
                 teamNumber = teamNumber,
-                isAdmin = authorities.any { it == ADMIN_AUTHORITY },
+                isAdmin = isAdmin,
                 status = member.status.name,
             )
-
-        private const val ADMIN_AUTHORITY = "ORGANIZER"
     }
 }
