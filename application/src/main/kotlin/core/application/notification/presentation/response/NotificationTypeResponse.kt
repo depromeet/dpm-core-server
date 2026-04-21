@@ -9,7 +9,7 @@ data class NotificationTypeResponse(
     val name: String,
     @Schema(description = "알림 제목", example = "세션 시작 30분 전 알림")
     val title: String,
-    @Schema(description = "알림 본문 템플릿", example = "{sessionName} 세션이 30분 후 시작됩니다!")
+    @Schema(description = "알림 본문 템플릿", example = "{title} 세션이 30분 후 시작됩니다!")
     val bodyTemplate: String,
     @Schema(description = "알림 설명", example = "세션 시작 30분 전 알림")
     val description: String,

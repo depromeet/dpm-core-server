@@ -83,7 +83,7 @@ class NotificationController(
         notificationService.sendPushNotification(
             memberId = messageTypeNotificationRequest.targetMemberId,
             messageType = messageTypeNotificationRequest.notificationMessageType,
-            variables = emptyMap(),
+            variables = messageTypeNotificationRequest.variables,
             data = null,
         )
         return CustomResponse.ok()
