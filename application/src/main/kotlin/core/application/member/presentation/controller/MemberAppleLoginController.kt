@@ -7,11 +7,10 @@ import core.application.member.application.service.auth.KakaoAuthService
 import core.application.member.presentation.request.EmailPasswordLoginRequest
 import core.application.security.oauth.service.OAuthAuthorizationUrl
 import core.application.security.oauth.service.OAuthAuthorizationUrlService
-import core.application.security.properties.SecurityProperties
+import core.application.security.oauth.token.JwtTokenInjector
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
@@ -26,8 +25,8 @@ class MemberAppleLoginController(
     private val appleAuthService: AppleAuthService,
     private val kakaoAuthService: KakaoAuthService,
     private val oAuthAuthorizationUrlService: OAuthAuthorizationUrlService,
-    private val securityProperties: SecurityProperties,
     private val emailPasswordAuthService: EmailPasswordAuthService,
+    private val tokenInjector: JwtTokenInjector,
 ) {
     @GetMapping("/login/oauth/authorization/{provider}")
     @Operation(
@@ -124,56 +123,7 @@ class MemberAppleLoginController(
         response: HttpServletResponse,
         tokens: AuthTokenResponse,
     ) {
-        // 1 day
-        val maxAgeSecondsForAccessToken = 60 * 60 * 24
-        val accessTokenCookie =
-            createAccessTokenCookie(
-                value = tokens.accessToken,
-                maxAgeSeconds = maxAgeSecondsForAccessToken,
-            )
-
-        // 30 days
-        val maxAgeSecondsForRefreshToken = 60 * 60 * 24 * 30
-        val refreshTokenCookie =
-            createRefreshTokenCookie(
-                value = tokens.refreshToken,
-                maxAgeSeconds = maxAgeSecondsForRefreshToken,
-            )
-
-        response.addCookie(accessTokenCookie)
-        response.addCookie(refreshTokenCookie)
+        tokenInjector.injectAccessToken(tokens.accessToken, response)
+        tokenInjector.injectRefreshToken(tokens.refreshToken, response)
     }
-
-    private fun createAccessTokenCookie(
-        value: String,
-        maxAgeSeconds: Int,
-    ): Cookie =
-        Cookie("accessToken", value).apply {
-            path = "/"
-            domain = resolveDomain()
-            maxAge = maxAgeSeconds
-            isHttpOnly = true
-            secure = securityProperties.cookie.secure
-            setAttribute("SameSite", "Lax")
-        }
-
-    private fun createRefreshTokenCookie(
-        value: String,
-        maxAgeSeconds: Int,
-    ): Cookie =
-        Cookie("refreshToken", value).apply {
-            path = "/"
-            domain = resolveDomain()
-            maxAge = maxAgeSeconds
-            isHttpOnly = true
-            secure = true
-            setAttribute("SameSite", "None")
-        }
-
-    private fun resolveDomain(): String? =
-        if (securityProperties.cookie.domain != "localhost") {
-            securityProperties.cookie.domain
-        } else {
-            null
-        }
 }

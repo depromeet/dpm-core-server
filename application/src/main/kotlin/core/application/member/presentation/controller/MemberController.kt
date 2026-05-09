@@ -15,13 +15,12 @@ import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.member.presentation.response.MemberOverviewResponse
-import core.application.security.properties.SecurityProperties
+import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
@@ -42,7 +41,7 @@ class MemberController(
     private val memberCommandService: MemberCommandService,
     private val appleAuthService: AppleAuthService,
     private val emailPasswordAuthService: EmailPasswordAuthService,
-    private val securityProperties: SecurityProperties,
+    private val tokenInjector: JwtTokenInjector,
 ) : MemberApi {
     //    @PreAuthorize("hasAuthority('read:member')")
     @PreAuthorize("permitAll()")
@@ -76,7 +75,7 @@ class MemberController(
     }
 
     //    @PreAuthorize("hasAuthority('delete:member')")
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/withdraw")
     override fun withdraw(
         memberId: MemberId,
@@ -207,30 +206,7 @@ class MemberController(
         response: HttpServletResponse,
         tokens: AuthTokenResponse,
     ) {
-        val accessTokenCookie = createCookie("accessToken", tokens.accessToken, 60 * 60 * 24) // 1 day
-        val refreshTokenCookie = createCookie("refreshToken", tokens.refreshToken, 60 * 60 * 24 * 30) // 30 days
-
-        response.addCookie(accessTokenCookie)
-        response.addCookie(refreshTokenCookie)
-    }
-
-    private fun createCookie(
-        name: String,
-        value: String,
-        maxAgeSeconds: Int,
-    ): Cookie {
-        return Cookie(name, value).apply {
-            path = "/"
-            domain =
-                if (securityProperties.cookie.domain != "localhost") {
-                    securityProperties.cookie.domain
-                } else {
-                    null
-                }
-            maxAge = maxAgeSeconds
-            isHttpOnly = true
-            secure = securityProperties.cookie.secure // Use config value (true for dev/prod, false for local)
-            setAttribute("SameSite", "None")
-        }
+        tokenInjector.injectAccessToken(tokens.accessToken, response)
+        tokenInjector.injectRefreshToken(tokens.refreshToken, response)
     }
 }

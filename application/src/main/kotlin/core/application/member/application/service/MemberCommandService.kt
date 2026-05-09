@@ -24,6 +24,7 @@ import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -46,6 +47,8 @@ class MemberCommandService(
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
+    private val logger = KotlinLogging.logger { }
+
     /**
      * 회원 가입 시 멤버별 팀/파트/상태 정보를 주입함. (DEV)
      *
@@ -82,6 +85,7 @@ class MemberCommandService(
         memberId: MemberId,
         response: HttpServletResponse,
     ) {
+        logger.warn { "Invalidating refresh token during member withdrawal for memberId=${memberId.value}" }
         tokenInjector.invalidateRefreshToken(response)
         refreshTokenInvalidator.destroyRefreshToken(memberId)
 
