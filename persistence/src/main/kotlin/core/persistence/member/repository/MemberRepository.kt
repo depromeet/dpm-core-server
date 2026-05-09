@@ -1,10 +1,10 @@
 package core.persistence.member.repository
 
 import core.domain.authorization.vo.RoleId
+import core.domain.authorization.vo.RoleType
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
-import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -43,10 +43,10 @@ import org.jooq.dsl.tables.references.SENT_ANNOUNCEMENT_NOTIFICATIONS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.selectOne
-import org.jooq.impl.DSL.table
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -159,28 +159,28 @@ class MemberRepository(
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
         authorityId: AuthorityId,
-    ): List<MemberId> =
-        run {
-            val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
-            val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
-            val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
-            val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
+    ): List<MemberId> {
+        val roleName = roleNameFieldForCohortValue(roleTypeFromLegacyAuthorityId(authorityId))
 
-            dsl
-                .selectDistinct(MEMBERS.MEMBER_ID)
-                .from(MEMBERS)
-                .join(MEMBER_COHORTS)
-                .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
-                .join(memberAuthoritiesTable)
-                .on(MEMBERS.MEMBER_ID.eq(memberAuthoritiesMemberIdField))
-                .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
-                .and(MEMBERS.DELETED_AT.isNull)
-                .and(memberAuthoritiesAuthorityIdField.eq(authorityId.value))
-                .and(memberAuthoritiesDeletedAtField.isNull)
-                .fetch(MEMBERS.MEMBER_ID)
-                .filterNotNull()
-                .map { MemberId(it) }
-        }
+        return dsl
+            .selectDistinct(MEMBERS.MEMBER_ID)
+            .from(MEMBERS)
+            .join(MEMBER_COHORTS)
+            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+            .join(COHORTS)
+            .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
+            .join(MEMBER_ROLES)
+            .on(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(ROLES)
+            .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
+            .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+            .and(MEMBERS.DELETED_AT.isNull)
+            .and(MEMBER_ROLES.DELETED_AT.isNull)
+            .and(ROLES.NAME.eq(roleName))
+            .fetch(MEMBERS.MEMBER_ID)
+            .filterNotNull()
+            .map { MemberId(it) }
+    }
 
     override fun findMemberNameAndRoleByMemberId(memberId: MemberId): List<MemberNameRoleQueryModel> =
         dsl
@@ -222,18 +222,17 @@ class MemberRepository(
         val maxTeamNumber = max(TEAMS.NUMBER).`as`("max_team_number")
         val latestMemberCohorts = MEMBER_COHORTS.`as`("latest_member_cohorts")
 
-        val memberAuthoritiesTable = table(name("member_authorities")).`as`("ma")
-        val memberAuthoritiesMemberIdField = field(name("ma", "member_id"), Long::class.java)
-        val memberAuthoritiesAuthorityIdField = field(name("ma", "authority_id"), Long::class.java)
-        val memberAuthoritiesDeletedAtField = field(name("ma", "deleted_at"), LocalDateTime::class.java)
-
         val isAdminField =
             exists(
                 selectOne()
-                    .from(memberAuthoritiesTable)
-                    .where(memberAuthoritiesMemberIdField.eq(MEMBERS.MEMBER_ID))
-                    .and(memberAuthoritiesAuthorityIdField.eq(ORGANIZER_AUTHORITY_ID))
-                    .and(memberAuthoritiesDeletedAtField.isNull),
+                    .from(MEMBER_ROLES)
+                    .join(ROLES)
+                    .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
+                    .join(COHORTS)
+                    .on(COHORTS.COHORT_ID.eq(latestCohortId))
+                    .where(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                    .and(MEMBER_ROLES.DELETED_AT.isNull)
+                    .and(ROLES.NAME.eq(roleNameFieldForCohortValue(RoleType.Organizer))),
             ).`as`("is_admin")
 
         val statusPriority =
@@ -327,7 +326,6 @@ class MemberRepository(
             .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
             .limit(1)
             .fetchOne(TEAMS.TEAM_ID)
-            ?.toLong()
 
     override fun anonymizeIdentity(
         memberId: MemberId,
@@ -493,9 +491,6 @@ class MemberRepository(
         dsl.deleteFrom(MEMBER_CREDENTIALS)
             .where(MEMBER_CREDENTIALS.MEMBER_ID.eq(value))
             .execute()
-        dsl.deleteFrom(table(name("member_authorities")))
-            .where(field(name("member_id"), Long::class.java).eq(value))
-            .execute()
         dsl.deleteFrom(MEMBER_PERMISSIONS)
             .where(MEMBER_PERMISSIONS.MEMBER_ID.eq(value))
             .execute()
@@ -512,7 +507,7 @@ class MemberRepository(
             .where(MEMBER_OAUTH.MEMBER_ID.eq(value))
             .execute()
         dsl.deleteFrom(REFRESH_TOKENS)
-            .where(REFRESH_TOKENS.MEMBERID.eq(value))
+            .where(field(name("member_id"), Long::class.java).eq(value))
             .execute()
         dsl.deleteFrom(MEMBERS)
             .where(MEMBERS.MEMBER_ID.eq(value))
@@ -520,4 +515,19 @@ class MemberRepository(
     }
 
     override fun findAll(): List<Member> = memberJpaRepository.findAllByDeletedAtIsNull().map { it.toDomain() }
+
+    private fun roleTypeFromLegacyAuthorityId(authorityId: AuthorityId): RoleType =
+        when (authorityId.value) {
+            LEGACY_DEEPER_AUTHORITY_ID -> RoleType.Deeper
+            LEGACY_ORGANIZER_AUTHORITY_ID -> RoleType.Organizer
+            else -> RoleType.Guest
+        }
+
+    private fun roleNameFieldForCohortValue(roleType: RoleType) =
+        COHORTS.VALUE.concat(inline("기 ${roleType.aliases.firstOrNull() ?: "__unknown__"}"))
+
+    companion object {
+        private const val LEGACY_DEEPER_AUTHORITY_ID = 1L
+        private const val LEGACY_ORGANIZER_AUTHORITY_ID = 2L
+    }
 }
