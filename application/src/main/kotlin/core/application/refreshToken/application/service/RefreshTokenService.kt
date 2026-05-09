@@ -7,6 +7,7 @@ import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.oauth.token.JwtTokenResolver
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Service
@@ -19,6 +20,8 @@ class RefreshTokenService(
     private val tokenInjector: JwtTokenInjector,
     private val tokenProvider: JwtTokenProvider,
 ) {
+    private val logger = KotlinLogging.logger { }
+
     /**
      * HTTP Header에서 Refresh Token을 추출하여, 해당 토큰을 기반으로 Access Token을 재발급하고,
      * RTR(Refresh Token Rotation) 전략에 따라 Refresh Token도 재발급함.
@@ -39,14 +42,25 @@ class RefreshTokenService(
             tokenResolver.resolveRefreshTokenFromRequest(request)
                 ?: throw TokenInvalidException()
 
+        if (!tokenProvider.validateToken(token)) {
+            throw TokenInvalidException()
+        }
+
         val refreshToken: RefreshToken = getByTokenString(token)
         tokenInjector.injectRefreshToken(rotate(refreshToken), response)
         return tokenProvider.generateAccessToken(refreshToken.memberId.toString())
     }
 
     private fun getByTokenString(token: String): RefreshToken {
+        val memberId = tokenProvider.getMemberId(token)
         return refreshTokenPersistencePort.findByToken(token)
-            ?: throw TokenNotFoundException()
+            ?: run {
+                val currentRefreshToken = refreshTokenPersistencePort.findByMemberId(memberId)
+                logger.warn {
+                    "Refresh token lookup failed for memberId=$memberId; storedTokenExists=${currentRefreshToken != null}"
+                }
+                throw TokenNotFoundException()
+            }
     }
 
     private fun rotate(refreshToken: RefreshToken): RefreshToken {

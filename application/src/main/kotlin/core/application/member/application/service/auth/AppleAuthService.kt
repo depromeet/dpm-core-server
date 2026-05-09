@@ -4,6 +4,7 @@ import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.security.oauth.apple.AppleTokenExchangeService
+import core.application.security.oauth.redirect.OAuthRedirectUriValidator
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberOAuth
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class AppleAuthService(
     private val appleTokenExchangeService: AppleTokenExchangeService,
+    private val redirectUriValidator: OAuthRedirectUriValidator,
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
     private val jwtTokenProvider: JwtTokenProvider,
@@ -30,11 +32,16 @@ class AppleAuthService(
     @Transactional
     fun login(
         authorizationCode: String,
+        redirectUri: String? = null,
         fullName: String? = null,
         familyName: String? = null,
         givenName: String? = null,
     ): AuthTokenResponse {
-        val tokenResponse = appleTokenExchangeService.getTokens(authorizationCode)
+        val tokenResponse =
+            appleTokenExchangeService.getTokens(
+                authorizationCode = authorizationCode,
+                redirectUri = redirectUri?.let { redirectUriValidator.validate(it) },
+            )
 
         val claims = appleIdTokenValidator.verify(tokenResponse.id_token)
         val externalId = claims.subject ?: throw IllegalArgumentException("Invalid ID Token: sub missing")

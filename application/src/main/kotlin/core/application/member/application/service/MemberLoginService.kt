@@ -5,7 +5,6 @@ import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.security.oauth.token.JwtTokenProvider
-import core.application.security.properties.SecurityProperties
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
@@ -24,7 +23,6 @@ class MemberLoginService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberOAuthService: MemberOAuthService,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
-    private val securityProperties: SecurityProperties,
     private val tokenProvider: JwtTokenProvider,
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
@@ -51,10 +49,7 @@ class MemberLoginService(
         return handleUnregisteredMember(authAttributes)
     }
 
-    private fun generateLoginResult(
-        memberId: MemberId,
-        redirectUrl: String,
-    ): LoginResult {
+    private fun generateLoginResult(memberId: MemberId): LoginResult {
         val newToken = tokenProvider.generateRefreshToken(memberId.toString())
         val refreshToken =
             refreshTokenPersistencePort
@@ -63,33 +58,27 @@ class MemberLoginService(
                 ?: RefreshToken.create(memberId, newToken)
         val savedToken = refreshTokenPersistencePort.save(refreshToken)
 
-        return LoginResult(savedToken, redirectUrl)
+        return LoginResult(savedToken)
     }
 
     private fun handleExistingMemberLogin(member: Member): LoginResult {
-        val memberId = member.id ?: return LoginResult(null, securityProperties.redirect.redirectUrl)
+        val memberId = member.id ?: return LoginResult(null)
 
         if (member.deletedAt == null) {
             memberTeamService.ensureMemberTeamInitialized(memberId)
         }
 
         if (memberPersistencePort.existsDeletedMemberById(memberId.value) || member.status == MemberStatus.WITHDRAWN) {
-            return LoginResult(null, securityProperties.redirect.redirectUrl)
+            return LoginResult(null)
         }
 
         memberRoleService.ensureGuestRoleAssigned(memberId)
 
         if (member.status == MemberStatus.PENDING) {
-            return generateLoginResult(
-                memberId,
-                securityProperties.redirect.redirectUrl,
-            )
+            return generateLoginResult(memberId)
         }
 
-        return generateLoginResult(
-            memberId,
-            securityProperties.redirect.redirectUrl,
-        )
+        return generateLoginResult(memberId)
     }
 
     private fun handleUnregisteredMember(authAttributes: OAuthAttributes): LoginResult {
