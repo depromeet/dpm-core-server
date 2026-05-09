@@ -22,10 +22,6 @@ spring:
         refresh-token: ${REFRESH_TOKEN_EXPIRATION_TIME}
 
     logout-url: ${LOGOUT_URL:/logout}
-    core-redirect-url: ${REDIRECT_URL:/swagger-ui/index.html}
-    admin-redirect-url: ${ADMIN_REDIRECT_URL:/swagger-ui/index.html}
-    restricted-redirect-url: ${RESTRICTED_REDIRECT_URL:/swagger-ui/index.html}
-
     cookie:
       domain: ${COOKIE_DOMAIN:localhost}
       secure: ${COOKIE_SECURE:true}

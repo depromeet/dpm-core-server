@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -150,6 +151,27 @@ interface NotificationApi {
     )
     @Operation(summary = "Expo 알림 테스트 API", description = "Expo 알림을 테스트합니다.")
     fun testSendMessageTypeNotification(
+        @RequestBody(
+            content = [
+                Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "알림 테스트 요청 예시",
+                            value = """
+                                {
+                                    "targetMemberId": 13,
+                                    "notificationMessageType": "SESSION_START_SOON",
+                                    "variables": {
+                                        "title": "테스트를 위한 타이틀입니다"
+                                    }
+                                }
+                            """,
+                        ),
+                    ],
+                ),
+            ],
+        )
         messageTypeNotificationRequest: MessageTypeNotificationRequest,
     ): CustomResponse<Void>
 
@@ -172,7 +194,7 @@ interface NotificationApi {
                                     {
                                         "name": "SESSION_START_SOON",
                                         "title": "세션 시작 30분 전 알림",
-                                        "bodyTemplate": "{sessionName} 세션이 30분 후 시작됩니다!",
+                                        "bodyTemplate": "{title} 세션이 30분 후 시작됩니다!",
                                         "description": "세션 시작 30분 전 알림"
                                     }
                                 ]
