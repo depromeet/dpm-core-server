@@ -1,11 +1,14 @@
 package com.server.dpmcore.security.oauth.handler
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.server.dpmcore.common.exception.CustomResponse
 import com.server.dpmcore.member.member.domain.port.inbound.HandleMemberLoginUseCase
 import com.server.dpmcore.security.oauth.domain.CustomOAuth2User
 import com.server.dpmcore.security.oauth.dto.LoginResult
 import com.server.dpmcore.security.oauth.token.JwtTokenInjector
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.MediaType
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.stereotype.Component
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Component
 class CustomAuthenticationSuccessHandler(
     private val tokenInjector: JwtTokenInjector,
     private val handleMemberLoginUseCase: HandleMemberLoginUseCase,
+    private val objectMapper: ObjectMapper,
 ) : AuthenticationSuccessHandler {
     override fun onAuthenticationSuccess(
         request: HttpServletRequest,
@@ -24,7 +28,14 @@ class CustomAuthenticationSuccessHandler(
             loginResult.refreshToken?.let {
                 tokenInjector.injectRefreshToken(it, response)
             }
-            response.sendRedirect(loginResult.redirectUrl)
+            response.status = HttpServletResponse.SC_OK
+            response.contentType = MediaType.APPLICATION_JSON_VALUE
+            response.characterEncoding = CHARACTER_ENCODING
+            response.writer.write(
+                objectMapper.writeValueAsString(
+                    CustomResponse.ok(OAuthLoginResponse(loginResult.refreshToken != null)),
+                ),
+            )
         }
     }
 
@@ -34,5 +45,13 @@ class CustomAuthenticationSuccessHandler(
     ): LoginResult {
         val oAuth2User = authentication.principal as CustomOAuth2User
         return handleMemberLoginUseCase.handleLoginSuccess(requestDomain, oAuth2User.authAttributes)
+    }
+
+    data class OAuthLoginResponse(
+        val authenticated: Boolean,
+    )
+
+    companion object {
+        private const val CHARACTER_ENCODING = "UTF-8"
     }
 }

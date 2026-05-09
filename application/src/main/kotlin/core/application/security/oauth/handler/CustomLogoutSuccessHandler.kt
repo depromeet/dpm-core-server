@@ -6,6 +6,7 @@ import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.port.inbound.RefreshTokenInvalidator
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.MediaType
@@ -21,6 +22,8 @@ class CustomLogoutSuccessHandler(
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
     private val objectMapper: ObjectMapper,
 ) : LogoutSuccessHandler {
+    private val logger = KotlinLogging.logger { }
+
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val TOKEN_PREFIX = "Bearer "
@@ -49,6 +52,7 @@ class CustomLogoutSuccessHandler(
 
         if (!token.isNullOrBlank() && tokenProvider.validateToken(token)) {
             val memberId = MemberId(tokenProvider.getMemberId(token))
+            logger.info { "Invalidating refresh token during logout for memberId=${memberId.value}" }
             refreshTokenInvalidator.destroyRefreshToken(memberId)
         }
 
