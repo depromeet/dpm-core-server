@@ -1,5 +1,6 @@
 package core.application.security.oauth.repository
 
+import core.application.security.oauth.redirect.OAuthCallbackRedirectService
 import core.application.security.oauth.repository.mapper.AuthorizationRequestCookieValueMapper
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
@@ -14,6 +15,7 @@ private const val REQUEST_COOKIE_MAX_AGE = 180
 @Component
 class HttpCookieOAuth2AuthorizationRequestRepository(
     private val authorizationRequestCookieValueMapper: AuthorizationRequestCookieValueMapper,
+    private val oAuthCallbackRedirectService: OAuthCallbackRedirectService,
 ) : AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
     override fun loadAuthorizationRequest(request: HttpServletRequest): OAuth2AuthorizationRequest? =
         getAuthorizationRequestCookie(request)
@@ -34,6 +36,7 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
             response = response,
             value = authorizationRequestCookieValueMapper.serialize(authorizationRequest),
         )
+        oAuthCallbackRedirectService.rememberClientRedirectUri(request, response)
     }
 
     override fun removeAuthorizationRequest(
