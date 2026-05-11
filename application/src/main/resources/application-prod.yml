@@ -7,6 +7,12 @@ spring:
     username: ${PROD_DB_USERNAME}
     password: ${PROD_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+        use_sql_comments: false
   security:
     oauth2:
       client:
@@ -28,7 +34,10 @@ spring:
             user-name-attribute: sub
 logging:
   level:
-    org.springframework.orm.jpa: INFO
+    org.springframework.orm.jpa: DEBUG
+    org.jooq.tools.LoggerListener: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: DEBUG
 
 apple:
   client-id: ${PROD_APPLE_CLIENT_ID}
