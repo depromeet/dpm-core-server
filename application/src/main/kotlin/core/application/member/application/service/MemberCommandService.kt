@@ -12,7 +12,6 @@ import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
-import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberStatus
