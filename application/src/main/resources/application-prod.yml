@@ -34,10 +34,10 @@ spring:
             user-name-attribute: sub
 logging:
   level:
-    org.springframework.orm.jpa: DEBUG
-    org.jooq.tools.LoggerListener: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: DEBUG
+    org.springframework.orm.jpa: INFO
+    org.jooq.tools.LoggerListener: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: INFO
 
 apple:
   client-id: ${PROD_APPLE_CLIENT_ID}
