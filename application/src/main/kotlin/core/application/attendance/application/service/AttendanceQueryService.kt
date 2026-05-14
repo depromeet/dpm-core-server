@@ -16,6 +16,7 @@ import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
+import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
@@ -149,4 +150,11 @@ class AttendanceQueryService(
 
     fun getAttendancesBySessionId(sessionId: SessionId): List<Attendance> =
         attendancePersistencePort.findAllBySessionId(sessionId.value)
+
+    fun getAttendancesBy(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): Attendance =
+        attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value)
+            ?: throw AttendanceNotFoundException()
 }
