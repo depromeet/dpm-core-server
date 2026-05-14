@@ -3,10 +3,12 @@ package core.application.session.presentation.controller
 import core.application.common.exception.CustomResponse
 import core.application.session.presentation.response.AttendanceTimeResponse
 import core.application.session.presentation.response.NextSessionResponse
+import core.application.session.presentation.response.SessionDetailForDeeperResponse
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.application.session.presentation.response.SessionWeeksResponse
+import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -158,6 +160,54 @@ interface SessionQueryApi {
         ],
     )
     fun getSessionById(sessionId: SessionId): CustomResponse<SessionDetailResponse>
+
+    @Operation(
+        summary = "(디퍼)세션 상세 조회",
+        description = "세션 ID를 통해 세션에 대한 디퍼의 상세 정보를 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "(디퍼)세션 상세 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "(디퍼)세션 상세 조회 성공 응답",
+                                value = """
+                                    {
+                                      "status": "OK",
+                                      "message": "요청에 성공했습니다",
+                                      "code": "GLOBAL-200-01",
+                                      "data": {
+                                        "id": 35,
+                                        "week": 1,
+                                        "name": "코어 OT & 팀빌딩",
+                                        "place": "준원's house",
+                                        "isOnline": false,
+                                        "date": "2026-03-14T13:00:00",
+                                        "attendanceStart": "2026-03-14T14:00:00",
+                                        "lateStart": "2026-03-14T14:30:00",
+                                        "absentStart": "2026-03-14T14:35:00",
+                                        "attendanceStatus": "PENDING",
+                                        "attendedAt": null
+                                      }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getSessionByIdForDeeper(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): CustomResponse<SessionDetailForDeeperResponse>
 
     @Operation(
         summary = "세션 출석시간 조회",
