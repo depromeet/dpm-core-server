@@ -1,14 +1,18 @@
 package core.application.session.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.security.annotation.CurrentMemberId
 import core.application.session.application.service.SessionQueryService
 import core.application.session.presentation.mapper.SessionMapper
 import core.application.session.presentation.response.AttendanceTimeResponse
 import core.application.session.presentation.response.NextSessionResponse
+import core.application.session.presentation.response.SessionDetailForDeeperResponse
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.application.session.presentation.response.SessionWeeksResponse
+import core.domain.member.vo.MemberId
+import core.domain.session.aggregate.Session
 import core.domain.session.vo.SessionId
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -56,6 +60,25 @@ class SessionQueryController(
                 .let { SessionMapper.toSessionDetailResponse(it) }
 
         return CustomResponse.ok(response)
+    }
+
+    @PreAuthorize("hasAuthority('read:session')")
+    @GetMapping("/{sessionId}/me")
+    override fun getSessionByIdForDeeper(
+        @PathVariable(name = "sessionId") sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<SessionDetailForDeeperResponse> {
+        val retrieveSession: Session =
+            sessionQueryService
+                .getSessionById(sessionId)
+        val retrieveAttendance = sessionQueryService.getAttendanceBySessionIdAndMemberId(sessionId, memberId)
+
+        return CustomResponse.ok(
+            SessionMapper.toSessionDetailForDeeperResponse(
+                session = retrieveSession,
+                attendance = retrieveAttendance,
+            ),
+        )
     }
 
     @PreAuthorize("hasAuthority('update:session')")
