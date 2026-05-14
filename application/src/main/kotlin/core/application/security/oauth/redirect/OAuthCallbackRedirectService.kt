@@ -110,9 +110,12 @@ class OAuthCallbackRedirectService(
         val requestHost = request.serverName.lowercase()
 
         return when {
-            requestHost == "localhost" || requestHost == "127.0.0.1" || requestHost == "::1" -> "https://localhost:3000/"
-            requestHost.startsWith("api.") -> "https://${requestHost.replaceFirst("api.", "core.")}/"
-            requestHost.startsWith("local-api.") -> "https://${requestHost.replaceFirst("local-api.", "local-core.")}/"
+            requestHost == "localhost" || requestHost == "127.0.0.1" || requestHost == "::1" ->
+                "https://localhost:3000/"
+            requestHost.startsWith("api.") ->
+                "https://${requestHost.replaceFirst("api.", "core.")}/"
+            requestHost.startsWith("local-api.") ->
+                "https://${requestHost.replaceFirst("local-api.", "local-core.")}/"
             else -> {
                 val portSuffix =
                     when {
@@ -160,8 +163,7 @@ class OAuthCallbackRedirectService(
             .withoutPadding()
             .encodeToString(value.toByteArray(StandardCharsets.UTF_8))
 
-    private fun decode(value: String): String =
-        String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8)
+    private fun decode(value: String): String = String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8)
 
     companion object {
         private const val SET_COOKIE_HEADER = "Set-Cookie"
