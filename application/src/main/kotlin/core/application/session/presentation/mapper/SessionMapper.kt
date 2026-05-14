@@ -6,11 +6,13 @@ import core.application.session.presentation.request.SessionCreateRequest
 import core.application.session.presentation.request.SessionUpdateRequest
 import core.application.session.presentation.response.AttendanceTimeResponse
 import core.application.session.presentation.response.NextSessionResponse
+import core.application.session.presentation.response.SessionDetailForDeeperResponse
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListDetailResponse
 import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
+import core.domain.attendance.aggregate.Attendance
 import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.command.SessionCreateCommand
@@ -70,6 +72,27 @@ object SessionMapper {
                 lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
                 absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
                 attendanceCode = session.attendancePolicy.attendanceCode,
+            )
+        }
+
+    fun toSessionDetailForDeeperResponse(
+        session: Session,
+        attendance: Attendance,
+    ): SessionDetailForDeeperResponse =
+        with(session) {
+            SessionDetailForDeeperResponse.of(
+                id = id!!,
+                week = week,
+                name = eventName,
+                place = place,
+                isOnline = isOnline,
+                date = instantToLocalDateTime(date),
+                attendanceStart =
+                    instantToLocalDateTime(session.attendancePolicy.attendanceStart),
+                lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
+                absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
+                attendanceStatus = attendance.status,
+                attendedAt = instantToLocalDateTime(attendance.attendedAt),
             )
         }
 

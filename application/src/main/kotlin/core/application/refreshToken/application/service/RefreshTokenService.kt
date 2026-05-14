@@ -57,7 +57,8 @@ class RefreshTokenService(
             ?: run {
                 val currentRefreshToken = refreshTokenPersistencePort.findByMemberId(memberId)
                 logger.warn {
-                    "Refresh token lookup failed for memberId=$memberId; storedTokenExists=${currentRefreshToken != null}"
+                    "Refresh token lookup failed for memberId=$memberId;" +
+                        "storedTokenExists=${currentRefreshToken != null}"
                 }
                 throw TokenNotFoundException()
             }
