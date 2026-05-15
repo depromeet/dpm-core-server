@@ -41,6 +41,7 @@ import org.jooq.dsl.tables.references.REFRESH_TOKENS
 import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.SENT_ANNOUNCEMENT_NOTIFICATIONS
 import org.jooq.dsl.tables.references.TEAMS
+import org.jooq.impl.DSL
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.inline
@@ -299,6 +300,39 @@ class MemberRepository(
                     part = record[MEMBERS.PART],
                 )
             }
+    }
+
+    override fun findMemberTeamNumberByMemberIds(memberIds: List<MemberId>): Map<Long, Int> {
+        if (memberIds.isEmpty()) return emptyMap()
+
+        // 멤버별 가장 최신(max) member_team_id를 서브쿼리로 구함
+        val maxMemberTeamId =
+            DSL.select(
+                MEMBER_TEAMS.MEMBER_ID,
+                DSL.max(MEMBER_TEAMS.MEMBER_TEAM_ID).`as`("max_id"),
+            )
+                .from(MEMBER_TEAMS)
+                .where(MEMBER_TEAMS.MEMBER_ID.`in`(memberIds.map { it.value }))
+                .groupBy(MEMBER_TEAMS.MEMBER_ID)
+                .asTable("latest_mt")
+
+        return dsl
+            .select(MEMBER_TEAMS.MEMBER_ID, TEAMS.NUMBER)
+            .from(MEMBER_TEAMS)
+            .join(TEAMS).on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .join(maxMemberTeamId)
+            .on(
+                MEMBER_TEAMS.MEMBER_TEAM_ID.eq(
+                    maxMemberTeamId.field("max_id", Long::class.java),
+                ),
+            )
+            .fetch()
+            .mapNotNull { record ->
+                val memberId = record[MEMBER_TEAMS.MEMBER_ID] ?: return@mapNotNull null
+                val teamNumber = record[TEAMS.NUMBER] ?: return@mapNotNull null
+                memberId to teamNumber
+            }
+            .toMap()
     }
 
     override fun findMemberTeamNumberByMemberId(memberId: MemberId): Int? =
