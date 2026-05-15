@@ -11,6 +11,7 @@ import core.application.announcement.presentation.response.AnnouncementViewMembe
 import core.application.announcement.presentation.response.AssignmentStatusMemberListItemResponse
 import core.application.announcement.presentation.response.AssignmentStatusMemberListResponse
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
+import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.access.MemberAccessService
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementRead
@@ -139,11 +140,17 @@ class AnnouncementQueryService(
             )
 
         val memberItems: List<AnnouncementViewMemberListItemResponse> =
-            retrievedMembers.map { member ->
-                val teamNumber: TeamNumber = retrievedMemberTeamNumberMap[member.id!!] ?: TeamNumber(0)
-                val isAdmin: Boolean = retrievedMemberAdminMap[member.id!!] ?: false
-                AnnouncementViewMemberListItemResponse.of(member, teamNumber, isAdmin)
-            }.sortedWith(compareBy({ it.teamNumber.value }, { it.name }))
+            retrievedMembers
+                .map { member ->
+                    val teamNumber: TeamNumber = retrievedMemberTeamNumberMap[member.id!!] ?: TeamNumber.defaultValue()
+                    val isAdmin: Boolean = retrievedMemberAdminMap[member.id!!] ?: false
+                    AnnouncementViewMemberListItemResponse.of(member, teamNumber, isAdmin)
+                }.sortedWith(
+                    compareBy<AnnouncementViewMemberListItemResponse> { it.teamNumber.value == 0 }
+                        .thenByDescending { it.isAdmin }
+                        .thenBy { it.teamNumber.value }
+                        .thenBy { it.name },
+                )
         val readMemberIds: Set<MemberId> =
             announcementReads.filter { it.isRead() }.map { it.memberId }.toSet()
 
@@ -168,6 +175,8 @@ class AnnouncementQueryService(
             assignmentSubmissionQueryUseCase.getByAssignmentId(
                 assignment.id ?: throw AssignmentNotFoundException(),
             )
+
+        val latestCohortValue = cohortQueryUseCase.getLatestCohortValue()
         val assignmentSubmissionMemberIds: List<MemberId> = assignmentSubmissions.map { it.memberId }
         val assignmentSubmissionMembers: List<Member> =
             memberQueryUseCase.getMembersByIds(
@@ -180,26 +189,34 @@ class AnnouncementQueryService(
         val assignmentSubmissionMemberAdminMap: Map<MemberId, Boolean> =
             memberAccessService.getIsAdminByMemberIds(
                 memberIds = assignmentSubmissionMemberIds,
-                cohortValue = cohortQueryUseCase.getLatestCohortValue(),
+                cohortValue = latestCohortValue,
             )
 
         val assignmentStatusMemberListItemResponses: List<AssignmentStatusMemberListItemResponse> =
-            assignmentSubmissions.map { assignmentSubmission ->
-                val member: Member =
-                    assignmentSubmissionMembers.find { it.id == assignmentSubmission.memberId }
-                        ?: throw AnnouncementNotFoundException()
-                val teamNumber: TeamNumber = assignmentSubmissionMemberTeamNumberMap[member.id!!] ?: TeamNumber(0)
-                val isAdmin: Boolean = assignmentSubmissionMemberAdminMap[member.id!!] ?: false
-                AssignmentStatusMemberListItemResponse.of(
-                    memberId = member.id!!,
-                    name = member.name,
-                    teamNumber = teamNumber,
-                    isAdmin = isAdmin,
-                    part = member.part,
-                    submitStatus = assignmentSubmission.submitStatus,
-                    score = assignmentSubmission.score,
+            assignmentSubmissions
+                .map { assignmentSubmission ->
+                    val member: Member =
+                        assignmentSubmissionMembers.find { it.id == assignmentSubmission.memberId }
+                            ?: throw MemberNotFoundException()
+                    val teamNumber: TeamNumber =
+                        assignmentSubmissionMemberTeamNumberMap[member.id!!] ?: TeamNumber.defaultValue()
+                    val isAdmin: Boolean = assignmentSubmissionMemberAdminMap[member.id!!] ?: false
+                    AssignmentStatusMemberListItemResponse.of(
+                        memberId = member.id!!,
+                        name = member.name,
+                        teamNumber = teamNumber,
+                        isAdmin = isAdmin,
+                        part = member.part,
+                        submitStatus = assignmentSubmission.submitStatus,
+                        score = assignmentSubmission.score,
+                    )
+                }.sortedWith(
+                    compareBy<AssignmentStatusMemberListItemResponse> { it.teamNumber.value == 0 }
+                        .thenBy { it.submitStatus.sortedValue() }
+                        .thenByDescending { it.isAdmin }
+                        .thenBy { it.teamNumber.value }
+                        .thenBy { it.name },
                 )
-            }
 
         return AssignmentStatusMemberListResponse.from(assignmentStatusMemberListItemResponses)
     }

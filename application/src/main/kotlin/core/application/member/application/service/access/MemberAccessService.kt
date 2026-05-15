@@ -45,7 +45,7 @@ class MemberAccessService(
 
     fun getIsAdminByMemberIds(
         memberIds: List<MemberId>,
-        cohortValue: String = cohortQueryUseCase.getLatestCohortValue(),
+        cohortValue: String,
     ): Map<MemberId, Boolean> {
         if (memberIds.isEmpty()) return emptyMap()
 
