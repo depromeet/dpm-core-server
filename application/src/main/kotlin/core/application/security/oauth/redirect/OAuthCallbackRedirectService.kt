@@ -163,7 +163,6 @@ class OAuthCallbackRedirectService(
             .withoutPadding()
             .encodeToString(value.toByteArray(StandardCharsets.UTF_8))
 
-    private fun decode(value: String): String = String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8)
 
     companion object {
         private const val SET_COOKIE_HEADER = "Set-Cookie"
