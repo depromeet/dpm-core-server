@@ -13,8 +13,10 @@ import core.domain.member.aggregate.Member
 import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
+@Transactional(readOnly = true)
 class AfterPartyInviteeQueryService(
     val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val memberQueryService: MemberQueryService,
@@ -49,16 +51,25 @@ class AfterPartyInviteeQueryService(
                 rsvpMemberIds,
                 currentCohortValue,
             )
+        val rsvpStatusByMemberId: Map<MemberId, Boolean?> = invitees.associate { it.memberId to it.rsvpStatus }
 
-        return inviteeMember.map { member ->
-            AfterPartyRsvpMemberResponse(
-                memberId = member.id!!,
-                name = member.name,
-                part = member.part,
-                teamNumber = rsvpMemberTeamNumberMap[member.id!!] ?: TeamNumber(0),
-                isAdmin = retrievedMemberAdminMap[member.id!!] ?: false,
-                rsvpStatus = invitees.find { it.memberId == member.id!! }?.rsvpStatus,
+        return inviteeMember
+            .map { member ->
+                AfterPartyRsvpMemberResponse(
+                    memberId = member.id!!,
+                    name = member.name,
+                    part = member.part,
+                    teamNumber = rsvpMemberTeamNumberMap[member.id!!] ?: TeamNumber.defaultValue(),
+                    isAdmin = retrievedMemberAdminMap[member.id!!] ?: false,
+                    rsvpStatus = rsvpStatusByMemberId[member.id!!],
+                )
+            }.sortedWith(
+                compareByDescending<AfterPartyRsvpMemberResponse> { it.rsvpStatus == true }
+                    .thenBy { it.teamNumber.value == 0 }
+                    .thenByDescending { it.rsvpStatus == false }
+                    .thenByDescending { it.isAdmin }
+                    .thenBy { it.teamNumber.value }
+                    .thenBy { it.name },
             )
-        }
     }
 }
