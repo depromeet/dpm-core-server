@@ -26,7 +26,7 @@ class SessionReminderScheduler(
     val sentSessionNotificationQueryUseCase: SentSessionNotificationQueryUseCase,
     val sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase,
 ) {
-    @Scheduled(cron = "0 0/10 * * * *")
+    @Scheduled(cron = "5 0/5 * * * *")
     @Transactional
     fun sendStartAttendanceReminder() {
         val currentCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
@@ -89,7 +89,7 @@ class SessionReminderScheduler(
         }
     }
 
-    @Scheduled(cron = "0 0/5 14 * * *")
+    @Scheduled(cron = "15 0/5 14 * * *")
     @Transactional
     fun sendNextDaySessionReminder() {
         val currentCohortId: CohortId = cohortQueryUseCase.getLatestCohortId()
