@@ -6,7 +6,10 @@ import core.application.notification.presentation.request.DeletePushTokenRequest
 import core.application.notification.presentation.request.MessageTypeNotificationRequest
 import core.application.notification.presentation.request.NotificationRequest
 import core.application.notification.presentation.request.RegisterPushTokenRequest
+import core.application.notification.presentation.request.TagBasedMessageTypeNotificationRequest
+import core.application.notification.presentation.request.TagBasedNotificationRequest
 import core.application.notification.presentation.response.NotificationTypeResponse
+import core.application.notification.presentation.response.TagBasedNotificationResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
 import core.domain.notification.enums.NotificationMessageType
@@ -94,5 +97,35 @@ class NotificationController(
     override fun getNotificationTypes(): CustomResponse<List<NotificationTypeResponse>> {
         val types = NotificationMessageType.entries.map { NotificationTypeResponse.from(it) }
         return CustomResponse.ok(types)
+    }
+
+    @PreAuthorize("hasAuthority('read:member')")
+    @PostMapping("/custom-test/by-tag")
+    override fun testSendNotificationByTags(
+        @RequestBody request: TagBasedNotificationRequest,
+    ): CustomResponse<TagBasedNotificationResponse> {
+        val targetCount =
+            notificationService.sendCustomPushNotificationByTags(
+                tags = request.tags.map { it.toInviteTagSpec() },
+                title = request.title,
+                body = request.message,
+                data = null,
+            )
+        return CustomResponse.ok(TagBasedNotificationResponse(targetMemberCount = targetCount))
+    }
+
+    @PreAuthorize("hasAuthority('read:member')")
+    @PostMapping("/type-test/by-tag")
+    override fun testSendMessageTypeNotificationByTags(
+        @RequestBody request: TagBasedMessageTypeNotificationRequest,
+    ): CustomResponse<TagBasedNotificationResponse> {
+        val targetCount =
+            notificationService.sendPushNotificationByTags(
+                tags = request.tags.map { it.toInviteTagSpec() },
+                messageType = request.notificationMessageType,
+                variables = request.variables,
+                data = null,
+            )
+        return CustomResponse.ok(TagBasedNotificationResponse(targetMemberCount = targetCount))
     }
 }

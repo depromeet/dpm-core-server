@@ -1,6 +1,7 @@
 package core.application.notification.application.service
 
 import core.application.notification.application.exception.NotificationTokenNotFoundException
+import core.domain.member.aggregate.InviteTagSpec
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.NotificationToken
 import core.domain.notification.enums.NotificationMessageType
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 class NotificationCommandService(
     private val expoPushClient: ExpoPushClient,
     private val notificationPersistencePort: NotificationPersistencePort,
+    private val notificationTargetResolver: NotificationTargetResolver,
 ) : NotificationCommandUseCase {
     companion object {
         private val logger = LoggerFactory.getLogger(NotificationCommandService::class.java)
@@ -98,6 +100,32 @@ class NotificationCommandService(
         val (title, body) = messageType.formatWithTitle(variables)
 
         sendPushNotificationInternalToMembers(memberIds, title, body, data, ExpoPriority.NORMAL)
+    }
+
+    fun sendCustomPushNotificationByTags(
+        tags: List<InviteTagSpec>,
+        title: String,
+        body: String,
+        data: Map<String, Any>? = null,
+    ): Int {
+        val memberIds = notificationTargetResolver.resolve(tags)
+        if (memberIds.isEmpty()) return 0
+
+        sendCustomPushNotificationToMembers(memberIds, title, body, data)
+        return memberIds.size
+    }
+
+    fun sendPushNotificationByTags(
+        tags: List<InviteTagSpec>,
+        messageType: NotificationMessageType,
+        variables: Map<String, Any> = emptyMap(),
+        data: Map<String, Any>? = null,
+    ): Int {
+        val memberIds = notificationTargetResolver.resolve(tags)
+        if (memberIds.isEmpty()) return 0
+
+        sendPushNotificationToMembers(memberIds, messageType, variables, data)
+        return memberIds.size
     }
 
     private fun sendPushNotificationInternal(
