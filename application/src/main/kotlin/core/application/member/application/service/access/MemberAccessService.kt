@@ -43,6 +43,31 @@ class MemberAccessService(
         } ?: RoleType.Guest
     }
 
+    fun getIsAdminByMemberIds(
+        memberIds: List<MemberId>,
+        cohortValue: String,
+    ): Map<MemberId, Boolean> {
+        if (memberIds.isEmpty()) return emptyMap()
+
+        val normalizedCohort = normalizeCohortValue(cohortValue)
+        val roleNamesByMemberId: Map<Long, List<String>> =
+            memberRolePersistencePort.findRoleNamesByMemberIds(memberIds.map { it.value })
+
+        return memberIds.associateWith { memberId ->
+            val currentRoles =
+                currentCohortRoleResolver.filterCurrentRoles(
+                    roleNames = roleNamesByMemberId[memberId.value] ?: emptyList(),
+                    latestCohortValue = normalizedCohort,
+                )
+            val roleType =
+                ROLE_PRIORITY.firstOrNull { roleType ->
+                    currentRoles.any { roleName -> RoleType.from(roleName) == roleType }
+                } ?: RoleType.Guest
+
+            roleType == RoleType.Organizer
+        }
+    }
+
     fun getEffectivePermissions(memberId: MemberId): List<String> = roleQueryUseCase.getPermissionsByMemberId(memberId)
 
     private fun normalizeCohortValue(cohortValue: String): String = cohortValue.trim().removeSuffix("기")
