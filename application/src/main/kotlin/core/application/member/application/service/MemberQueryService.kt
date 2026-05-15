@@ -89,6 +89,11 @@ class MemberQueryService(
                 ?: defaultTeamId,
         )
 
+    override fun getMemberTeamNumberByMemberIds(memberIds: List<MemberId>): Map<MemberId, TeamNumber> =
+        memberPersistencePort.findMemberTeamNumberByMemberIds(memberIds)
+            .mapKeys { MemberId(it.key) }
+            .mapValues { TeamNumber(it.value) }
+
     override fun getMemberTeamId(memberId: MemberId): TeamId =
         TeamId(
             memberPersistencePort.findMemberTeamIdByMemberId(memberId)
