@@ -1,7 +1,10 @@
 package core.application.security.resolver
 
+import core.application.common.exception.UnauthorizedException
 import core.application.security.annotation.CurrentMemberId
 import org.springframework.core.MethodParameter
+import org.springframework.security.authentication.AnonymousAuthenticationToken
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.support.WebDataBinderFactory
@@ -19,9 +22,18 @@ class CurrentMemberIdArgumentResolver : HandlerMethodArgumentResolver {
         mavContainer: ModelAndViewContainer?,
         webRequest: NativeWebRequest,
         binderFactory: WebDataBinderFactory?,
-    ): Any? =
-        SecurityContextHolder
+    ): Any? {
+        val authentication: Authentication = SecurityContextHolder.getContext().authentication
+        if (authentication == null ||
+            authentication is AnonymousAuthenticationToken ||
+            authentication.name == "anonymousUser"
+        ) {
+            throw UnauthorizedException()
+        }
+
+        return SecurityContextHolder
             .getContext()
             .authentication.name
             .toLong()
+    }
 }

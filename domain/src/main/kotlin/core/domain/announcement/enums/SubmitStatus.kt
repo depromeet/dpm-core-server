@@ -12,4 +12,12 @@ enum class SubmitStatus(
     companion object {
         fun fromValue(value: Int): SubmitStatus = entries.first { it.value == value }
     }
+
+    fun sortedValue(): Int =
+        when (this) {
+            SUBMITTED -> 0
+            PENDING -> 1
+            LATE_SUBMITTED -> 2
+            NOT_SUBMITTED -> 3
+        }
 }
