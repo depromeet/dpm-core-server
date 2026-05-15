@@ -24,6 +24,8 @@ interface MemberQueryUseCase {
 
     fun getMemberTeamNumber(memberId: MemberId): TeamNumber
 
+    fun getMemberTeamNumberByMemberIds(memberIds: List<MemberId>): Map<MemberId, TeamNumber>
+
     fun getMemberById(memberId: MemberId): Member
 
     fun getMemberTeamId(memberId: MemberId): TeamId

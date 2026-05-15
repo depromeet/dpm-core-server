@@ -16,6 +16,7 @@ import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
+import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
@@ -32,7 +33,7 @@ class AttendanceQueryService(
     fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
         val myTeamNumber: TeamNumber =
             query.onlyMyTeam
-                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber(0)
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber.defaultValue()
 
         val queryResult =
             attendancePersistencePort
@@ -58,7 +59,7 @@ class AttendanceQueryService(
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
         val myTeamNumber =
             query.onlyMyTeam
-                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber(0)
+                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber.defaultValue()
 
         val queryResult =
             attendancePersistencePort
@@ -149,4 +150,11 @@ class AttendanceQueryService(
 
     fun getAttendancesBySessionId(sessionId: SessionId): List<Attendance> =
         attendancePersistencePort.findAllBySessionId(sessionId.value)
+
+    fun getAttendancesBy(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): Attendance =
+        attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value)
+            ?: throw AttendanceNotFoundException()
 }
