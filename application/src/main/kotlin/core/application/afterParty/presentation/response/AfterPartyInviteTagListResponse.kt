@@ -1,6 +1,6 @@
 package core.application.afterParty.presentation.response
 
-import core.domain.afterParty.enums.AfterPartyInviteTagEnum
+import core.domain.member.enums.InviteTagEnum
 
 data class AfterPartyInviteTagListResponse(
     val inviteTags: List<AfterPartyInviteTagNameResponse>,
@@ -8,7 +8,7 @@ data class AfterPartyInviteTagListResponse(
     companion object {
         fun fromAllTags() =
             AfterPartyInviteTagListResponse(
-                inviteTags = AfterPartyInviteTagEnum.entries.map { AfterPartyInviteTagNameResponse.from(it) },
+                inviteTags = InviteTagEnum.entries.map { AfterPartyInviteTagNameResponse.from(it) },
             )
     }
 }

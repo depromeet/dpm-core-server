@@ -1,9 +1,9 @@
-package core.domain.afterParty.enums
+package core.domain.member.enums
 
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 
-enum class AfterPartyInviteTagEnum(
+enum class InviteTagEnum(
     val cohortId: CohortId,
     val authorityId: AuthorityId,
     val tagName: String,
@@ -18,8 +18,8 @@ enum class AfterPartyInviteTagEnum(
         fun from(
             cohortId: CohortId,
             authorityId: AuthorityId,
-        ): AfterPartyInviteTagEnum =
-            AfterPartyInviteTagEnum.entries.find {
+        ): InviteTagEnum =
+            InviteTagEnum.entries.find {
                 it.cohortId == cohortId && it.authorityId == authorityId
             } ?: throw IllegalArgumentException(
                 "일치하는 태그를 찾을 수 없습니다: cohortId=${cohortId.value}, authorityId=$authorityId",

@@ -11,6 +11,7 @@ import core.application.notification.presentation.request.TagBasedNotificationRe
 import core.application.notification.presentation.response.NotificationTypeResponse
 import core.application.notification.presentation.response.TagBasedNotificationResponse
 import core.application.security.annotation.CurrentMemberId
+import core.domain.member.aggregate.InviteTagSpec
 import core.domain.member.vo.MemberId
 import core.domain.notification.enums.NotificationMessageType
 import jakarta.validation.Valid
@@ -106,7 +107,7 @@ class NotificationController(
     ): CustomResponse<TagBasedNotificationResponse> {
         val targetCount =
             notificationService.sendCustomPushNotificationByTags(
-                tags = request.tags.map { it.toInviteTagSpec() },
+                tags = request.tags.map { InviteTagSpec.of(it.cohortId, it.authorityId, it.tagName) },
                 title = request.title,
                 body = request.message,
                 data = null,
@@ -121,7 +122,7 @@ class NotificationController(
     ): CustomResponse<TagBasedNotificationResponse> {
         val targetCount =
             notificationService.sendPushNotificationByTags(
-                tags = request.tags.map { it.toInviteTagSpec() },
+                tags = request.tags.map { InviteTagSpec.of(it.cohortId, it.authorityId, it.tagName) },
                 messageType = request.notificationMessageType,
                 variables = request.variables,
                 data = null,

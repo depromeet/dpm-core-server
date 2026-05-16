@@ -26,6 +26,7 @@ import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberCohort
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
 import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
+import core.domain.member.enums.InviteTagEnum
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -53,7 +54,7 @@ class AfterPartyCommandService(
 ) : AfterPartyCommandUseCase {
     override fun createAfterParty(
         afterParty: AfterParty,
-        afterPartyInviteTags: List<core.domain.afterParty.enums.AfterPartyInviteTagEnum>,
+        afterPartyInviteTags: List<InviteTagEnum>,
         authorMemberId: MemberId,
     ) {
         val inviteTagSpecs =
