@@ -1,9 +1,9 @@
 package core.application.afterParty.presentation.response
 
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
-import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
+import core.domain.member.enums.InviteTagEnum
 
 data class AfterPartyInviteTagNameResponse(
     val cohortId: CohortId,
@@ -18,11 +18,11 @@ data class AfterPartyInviteTagNameResponse(
                 tagName = afterPartyInviteTag.tagName,
             )
 
-        fun from(afterPartyInviteTagEnum: AfterPartyInviteTagEnum): AfterPartyInviteTagNameResponse =
+        fun from(inviteTagEnum: InviteTagEnum): AfterPartyInviteTagNameResponse =
             AfterPartyInviteTagNameResponse(
-                cohortId = afterPartyInviteTagEnum.cohortId,
-                authorityId = afterPartyInviteTagEnum.authorityId,
-                tagName = afterPartyInviteTagEnum.tagName,
+                cohortId = inviteTagEnum.cohortId,
+                authorityId = inviteTagEnum.authorityId,
+                tagName = inviteTagEnum.tagName,
             )
     }
 }

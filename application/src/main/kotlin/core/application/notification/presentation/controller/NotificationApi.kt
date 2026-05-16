@@ -5,7 +5,10 @@ import core.application.notification.presentation.request.DeletePushTokenRequest
 import core.application.notification.presentation.request.MessageTypeNotificationRequest
 import core.application.notification.presentation.request.NotificationRequest
 import core.application.notification.presentation.request.RegisterPushTokenRequest
+import core.application.notification.presentation.request.TagBasedMessageTypeNotificationRequest
+import core.application.notification.presentation.request.TagBasedNotificationRequest
 import core.application.notification.presentation.response.NotificationTypeResponse
+import core.application.notification.presentation.response.TagBasedNotificationResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
@@ -207,4 +210,114 @@ interface NotificationApi {
     )
     @Operation(summary = "알림 타입 목록 조회 API", description = "모든 알림 타입(NotificationMessage)을 조회합니다.")
     fun getNotificationTypes(): CustomResponse<List<NotificationTypeResponse>>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "태그 기반 Expo 커스텀 알림 테스트 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "태그 기반 Expo 커스텀 알림 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "targetMemberCount": 42
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "태그 기반 Expo 커스텀 알림 테스트 API",
+        description = "지정한 태그(코호트/권한)에 해당하는 멤버들에게 커스텀 알림을 발송합니다.",
+    )
+    fun testSendNotificationByTags(
+        @RequestBody(
+            content = [
+                Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "태그 기반 커스텀 알림 요청 예시",
+                            value = """
+                                {
+                                    "tags": [
+                                        { "cohortId": 2, "authorityId": 2 }
+                                    ],
+                                    "title": "알림을 확인해요!",
+                                    "message": "알림 내용도 확인해요"
+                                }
+                            """,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        request: TagBasedNotificationRequest,
+    ): CustomResponse<TagBasedNotificationResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "태그 기반 Expo 알림 테스트 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "태그 기반 Expo 알림 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "targetMemberCount": 42
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "태그 기반 Expo 알림 테스트 API",
+        description = "지정한 태그(코호트/권한)에 해당하는 멤버들에게 메시지 타입 알림을 발송합니다.",
+    )
+    fun testSendMessageTypeNotificationByTags(
+        @RequestBody(
+            content = [
+                Content(
+                    mediaType = APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "태그 기반 알림 테스트 요청 예시",
+                            value = """
+                                {
+                                    "tags": [
+                                        { "cohortId": 2, "authorityId": 2 }
+                                    ],
+                                    "notificationMessageType": "SESSION_START_SOON",
+                                    "variables": {
+                                        "title": "테스트를 위한 타이틀입니다"
+                                    }
+                                }
+                            """,
+                        ),
+                    ],
+                ),
+            ],
+        )
+        request: TagBasedMessageTypeNotificationRequest,
+    ): CustomResponse<TagBasedNotificationResponse>
 }
