@@ -251,7 +251,7 @@ interface NotificationApi {
                             value = """
                                 {
                                     "tags": [
-                                        { "cohortId": 1, "authorityId": 1, "tagName": "default" }
+                                        { "cohortId": 2, "authorityId": 2 }
                                     ],
                                     "title": "알림을 확인해요!",
                                     "message": "알림 내용도 확인해요"
@@ -305,7 +305,7 @@ interface NotificationApi {
                             value = """
                                 {
                                     "tags": [
-                                        { "cohortId": 1, "authorityId": 1, "tagName": "default" }
+                                        { "cohortId": 2, "authorityId": 2 }
                                     ],
                                     "notificationMessageType": "SESSION_START_SOON",
                                     "variables": {
