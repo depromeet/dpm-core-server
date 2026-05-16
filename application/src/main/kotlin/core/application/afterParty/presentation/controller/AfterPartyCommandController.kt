@@ -10,9 +10,9 @@ import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.enums.AfterPartyCategory
-import core.domain.afterParty.enums.AfterPartyInviteTagEnum
 import core.domain.afterParty.port.inbound.AfterPartyCommandUseCase
 import core.domain.afterParty.vo.AfterPartyId
+import core.domain.member.enums.InviteTagEnum
 import core.domain.member.vo.MemberId
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PatchMapping
@@ -33,7 +33,7 @@ class AfterPartyCommandController(
         @RequestBody createAfterPartyRequest: CreateAfterPartyRequest,
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
-        val afterPartyInviteTags: List<AfterPartyInviteTagEnum> =
+        val afterPartyInviteTags: List<InviteTagEnum> =
             createAfterPartyRequest.inviteTags.map { it.toDomain() }
         val createAfterParty: AfterParty =
             AfterParty.create(
