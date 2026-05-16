@@ -29,7 +29,7 @@ class AnnouncementReminderScheduler(
     val cohortQueryUseCase: CohortQueryUseCase,
     val notificationCommandUseCase: NotificationCommandUseCase,
 ) {
-    @Scheduled(cron = "0 0/10 * * * *")
+    @Scheduled(cron = "0 0/5 * * * *")
     @Transactional
     fun sendAssignmentDue24HReminder() {
         val now = Instant.now()
@@ -37,7 +37,7 @@ class AnnouncementReminderScheduler(
         checkAndSendReminders(now, Duration.ofHours(24), NotificationMessageType.ASSIGNMENT_DUE_24H)
     }
 
-    @Scheduled(cron = "10 0/10 * * * *")
+    @Scheduled(cron = "10 0/5 * * * *")
     @Transactional
     fun sendAssignmentDue12HReminder() {
         val now = Instant.now()
@@ -45,7 +45,7 @@ class AnnouncementReminderScheduler(
         checkAndSendReminders(now, Duration.ofHours(12), NotificationMessageType.ASSIGNMENT_DUE_12H)
     }
 
-    @Scheduled(cron = "20 0/10 * * * *")
+    @Scheduled(cron = "20 0/5 * * * *")
     @Transactional
     fun sendAssignmentDue1HReminder() {
         val now = Instant.now()
