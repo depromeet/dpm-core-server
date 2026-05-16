@@ -1,5 +1,6 @@
 package core.application.notification.presentation.request
 
+import core.domain.member.enums.InviteTagEnum
 import core.domain.notification.enums.NotificationMessageType
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -7,9 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     description = "태그 기반 메시지 타입 푸시 알림 전송 요청",
     example = """
     {
-      "tags": [
-        { "cohortId": 1, "authorityId": 1, "tagName": "default" }
-      ],
+      "tags": ["DEEPER_17TH", "ORGANIZER_17TH"],
       "notificationMessageType": "SESSION_START_SOON",
       "variables": {
         "title": "테스트를 위한 타이틀입니다"
@@ -18,8 +17,8 @@ import io.swagger.v3.oas.annotations.media.Schema
     """,
 )
 data class TagBasedMessageTypeNotificationRequest(
-    @Schema(description = "알림을 받을 대상 태그 목록")
-    val tags: List<TargetTagSpecRequest>,
+    @Schema(description = "알림을 받을 대상 태그 목록", example = "[\"DEEPER_17TH\", \"ORGANIZER_17TH\"]")
+    val tags: List<InviteTagEnum>,
     @Schema(description = "알림 메시지 타입")
     val notificationMessageType: NotificationMessageType,
     @Schema(description = "메시지 템플릿 변수")
