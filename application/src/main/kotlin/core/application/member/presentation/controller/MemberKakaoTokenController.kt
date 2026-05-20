@@ -2,13 +2,15 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.member.application.service.auth.KakaoLoginTokenSaveService
+import core.application.member.presentation.request.KakaoLoginTokenSaveRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Member-Login", description = "Member Login API")
@@ -19,7 +21,7 @@ class MemberKakaoTokenController(
     @PostMapping("/login/auth/kakao/tokens")
     @Operation(
         summary = "Kakao Login Token Save",
-        description = "Receives Kakao login tokens as request parameters and stores them as backend cookies.",
+        description = "Receives Kakao login tokens in the request body and stores them as backend cookies.",
     )
     @ApiResponses(
         value = [
@@ -29,11 +31,10 @@ class MemberKakaoTokenController(
         ],
     )
     fun saveKakaoLoginTokens(
-        @RequestParam accessToken: String,
-        @RequestParam refreshToken: String,
+        @RequestBody @Valid request: KakaoLoginTokenSaveRequest,
         response: HttpServletResponse,
     ): CustomResponse<Void> {
-        kakaoLoginTokenSaveService.save(accessToken, refreshToken, response)
+        kakaoLoginTokenSaveService.save(request.accessToken, request.refreshToken, response)
         return CustomResponse.ok()
     }
 }
