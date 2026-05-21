@@ -10,10 +10,10 @@ import org.springframework.web.client.RestClient
 @Service
 class KakaoTokenExchangeService(
     private val clientRegistrationRepository: ClientRegistrationRepository,
-) {
+) : KakaoUserInfoClient {
     private val restClient = RestClient.create()
 
-    fun getUserAttributes(
+    override fun getUserAttributes(
         authorizationCode: String,
         redirectUri: String?,
     ): Map<String, Any> {
@@ -29,8 +29,16 @@ class KakaoTokenExchangeService(
                 tokenUri = registration.providerDetails.tokenUri,
             )
 
+        return getUserAttributesByAccessToken(tokenResponse.accessToken)
+    }
+
+    override fun getUserAttributesByAccessToken(accessToken: String): Map<String, Any> {
+        val registration =
+            clientRegistrationRepository.findByRegistrationId(KAKAO_REGISTRATION_ID)
+                ?: throw IllegalStateException("Kakao OAuth registration is missing")
+
         return getUserInfo(
-            accessToken = tokenResponse.accessToken,
+            accessToken = accessToken,
             userInfoUri = registration.providerDetails.userInfoEndpoint.uri,
         )
     }

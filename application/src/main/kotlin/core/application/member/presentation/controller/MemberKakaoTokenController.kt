@@ -21,7 +21,7 @@ class MemberKakaoTokenController(
     @PostMapping("/login/auth/kakao/tokens")
     @Operation(
         summary = "Kakao Login Token Save",
-        description = "Receives Kakao login tokens in the request body and stores them as backend cookies.",
+        description = "Receives backend-issued JWT accessToken/refreshToken in the request body and stores them as backend cookies. This endpoint does not accept Kakao OAuth provider tokens.",
     )
     @ApiResponses(
         value = [
