@@ -7,8 +7,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Member-Login", description = "Member Login API")
@@ -19,7 +21,7 @@ class MemberKakaoTokenController(
     @PostMapping("/login/auth/kakao/tokens")
     @Operation(
         summary = "Kakao Login Token Save",
-        description = "Receives Kakao login tokens as request parameters and stores them as backend cookies.",
+        description = "Receives Kakao login tokens in the request body and stores them as backend cookies.",
     )
     @ApiResponses(
         value = [
@@ -29,11 +31,17 @@ class MemberKakaoTokenController(
         ],
     )
     fun saveKakaoLoginTokens(
-        @RequestParam accessToken: String,
-        @RequestParam refreshToken: String,
+        @RequestBody @Valid request: KakaoLoginTokenSaveRequest,
         response: HttpServletResponse,
     ): CustomResponse<Void> {
-        kakaoLoginTokenSaveService.save(accessToken, refreshToken, response)
+        kakaoLoginTokenSaveService.save(request.accessToken, request.refreshToken, response)
         return CustomResponse.ok()
     }
+
+    data class KakaoLoginTokenSaveRequest(
+        @field:NotBlank(message = "accessToken은 필수입니다")
+        val accessToken: String,
+        @field:NotBlank(message = "refreshToken은 필수입니다")
+        val refreshToken: String,
+    )
 }
