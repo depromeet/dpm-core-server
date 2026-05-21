@@ -15,7 +15,7 @@ jib = "3.4.2"
 
 # jooq
 jooq = "9.0"
-jooq_generator = "3.19.1"
+jooq_generator = "3.19.23"
 
 # Springdoc
 springdoc = "2.8.8"
