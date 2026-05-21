@@ -6,6 +6,7 @@ import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,13 +17,22 @@ class KakaoLoginTokenSaveService(
     private val jwtTokenInjector: JwtTokenInjector,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
 ) {
+    private val logger = KotlinLogging.logger { }
+
     @Transactional
     fun save(
         accessToken: String,
         refreshToken: String,
         response: HttpServletResponse,
     ) {
-        if (!jwtTokenProvider.validateToken(accessToken) || !jwtTokenProvider.validateToken(refreshToken)) {
+        val accessTokenValid = jwtTokenProvider.validateToken(accessToken)
+        val refreshTokenValid = jwtTokenProvider.validateToken(refreshToken)
+
+        if (!accessTokenValid || !refreshTokenValid) {
+            logger.warn {
+                "Rejected Kakao token save request: invalid token pair " +
+                    "(accessTokenValid=$accessTokenValid, refreshTokenValid=$refreshTokenValid)"
+            }
             throw TokenInvalidException()
         }
 
@@ -30,6 +40,10 @@ class KakaoLoginTokenSaveService(
         val refreshTokenMemberId = jwtTokenProvider.getMemberId(refreshToken)
 
         if (accessTokenMemberId != refreshTokenMemberId) {
+            logger.warn {
+                "Rejected Kakao token save request: token subjects differ " +
+                    "(accessTokenMemberId=$accessTokenMemberId, refreshTokenMemberId=$refreshTokenMemberId)"
+            }
             throw TokenInvalidException()
         }
 
