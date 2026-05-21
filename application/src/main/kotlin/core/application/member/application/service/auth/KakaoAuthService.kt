@@ -3,7 +3,7 @@ package core.application.member.application.service.auth
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
-import core.application.security.oauth.kakao.KakaoTokenExchangeService
+import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.redirect.OAuthRedirectUriValidator
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class KakaoAuthService(
-    private val kakaoTokenExchangeService: KakaoTokenExchangeService,
+    private val kakaoUserInfoClient: KakaoUserInfoClient,
     private val redirectUriValidator: OAuthRedirectUriValidator,
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
@@ -36,7 +36,7 @@ class KakaoAuthService(
         val attributes =
             OAuthAttributes.of(
                 KAKAO_PROVIDER_ID,
-                kakaoTokenExchangeService.getUserAttributes(
+                kakaoUserInfoClient.getUserAttributes(
                     authorizationCode = authorizationCode,
                     redirectUri = validatedRedirectUri,
                 ),
