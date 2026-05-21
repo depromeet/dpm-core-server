@@ -16,6 +16,11 @@ class JwtAuthenticationFilter(
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val TOKEN_PREFIX = "Bearer "
+        private val EXCLUDED_PATHS =
+            setOf(
+                "/v1/auth/kakao/native",
+                "/api/v1/auth/kakao/native",
+            )
     }
 
     override fun doFilterInternal(
@@ -44,6 +49,8 @@ class JwtAuthenticationFilter(
 
         filterChain.doFilter(request, response)
     }
+
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI in EXCLUDED_PATHS
 
     private fun getAccessToken(authorizationHeader: String?): String? {
         if (authorizationHeader.isNullOrEmpty() || !authorizationHeader.startsWith(TOKEN_PREFIX)) {
