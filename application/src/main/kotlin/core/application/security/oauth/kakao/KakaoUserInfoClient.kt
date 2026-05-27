@@ -6,5 +6,7 @@ interface KakaoUserInfoClient {
         redirectUri: String?,
     ): Map<String, Any>
 
+    fun getServiceUserIdByAccessToken(accessToken: String): Long
+
     fun getUserAttributesByAccessToken(accessToken: String): Map<String, Any>
 }
