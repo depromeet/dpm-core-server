@@ -32,6 +32,18 @@ class KakaoTokenExchangeService(
         return getUserAttributesByAccessToken(tokenResponse.accessToken)
     }
 
+    override fun getServiceUserIdByAccessToken(accessToken: String): Long {
+        val accessTokenInfo =
+            restClient.get()
+                .uri(ACCESS_TOKEN_INFO_URI)
+                .header("Authorization", "Bearer $accessToken")
+                .retrieve()
+                .body(KakaoAccessTokenInfoResponse::class.java)
+                ?: throw IllegalStateException("Failed to retrieve Kakao access token info")
+
+        return accessTokenInfo.id
+    }
+
     override fun getUserAttributesByAccessToken(accessToken: String): Map<String, Any> {
         val registration =
             clientRegistrationRepository.findByRegistrationId(KAKAO_REGISTRATION_ID)
@@ -97,7 +109,16 @@ class KakaoTokenExchangeService(
         val refreshTokenExpiresIn: Int? = null,
     )
 
+    data class KakaoAccessTokenInfoResponse(
+        val id: Long,
+        @JsonProperty("expires_in")
+        val expiresIn: Int,
+        @JsonProperty("app_id")
+        val appId: Int,
+    )
+
     companion object {
         private const val KAKAO_REGISTRATION_ID = "kakao"
+        private const val ACCESS_TOKEN_INFO_URI = "https://kapi.kakao.com/v1/user/access_token_info"
     }
 }
