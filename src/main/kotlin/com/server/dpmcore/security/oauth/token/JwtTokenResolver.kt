@@ -16,7 +16,7 @@ class JwtTokenResolver {
         cookieName: String,
     ): String? {
         return request.cookies
-            ?.firstOrNull { it.name == cookieName }
+            ?.lastOrNull { it.name == cookieName }
             ?.value
     }
 
