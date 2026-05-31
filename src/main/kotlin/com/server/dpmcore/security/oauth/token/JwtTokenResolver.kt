@@ -1,12 +1,15 @@
 package com.server.dpmcore.security.oauth.token
 
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.http.HttpHeaders
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames.REFRESH_TOKEN
 import org.springframework.stereotype.Component
 
 @Component
 class JwtTokenResolver {
-    fun resolveRefreshTokenFromRequest(request: HttpServletRequest): String? = resolveFromCookie(request, REFRESH_TOKEN)
+    fun resolveRefreshTokenFromRequest(request: HttpServletRequest): String? =
+        resolveFromCookie(request, REFRESH_TOKEN)
+            ?: resolveFromBearerHeader(request.getHeader(HttpHeaders.AUTHORIZATION))
 
     private fun resolveFromCookie(
         request: HttpServletRequest,
@@ -15,5 +18,23 @@ class JwtTokenResolver {
         return request.cookies
             ?.firstOrNull { it.name == cookieName }
             ?.value
+    }
+
+    private fun resolveFromBearerHeader(authorizationHeader: String?): String? {
+        if (authorizationHeader.isNullOrBlank()) {
+            return null
+        }
+        if (!authorizationHeader.startsWith(BEARER_PREFIX)) {
+            return null
+        }
+
+        return authorizationHeader
+            .removePrefix(BEARER_PREFIX)
+            .trim()
+            .takeIf { it.isNotBlank() }
+    }
+
+    companion object {
+        private const val BEARER_PREFIX = "Bearer "
     }
 }
