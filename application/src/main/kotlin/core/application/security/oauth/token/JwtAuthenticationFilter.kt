@@ -15,6 +15,7 @@ class JwtAuthenticationFilter(
 ) : OncePerRequestFilter() {
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
+        private const val ACCESS_TOKEN_COOKIE = "accessToken"
         private const val TOKEN_PREFIX = "Bearer "
         private val EXCLUDED_PATHS =
             setOf(
@@ -29,15 +30,15 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain,
     ) {
         val authorizationHeader = request.getHeader(HEADER_AUTHORIZATION)
+        val token = getAccessToken(authorizationHeader) ?: getAccessTokenFromCookie(request)
 
         if (authorizationHeader != null &&
             authorizationHeader.isNotEmpty() &&
-            !authorizationHeader.startsWith(TOKEN_PREFIX)
+            !authorizationHeader.startsWith(TOKEN_PREFIX) &&
+            token == null
         ) {
             throw InvalidAccessTokenException(JwtExceptionCode.AUTHORIZATION_HEADER_INVALID)
         }
-
-        val token = getAccessToken(authorizationHeader)
 
         if (token != null) {
             if (!jwtTokenProvider.validateToken(token)) {
@@ -59,4 +60,10 @@ class JwtAuthenticationFilter(
         val token = authorizationHeader.substring(TOKEN_PREFIX.length)
         return token.ifEmpty { null }
     }
+
+    private fun getAccessTokenFromCookie(request: HttpServletRequest): String? =
+        request.cookies
+            ?.firstOrNull { it.name == ACCESS_TOKEN_COOKIE }
+            ?.value
+            ?.takeIf { it.isNotBlank() }
 }
