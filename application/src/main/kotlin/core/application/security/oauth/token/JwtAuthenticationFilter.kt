@@ -63,7 +63,7 @@ class JwtAuthenticationFilter(
 
     private fun getAccessTokenFromCookie(request: HttpServletRequest): String? =
         request.cookies
-            ?.firstOrNull { it.name == ACCESS_TOKEN_COOKIE }
+            ?.lastOrNull { it.name == ACCESS_TOKEN_COOKIE }
             ?.value
             ?.takeIf { it.isNotBlank() }
 }
