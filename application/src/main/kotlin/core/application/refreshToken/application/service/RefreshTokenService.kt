@@ -38,30 +38,27 @@ class RefreshTokenService(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): String {
-        val token =
-            tokenResolver.resolveRefreshTokenFromRequest(request)
-                ?: throw TokenInvalidException()
+        val tokenCandidates =
+            tokenResolver.resolveRefreshTokenCandidatesFromRequest(request)
 
-        if (!tokenProvider.validateToken(token)) {
+        if (tokenCandidates.isEmpty()) {
             throw TokenInvalidException()
         }
 
-        val refreshToken: RefreshToken = getByTokenString(token)
-        tokenInjector.injectRefreshToken(rotate(refreshToken), response)
-        return tokenProvider.generateAccessToken(refreshToken.memberId.toString())
-    }
-
-    private fun getByTokenString(token: String): RefreshToken {
-        val memberId = tokenProvider.getMemberId(token)
-        return refreshTokenPersistencePort.findByToken(token)
-            ?: run {
-                val currentRefreshToken = refreshTokenPersistencePort.findByMemberId(memberId)
-                logger.warn {
-                    "Refresh token lookup failed for memberId=$memberId;" +
-                        "storedTokenExists=${currentRefreshToken != null}"
-                }
-                throw TokenNotFoundException()
+        for (token in tokenCandidates.distinct()) {
+            if (!tokenProvider.validateToken(token)) {
+                continue
             }
+
+            val refreshToken =
+                refreshTokenPersistencePort.findByToken(token)
+                    ?: continue
+
+            tokenInjector.injectRefreshToken(rotate(refreshToken), response)
+            return tokenProvider.generateAccessToken(refreshToken.memberId.toString())
+        }
+
+        throw TokenNotFoundException()
     }
 
     private fun rotate(refreshToken: RefreshToken): RefreshToken {

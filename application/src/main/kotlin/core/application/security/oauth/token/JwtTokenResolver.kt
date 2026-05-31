@@ -11,6 +11,17 @@ class JwtTokenResolver {
         resolveFromCookie(request, REFRESH_TOKEN_CAMEL_CASE)
             ?: resolveFromBearerHeader(request.getHeader(HttpHeaders.AUTHORIZATION))
 
+    fun resolveRefreshTokenCandidatesFromRequest(request: HttpServletRequest): List<String> =
+        buildList {
+            request.cookies
+                ?.filter { it.name == REFRESH_TOKEN_CAMEL_CASE }
+                ?.mapNotNull { it.value.takeIf(String::isNotBlank) }
+                ?.let(::addAll)
+
+            resolveFromBearerHeader(request.getHeader(HttpHeaders.AUTHORIZATION))
+                ?.let(::add)
+        }
+
     private fun resolveFromCookie(
         request: HttpServletRequest,
         cookieName: String,
