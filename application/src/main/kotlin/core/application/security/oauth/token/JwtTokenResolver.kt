@@ -16,7 +16,7 @@ class JwtTokenResolver {
         cookieName: String,
     ): String? =
         request.cookies
-            ?.firstOrNull { it.name == cookieName }
+            ?.lastOrNull { it.name == cookieName }
             ?.value
 
     private fun resolveFromBearerHeader(authorizationHeader: String?): String? {
