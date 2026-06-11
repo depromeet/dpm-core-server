@@ -4,12 +4,16 @@ import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
 import core.application.member.application.service.access.MemberAccessService
+import core.application.member.application.service.oauth.MemberOAuthService
+import core.application.member.presentation.response.AppleHiddenEmailMemberResponse
+import core.application.member.presentation.response.AppleHiddenEmailMembersResponse
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -20,11 +24,13 @@ import core.domain.team.vo.TeamId
 import core.domain.team.vo.TeamNumber
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.time.Instant
 
 @Service
 class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberAccessService: MemberAccessService,
+    private val memberOAuthService: MemberOAuthService,
     private val cohortQueryUseCase: CohortQueryUseCase,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
@@ -102,6 +108,30 @@ class MemberQueryService(
 
     fun checkWhiteList(email: String): Member? = memberPersistencePort.findBySignupEmail(email)
 
+    fun getAppleHiddenEmailMembers(): AppleHiddenEmailMembersResponse =
+        AppleHiddenEmailMembersResponse(
+            members =
+                memberOAuthService
+                    .findMemberIdsByProvider(OAuthProvider.APPLE)
+                    .mapNotNull { memberPersistencePort.findById(it) }
+                    .asSequence()
+                    .filter { it.deletedAt == null }
+                    .filter { isHashLikeName(it.name) }
+                    .sortedWith(
+                        compareBy<Member> { it.createdAt ?: Instant.EPOCH }
+                            .thenBy { it.id?.value ?: Long.MAX_VALUE },
+                    )
+                    .map {
+                        AppleHiddenEmailMemberResponse(
+                            memberId = requireNotNull(it.id).value,
+                            name = it.name,
+                            part = it.part?.name,
+                            email = it.email ?: it.signupEmail,
+                        )
+                    }
+                    .toList(),
+        )
+
     fun getMembersOverview(latest: Boolean?): List<MemberOverviewQueryModel> =
         memberPersistencePort.findAllOrderedByHighestCohortAndStatus(
             latest = latest,
@@ -138,4 +168,21 @@ class MemberQueryService(
             cohortId,
             authorityId,
         ).distinct()
+
+    private fun isHashLikeName(name: String): Boolean {
+        val normalizedName = name.trim()
+        if (normalizedName.isBlank()) {
+            return false
+        }
+
+        return UUID_REGEX.matches(normalizedName) || HASH_LIKE_REGEX.matches(normalizedName)
+    }
+
+    private companion object {
+        private val UUID_REGEX =
+            Regex(
+                pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+            )
+        private val HASH_LIKE_REGEX = Regex("^[0-9a-fA-F]{16,64}$")
+    }
 }
