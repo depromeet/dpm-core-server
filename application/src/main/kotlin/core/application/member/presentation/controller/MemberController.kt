@@ -3,18 +3,25 @@ package core.application.member.presentation.controller
 import core.application.common.exception.CustomResponse
 import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.service.MemberCommandService
+import core.application.member.application.service.MemberNameHashTypeValidator
 import core.application.member.application.service.MemberQueryService
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.member.application.service.auth.EmailPasswordAuthService
+import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
 import core.application.member.presentation.controller.MemberLoginController.AppleLoginRequest
 import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.MemberNameHashValidationRequest
 import core.application.member.presentation.request.SetPasswordRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
+import core.application.member.presentation.response.AppleHiddenEmailMembersResponse
+import core.application.member.presentation.response.AppleMemberProfileUpdateResponse
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.application.member.presentation.response.MemberNameHashValidationResponse
 import core.application.member.presentation.response.MemberOverviewResponse
+import core.application.security.annotation.CurrentMemberId
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
@@ -39,10 +46,42 @@ import org.springframework.web.bind.annotation.RestController
 class MemberController(
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
+    private val memberNameHashTypeValidator: MemberNameHashTypeValidator,
     private val appleAuthService: AppleAuthService,
     private val emailPasswordAuthService: EmailPasswordAuthService,
     private val tokenInjector: JwtTokenInjector,
 ) : MemberApi {
+    @PreAuthorize("permitAll()")
+    @PostMapping("/name/hash-type/validation")
+    override fun validateMemberNameHashType(
+        @Valid @RequestBody request: MemberNameHashValidationRequest,
+    ): CustomResponse<MemberNameHashValidationResponse> =
+        CustomResponse.ok(
+            MemberNameHashValidationResponse(
+                isHashType = memberNameHashTypeValidator.isHashType(request.name),
+            ),
+        )
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/apple/profile")
+    override fun updateAppleMemberProfile(
+        @CurrentMemberId memberId: MemberId,
+        @Valid @RequestBody request: AppleMemberProfileUpdateRequest,
+    ): CustomResponse<AppleMemberProfileUpdateResponse> =
+        CustomResponse.ok(
+            memberCommandService.updateAppleMemberProfile(
+                memberId = memberId,
+                request = request,
+            ),
+        )
+
+    @PreAuthorize("hasAuthority('read:member')")
+    @GetMapping("/apple/hidden-email")
+    override fun getAppleHiddenEmailMembers(): CustomResponse<AppleHiddenEmailMembersResponse> =
+        CustomResponse.ok(
+            memberQueryService.getAppleHiddenEmailMembers(),
+        )
+
     //    @PreAuthorize("hasAuthority('read:member')")
     @PreAuthorize("permitAll()")
     @GetMapping("/me")
