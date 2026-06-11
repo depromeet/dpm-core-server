@@ -19,6 +19,11 @@ class MemberOAuthRepository(
         memberOAuthJpaRepository.save(MemberOAuthEntity.of(memberOAuth, member))
     }
 
+    override fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId> =
+        memberOAuthJpaRepository
+            .findAllByProvider(provider.name)
+            .map { MemberId(it.member.id) }
+
     override fun relinkToMember(
         provider: OAuthProvider,
         externalId: String,
