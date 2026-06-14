@@ -5,6 +5,7 @@ import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceStatusUpdateCommand
 import core.application.attendance.presentation.request.AbsenceReportCreateRequest
+import core.application.attendance.presentation.request.AbsenceReportUpdateRequest
 import core.application.attendance.presentation.request.AttendanceRecordRequest
 import core.application.attendance.presentation.request.AttendanceStatusBulkUpdateRequest
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
@@ -12,12 +13,14 @@ import core.application.attendance.presentation.response.AttendanceResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
+import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -94,6 +97,35 @@ class AttendanceCommandController(
                 contents = request.contents,
             ),
         )
+
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("hasAuthority('create:attendance')")
+    @PatchMapping("/v2/sessions/{sessionId}/absence-reasons")
+    override fun updateAbsenceReport(
+        @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+        @RequestBody request: AbsenceReportUpdateRequest,
+    ): CustomResponse<Void> {
+        absenceReasonCommandService.updateAbsenceReason(
+            AbsenceReportUpdateCommand(
+                sessionId = sessionId,
+                memberId = memberId,
+                contents = request.contents,
+            ),
+        )
+
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("hasAuthority('create:attendance')")
+    @DeleteMapping("/v2/sessions/{sessionId}/absence-reasons")
+    override fun deleteAbsenceReport(
+        @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<Void> {
+        absenceReasonCommandService.deleteAbsenceReason(sessionId, memberId)
 
         return CustomResponse.ok()
     }

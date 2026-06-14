@@ -1,6 +1,7 @@
 package core.application.attendance.presentation.controller
 
 import core.application.attendance.presentation.request.AbsenceReportCreateRequest
+import core.application.attendance.presentation.request.AbsenceReportUpdateRequest
 import core.application.attendance.presentation.request.AttendanceRecordRequest
 import core.application.attendance.presentation.request.AttendanceStatusBulkUpdateRequest
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
@@ -195,5 +196,69 @@ interface AttendanceCommandApi {
         sessionId: SessionId,
         memberId: MemberId,
         request: AbsenceReportCreateRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 수정",
+        description = "본인이 제출한 결석 사유서의 내용을 수정합니다. 수정 시 검토 상태는 다시 대기(PENDING)로 전환됩니다.",
+        requestBody =
+            RequestBody(
+                description = "결석 사유 수정 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AbsenceReportUpdateRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "결석 사유 수정 요청 예시",
+                                value = """
+                                    {
+                                        "contents": "갑자기 일이 생겨 불참"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 수정 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "제출한 결석 사유서가 존재하지 않음",
+            ),
+        ],
+    )
+    fun updateAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AbsenceReportUpdateRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 삭제",
+        description = "본인이 제출한 결석 사유서를 삭제합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 삭제 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "제출한 결석 사유서가 존재하지 않음",
+            ),
+        ],
+    )
+    fun deleteAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
     ): CustomResponse<Void>
 }
