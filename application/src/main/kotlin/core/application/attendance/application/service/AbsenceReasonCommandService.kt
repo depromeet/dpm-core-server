@@ -32,7 +32,8 @@ class AbsenceReasonCommandService(
 
         val session: Session = sessionQueryService.getSessionById(command.sessionId)
 
-        val absenceReason: AbsenceReason = absenceReasonPersistencePort
+        val absenceReason: AbsenceReason =
+            absenceReasonPersistencePort
                 .findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
                 ?.apply { resubmit(command.contents) }
                 ?: AbsenceReason.create(command)

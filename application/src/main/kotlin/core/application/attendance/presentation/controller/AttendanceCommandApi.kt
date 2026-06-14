@@ -6,7 +6,6 @@ import core.application.attendance.presentation.request.AttendanceStatusBulkUpda
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
 import core.application.attendance.presentation.response.AttendanceResponse
 import core.application.common.exception.CustomResponse
-import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
