@@ -9,4 +9,6 @@ interface AbsenceReasonPersistencePort {
         sessionId: Long,
         memberId: Long,
     ): AbsenceReason?
+
+    fun delete(absenceReason: AbsenceReason)
 }
