@@ -1,14 +1,17 @@
 package core.application.attendance.presentation.controller
 
+import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceStatusUpdateCommand
+import core.application.attendance.presentation.request.AbsenceReportCreateRequest
 import core.application.attendance.presentation.request.AttendanceRecordRequest
 import core.application.attendance.presentation.request.AttendanceStatusBulkUpdateRequest
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
 import core.application.attendance.presentation.response.AttendanceResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
+import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
 import core.domain.member.vo.MemberId
@@ -25,6 +28,7 @@ import java.time.Instant
 @RestController
 class AttendanceCommandController(
     private val attendanceCommandService: AttendanceCommandService,
+    private val absenceReasonCommandService: AbsenceReasonCommandService,
 ) : AttendanceCommandApi {
     @PreAuthorize("hasAuthority('create:attendance')")
     @PostMapping("/v1/sessions/{sessionId}/attendances")
@@ -71,6 +75,24 @@ class AttendanceCommandController(
             sessionId,
             AttendanceStatus.valueOf(request.attendanceStatus),
             request.toMemberIds(),
+        )
+
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("hasAuthority('create:attendance')")
+    @PostMapping("/v2/sessions/{sessionId}/absence-reasons")
+    override fun createAbsenceReport(
+        @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+        @RequestBody request: AbsenceReportCreateRequest,
+    ): CustomResponse<Void> {
+        absenceReasonCommandService.submitAbsenceReason(
+            AbsenceReportCreateCommand(
+                sessionId = sessionId,
+                memberId = memberId,
+                contents = request.contents,
+            ),
         )
 
         return CustomResponse.ok()
