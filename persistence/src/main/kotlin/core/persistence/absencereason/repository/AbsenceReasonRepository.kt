@@ -19,4 +19,9 @@ class AbsenceReasonRepository(
         absenceReasonJpaRepository
             .findBySessionIdAndMemberId(sessionId, memberId)
             ?.toDomain()
+
+    override fun delete(absenceReason: AbsenceReason) {
+        val id = absenceReason.id?.value ?: return
+        absenceReasonJpaRepository.deleteById(id)
+    }
 }
