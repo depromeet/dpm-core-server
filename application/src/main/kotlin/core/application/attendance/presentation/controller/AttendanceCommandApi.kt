@@ -1,10 +1,12 @@
 package core.application.attendance.presentation.controller
 
+import core.application.attendance.presentation.request.AbsenceReportCreateRequest
 import core.application.attendance.presentation.request.AttendanceRecordRequest
 import core.application.attendance.presentation.request.AttendanceStatusBulkUpdateRequest
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
 import core.application.attendance.presentation.response.AttendanceResponse
 import core.application.common.exception.CustomResponse
+import core.application.security.annotation.CurrentMemberId
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
@@ -155,5 +157,44 @@ interface AttendanceCommandApi {
     fun updateAttendanceBulk(
         sessionId: SessionId,
         request: AttendanceStatusBulkUpdateRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 제출",
+        description = "결석 사유를 제출합니다.",
+        requestBody =
+            RequestBody(
+                description = "결석 사유 제출 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AbsenceReportCreateRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "결석 사유 제출 요청 예시",
+                                value = """
+                                    {
+                                        "contents": "아파서 병원다녀옴"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 제출 성공",
+            ),
+        ],
+    )
+    fun createAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AbsenceReportCreateRequest,
     ): CustomResponse<Void>
 }
