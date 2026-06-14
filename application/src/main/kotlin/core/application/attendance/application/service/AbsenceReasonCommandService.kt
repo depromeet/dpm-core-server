@@ -1,5 +1,6 @@
 package core.application.attendance.application.service
 
+import core.application.attendance.application.exception.AbsenceReasonRequiredException
 import core.application.session.application.service.SessionQueryService
 import core.domain.absencereason.aggregate.AbsenceReason
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
@@ -25,6 +26,10 @@ class AbsenceReasonCommandService(
      * 이미 제출한 사유서가 있다면 내용을 갱신하고 검토 상태를 다시 PENDING 으로 되돌린다(재제출).
      */
     fun submitAbsenceReason(command: AbsenceReportCreateCommand) {
+        if (command.contents.isBlank()) {
+            throw AbsenceReasonRequiredException()
+        }
+
         val session: Session = sessionQueryService.getSessionById(command.sessionId)
 
         val absenceReason: AbsenceReason = absenceReasonPersistencePort
