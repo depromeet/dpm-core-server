@@ -8,4 +8,6 @@ interface AbsenceReasonJpaRepository : JpaRepository<AbsenceReasonEntity, Long> 
         sessionId: Long,
         memberId: Long,
     ): AbsenceReasonEntity?
+
+    fun findAllBySessionId(sessionId: Long): List<AbsenceReasonEntity>
 }

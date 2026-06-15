@@ -10,5 +10,7 @@ interface AbsenceReasonPersistencePort {
         memberId: Long,
     ): AbsenceReason?
 
+    fun findAllBySessionId(sessionId: Long): List<AbsenceReason>
+
     fun delete(absenceReason: AbsenceReason)
 }

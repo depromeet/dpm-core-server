@@ -20,6 +20,11 @@ class AbsenceReasonRepository(
             .findBySessionIdAndMemberId(sessionId, memberId)
             ?.toDomain()
 
+    override fun findAllBySessionId(sessionId: Long): List<AbsenceReason> =
+        absenceReasonJpaRepository
+            .findAllBySessionId(sessionId)
+            .map { it.toDomain() }
+
     override fun delete(absenceReason: AbsenceReason) {
         val id = absenceReason.id?.value ?: return
         absenceReasonJpaRepository.deleteById(id)
