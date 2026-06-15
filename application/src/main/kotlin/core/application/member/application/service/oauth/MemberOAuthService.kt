@@ -17,6 +17,9 @@ class MemberOAuthService(
         externalId: String,
     ): MemberOAuth? = memberOAuthPersistencePort.findByProviderAndExternalId(provider, externalId)
 
+    fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId> =
+        memberOAuthPersistencePort.findMemberIdsByProvider(provider)
+
     fun relinkMemberOAuthProvider(
         member: Member,
         authAttribute: OAuthAttributes,

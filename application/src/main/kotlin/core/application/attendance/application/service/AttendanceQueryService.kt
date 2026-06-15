@@ -1,6 +1,7 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
+import core.application.attendance.application.exception.MemberAttendanceAmbiguousException
 import core.application.attendance.presentation.mapper.AttendanceMapper
 import core.application.attendance.presentation.response.DetailAttendancesBySessionResponse
 import core.application.attendance.presentation.response.DetailMemberAttendancesResponse
@@ -118,10 +119,16 @@ class AttendanceQueryService(
     }
 
     fun getDetailMemberAttendances(query: GetDetailMemberAttendancesQuery): DetailMemberAttendancesResponse {
-        val memberAttendanceQueryResult =
+        val memberAttendanceQueryResults =
             attendancePersistencePort
                 .findDetailMemberAttendance(query)
-                ?: throw AttendanceNotFoundException()
+
+        val memberAttendanceQueryResult =
+            when {
+                memberAttendanceQueryResults.isEmpty() -> throw AttendanceNotFoundException()
+                memberAttendanceQueryResults.size > 1 -> throw MemberAttendanceAmbiguousException()
+                else -> memberAttendanceQueryResults.first()
+            }
 
         val sessionAttendanceQueryResult =
             attendancePersistencePort

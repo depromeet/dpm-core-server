@@ -1,11 +1,16 @@
 package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
 import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
+import core.application.member.presentation.request.MemberNameHashValidationRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.request.WhiteListCheckRequest
+import core.application.member.presentation.response.AppleHiddenEmailMembersResponse
+import core.application.member.presentation.response.AppleMemberProfileUpdateResponse
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.application.member.presentation.response.MemberNameHashValidationResponse
 import core.application.member.presentation.response.MemberOverviewResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.cohort.vo.CohortId
@@ -23,6 +28,150 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "Member", description = "멤버 API")
 interface MemberApi {
+    @Operation(
+        summary = "멤버 이름 해시 형식 검증 API",
+        description = "Apple Login의 Hide My Email 케이스 등에서 내려온 name 값이 hash-like 문자열인지 검증합니다.",
+        requestBody =
+            RequestBody(
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = MemberNameHashValidationRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "멤버 이름 해시 형식 검증 요청 예시",
+                                value = """
+                                {
+                                    "name": "3f2504e04f8911d39a0c0305e82c3301"
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버 이름 해시 형식 검증 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "멤버 이름 해시 형식 검증 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "isHashType": true
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun validateMemberNameHashType(request: MemberNameHashValidationRequest): CustomResponse<MemberNameHashValidationResponse>
+
+    @Operation(
+        summary = "Apple 로그인 멤버 프로필 수정 API",
+        description = "현재 로그인한 Apple 회원의 name과 part를 수정합니다.",
+        requestBody =
+            RequestBody(
+                content = [
+                    Content(
+                        mediaType = APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = AppleMemberProfileUpdateRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "Apple 멤버 프로필 수정 요청 예시",
+                                value = """
+                                {
+                                    "name": "홍길동",
+                                    "part": "SERVER"
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Apple 로그인 멤버 프로필 수정 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "Apple 멤버 프로필 수정 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "memberId": 1,
+                                    "name": "홍길동",
+                                    "part": "SERVER"
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun updateAppleMemberProfile(
+        @CurrentMemberId memberId: MemberId,
+        request: AppleMemberProfileUpdateRequest,
+    ): CustomResponse<AppleMemberProfileUpdateResponse>
+
+    @ApiResponse(
+        responseCode = "200",
+        description = "Apple 로그인 숨김 이메일 멤버 조회 성공",
+        content = [
+            Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = Schema(implementation = CustomResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "Apple 숨김 이메일 멤버 조회 성공 응답",
+                        value = """
+                            {
+                                "status": "OK",
+                                "code": "G000",
+                                "message": "요청에 성공했습니다",
+                                "data": {
+                                    "members": [
+                                        {
+                                            "memberId": 1,
+                                            "name": "3f2504e04f8911d39a0c0305e82c3301",
+                                            "part": null,
+                                            "email": "apple@example.com"
+                                        }
+                                    ]
+                                }
+                            }
+                        """,
+                    ),
+                ],
+            ),
+        ],
+    )
+    @Operation(
+        summary = "Apple 로그인 숨김 이메일 멤버 조회 API",
+        description = "Apple 로그인 유저 중 name이 UUID 또는 해시 형태인 멤버만 조회합니다.",
+    )
+    fun getAppleHiddenEmailMembers(): CustomResponse<AppleHiddenEmailMembersResponse>
+
     @ApiResponse(
         responseCode = "200",
         description = "로그인 한 멤버 조회 성공",
