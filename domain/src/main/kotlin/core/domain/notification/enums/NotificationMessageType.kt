@@ -75,6 +75,11 @@ enum class NotificationMessageType(
         bodyTemplate = "{title}",
         description = "세션 24시간 전 알림",
     ),
+    ABSENCE_REASON_SUBMITTED(
+        title = "새로운 결석 사유서가 제출됐어요.",
+        bodyTemplate = "{name}님이 {week}주차 결석 사유서를 제출했어요.",
+        description = "디퍼가 결석 사유서 제출 시 운영진 알림",
+    ),
     ;
 
     fun format(variables: Map<String, Any>): String {
