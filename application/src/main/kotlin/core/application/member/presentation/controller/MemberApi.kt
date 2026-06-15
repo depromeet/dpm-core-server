@@ -76,7 +76,9 @@ interface MemberApi {
             ),
         ],
     )
-    fun validateMemberNameHashType(request: MemberNameHashValidationRequest): CustomResponse<MemberNameHashValidationResponse>
+    fun validateMemberNameHashType(
+        request: MemberNameHashValidationRequest,
+    ): CustomResponse<MemberNameHashValidationResponse>
 
     @Operation(
         summary = "Apple 로그인 멤버 프로필 수정 API",

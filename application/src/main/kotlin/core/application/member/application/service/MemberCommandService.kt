@@ -1,7 +1,7 @@
 package core.application.member.application.service
 
-import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.AppleLoginMemberRequiredException
+import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
 import core.application.member.application.service.cohort.MemberCohortService
 import core.application.member.application.service.oauth.MemberOAuthService
@@ -18,8 +18,8 @@ import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberPart
-import core.domain.member.enums.OAuthProvider
 import core.domain.member.enums.MemberStatus
+import core.domain.member.enums.OAuthProvider
 import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
