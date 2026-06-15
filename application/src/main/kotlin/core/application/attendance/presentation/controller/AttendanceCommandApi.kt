@@ -1,5 +1,6 @@
 package core.application.attendance.presentation.controller
 
+import core.application.attendance.presentation.request.AbsenceReasonReviewRequest
 import core.application.attendance.presentation.request.AbsenceReportCreateRequest
 import core.application.attendance.presentation.request.AbsenceReportUpdateRequest
 import core.application.attendance.presentation.request.AttendanceRecordRequest
@@ -260,5 +261,48 @@ interface AttendanceCommandApi {
     fun deleteAbsenceReport(
         sessionId: SessionId,
         memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 검토 (운영진)",
+        description = "운영진이 제출된 결석 사유서를 승인하거나 반려합니다. 승인 시 해당 멤버의 출석 상태가 인정결석으로 변경됩니다.",
+        requestBody =
+            RequestBody(
+                description = "결석 사유 검토 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AbsenceReasonReviewRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "결석 사유 승인 요청 예시",
+                                value = """
+                                    {
+                                        "approved": true
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 검토 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "제출된 결석 사유서가 존재하지 않음",
+            ),
+        ],
+    )
+    fun reviewAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AbsenceReasonReviewRequest,
     ): CustomResponse<Void>
 }
