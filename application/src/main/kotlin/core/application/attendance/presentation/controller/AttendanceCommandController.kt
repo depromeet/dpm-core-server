@@ -4,6 +4,7 @@ import core.application.attendance.application.service.AbsenceReasonCommandServi
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceStatusUpdateCommand
+import core.application.attendance.presentation.request.AbsenceReasonReviewRequest
 import core.application.attendance.presentation.request.AbsenceReportCreateRequest
 import core.application.attendance.presentation.request.AbsenceReportUpdateRequest
 import core.application.attendance.presentation.request.AttendanceRecordRequest
@@ -12,6 +13,7 @@ import core.application.attendance.presentation.request.AttendanceStatusUpdateRe
 import core.application.attendance.presentation.response.AttendanceResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
+import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
 import core.domain.attendance.enums.AttendanceStatus
@@ -126,6 +128,24 @@ class AttendanceCommandController(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<Void> {
         absenceReasonCommandService.deleteAbsenceReason(sessionId, memberId)
+
+        return CustomResponse.ok()
+    }
+
+    @PreAuthorize("hasAuthority('update:attendance')")
+    @PatchMapping("/v2/sessions/{sessionId}/absence-reasons/{memberId}/review")
+    override fun reviewAbsenceReport(
+        @PathVariable sessionId: SessionId,
+        @PathVariable memberId: MemberId,
+        @RequestBody request: AbsenceReasonReviewRequest,
+    ): CustomResponse<Void> {
+        absenceReasonCommandService.reviewAbsenceReason(
+            AbsenceReasonReviewCommand(
+                sessionId = sessionId,
+                memberId = memberId,
+                approved = request.approved,
+            ),
+        )
 
         return CustomResponse.ok()
     }

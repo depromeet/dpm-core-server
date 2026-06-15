@@ -3,7 +3,9 @@ package core.application.attendance.presentation.controller
 import core.application.attendance.presentation.response.DetailAttendancesBySessionResponse
 import core.application.attendance.presentation.response.DetailMemberAttendancesResponse
 import core.application.attendance.presentation.response.MemberAttendancesResponse
+import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
+import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
 import core.domain.attendance.enums.AttendanceStatus
@@ -386,4 +388,35 @@ interface AttendanceQueryApi {
         ],
     )
     fun getMyDetailAttendances(memberId: MemberId): CustomResponse<DetailMemberAttendancesResponse>
+
+    @Operation(
+        summary = "내 결석 사유서 조회",
+        description = "로그인한 디퍼가 해당 세션에 제출한 결석 사유서를 조회합니다. 제출 이력이 없으면 data 가 비어있습니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "내 결석 사유서 조회 성공",
+            ),
+        ],
+    )
+    fun getMyAbsenceReason(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): CustomResponse<MyAbsenceReasonResponse>
+
+    @Operation(
+        summary = "세션 결석 사유서 목록 조회 (운영진)",
+        description = "운영진이 해당 세션에 제출된 모든 결석 사유서를 제출자 이름과 함께 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션 결석 사유서 목록 조회 성공",
+            ),
+        ],
+    )
+    fun getSessionAbsenceReasons(sessionId: SessionId): CustomResponse<SessionAbsenceReasonsResponse>
 }

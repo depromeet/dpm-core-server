@@ -8,8 +8,8 @@ import core.application.member.application.service.MemberQueryService
 import core.application.member.application.service.auth.AppleAuthService
 import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.member.application.service.auth.EmailPasswordAuthService
-import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
 import core.application.member.presentation.controller.MemberLoginController.AppleLoginRequest
+import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
 import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.MemberNameHashValidationRequest
