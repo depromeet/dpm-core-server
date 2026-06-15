@@ -24,7 +24,7 @@ import java.time.Instant
  */
 class Member(
     val id: MemberId? = null,
-    val name: String,
+    var name: String,
     val email: String,
     val part: MemberPart? = null,
     status: MemberStatus,
@@ -49,6 +49,10 @@ class Member(
         private set
 
     fun isAllowed(): Boolean = status == MemberStatus.ACTIVE || status == MemberStatus.INACTIVE
+
+    fun updateName(newName: String) {
+        name = newName
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

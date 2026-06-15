@@ -34,7 +34,7 @@ interface AttendancePersistencePort {
 
     fun findDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): SessionDetailAttendanceQueryModel?
 
-    fun findDetailMemberAttendance(query: GetDetailMemberAttendancesQuery): MemberDetailAttendanceQueryModel?
+    fun findDetailMemberAttendance(query: GetDetailMemberAttendancesQuery): List<MemberDetailAttendanceQueryModel>
 
     fun findMemberSessionAttendances(query: GetDetailMemberAttendancesQuery): List<MemberSessionAttendanceQueryModel>
 
