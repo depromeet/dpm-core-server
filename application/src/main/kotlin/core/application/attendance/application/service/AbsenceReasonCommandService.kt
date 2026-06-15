@@ -4,9 +4,12 @@ import core.application.attendance.application.exception.AbsenceReasonNotFoundEx
 import core.application.attendance.application.exception.AbsenceReasonRequiredException
 import core.application.session.application.service.SessionQueryService
 import core.domain.absencereason.aggregate.AbsenceReason
+import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
+import core.domain.attendance.enums.AttendanceStatus
+import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.notification.event.AbsenceReasonSubmittedEvent
@@ -22,6 +25,7 @@ class AbsenceReasonCommandService(
     private val absenceReasonPersistencePort: AbsenceReasonPersistencePort,
     private val sessionQueryService: SessionQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val attendanceCommandService: AttendanceCommandService,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
     /**
@@ -92,5 +96,34 @@ class AbsenceReasonCommandService(
                 ?: throw AbsenceReasonNotFoundException()
 
         absenceReasonPersistencePort.delete(absenceReason)
+    }
+
+    /**
+     * 운영진이 결석 사유서를 검토(승인/반려)한다.
+     *
+     * 승인 시 해당 멤버의 출석 상태를 인정결석([AttendanceStatus.EXCUSED_ABSENT])으로 변경한다.
+     * 반려 시 출석 상태는 결석 그대로 유지된다.
+     * 제출된 사유서가 없으면 [AbsenceReasonNotFoundException] 을 던진다.
+     */
+    fun reviewAbsenceReason(command: AbsenceReasonReviewCommand) {
+        val absenceReason =
+            absenceReasonPersistencePort
+                .findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
+                ?: throw AbsenceReasonNotFoundException()
+
+        if (command.approved) {
+            absenceReason.approve()
+            attendanceCommandService.updateAttendanceStatus(
+                AttendanceStatusUpdateCommand(
+                    sessionId = command.sessionId,
+                    memberId = command.memberId,
+                    attendanceStatus = AttendanceStatus.EXCUSED_ABSENT,
+                ),
+            )
+        } else {
+            absenceReason.reject()
+        }
+
+        absenceReasonPersistencePort.save(absenceReason)
     }
 }
