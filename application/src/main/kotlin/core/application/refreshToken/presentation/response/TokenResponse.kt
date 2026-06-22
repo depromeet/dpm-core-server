@@ -9,7 +9,7 @@ data class TokenResponse(
         example = "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MjAxOTcyNzc",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
-    val token: String,
+    val accessToken: String,
     @field:Schema(
         description = "토큰 만료 시간(초)",
         example = "7200",
@@ -19,11 +19,11 @@ data class TokenResponse(
 ) {
     companion object {
         fun of(
-            token: String,
+            accessToken: String,
             tokenProperties: TokenProperties,
         ): TokenResponse {
             return TokenResponse(
-                token = token,
+                accessToken = accessToken,
                 expirationTime = tokenProperties.expirationTime.accessToken,
             )
         }

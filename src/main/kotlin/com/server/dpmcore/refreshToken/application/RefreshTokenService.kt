@@ -24,17 +24,17 @@ class RefreshTokenService(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): String {
-        val token =
+        val refreshTokenValue =
             tokenResolver.resolveRefreshTokenFromRequest(request)
                 ?: throw TokenInvalidException()
 
-        val refreshToken: RefreshToken = getByTokenString(token)
+        val refreshToken: RefreshToken = getByRefreshTokenString(refreshTokenValue)
         tokenInjector.injectRefreshToken(rotate(refreshToken), response)
         return tokenProvider.generateAccessToken(refreshToken.memberId.toString())
     }
 
-    private fun getByTokenString(token: String): RefreshToken {
-        return refreshTokenPersistencePort.findByToken(token)
+    private fun getByRefreshTokenString(refreshToken: String): RefreshToken {
+        return refreshTokenPersistencePort.findByToken(refreshToken)
             ?: throw TokenNotFoundException()
     }
 

@@ -38,20 +38,20 @@ class RefreshTokenService(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): String {
-        val tokenCandidates =
+        val refreshTokenCandidates =
             tokenResolver.resolveRefreshTokenCandidatesFromRequest(request)
 
-        if (tokenCandidates.isEmpty()) {
+        if (refreshTokenCandidates.isEmpty()) {
             throw TokenInvalidException()
         }
 
-        for (token in tokenCandidates.distinct()) {
-            if (!tokenProvider.validateToken(token)) {
+        for (refreshTokenValue in refreshTokenCandidates.distinct()) {
+            if (!tokenProvider.validateToken(refreshTokenValue)) {
                 continue
             }
 
             val refreshToken =
-                refreshTokenPersistencePort.findByToken(token)
+                refreshTokenPersistencePort.findByToken(refreshTokenValue)
                     ?: continue
 
             tokenInjector.injectRefreshToken(rotate(refreshToken), response)
