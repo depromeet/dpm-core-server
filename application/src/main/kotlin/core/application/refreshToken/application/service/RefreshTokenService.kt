@@ -4,7 +4,6 @@ import core.application.refreshToken.application.exception.TokenInvalidException
 import core.application.refreshToken.application.exception.TokenNotFoundException
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
-import core.application.security.oauth.token.JwtTokenResolver
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import jakarta.servlet.http.HttpServletRequest
@@ -15,36 +14,24 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class RefreshTokenService(
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
-    private val tokenResolver: JwtTokenResolver,
     private val tokenInjector: JwtTokenInjector,
     private val tokenProvider: JwtTokenProvider,
 ) {
     @Transactional
     fun reissueBasedOnRefreshToken(
-        request: HttpServletRequest,
+        refreshToken: String,
         response: HttpServletResponse,
     ): String {
-        val tokenCandidates =
-            tokenResolver.resolveRefreshTokenCandidatesFromRequest(request)
-
-        if (tokenCandidates.isEmpty()) {
+        if (!tokenProvider.validateToken(refreshToken)) {
             throw TokenInvalidException()
         }
 
-        for (token in tokenCandidates.distinct()) {
-            if (!tokenProvider.validateToken(token)) {
-                continue
-            }
+        val savedRefreshToken =
+            refreshTokenPersistencePort.findByToken(refreshToken)
+                ?: throw TokenNotFoundException()
 
-            val refreshToken =
-                refreshTokenPersistencePort.findByToken(token)
-                    ?: continue
-
-            tokenInjector.injectRefreshToken(rotate(refreshToken), response)
-            return tokenProvider.generateAccessToken(refreshToken.memberId.toString())
-        }
-
-        throw TokenNotFoundException()
+        tokenInjector.injectRefreshToken(rotate(savedRefreshToken), response)
+        return tokenProvider.generateAccessToken(savedRefreshToken.memberId.toString())
     }
 
     private fun rotate(refreshToken: RefreshToken): RefreshToken {
