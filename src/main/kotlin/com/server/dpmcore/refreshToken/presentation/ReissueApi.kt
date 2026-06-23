@@ -30,7 +30,7 @@ interface ReissueApi {
                                 "code": "G000",
                                 "message": "요청에 성공했습니다",
                                 "data": {
-                                    "token": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MjAxOTcyNzc",
+                                    "accessToken": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MjAxOTcyNzc",
                                     "expirationTime": 3600
                                 }
                             }
