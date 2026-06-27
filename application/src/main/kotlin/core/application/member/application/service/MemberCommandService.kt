@@ -1,6 +1,7 @@
 package core.application.member.application.service
 
 import core.application.member.application.exception.AppleLoginMemberRequiredException
+import core.application.member.application.exception.InvalidMemberPartException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
 import core.application.member.application.service.cohort.MemberCohortService
@@ -120,7 +121,13 @@ class MemberCommandService(
         }
 
         member.updateName(request.name.trim())
-        member.updatePart(MemberPart.valueOf(request.part.trim().uppercase()))
+        val normalizedPart = request.part.trim().uppercase()
+        if (normalizedPart != "UNASSIGNED") {
+            val memberPart =
+                runCatching { MemberPart.valueOf(normalizedPart) }
+                    .getOrElse { throw InvalidMemberPartException() }
+            member.updatePart(memberPart)
+        }
 
         val savedMember = memberPersistencePort.save(member)
         return AppleMemberProfileUpdateResponse(

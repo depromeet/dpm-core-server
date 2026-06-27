@@ -27,7 +27,6 @@ import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.announcement.vo.AssignmentId
-import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -45,7 +44,6 @@ class AnnouncementQueryService(
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val memberQueryUseCase: MemberQueryUseCase,
     val memberAccessService: MemberAccessService,
-    val cohortQueryUseCase: CohortQueryUseCase,
 ) : AnnouncementQueryUseCase {
     fun getAllAnnouncements(): AnnouncementListResponse {
         val announcementListItemQueryModels: List<AnnouncementListItemQueryModel> =
@@ -126,7 +124,6 @@ class AnnouncementQueryService(
     fun getAnnouncementReadMemberList(announcementId: AnnouncementId): AnnouncementViewMemberListResponse {
         val announcementReads: List<AnnouncementRead> = announcementReadQueryUseCase.getByAnnouncementId(announcementId)
         val announcementReadMemberIds: List<MemberId> = announcementReads.map { it.memberId }
-        val currentCohort: String = cohortQueryUseCase.getLatestCohortValue()
 
         val retrievedMembers: List<Member> = memberQueryUseCase.getMembersByIds(announcementReadMemberIds)
         val retrievedMemberTeamNumberMap: Map<MemberId, TeamNumber> =
@@ -136,7 +133,6 @@ class AnnouncementQueryService(
         val retrievedMemberAdminMap: Map<MemberId, Boolean> =
             memberAccessService.getIsAdminByMemberIds(
                 memberIds = announcementReadMemberIds,
-                cohortValue = currentCohort,
             )
 
         val memberItems: List<AnnouncementViewMemberListItemResponse> =
@@ -176,7 +172,6 @@ class AnnouncementQueryService(
                 assignment.id ?: throw AssignmentNotFoundException(),
             )
 
-        val latestCohortValue = cohortQueryUseCase.getLatestCohortValue()
         val assignmentSubmissionMemberIds: List<MemberId> = assignmentSubmissions.map { it.memberId }
         val assignmentSubmissionMembers: List<Member> =
             memberQueryUseCase.getMembersByIds(
@@ -189,7 +184,6 @@ class AnnouncementQueryService(
         val assignmentSubmissionMemberAdminMap: Map<MemberId, Boolean> =
             memberAccessService.getIsAdminByMemberIds(
                 memberIds = assignmentSubmissionMemberIds,
-                cohortValue = latestCohortValue,
             )
 
         val assignmentStatusMemberListItemResponses: List<AssignmentStatusMemberListItemResponse> =

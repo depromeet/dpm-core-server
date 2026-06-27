@@ -10,6 +10,7 @@ import core.domain.gathering.port.inbound.GatheringMemberQueryUseCase
 import core.domain.gathering.port.outbound.GatheringMemberPersistencePort
 import core.domain.gathering.port.outbound.query.GatheringMemberIsJoinQueryModel
 import core.domain.gathering.vo.GatheringId
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional
 class GatheringMemberQueryService(
     private val gatheringMemberPersistencePort: GatheringMemberPersistencePort,
     private val gatheringMemberValidator: GatheringMemberValidator,
-    private val cohortQueryService: CohortQueryService,
+    private val memberQueryUseCase: MemberQueryUseCase,
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) : GatheringMemberQueryUseCase {
     override fun getGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
@@ -41,11 +42,11 @@ class GatheringMemberQueryService(
 
     fun getQueryGatheringMemberIsJoined(gatheringId: GatheringId): List<GatheringMemberIsJoinQueryModel> {
         val memberIds = getMemberIdsByGatheringId(gatheringId)
-        val latestCohortValue = cohortQueryService.getLatestCohortValue()
         return memberIds.map { memberId ->
             val queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsJoinByGatheringIdAndMemberId(gatheringId, memberId)
+            val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
             val representativeAuthority =
                 currentCohortRoleResolver.selectRepresentativeRole(
                     roleNames = queryResults.map { it.authority },
@@ -59,11 +60,11 @@ class GatheringMemberQueryService(
         gatheringId: GatheringId,
     ): List<BillMemberIsInvitationSubmittedQueryModel> {
         val memberIds = getMemberIdsByGatheringId(gatheringId)
-        val latestCohortValue = cohortQueryService.getLatestCohortValue()
         return memberIds.map { memberId ->
             val queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(gatheringId, memberId)
+            val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
             val representativeAuthority =
                 currentCohortRoleResolver.selectRepresentativeRole(
                     roleNames = queryResults.map { it.authority },
