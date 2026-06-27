@@ -49,8 +49,6 @@ class MemberQueryService(
             getMemberById(memberId),
             memberAccessService.isAdmin(memberId),
             getMemberTeamNumber(memberId),
-            cohortQueryUseCase.getLatestCohortId().value,
-            cohortQueryUseCase.getLatestCohortValue(),
         )
 
     /**

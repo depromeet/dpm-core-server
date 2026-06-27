@@ -45,6 +45,7 @@ import org.jooq.impl.DSL
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.inline
+import org.jooq.impl.DSL.noCondition
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.selectOne
@@ -130,11 +131,18 @@ class MemberRepository(
             .map { MemberId(it ?: 0L) }
 
     override fun findAllByCohort(value: String): List<MemberId> =
-        dsl
+        run {
+            val latestMemberCohorts = latestMemberCohorts()
+            val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
+            val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
+
+            dsl
             .select(MEMBERS.MEMBER_ID)
             .from(MEMBERS)
+            .join(latestMemberCohorts)
+            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_COHORTS)
-            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
             .join(COHORTS)
             .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
             .where(COHORTS.VALUE.eq(value))
@@ -144,30 +152,51 @@ class MemberRepository(
             .map {
                 MemberId(it)
             }
+        }
 
     override fun findAllByCohortId(cohortId: CohortId): List<MemberId> =
-        dsl
+        run {
+            val latestMemberCohorts = latestMemberCohorts()
+            val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
+            val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
+
+            dsl
             .select(MEMBERS.MEMBER_ID)
             .from(MEMBERS)
+            .join(latestMemberCohorts)
+            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_COHORTS)
-            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
             .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
             .and(MEMBERS.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map { MemberId(it) }
+        }
 
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
         authorityId: AuthorityId,
     ): List<MemberId> {
-        val roleName = roleNameFieldForCohortValue(roleTypeFromLegacyAuthorityId(authorityId))
+        val cohortValue =
+            dsl
+                .select(COHORTS.VALUE)
+                .from(COHORTS)
+                .where(COHORTS.COHORT_ID.eq(cohortId.value))
+                .fetchOne(COHORTS.VALUE)
+                ?: return emptyList()
+        val roleName = "${cohortValue}기 ${roleTypeFromLegacyAuthorityId(authorityId).aliases.firstOrNull() ?: "__unknown__"}"
+        val latestMemberCohorts = latestMemberCohorts()
+        val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
+        val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
 
         return dsl
             .selectDistinct(MEMBERS.MEMBER_ID)
             .from(MEMBERS)
+            .join(latestMemberCohorts)
+            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_COHORTS)
-            .on(MEMBERS.MEMBER_ID.eq(MEMBER_COHORTS.MEMBER_ID))
+            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
             .join(COHORTS)
             .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
             .join(MEMBER_ROLES)
@@ -217,11 +246,15 @@ class MemberRepository(
         latest: Boolean?,
         latestCohortId: Long,
     ): List<MemberOverviewQueryModel> {
-        val cohortValueAsNumber = field("CAST({0} AS UNSIGNED)", Int::class.java, COHORTS.VALUE)
-        val maxCohortValue = max(cohortValueAsNumber).`as`("max_cohort_value")
-        val maxCohortId = max(MEMBER_COHORTS.COHORT_ID).`as`("max_cohort_id")
-        val maxTeamNumber = max(TEAMS.NUMBER).`as`("max_team_number")
-        val latestMemberCohorts = MEMBER_COHORTS.`as`("latest_member_cohorts")
+        val latestMemberCohorts = latestMemberCohorts()
+        val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
+        val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
+        val latestMemberTeams = latestMemberTeams()
+        val latestMemberTeamIdField = latestMemberTeamsFieldId(latestMemberTeams)
+        val latestMemberTeamMemberIdField = latestMemberTeamsFieldMemberId(latestMemberTeams)
+        val latestCohortValueField = COHORTS.VALUE.`as`("cohort_value")
+        val latestCohortIdField = COHORTS.COHORT_ID.`as`("cohort_id")
+        val latestTeamNumberField = TEAMS.NUMBER.`as`("team_number")
 
         val isAdminField =
             exists(
@@ -229,11 +262,16 @@ class MemberRepository(
                     .from(MEMBER_ROLES)
                     .join(ROLES)
                     .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
-                    .join(COHORTS)
-                    .on(COHORTS.COHORT_ID.eq(latestCohortId))
                     .where(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
                     .and(MEMBER_ROLES.DELETED_AT.isNull)
-                    .and(ROLES.NAME.eq(roleNameFieldForCohortValue(RoleType.Organizer))),
+                    .and(
+                        ROLES.NAME.eq(
+                            roleNameForCohortValue(
+                                latestCohortValueField,
+                                RoleType.Organizer,
+                            ),
+                        ),
+                    ),
             ).`as`("is_admin")
 
         val statusPriority =
@@ -243,18 +281,13 @@ class MemberRepository(
                 .otherwise(3)
 
         val hasLatestCohortCondition =
-            exists(
-                selectOne()
-                    .from(latestMemberCohorts)
-                    .where(latestMemberCohorts.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-                    .and(latestMemberCohorts.COHORT_ID.eq(latestCohortId)),
-            )
+            latestCohortIdField.eq(latestCohortId)
 
         val filterCondition =
             when (latest) {
                 true -> hasLatestCohortCondition
                 false -> hasLatestCohortCondition.not()
-                null -> null
+                null -> noCondition()
             }
 
         return dsl
@@ -263,38 +296,37 @@ class MemberRepository(
                 MEMBERS.NAME,
                 MEMBERS.STATUS,
                 MEMBERS.PART,
-                maxCohortValue,
-                maxCohortId,
-                maxTeamNumber,
+                latestCohortValueField,
+                latestCohortIdField,
+                latestTeamNumberField,
                 isAdminField,
             ).from(MEMBERS)
+            .leftJoin(latestMemberCohorts)
+            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
             .leftJoin(MEMBER_COHORTS)
-            .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
             .leftJoin(COHORTS)
             .on(COHORTS.COHORT_ID.eq(MEMBER_COHORTS.COHORT_ID))
+            .leftJoin(latestMemberTeams)
+            .on(latestMemberTeamMemberIdField.eq(MEMBERS.MEMBER_ID))
             .leftJoin(MEMBER_TEAMS)
-            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .on(MEMBER_TEAMS.MEMBER_TEAM_ID.eq(latestMemberTeamIdField))
             .leftJoin(TEAMS)
             .on(TEAMS.TEAM_ID.eq(MEMBER_TEAMS.TEAM_ID))
             .where(
                 MEMBERS.DELETED_AT.isNull
                     .and(filterCondition),
-            ).groupBy(
-                MEMBERS.MEMBER_ID,
-                MEMBERS.NAME,
-                MEMBERS.STATUS,
-                MEMBERS.PART,
             ).orderBy(
-                maxCohortValue.desc().nullsLast(),
+                latestCohortIdField.desc().nullsLast(),
                 statusPriority.asc(),
                 MEMBERS.NAME.asc(),
             ).fetch { record ->
                 MemberOverviewQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
-                    cohortId = record[maxCohortId],
-                    cohortValue = record[maxCohortValue]?.toString(),
+                    cohortId = record[latestCohortIdField],
+                    cohortValue = record[latestCohortValueField],
                     name = record[MEMBERS.NAME] ?: "",
-                    teamNumber = TeamNumber(record[maxTeamNumber] ?: 0),
+                    teamNumber = TeamNumber(record[latestTeamNumberField] ?: 0),
                     isAdmin = record[isAdminField] ?: false,
                     status = record[MEMBERS.STATUS] ?: "",
                     part = record[MEMBERS.PART],
@@ -557,8 +589,54 @@ class MemberRepository(
             else -> RoleType.Guest
         }
 
-    private fun roleNameFieldForCohortValue(roleType: RoleType) =
-        COHORTS.VALUE.concat(inline("기 ${roleType.aliases.firstOrNull() ?: "__unknown__"}"))
+    private fun latestMemberCohorts(memberIds: Collection<Long>? = null) =
+        DSL.select(
+            MEMBER_COHORTS.MEMBER_ID,
+            max(MEMBER_COHORTS.MEMBER_COHORT_ID).`as`("latest_member_cohort_id"),
+        )
+            .from(MEMBER_COHORTS)
+            .where(
+                if (memberIds.isNullOrEmpty()) {
+                    noCondition()
+                } else {
+                    MEMBER_COHORTS.MEMBER_ID.`in`(memberIds)
+                },
+            )
+            .groupBy(MEMBER_COHORTS.MEMBER_ID)
+            .asTable("latest_member_cohorts")
+
+    private fun latestMemberTeams(memberIds: Collection<Long>? = null) =
+        DSL.select(
+            MEMBER_TEAMS.MEMBER_ID,
+            max(MEMBER_TEAMS.MEMBER_TEAM_ID).`as`("latest_member_team_id"),
+        )
+            .from(MEMBER_TEAMS)
+            .where(
+                if (memberIds.isNullOrEmpty()) {
+                    noCondition()
+                } else {
+                    MEMBER_TEAMS.MEMBER_ID.`in`(memberIds)
+                },
+            )
+            .groupBy(MEMBER_TEAMS.MEMBER_ID)
+            .asTable("latest_member_teams")
+
+    private fun latestMemberCohortsFieldId(table: org.jooq.Table<*> = latestMemberCohorts()) =
+        table.field(name("latest_member_cohort_id"), Long::class.java)!!
+
+    private fun latestMemberCohortsFieldMemberId(table: org.jooq.Table<*> = latestMemberCohorts()) =
+        table.field(MEMBER_COHORTS.MEMBER_ID)!!
+
+    private fun latestMemberTeamsFieldId(table: org.jooq.Table<*> = latestMemberTeams()) =
+        table.field(name("latest_member_team_id"), Long::class.java)!!
+
+    private fun latestMemberTeamsFieldMemberId(table: org.jooq.Table<*> = latestMemberTeams()) =
+        table.field(MEMBER_TEAMS.MEMBER_ID)!!
+
+    private fun roleNameForCohortValue(
+        cohortValueField: org.jooq.Field<String?>,
+        roleType: RoleType,
+    ) = cohortValueField.concat(inline("기 ${roleType.aliases.firstOrNull() ?: "__unknown__"}"))
 
     companion object {
         private const val LEGACY_DEEPER_AUTHORITY_ID = 1L
