@@ -3,7 +3,8 @@ package core.application.member.application.service.access
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleType
-import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.member.aggregate.Member
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -14,14 +15,10 @@ import org.springframework.transaction.annotation.Transactional
 class MemberAccessService(
     private val memberRolePersistencePort: MemberRolePersistencePort,
     private val roleQueryUseCase: RoleQueryUseCase,
-    private val cohortQueryUseCase: CohortQueryUseCase,
+    private val memberQueryUseCase: MemberQueryUseCase,
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) {
-    fun isAdmin(memberId: MemberId): Boolean =
-        getRoleType(
-            memberId = memberId,
-            cohortValue = cohortQueryUseCase.getLatestCohortValue(),
-        ) == RoleType.Organizer
+    fun isAdmin(memberId: MemberId): Boolean = getRoleType(memberId) == RoleType.Organizer
 
     fun isAdmin(
         memberId: MemberId,
@@ -30,12 +27,13 @@ class MemberAccessService(
 
     fun getRoleType(
         memberId: MemberId,
-        cohortValue: String = cohortQueryUseCase.getLatestCohortValue(),
+        cohortValue: String? = null,
     ): RoleType {
+        val resolvedCohortValue = normalizeCohortValue(cohortValue ?: latestCohortValue(memberId))
         val currentRoles =
             currentCohortRoleResolver.filterCurrentRoles(
                 roleNames = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value),
-                latestCohortValue = normalizeCohortValue(cohortValue),
+                latestCohortValue = resolvedCohortValue,
             )
 
         return ROLE_PRIORITY.firstOrNull { roleType ->
@@ -45,19 +43,21 @@ class MemberAccessService(
 
     fun getIsAdminByMemberIds(
         memberIds: List<MemberId>,
-        cohortValue: String,
     ): Map<MemberId, Boolean> {
         if (memberIds.isEmpty()) return emptyMap()
 
-        val normalizedCohort = normalizeCohortValue(cohortValue)
+        val membersById: Map<MemberId, Member> =
+            memberQueryUseCase.getMembersByIds(memberIds).associateBy { requireNotNull(it.id) }
         val roleNamesByMemberId: Map<Long, List<String>> =
             memberRolePersistencePort.findRoleNamesByMemberIds(memberIds.map { it.value })
 
         return memberIds.associateWith { memberId ->
+            val member = membersById[memberId]
+            val latestCohortValue = normalizeCohortValue(member?.latestCohortValue())
             val currentRoles =
                 currentCohortRoleResolver.filterCurrentRoles(
                     roleNames = roleNamesByMemberId[memberId.value] ?: emptyList(),
-                    latestCohortValue = normalizedCohort,
+                    latestCohortValue = latestCohortValue,
                 )
             val roleType =
                 ROLE_PRIORITY.firstOrNull { roleType ->
@@ -70,7 +70,10 @@ class MemberAccessService(
 
     fun getEffectivePermissions(memberId: MemberId): List<String> = roleQueryUseCase.getPermissionsByMemberId(memberId)
 
-    private fun normalizeCohortValue(cohortValue: String): String = cohortValue.trim().removeSuffix("기")
+    private fun latestCohortValue(memberId: MemberId): String =
+        memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
+
+    private fun normalizeCohortValue(cohortValue: String?): String = cohortValue.orEmpty().trim().removeSuffix("기")
 
     companion object {
         private val ROLE_PRIORITY = listOf(RoleType.Core, RoleType.Organizer, RoleType.Deeper, RoleType.Guest)

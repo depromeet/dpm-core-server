@@ -5,6 +5,7 @@ import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleId
 import core.domain.authorization.vo.RoleType
 import core.domain.member.aggregate.MemberRole
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -15,6 +16,7 @@ class MemberRoleService(
     private val memberRolePersistencePort: MemberRolePersistencePort,
     private val roleQueryUseCase: RoleQueryUseCase,
     private val cohortQueryService: CohortQueryService,
+    private val memberQueryUseCase: MemberQueryUseCase,
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) {
     /**
@@ -49,9 +51,10 @@ class MemberRoleService(
             memberRolePersistencePort
                 .findRoleNamesByMemberId(memberId.value)
 
+        val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
         return currentCohortRoleResolver.findPrimaryRoleType(
             roleNames = roles,
-            latestCohortValue = cohortQueryService.getLatestCohortValue(),
+            latestCohortValue = latestCohortValue,
         )
     }
 
@@ -99,10 +102,11 @@ class MemberRoleService(
     }
 
     fun ensureGuestRoleAssigned(memberId: MemberId) {
+        val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
         val roles =
             currentCohortRoleResolver.filterCurrentRoles(
                 memberRolePersistencePort.findRoleNamesByMemberId(memberId.value),
-                cohortQueryService.getLatestCohortValue(),
+                latestCohortValue,
             )
         if (roles.isEmpty()) {
             assignGuestRole(memberId)

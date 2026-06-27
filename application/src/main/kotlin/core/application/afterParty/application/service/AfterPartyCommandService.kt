@@ -23,7 +23,6 @@ import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.InviteTagSpec
 import core.domain.member.aggregate.Member
-import core.domain.member.aggregate.MemberCohort
 import core.domain.member.constant.AuthorityConstants.DEEPER_AUTHORITY_ID
 import core.domain.member.constant.AuthorityConstants.ORGANIZER_AUTHORITY_ID
 import core.domain.member.enums.InviteTagEnum
@@ -96,11 +95,9 @@ class AfterPartyCommandService(
             .filter { it.status == MemberStatus.ACTIVE || it.status == MemberStatus.INACTIVE }
             .flatMap { member ->
                 val memberId = member.id ?: return@flatMap emptySequence()
-                member.memberCohorts
-                    .asSequence()
-                    .map(MemberCohort::cohortId)
-                    .distinct()
-                    .map { cohortId -> memberId to cohortId }
+                member.latestCohortId()
+                    ?.let { cohortId -> sequenceOf(memberId to cohortId) }
+                    ?: emptySequence()
             }.sumOf { (memberId, cohortId) ->
                 inviteOpenAfterPartiesForMember(memberId, cohortId)
             }
