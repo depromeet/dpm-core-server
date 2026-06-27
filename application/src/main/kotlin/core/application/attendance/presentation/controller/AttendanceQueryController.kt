@@ -1,10 +1,13 @@
 package core.application.attendance.presentation.controller
 
+import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.attendance.application.service.AttendanceQueryService
 import core.application.attendance.presentation.response.DetailAttendancesBySessionResponse
 import core.application.attendance.presentation.response.DetailMemberAttendancesResponse
 import core.application.attendance.presentation.response.MemberAttendancesResponse
+import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
+import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class AttendanceQueryController(
     private val attendanceQueryService: AttendanceQueryService,
+    private val absenceReasonQueryService: AbsenceReasonQueryService,
 ) : AttendanceQueryApi {
     @PreAuthorize("hasAuthority('create:attendance')")
     @GetMapping("/v1/sessions/{sessionId}/attendances")
@@ -145,4 +149,19 @@ class AttendanceQueryController(
 
         return CustomResponse.ok(response)
     }
+
+    @PreAuthorize("hasAuthority('create:attendance')")
+    @GetMapping("/v2/sessions/{sessionId}/absence-reasons/me")
+    override fun getMyAbsenceReason(
+        @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<MyAbsenceReasonResponse> =
+        CustomResponse.ok(absenceReasonQueryService.getMyAbsenceReason(sessionId, memberId))
+
+    @PreAuthorize("hasAuthority('update:attendance')")
+    @GetMapping("/v2/sessions/{sessionId}/absence-reasons")
+    override fun getSessionAbsenceReasons(
+        @PathVariable sessionId: SessionId,
+    ): CustomResponse<SessionAbsenceReasonsResponse> =
+        CustomResponse.ok(absenceReasonQueryService.getSessionAbsenceReasons(sessionId))
 }

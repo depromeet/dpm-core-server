@@ -33,6 +33,7 @@ import org.jooq.impl.DSL.select
 import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.sum
 import org.jooq.impl.DSL.`when`
+import org.jooq.impl.SQLDataType
 import org.springframework.stereotype.Repository
 import java.time.ZoneId
 
@@ -254,7 +255,7 @@ class AttendanceRepository(
 
     override fun findDetailMemberAttendance(
         query: GetDetailMemberAttendancesQuery,
-    ): MemberDetailAttendanceQueryModel? {
+    ): List<MemberDetailAttendanceQueryModel> {
         val isAdminField = isAdminField()
 
         return dsl
@@ -310,7 +311,7 @@ class AttendanceRepository(
                 TEAMS.NUMBER,
                 MEMBERS.PART,
                 COHORTS.VALUE,
-            ).fetchOne {
+            ).fetch {
                 MemberDetailAttendanceQueryModel(
                     memberId = it[MEMBERS.MEMBER_ID]!!,
                     memberName = it[MEMBERS.NAME]!!,
@@ -540,7 +541,28 @@ class AttendanceRepository(
         listOf(
             ATTENDANCES.MEMBER_ID.eq(query.memberId.value),
             ATTENDANCES.DELETED_AT.isNull,
+            SESSIONS.COHORT_ID.eq(latestAttendedCohortId(query.memberId.value)),
         )
+
+    /**
+     * 해당 멤버가 출석 기록을 가진 기수 중 가장 최신(기수 값이 가장 큰) 기수의 cohortId.
+     * 멤버가 여러 기수에 걸쳐 출석한 경우 기수별로 행이 분리되어 통계가 다건이 되는 것을 막기 위해
+     * 최신 기수 하나로 한정한다.
+     */
+    private fun latestAttendedCohortId(memberId: Long) =
+        select(SESSIONS.COHORT_ID)
+            .from(ATTENDANCES)
+            .join(SESSIONS)
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+            .join(COHORTS)
+            .on(SESSIONS.COHORT_ID.eq(COHORTS.COHORT_ID))
+            .where(
+                ATTENDANCES.MEMBER_ID.eq(memberId),
+                ATTENDANCES.DELETED_AT.isNull,
+            ).orderBy(
+                DSL.cast(COHORTS.VALUE, SQLDataType.INTEGER).desc(),
+                SESSIONS.COHORT_ID.desc(),
+            ).limit(1)
 
     private fun myAttendanceConditions(query: GetMyAttendanceBySessionQuery): List<Condition> =
         listOf(

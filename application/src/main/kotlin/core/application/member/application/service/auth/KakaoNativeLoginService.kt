@@ -6,9 +6,7 @@ import core.application.security.oauth.exception.OAuthAuthenticationFailedExcept
 import core.application.security.oauth.exception.OAuthExceptionCode
 import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.token.JwtTokenProvider
-import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
-import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.security.oauth.dto.OAuthAttributes
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -17,40 +15,21 @@ import org.springframework.stereotype.Service
 @Service
 class KakaoNativeLoginService(
     private val kakaoUserInfoClient: KakaoUserInfoClient,
-    private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
-    private val memberPersistencePort: MemberPersistencePort,
     private val handleMemberLoginUseCase: HandleMemberLoginUseCase,
     private val jwtTokenProvider: JwtTokenProvider,
+    private val memberPersistencePort: MemberPersistencePort,
 ) {
     private val logger = KotlinLogging.logger { }
 
     fun login(kakaoAccessToken: String): KakaoNativeLoginResponse {
-        val attributes = resolveAttributes(kakaoAccessToken)
-        val memberOAuth =
-            memberOAuthPersistencePort.findByProviderAndExternalId(
-                provider = attributes.getProvider(),
-                externalId = attributes.getExternalId(),
+        val loginAttributes = resolveAttributes(kakaoAccessToken)
+        val loginResult =
+            handleMemberLoginUseCase.handleLoginSuccess(
+                loginAttributes,
             )
-
-        if (memberOAuth == null) {
-            return KakaoNativeLoginResponse.signupRequired(
-                provider = attributes.getProvider().name,
-                externalId = attributes.getExternalId(),
-                email = attributes.getEmail(),
-                name = attributes.getName(),
-            )
-        }
-
-        memberPersistencePort.findById(memberOAuth.memberId)?.let { member ->
-            if (member.deletedAt != null || member.status == MemberStatus.WITHDRAWN) {
-                throw MemberDeletedException()
-            }
-        }
-
-        val loginResult = handleMemberLoginUseCase.handleLoginSuccess(attributes)
         val refreshToken =
             loginResult.refreshToken
-                ?: throw IllegalStateException("Refresh token was not issued for Kakao native login")
+                ?: throw MemberDeletedException()
         val memberId = refreshToken.memberId.value
         val accessToken = jwtTokenProvider.generateAccessToken(memberId.toString())
         val memberStatus = memberPersistencePort.findById(refreshToken.memberId)?.status
@@ -67,10 +46,9 @@ class KakaoNativeLoginService(
 
     private fun resolveAttributes(kakaoAccessToken: String): OAuthAttributes =
         try {
-            OAuthAttributes.of(
-                KAKAO_PROVIDER_ID,
-                kakaoUserInfoClient.getUserAttributesByAccessToken(kakaoAccessToken),
-            ) ?: throw OAuthAuthenticationFailedException()
+            val attributes = kakaoUserInfoClient.getUserAttributesByAccessToken(kakaoAccessToken)
+            OAuthAttributes.of(KAKAO_PROVIDER_ID, attributes)
+                ?: throw OAuthAuthenticationFailedException(OAuthExceptionCode.KAKAO_ACCESS_TOKEN_INVALID)
         } catch (_: OAuthAuthenticationFailedException) {
             throw OAuthAuthenticationFailedException(OAuthExceptionCode.KAKAO_ACCESS_TOKEN_INVALID)
         } catch (e: Exception) {

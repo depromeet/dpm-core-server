@@ -22,5 +22,7 @@ interface MemberOAuthPersistencePort {
         externalId: String,
     ): MemberOAuth?
 
+    fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId>
+
     fun deleteAllByMemberId(memberId: MemberId)
 }

@@ -13,6 +13,7 @@ class JwtAuthenticationFilter(
 ) : OncePerRequestFilter() {
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
+        private const val ACCESS_TOKEN_COOKIE = "accessToken"
         private const val TOKEN_PREFIX = "Bearer "
     }
 
@@ -22,7 +23,7 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain,
     ) {
         val authorizationHeader = request.getHeader(HEADER_AUTHORIZATION)
-        val token = getAccessToken(authorizationHeader)
+        val token = getAccessToken(authorizationHeader) ?: getAccessTokenFromCookie(request)
         if (jwtTokenProvider.validateToken(token)) {
             val authentication = jwtTokenProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication
@@ -36,4 +37,10 @@ class JwtAuthenticationFilter(
         } else {
             null
         }
+
+    private fun getAccessTokenFromCookie(request: HttpServletRequest): String? =
+        request.cookies
+            ?.lastOrNull { it.name == ACCESS_TOKEN_COOKIE }
+            ?.value
+            ?.takeIf { it.isNotBlank() }
 }
