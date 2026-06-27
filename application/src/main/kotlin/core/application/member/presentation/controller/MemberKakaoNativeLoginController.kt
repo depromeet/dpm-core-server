@@ -24,7 +24,7 @@ class MemberKakaoNativeLoginController(
     @PostMapping("/native")
     @Operation(
         summary = "Kakao Native Login",
-        description = "Authenticates a user with a Kakao native access token and returns backend-issued JWT tokens or a signup-required status.",
+        description = "Authenticates a user with a Kakao native access token and returns backend-issued JWT tokens.",
     )
     @ApiResponses(
         value = [

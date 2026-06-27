@@ -46,6 +46,7 @@ out/
 **/*.yml
 **/*.properties
 **/*.env
+!gradle.properties
 
 
 # Secrets

@@ -32,6 +32,17 @@ class KakaoTokenExchangeService(
         return getUserAttributesByAccessToken(tokenResponse.accessToken)
     }
 
+    override fun getServiceUserIdByAccessToken(accessToken: String): Long {
+        val userInfo = getUserAttributesByAccessToken(accessToken)
+        val id = userInfo["id"] ?: throw IllegalStateException("Failed to retrieve Kakao user id")
+
+        return when (id) {
+            is Number -> id.toLong()
+            is String -> id.toLongOrNull() ?: throw IllegalStateException("Failed to parse Kakao user id")
+            else -> throw IllegalStateException("Failed to parse Kakao user id")
+        }
+    }
+
     override fun getUserAttributesByAccessToken(accessToken: String): Map<String, Any> {
         val registration =
             clientRegistrationRepository.findByRegistrationId(KAKAO_REGISTRATION_ID)

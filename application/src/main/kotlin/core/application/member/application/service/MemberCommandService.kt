@@ -1,20 +1,25 @@
 package core.application.member.application.service
 
+import core.application.member.application.exception.AppleLoginMemberRequiredException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
 import core.application.member.application.service.cohort.MemberCohortService
 import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
+import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
 import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
+import core.application.member.presentation.response.AppleMemberProfileUpdateResponse
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
+import core.domain.member.enums.OAuthProvider
 import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -101,6 +106,28 @@ class MemberCommandService(
     fun hardDelete(memberId: MemberId) {
         memberQueryService.getMemberById(memberId)
         memberPersistencePort.hardDeleteById(memberId)
+    }
+
+    fun updateAppleMemberProfile(
+        memberId: MemberId,
+        request: AppleMemberProfileUpdateRequest,
+    ): AppleMemberProfileUpdateResponse {
+        val member =
+            memberQueryService.getMemberById(memberId)
+
+        if (memberOAuthService.findMemberIdsByProvider(OAuthProvider.APPLE).none { it == memberId }) {
+            throw AppleLoginMemberRequiredException()
+        }
+
+        member.updateName(request.name.trim())
+        member.updatePart(MemberPart.valueOf(request.part.trim().uppercase()))
+
+        val savedMember = memberPersistencePort.save(member)
+        return AppleMemberProfileUpdateResponse(
+            memberId = requireNotNull(savedMember.id).value,
+            name = savedMember.name,
+            part = savedMember.part?.name,
+        )
     }
 
     fun activate(member: Member) {

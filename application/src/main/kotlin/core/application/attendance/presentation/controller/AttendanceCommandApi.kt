@@ -1,5 +1,8 @@
 package core.application.attendance.presentation.controller
 
+import core.application.attendance.presentation.request.AbsenceReasonReviewRequest
+import core.application.attendance.presentation.request.AbsenceReportCreateRequest
+import core.application.attendance.presentation.request.AbsenceReportUpdateRequest
 import core.application.attendance.presentation.request.AttendanceRecordRequest
 import core.application.attendance.presentation.request.AttendanceStatusBulkUpdateRequest
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
@@ -155,5 +158,151 @@ interface AttendanceCommandApi {
     fun updateAttendanceBulk(
         sessionId: SessionId,
         request: AttendanceStatusBulkUpdateRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 제출",
+        description = "결석 사유를 제출합니다.",
+        requestBody =
+            RequestBody(
+                description = "결석 사유 제출 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AbsenceReportCreateRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "결석 사유 제출 요청 예시",
+                                value = """
+                                    {
+                                        "contents": "아파서 병원다녀옴"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 제출 성공",
+            ),
+        ],
+    )
+    fun createAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AbsenceReportCreateRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 수정",
+        description = "본인이 제출한 결석 사유서의 내용을 수정합니다. 수정 시 검토 상태는 다시 대기(PENDING)로 전환됩니다.",
+        requestBody =
+            RequestBody(
+                description = "결석 사유 수정 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AbsenceReportUpdateRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "결석 사유 수정 요청 예시",
+                                value = """
+                                    {
+                                        "contents": "갑자기 일이 생겨 불참"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 수정 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "제출한 결석 사유서가 존재하지 않음",
+            ),
+        ],
+    )
+    fun updateAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AbsenceReportUpdateRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 삭제",
+        description = "본인이 제출한 결석 사유서를 삭제합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 삭제 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "제출한 결석 사유서가 존재하지 않음",
+            ),
+        ],
+    )
+    fun deleteAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "결석 사유 검토 (운영진)",
+        description = "운영진이 제출된 결석 사유서를 승인하거나 반려합니다. 승인 시 해당 멤버의 출석 상태가 인정결석으로 변경됩니다.",
+        requestBody =
+            RequestBody(
+                description = "결석 사유 검토 요청",
+                required = true,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AbsenceReasonReviewRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "결석 사유 승인 요청 예시",
+                                value = """
+                                    {
+                                        "approved": true
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "결석 사유 검토 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "제출된 결석 사유서가 존재하지 않음",
+            ),
+        ],
+    )
+    fun reviewAbsenceReport(
+        sessionId: SessionId,
+        memberId: MemberId,
+        request: AbsenceReasonReviewRequest,
     ): CustomResponse<Void>
 }
