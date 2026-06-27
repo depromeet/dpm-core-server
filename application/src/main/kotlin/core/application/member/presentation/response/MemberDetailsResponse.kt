@@ -55,19 +55,12 @@ data class MemberDetailsResponse(
             member: Member,
             isAdmin: Boolean,
             teamNumber: TeamNumber,
-            latestCohortId: Long,
-            latestCohortValue: String,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = member.signupEmail,
                 name = member.name,
                 part = member.part?.name,
-                cohort =
-                    if (member.memberCohorts.any { it.cohortId.value == latestCohortId }) {
-                        latestCohortValue
-                    } else {
-                        member.memberCohorts.maxByOrNull { it.cohortId.value }?.cohortId?.value?.toString()
-                    },
+                cohort = member.latestCohortValue(),
                 teamNumber = teamNumber,
                 isAdmin = isAdmin,
                 status = member.status.name,

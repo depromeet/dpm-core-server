@@ -21,6 +21,7 @@ enum class MemberExceptionCode(
     INVALID_EMAIL_PASSWORD(HttpStatus.UNAUTHORIZED, "MEMBER-401-01", "이메일 또는 비밀번호가 올바르지 않습니다"),
     MEMBER_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MEMBER-403-01", "로그인이 제한된 회원입니다"),
     APPLE_LOGIN_MEMBER_REQUIRED(HttpStatus.FORBIDDEN, "MEMBER-403-02", "Apple 로그인 회원만 사용할 수 있습니다"),
+    INVALID_MEMBER_PART(HttpStatus.BAD_REQUEST, "MEMBER-400-05", "유효하지 않은 멤버 파트입니다"),
     MEMBER_DELETED(HttpStatus.UNAUTHORIZED, "MEMBER-401-02", "탈퇴한 회원입니다"),
     ;
 
