@@ -22,9 +22,8 @@ class MemberKakaoTokenController(
     @Operation(
         summary = "Kakao Login Token Save",
         description =
-            "Receives backend-issued JWT accessToken/refreshToken in" +
-                " the request body and stores them as backend cookies." +
-                "This endpoint does not accept Kakao OAuth provider tokens.",
+            "Receives the backend-issued refreshToken in the request body and stores backend cookies. " +
+                "The access token cookie is regenerated on the server, so the request no longer needs to send it.",
     )
     @ApiResponses(
         value = [
@@ -37,13 +36,11 @@ class MemberKakaoTokenController(
         @RequestBody @Valid request: KakaoLoginTokenSaveRequest,
         response: HttpServletResponse,
     ): CustomResponse<Void> {
-        kakaoLoginTokenSaveService.save(request.accessToken, request.refreshToken, response)
+        kakaoLoginTokenSaveService.save(request.refreshToken, response)
         return CustomResponse.ok()
     }
 
     data class KakaoLoginTokenSaveRequest(
-        @field:NotBlank(message = "accessToken은 필수입니다")
-        val accessToken: String,
         @field:NotBlank(message = "refreshToken은 필수입니다")
         val refreshToken: String,
     )
