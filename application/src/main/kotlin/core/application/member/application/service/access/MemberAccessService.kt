@@ -1,7 +1,6 @@
 package core.application.member.application.service.access
 
 import core.application.member.application.service.role.CurrentCohortRoleResolver
-import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.member.port.outbound.MemberRolePersistencePort
@@ -13,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class MemberAccessService(
     private val memberRolePersistencePort: MemberRolePersistencePort,
-    private val roleQueryUseCase: RoleQueryUseCase,
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) {
@@ -67,8 +65,6 @@ class MemberAccessService(
             roleType == RoleType.Organizer
         }
     }
-
-    fun getEffectivePermissions(memberId: MemberId): List<String> = roleQueryUseCase.getPermissionsByMemberId(memberId)
 
     private fun normalizeCohortValue(cohortValue: String): String = cohortValue.trim().removeSuffix("기")
 
