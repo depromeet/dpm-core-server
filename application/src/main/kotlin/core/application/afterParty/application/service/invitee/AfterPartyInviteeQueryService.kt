@@ -8,7 +8,6 @@ import core.domain.afterParty.aggregate.AfterPartyInvitee
 import core.domain.afterParty.port.inbound.AfterPartyInviteeQueryUseCase
 import core.domain.afterParty.port.outbound.AfterPartyInviteePersistencePort
 import core.domain.afterParty.vo.AfterPartyId
-import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.member.aggregate.Member
 import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamNumber
@@ -21,7 +20,6 @@ class AfterPartyInviteeQueryService(
     val afterPartyInviteePersistencePort: AfterPartyInviteePersistencePort,
     val memberQueryService: MemberQueryService,
     val memberAccessService: MemberAccessService,
-    val cohortQueryUseCase: CohortQueryUseCase,
 ) : AfterPartyInviteeQueryUseCase {
     override fun getInviteesByAfterPartyId(afterPartyId: AfterPartyId): List<AfterPartyInvitee> =
         afterPartyInviteePersistencePort.findByAfterPartyId(afterPartyId)
@@ -37,8 +35,6 @@ class AfterPartyInviteeQueryService(
             ?: throw AfterPartyMemberNotFoundException()
 
     fun getRsvpMembers(afterPartyId: AfterPartyId): List<AfterPartyRsvpMemberResponse> {
-        val currentCohortValue: String = cohortQueryUseCase.getLatestCohortValue()
-
         val invitees: List<AfterPartyInvitee> = getInviteesByAfterPartyId(afterPartyId = afterPartyId)
         val inviteeMember: List<Member> = memberQueryService.getMembersByIds(invitees.map { it.memberId })
         val rsvpMemberIds: List<MemberId> = inviteeMember.map { it.id!! }
@@ -49,7 +45,6 @@ class AfterPartyInviteeQueryService(
         val retrievedMemberAdminMap: Map<MemberId, Boolean> =
             memberAccessService.getIsAdminByMemberIds(
                 rsvpMemberIds,
-                currentCohortValue,
             )
         val rsvpStatusByMemberId: Map<MemberId, Boolean?> = invitees.associate { it.memberId to it.rsvpStatus }
 
