@@ -1,12 +1,10 @@
 package core.application.authorization.application.service
 
 import core.application.cohort.application.service.CohortQueryService
-import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.domain.authorization.aggregate.Role
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.port.outbound.RolePersistencePort
 import core.domain.authorization.vo.RoleType
-import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -16,8 +14,6 @@ class RoleQueryService(
     private val rolePersistencePort: RolePersistencePort,
     private val memberRolePersistencePort: MemberRolePersistencePort,
     private val cohortQueryService: CohortQueryService,
-    private val memberQueryUseCase: MemberQueryUseCase,
-    private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) : RoleQueryUseCase {
     override fun getAllRoles(): List<Role> {
         val latestCohortValue = cohortQueryService.getLatestCohortValue()
@@ -52,15 +48,9 @@ class RoleQueryService(
         rolePersistencePort.findAllByMemberExternalId(externalId).ifEmpty { listOf("GUEST") }
 
     override fun getPermissionsByMemberId(memberId: MemberId): List<String> {
-        val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
-        val currentRoleNames =
-            currentCohortRoleResolver.filterCurrentRoles(
-                memberRolePersistencePort.findRoleNamesByMemberId(memberId.value),
-                latestCohortValue,
-            )
         return rolePersistencePort.findAllPermissionsByMemberIdAndRoleNames(
             memberId = memberId,
-            roleNames = currentRoleNames,
+            roleNames = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value),
         )
     }
 
