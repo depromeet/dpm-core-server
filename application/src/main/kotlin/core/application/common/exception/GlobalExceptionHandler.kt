@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -69,6 +70,15 @@ class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     protected fun handleNoResourceFoundException(exception: NoResourceFoundException): CustomResponse<Void> =
         CustomResponse.error(GlobalExceptionCode.NOT_FOUND)
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    protected fun handleHttpRequestMethodNotSupportedException(
+        exception: HttpRequestMethodNotSupportedException,
+    ): CustomResponse<Void> {
+        logger.error { "Exception: ${exception.javaClass.simpleName} - ${exception.message}" }
+        return CustomResponse.error(GlobalExceptionCode.METHOD_NOT_ALLOWED)
+    }
 
     @ExceptionHandler(Exception::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

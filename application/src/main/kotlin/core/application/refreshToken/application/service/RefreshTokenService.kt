@@ -3,8 +3,8 @@ package core.application.refreshToken.application.service
 import core.application.refreshToken.application.exception.TokenInvalidException
 import core.application.refreshToken.application.exception.TokenNotFoundException
 import core.application.security.oauth.token.JwtTokenInjector
-import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.oauth.token.JwtTokenResolver
+import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import jakarta.servlet.http.HttpServletRequest
@@ -24,27 +24,30 @@ class RefreshTokenService(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): String {
-        val tokenCandidates =
-            tokenResolver.resolveRefreshTokenCandidatesFromRequest(request)
+        val refreshToken =
+            tokenResolver.resolveRefreshTokenFromRequest(request)
+                ?: throw TokenInvalidException()
 
-        if (tokenCandidates.isEmpty()) {
+        return reissueBasedOnRefreshToken(refreshToken, response)
+    }
+
+    @Transactional
+    fun reissueBasedOnRefreshToken(
+        refreshToken: String,
+        response: HttpServletResponse,
+    ): String {
+        if (!tokenProvider.validateToken(refreshToken)) {
             throw TokenInvalidException()
         }
 
-        for (token in tokenCandidates.distinct()) {
-            if (!tokenProvider.validateToken(token)) {
-                continue
-            }
+        val savedRefreshToken =
+            refreshTokenPersistencePort.findByToken(refreshToken)
+                ?: throw TokenNotFoundException()
 
-            val refreshToken =
-                refreshTokenPersistencePort.findByToken(token)
-                    ?: continue
-
-            tokenInjector.injectRefreshToken(rotate(refreshToken), response)
-            return tokenProvider.generateAccessToken(refreshToken.memberId.toString())
-        }
-
-        throw TokenNotFoundException()
+        val accessToken = tokenProvider.generateAccessToken(savedRefreshToken.memberId.toString())
+        tokenInjector.injectAccessToken(accessToken, response)
+        tokenInjector.injectRefreshToken(rotate(savedRefreshToken), response)
+        return accessToken
     }
 
     private fun rotate(refreshToken: RefreshToken): RefreshToken {

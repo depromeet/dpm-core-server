@@ -11,6 +11,7 @@ enum class GlobalExceptionCode(
     CREATED(HttpStatus.CREATED, "GLOBAL-201-01", "요청에 성공하여 리소스가 생성되었습니다."),
     NO_CONTENT(HttpStatus.NO_CONTENT, "GLOBAL-204-01", "요청에 성공했지만 반환할 데이터가 없습니다."),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "GLOBAL-400-01", "올바른 입력 형식이 아닙니다."),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "GLOBAL-405-01", "허용되지 않은 HTTP 메서드입니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "GLOBAL-404-01", "요청한 리소스를 찾을 수 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "GLOBAL-401-01", "로그인이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "GLOBAL-403-01", "요청 권한이 없습니다."),

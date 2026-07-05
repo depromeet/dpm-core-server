@@ -12,6 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Component
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
+    private val jwtTokenResolver: JwtTokenResolver,
 ) : OncePerRequestFilter() {
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
@@ -30,22 +31,27 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain,
     ) {
         val authorizationHeader = request.getHeader(HEADER_AUTHORIZATION)
-        val token = getAccessToken(authorizationHeader) ?: getAccessTokenFromCookie(request)
+        val tokenCandidates =
+            buildList {
+                getAccessToken(authorizationHeader)?.let(::add)
+                getAccessTokenFromCookie(request)?.let(::add)
+                jwtTokenResolver.resolveRefreshTokenCandidatesFromRequest(request)
+                    .forEach(::add)
+            }.distinct()
 
-        if (authorizationHeader != null &&
+        val authenticatedToken =
+            tokenCandidates.firstOrNull { jwtTokenProvider.validateToken(it) }
+
+        if (authenticatedToken != null) {
+            val authentication = jwtTokenProvider.getAuthentication(authenticatedToken)
+            SecurityContextHolder.getContext().authentication = authentication
+        } else if (authorizationHeader != null &&
             authorizationHeader.isNotEmpty() &&
-            !authorizationHeader.startsWith(TOKEN_PREFIX) &&
-            token == null
+            !authorizationHeader.startsWith(TOKEN_PREFIX)
         ) {
             throw InvalidAccessTokenException(JwtExceptionCode.AUTHORIZATION_HEADER_INVALID)
-        }
-
-        if (token != null) {
-            if (!jwtTokenProvider.validateToken(token)) {
-                throw InvalidAccessTokenException(JwtExceptionCode.TOKEN_INVALID)
-            }
-            val authentication = jwtTokenProvider.getAuthentication(token)
-            SecurityContextHolder.getContext().authentication = authentication
+        } else if (tokenCandidates.isNotEmpty()) {
+            throw InvalidAccessTokenException(JwtExceptionCode.TOKEN_INVALID)
         }
 
         filterChain.doFilter(request, response)
