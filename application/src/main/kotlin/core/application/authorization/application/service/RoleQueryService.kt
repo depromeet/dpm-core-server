@@ -5,6 +5,7 @@ import core.domain.authorization.aggregate.Role
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.port.outbound.RolePersistencePort
 import core.domain.authorization.vo.RoleType
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
