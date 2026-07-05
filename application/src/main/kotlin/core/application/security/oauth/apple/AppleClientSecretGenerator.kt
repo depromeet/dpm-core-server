@@ -3,7 +3,6 @@ package core.application.security.oauth.apple
 import core.application.security.properties.AppleProperties
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
-import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Component
 import java.security.KeyFactory
 import java.security.PrivateKey
@@ -16,12 +15,7 @@ import java.util.Date
 class AppleClientSecretGenerator(
     private val appleProperties: AppleProperties,
 ) {
-    private lateinit var privateKey: PrivateKey
-
-    @PostConstruct
-    fun init() {
-        privateKey = getPrivateKey(appleProperties.privateKey)!!
-    }
+    private val privateKey: PrivateKey by lazy { getPrivateKey(appleProperties.privateKey) }
 
     fun generateClientSecret(): String {
         val now = Date()
@@ -52,10 +46,15 @@ class AppleClientSecretGenerator(
             .compact()
     }
 
-    private fun getPrivateKey(privateKey: String): PrivateKey? {
+    private fun getPrivateKey(privateKey: String): PrivateKey {
+        val configuredKey = privateKey.trim()
+        if (configuredKey.isBlank()) {
+            throw IllegalStateException("Apple private key is not configured")
+        }
+
         try {
             val replacedKey =
-                privateKey.replace("-----BEGIN PRIVATE KEY-----", "")
+                configuredKey.replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace("-----END PRIVATE KEY-----", "")
                     .replace("\\s".toRegex(), "")
 
