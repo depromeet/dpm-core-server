@@ -125,7 +125,10 @@ jobs:
 
             echo "${{ env.DOCKER_PASSWORD }}" | docker login --username "${{ env.DOCKER_USERNAME }}" --password-stdin
             docker pull ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
-            docker stack deploy -c server-stack.yml server
+            docker stack deploy --with-registry-auth -c server-stack.yml server
+            docker service ps server_spring-app --no-trunc
+            docker service logs server_spring-app --tail 50
+            test "$(docker service ls --filter name=server_spring-app --format '{{.Replicas}}')" = "1/1"
 
       - name: "Discord로 Production 배포 실패를 알린다."
         if: failure()
