@@ -36,5 +36,6 @@ class MemberCohortEntity(
             id = MemberCohortId(this.id),
             memberId = MemberId(this.member.id),
             cohortId = CohortId(this.cohort.id),
+            cohortValue = this.cohort.value,
         )
 }
