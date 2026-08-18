@@ -8,6 +8,7 @@ class MemberCohort(
     val id: MemberCohortId? = null,
     val memberId: MemberId,
     val cohortId: CohortId,
+    val cohortValue: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
