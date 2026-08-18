@@ -90,7 +90,7 @@ class Member(
 
     fun latestCohortId(): CohortId? = latestMemberCohort()?.cohortId
 
-    fun latestCohortValue(): String? = latestCohortId()?.value?.toString()
+    fun latestCohortValue(): String? = latestMemberCohort()?.cohortValue
 
     fun updateStatus(newStatus: MemberStatus) {
         status = newStatus
