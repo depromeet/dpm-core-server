@@ -102,12 +102,7 @@ class MemberRoleService(
     }
 
     fun ensureGuestRoleAssigned(memberId: MemberId) {
-        val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
-        val roles =
-            currentCohortRoleResolver.filterCurrentRoles(
-                memberRolePersistencePort.findRoleNamesByMemberId(memberId.value),
-                latestCohortValue,
-            )
+        val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
         if (roles.isEmpty()) {
             assignGuestRole(memberId)
         }
