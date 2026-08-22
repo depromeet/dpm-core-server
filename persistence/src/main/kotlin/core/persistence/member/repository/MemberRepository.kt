@@ -284,7 +284,7 @@ class MemberRepository(
                 .otherwise(3)
 
         val hasLatestCohortCondition =
-            latestCohortIdField.eq(latestCohortId)
+            COHORTS.COHORT_ID.eq(latestCohortId)
 
         val filterCondition =
             when (latest) {
