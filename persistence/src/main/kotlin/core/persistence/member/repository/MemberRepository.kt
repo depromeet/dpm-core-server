@@ -267,7 +267,7 @@ class MemberRepository(
                     .and(
                         ROLES.NAME.eq(
                             roleNameForCohortValue(
-                                latestCohortValueField,
+                                COHORTS.VALUE,
                                 RoleType.Organizer,
                             ),
                         ),
@@ -317,7 +317,8 @@ class MemberRepository(
                 MEMBERS.DELETED_AT.isNull
                     .and(filterCondition),
             ).orderBy(
-                latestCohortIdField.desc().nullsLast(),
+                // nullsLast() 가 별칭을 case 표현식 안에 넣어 렌더링하므로 여기서도 한정된 실제 컬럼을 쓴다.
+                COHORTS.COHORT_ID.desc().nullsLast(),
                 statusPriority.asc(),
                 MEMBERS.NAME.asc(),
             ).fetch { record ->
