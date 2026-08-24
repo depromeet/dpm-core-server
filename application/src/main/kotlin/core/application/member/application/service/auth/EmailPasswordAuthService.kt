@@ -7,14 +7,13 @@ import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
+import core.application.refreshToken.application.service.RefreshTokenIssueService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.membercredential.aggregate.MemberCredential
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
-import core.domain.refreshToken.aggregate.RefreshToken
-import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -36,7 +35,7 @@ class EmailPasswordAuthService(
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
     private val jwtTokenProvider: JwtTokenProvider,
-    private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
+    private val refreshTokenIssueService: RefreshTokenIssueService,
     private val passwordEncoder: PasswordEncoder,
 ) {
     /**
@@ -48,6 +47,7 @@ class EmailPasswordAuthService(
     fun login(
         email: String,
         password: String,
+        deviceId: String? = null,
     ): AuthTokenResponse {
         // 1. Find credential by email
         val credential = memberCredentialPersistencePort.findByEmail(email)
@@ -57,7 +57,7 @@ class EmailPasswordAuthService(
                 // 신규 회원 가입 (Signup) 또는 기존 회원 연동
                 val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
                 if (existingMembers.isEmpty()) {
-                    return signupNewMember(email, password)
+                    return signupNewMember(email, password, deviceId)
                 }
 
                 val existingMember = selectLoginCandidate(existingMembers)
@@ -115,13 +115,9 @@ class EmailPasswordAuthService(
                 authorities,
             )
 
-        val refreshToken = jwtTokenProvider.generateRefreshToken(member.id!!.toString())
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
 
-        // Save refresh token
-        val refreshTokenEntity = RefreshToken.create(member.id!!, refreshToken)
-        refreshTokenPersistencePort.save(refreshTokenEntity)
-
-        return AuthTokenResponse(accessToken, refreshToken)
+        return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
 
     /**
@@ -130,6 +126,7 @@ class EmailPasswordAuthService(
     private fun signupNewMember(
         email: String,
         password: String,
+        deviceId: String?,
     ): AuthTokenResponse {
         // 1. Create new member
         val memberName = email.substringBefore("@")
@@ -171,13 +168,9 @@ class EmailPasswordAuthService(
                 authorities,
             )
 
-        val refreshToken = jwtTokenProvider.generateRefreshToken(newMember.id!!.toString())
+        val issued = refreshTokenIssueService.issueForLogin(newMember.id!!, deviceId)
 
-        // 5. Save refresh token
-        val refreshTokenEntity = RefreshToken.create(newMember.id!!, refreshToken)
-        refreshTokenPersistencePort.save(refreshTokenEntity)
-
-        return AuthTokenResponse(accessToken, refreshToken)
+        return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
 
     private fun validateMemberForLogin(member: Member) {
