@@ -120,9 +120,36 @@ CREATE TABLE `members`
 
 CREATE TABLE `refresh_tokens`
 (
-    `member_id` bigint NOT NULL,
-    `token`     text,
-    PRIMARY KEY (`member_id`)
+    `token_id`   bigint       NOT NULL AUTO_INCREMENT,
+    `member_id`  bigint       NOT NULL,
+    `token_hash` varchar(64)  NOT NULL,
+    -- 전환기 롤백 대비 평문 사본. 안정화 후 DROP COLUMN 예정.
+    `token`      text             NULL,
+    `device_id`  varchar(128)     NULL,
+    `issued_at`  datetime(6)  NOT NULL,
+    `expires_at` datetime(6)  NOT NULL,
+    `rotated_at` datetime(6)      NULL,
+    PRIMARY KEY (`token_id`),
+    UNIQUE KEY `uk_rt_token_hash` (`token_hash`),
+    KEY `idx_rt_member_id` (`member_id`),
+    KEY `idx_rt_member_device` (`member_id`, `device_id`),
+    KEY `idx_rt_expires_at` (`expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+-- dpm_core.notification_tokens definition
+
+CREATE TABLE `notification_tokens`
+(
+    `notification_token_id` bigint       NOT NULL AUTO_INCREMENT,
+    `member_id`             bigint       NOT NULL,
+    `token`                 varchar(255) NOT NULL,
+    `created_at`            datetime(6)  NOT NULL,
+    `updated_at`            datetime(6)      NULL,
+    PRIMARY KEY (`notification_token_id`),
+    UNIQUE KEY `uk_notification_token_member_token` (`member_id`, `token`),
+    KEY `idx_notification_token_member_id` (`member_id`),
+    KEY `idx_notification_token_token` (`token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
