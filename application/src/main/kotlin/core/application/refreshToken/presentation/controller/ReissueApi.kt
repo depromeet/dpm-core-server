@@ -16,7 +16,9 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 interface ReissueApi {
     @Operation(
         summary = "액세스 토큰 발급 API",
-        description = "요청 쿠키의 refreshToken을 기반으로 액세스 토큰을 재발급합니다.",
+        description =
+            "Authorization 헤더(Bearer) 또는 쿠키의 refreshToken을 기반으로 토큰을 재발급합니다. " +
+                "응답의 refreshToken은 회전된 새 값이므로 클라이언트 저장소를 반드시 갱신해야 합니다.",
     )
     @ApiResponse(
         responseCode = "200",
@@ -35,7 +37,9 @@ interface ReissueApi {
                                 "message": "요청에 성공했습니다",
                                 "data": {
                                     "token": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MjAxOTcyNzc",
-                                    "expirationTime": 3600
+                                    "expirationTime": 7200,
+                                    "refreshToken": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI0MjAxOTcyNzc",
+                                    "refreshTokenExpirationTime": 2592000
                                 }
                             }
                         """,
