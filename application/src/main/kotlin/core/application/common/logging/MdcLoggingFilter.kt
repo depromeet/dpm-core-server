@@ -42,7 +42,13 @@ class MdcLoggingFilter : OncePerRequestFilter() {
         const val REQUEST_URI = "requestUri"
         const val CLIENT_IP = "clientIp"
 
+        /**
+         * 이 필터는 인증보다 먼저 돌기 때문에 여기서는 채울 수 없다.
+         * JwtAuthenticationFilter 가 인증에 성공한 뒤에 넣고, 정리는 바깥에 있는 이 필터가 맡는다.
+         */
+        const val MEMBER_ID = "memberId"
+
         private const val REQUEST_ID_LENGTH = 8
-        private val KEYS = listOf(REQUEST_ID, HTTP_METHOD, REQUEST_URI, CLIENT_IP)
+        private val KEYS = listOf(REQUEST_ID, HTTP_METHOD, REQUEST_URI, CLIENT_IP, MEMBER_ID)
     }
 }
