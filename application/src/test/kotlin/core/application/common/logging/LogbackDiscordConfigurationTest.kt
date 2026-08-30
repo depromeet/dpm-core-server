@@ -45,6 +45,7 @@ class LogbackDiscordConfigurationTest {
                 setProperty("logging.discord.cooldown-seconds", "300")
                 setProperty("logging.discord.max-per-minute", "20")
                 setProperty("logging.discord.stack-trace-lines", "20")
+                setProperty("logging.discord.include-packages", "core.")
                 setProperty("logging.discord.queue-size", "512")
                 setProperty("logging.discord.connect-timeout-millis", "500")
                 setProperty("logging.discord.read-timeout-millis", "1000")

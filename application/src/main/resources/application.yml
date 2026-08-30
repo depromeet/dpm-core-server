@@ -69,7 +69,10 @@ logging:
     # 같은 에러를 다시 알리기까지의 최소 간격
     cooldown-seconds: 300
     max-per-minute: 20
-    stack-trace-lines: 20
+    # 스택트레이스에서 남길 프레임의 패키지. 나머지는 줄 수만 세어 접는다.
+    include-packages: core.,com.server.dpmcore.
+    # 위 패키지에 해당하는 프레임을 최대 몇 줄까지 남길지
+    stack-trace-lines: 12
     queue-size: 512
     connect-timeout-millis: 2000
     read-timeout-millis: 3000
