@@ -36,15 +36,8 @@ class RefreshTokenService(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ReissueResult {
-        val presented = resolvePresentedToken(request)
+        val stored = resolveStoredToken(request)
         val now = Instant.now()
-
-        val stored =
-            refreshTokenPersistencePort.findByTokenHash(TokenHasher.sha256Hex(presented))
-                ?: run {
-                    logDiagnostics(request)
-                    throw TokenNotFoundException()
-                }
 
         if (stored.isExpired(now)) {
             throw TokenExpiredException()
@@ -85,16 +78,32 @@ class RefreshTokenService(
         )
     }
 
-    /** Bearer 우선, 쿠키 폴백. 유효한 JWT 후보 중 첫 번째를 쓴다. */
-    private fun resolvePresentedToken(request: HttpServletRequest): String {
-        val candidates = tokenResolver.resolveRefreshTokenCandidatesFromRequest(request)
+    /**
+     * Bearer 우선, 쿠키 폴백. 후보 중 저장소에 실제로 존재하는 첫 번째를 채택한다.
+     *
+     * "첫 번째 유효한 JWT" 를 고르면 안 된다. 클라이언트는 일반 API 인증용으로 Authorization 에
+     * 액세스 토큰을 싣는데, 액세스와 리프레시는 서명 키도 클레임도 같아 validateToken 만으로는
+     * 구분되지 않는다. 그래서 Bearer 의 액세스 토큰이 리프레시 토큰으로 채택되고, 쿠키에 멀쩡한
+     * 리프레시 토큰이 함께 실려 있어도 TOKEN_NOT_FOUND 로 떨어진다.
+     * 저장소에 있는지를 판정 기준으로 삼으면 액세스 토큰은 자연히 건너뛴다.
+     */
+    private fun resolveStoredToken(request: HttpServletRequest): RefreshToken {
+        val candidates =
+            tokenResolver
+                .resolveRefreshTokenCandidatesFromRequest(request)
+                .filter { tokenProvider.validateToken(it) }
+
         if (candidates.isEmpty()) {
             logDiagnostics(request)
             throw TokenInvalidException()
         }
 
-        return candidates.firstOrNull { tokenProvider.validateToken(it) }
-            ?: throw TokenInvalidException()
+        return candidates.firstNotNullOfOrNull {
+            refreshTokenPersistencePort.findByTokenHash(TokenHasher.sha256Hex(it))
+        } ?: run {
+            logDiagnostics(request)
+            throw TokenNotFoundException()
+        }
     }
 
     private fun logDiagnostics(request: HttpServletRequest) {
