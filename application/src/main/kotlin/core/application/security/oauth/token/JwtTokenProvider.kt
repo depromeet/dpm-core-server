@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.stereotype.Component
 import java.util.Date
+import java.util.UUID
 import javax.crypto.SecretKey
 
 @Component
@@ -42,8 +43,28 @@ class JwtTokenProvider(
             .compact()
     }
 
-    fun generateRefreshToken(memberId: String): String =
-        generateToken(memberId, tokenProperties.expirationTime.refreshToken)
+    /**
+     * 리프레시 토큰은 매번 서로 다른 값이어야 한다.
+     *
+     * subject 와 초 단위 iat/exp 만으로 서명하면 같은 초에 같은 회원에게 발급한 두 토큰이
+     * 바이트 단위로 동일해진다. 그러면 회전이 이전 토큰과 같은 token_hash 를 만들어
+     * uk_rt_token_hash 유니크 제약을 위반하고, 재사용 탐지도 새 토큰을 회전된 토큰으로 오인한다.
+     * jti 로 발급 건마다 고유성을 준다.
+     */
+    fun generateRefreshToken(memberId: String): String {
+        val currentTimeMillis = System.currentTimeMillis()
+        val now = Date(currentTimeMillis)
+        val expiration = Date(currentTimeMillis + tokenProperties.expirationTime.refreshToken * 1000)
+
+        return Jwts
+            .builder()
+            .id(UUID.randomUUID().toString())
+            .subject(memberId)
+            .issuedAt(now)
+            .expiration(expiration)
+            .signWith(getSigningKey())
+            .compact()
+    }
 
     fun generateToken(
         memberId: String,

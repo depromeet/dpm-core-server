@@ -22,12 +22,14 @@ import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.member.presentation.response.MemberNameHashValidationResponse
 import core.application.member.presentation.response.MemberOverviewResponse
 import core.application.security.annotation.CurrentMemberId
+import core.application.security.oauth.token.DeviceIdResolver
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.security.access.prepost.PreAuthorize
@@ -50,6 +52,7 @@ class MemberController(
     private val appleAuthService: AppleAuthService,
     private val emailPasswordAuthService: EmailPasswordAuthService,
     private val tokenInjector: JwtTokenInjector,
+    private val deviceIdResolver: DeviceIdResolver,
 ) : MemberApi {
     @PreAuthorize("permitAll()")
     @PostMapping("/name/hash-type/validation")
@@ -198,6 +201,7 @@ class MemberController(
     )
     fun appleLoginV1(
         @RequestBody body: AppleLoginRequest,
+        request: HttpServletRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
         val tokens =
@@ -206,6 +210,7 @@ class MemberController(
                 fullName = body.fullName,
                 familyName = body.familyName,
                 givenName = body.givenName,
+                deviceId = deviceIdResolver.resolve(request, response),
             )
         addTokenCookies(response, tokens)
         return tokens
