@@ -30,6 +30,8 @@ spring:
 logging:
   level:
     org.springframework.orm.jpa: INFO
+  discord:
+    webhook-url: ${DEV_DISCORD_WEBHOOK_URL}
 apple:
   client-id: ${DEV_APPLE_CLIENT_ID:${APPLE_CLIENT_ID:}}
   key-id: ${DEV_APPLE_KEY_ID:${APPLE_KEY_ID:}}

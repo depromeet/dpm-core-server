@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  콘솔 로깅은 스프링 부트 기본 설정을 그대로 쓰고, ERROR 로그를 Discord 로 보내는 appender 만 얹는다.
+  application.yml 의 logging.level 설정은 이 파일 적용 이후에 덧씌워지므로 그대로 동작한다.
+-->
+<configuration>
+    <!--
+      appender 내부 오류(웹훅 주소 오류, 전송 실패)는 로거가 아니라 로그백 상태 관리자로 나간다.
+      로거를 쓰면 알림 -> 에러 로그 -> 알림 으로 재귀하기 때문이다. 이 리스너가 없으면 실패가 조용히 묻힌다.
+    -->
+    <statusListener class="ch.qos.logback.core.status.OnErrorConsoleStatusListener"/>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <springProfile name="local,dev,prod">
+        <springProperty scope="context" name="DISCORD_WEBHOOK_URL" source="logging.discord.webhook-url"/>
+        <springProperty scope="context" name="DISCORD_APP_NAME" source="logging.discord.app-name"/>
+        <springProperty scope="context" name="DISCORD_PROFILE" source="spring.profiles.active"/>
+        <springProperty scope="context" name="DISCORD_COOLDOWN_SECONDS" source="logging.discord.cooldown-seconds"/>
+        <springProperty scope="context" name="DISCORD_MAX_PER_MINUTE" source="logging.discord.max-per-minute"/>
+        <springProperty scope="context" name="DISCORD_STACK_TRACE_LINES" source="logging.discord.stack-trace-lines"/>
+        <springProperty scope="context" name="DISCORD_QUEUE_SIZE" source="logging.discord.queue-size"/>
+        <springProperty scope="context" name="DISCORD_CONNECT_TIMEOUT" source="logging.discord.connect-timeout-millis"/>
+        <springProperty scope="context" name="DISCORD_READ_TIMEOUT" source="logging.discord.read-timeout-millis"/>
+        <springProperty scope="context" name="DISCORD_EXCLUDED_EXCEPTIONS" source="logging.discord.excluded-exceptions"/>
+        <springProperty scope="context" name="DISCORD_EXCLUDED_LOGGERS" source="logging.discord.excluded-loggers"/>
+
+        <appender name="DISCORD" class="core.application.common.logging.DiscordWebhookAppender">
+            <webhookUrl>${DISCORD_WEBHOOK_URL}</webhookUrl>
+            <appName>${DISCORD_APP_NAME}</appName>
+            <profile>${DISCORD_PROFILE}</profile>
+            <cooldownSeconds>${DISCORD_COOLDOWN_SECONDS}</cooldownSeconds>
+            <maxPerMinute>${DISCORD_MAX_PER_MINUTE}</maxPerMinute>
+            <stackTraceLines>${DISCORD_STACK_TRACE_LINES}</stackTraceLines>
+            <connectTimeoutMillis>${DISCORD_CONNECT_TIMEOUT}</connectTimeoutMillis>
+            <readTimeoutMillis>${DISCORD_READ_TIMEOUT}</readTimeoutMillis>
+            <excludedExceptions>${DISCORD_EXCLUDED_EXCEPTIONS}</excludedExceptions>
+            <excludedLoggers>${DISCORD_EXCLUDED_LOGGERS}</excludedLoggers>
+        </appender>
+
+        <!--
+          전용 워커 스레드에서만 전송해 요청 스레드와 @Async 풀을 건드리지 않는다.
+          큐가 가득 차면 블로킹하지 않고 버린다. 알림 때문에 애플리케이션이 느려지면 안 된다.
+        -->
+        <appender name="DISCORD_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+            <!--
+              ERROR 만 큐에 넣는다. 이 필터가 안쪽 appender 에 붙어 있으면 INFO/DEBUG 까지 전부 큐를 거치게 되어,
+              호출 스레드가 매 로그마다 직렬화 비용을 물고 정작 필요한 ERROR 가 큐에서 밀려난다.
+            -->
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>ERROR</level>
+            </filter>
+            <queueSize>${DISCORD_QUEUE_SIZE}</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <neverBlock>true</neverBlock>
+            <includeCallerData>false</includeCallerData>
+            <maxFlushTime>2000</maxFlushTime>
+            <appender-ref ref="DISCORD"/>
+        </appender>
+
+        <root>
+            <appender-ref ref="DISCORD_ASYNC"/>
+        </root>
+    </springProfile>
+</configuration>
