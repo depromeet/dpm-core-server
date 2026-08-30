@@ -24,6 +24,7 @@
         <springProperty scope="context" name="DISCORD_COOLDOWN_SECONDS" source="logging.discord.cooldown-seconds"/>
         <springProperty scope="context" name="DISCORD_MAX_PER_MINUTE" source="logging.discord.max-per-minute"/>
         <springProperty scope="context" name="DISCORD_STACK_TRACE_LINES" source="logging.discord.stack-trace-lines"/>
+        <springProperty scope="context" name="DISCORD_INCLUDE_PACKAGES" source="logging.discord.include-packages"/>
         <springProperty scope="context" name="DISCORD_QUEUE_SIZE" source="logging.discord.queue-size"/>
         <springProperty scope="context" name="DISCORD_CONNECT_TIMEOUT" source="logging.discord.connect-timeout-millis"/>
         <springProperty scope="context" name="DISCORD_READ_TIMEOUT" source="logging.discord.read-timeout-millis"/>
@@ -37,6 +38,7 @@
             <cooldownSeconds>${DISCORD_COOLDOWN_SECONDS}</cooldownSeconds>
             <maxPerMinute>${DISCORD_MAX_PER_MINUTE}</maxPerMinute>
             <stackTraceLines>${DISCORD_STACK_TRACE_LINES}</stackTraceLines>
+            <includePackages>${DISCORD_INCLUDE_PACKAGES}</includePackages>
             <connectTimeoutMillis>${DISCORD_CONNECT_TIMEOUT}</connectTimeoutMillis>
             <readTimeoutMillis>${DISCORD_READ_TIMEOUT}</readTimeoutMillis>
             <excludedExceptions>${DISCORD_EXCLUDED_EXCEPTIONS}</excludedExceptions>
