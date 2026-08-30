@@ -37,3 +37,6 @@ apple:
   team-id: ${LOCAL_APPLE_TEAM_ID}
   private-key: ${LOCAL_APPLE_PRIVATE_KEY}
   redirect-uri: ${LOCAL_APPLE_REDIRECT_URI}
+logging:
+  discord:
+    webhook-url: ${DISCORD_WEBHOOK_URL}
