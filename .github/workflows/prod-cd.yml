@@ -121,6 +121,7 @@ jobs:
             PROD_APPLE_KEY_ID=${{ secrets.PROD_APPLE_KEY_ID }}
             PROD_APPLE_CLIENT_ID=${{ secrets.PROD_APPLE_CLIENT_ID }}
             SECURITY_LOGGING_LEVEL=${{ secrets.SECURITY_LOGGING_LEVEL }}
+            PROD_DISCORD_WEBHOOK_URL=${{ secrets.PROD_DISCORD_WEBHOOK_URL }}
             EOF
 
             echo "${{ env.DOCKER_PASSWORD }}" | docker login --username "${{ env.DOCKER_USERNAME }}" --password-stdin

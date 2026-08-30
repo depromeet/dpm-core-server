@@ -63,6 +63,25 @@ logging:
   level:
     org.jooq.tools.LoggerListener: DEBUG
     org.springframework.security: ${SECURITY_LOGGING_LEVEL:DEBUG}
+  # ERROR 로그 Discord 알림. webhook-url 은 프로필별 설정에서 주입한다.
+  discord:
+    app-name: dpm-core-server
+    # 같은 에러를 다시 알리기까지의 최소 간격
+    cooldown-seconds: 300
+    max-per-minute: 20
+    # 스택트레이스에서 남길 프레임의 패키지. 나머지는 줄 수만 세어 접는다.
+    include-packages: core.,com.server.dpmcore.
+    # 위 패키지에 해당하는 프레임을 최대 몇 줄까지 남길지
+    stack-trace-lines: 12
+    queue-size: 512
+    connect-timeout-millis: 2000
+    read-timeout-millis: 3000
+    # 알림 가치가 없는 프레임워크 예외들. 코드 수정 없이 여기서 끌 수 있다.
+    excluded-exceptions: >-
+      org.springframework.web.HttpRequestMethodNotSupportedException,
+      org.springframework.web.servlet.resource.NoResourceFoundException,
+      org.apache.catalina.connector.ClientAbortException
+    excluded-loggers: ""
 
 cohort:
   value: ${COHORT_VALUE}
