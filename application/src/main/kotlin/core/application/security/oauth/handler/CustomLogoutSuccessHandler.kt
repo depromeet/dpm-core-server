@@ -61,18 +61,21 @@ class CustomLogoutSuccessHandler(
         finish(response)
     }
 
-    /** @return 현재 기기 세션을 특정해 삭제했으면 true. */
+    /**
+     * @return 현재 기기 세션을 특정해 삭제했으면 true.
+     *
+     * 후보 중 저장소에 실제로 있는 것을 찾아야 한다. "첫 번째 유효한 JWT" 를 고르면
+     * 클라이언트가 Authorization 에 싣는 액세스 토큰이 채택되는데, 액세스 토큰은 저장소에
+     * 없으므로 항상 false 가 되어 전 기기 로그아웃으로 폴백해 버린다.
+     */
     private fun destroyCurrentDeviceSession(request: HttpServletRequest): Boolean {
-        val presented =
+        val tokenHash =
             tokenResolver
                 .resolveRefreshTokenCandidatesFromRequest(request)
-                .firstOrNull { tokenProvider.validateToken(it) }
+                .filter { tokenProvider.validateToken(it) }
+                .map { TokenHasher.sha256Hex(it) }
+                .firstOrNull { refreshTokenPersistencePort.findByTokenHash(it) != null }
                 ?: return false
-
-        val tokenHash = TokenHasher.sha256Hex(presented)
-        if (refreshTokenPersistencePort.findByTokenHash(tokenHash) == null) {
-            return false
-        }
 
         logger.info { "Invalidating current device session during logout" }
         refreshTokenInvalidator.destroyByTokenHash(tokenHash)
