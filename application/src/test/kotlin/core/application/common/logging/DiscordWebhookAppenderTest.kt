@@ -103,6 +103,7 @@ class DiscordWebhookAppenderTest {
                 profile = "test"
                 cooldownSeconds = 300
                 maxPerMinute = 20
+                includePackages = "core."
                 connectTimeoutMillis = 500
                 readTimeoutMillis = 1_000
                 excludedExceptions = "org.springframework.web.HttpRequestMethodNotSupportedException"

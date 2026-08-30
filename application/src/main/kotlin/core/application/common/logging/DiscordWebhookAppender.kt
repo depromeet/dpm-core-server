@@ -27,6 +27,7 @@ class DiscordWebhookAppender : AppenderBase<ILoggingEvent>() {
     var cooldownSeconds: Long = 300
     var maxPerMinute: Int = 20
     var stackTraceLines: Int = 20
+    var includePackages: String = ""
     var connectTimeoutMillis: Long = 2_000
     var readTimeoutMillis: Long = 3_000
     var excludedExceptions: String = ""
@@ -57,7 +58,7 @@ class DiscordWebhookAppender : AppenderBase<ILoggingEvent>() {
                 .build()
         alertFilter = ErrorAlertFilter(excludedExceptions, excludedLoggers)
         throttler = ErrorAlertThrottler(Duration.ofSeconds(cooldownSeconds).toMillis(), maxPerMinute)
-        formatter = DiscordMessageFormatter(appName, profile, stackTraceLines)
+        formatter = DiscordMessageFormatter(appName, profile, stackTraceLines, includePackages)
 
         super.start()
     }
