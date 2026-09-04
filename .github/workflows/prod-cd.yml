@@ -127,6 +127,15 @@ jobs:
             echo "${{ env.DOCKER_PASSWORD }}" | docker login --username "${{ env.DOCKER_USERNAME }}" --password-stdin
             docker pull ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
             docker stack deploy --with-registry-auth -c server-stack.yml server
+
+            # 이미지 pull 등으로 레플리카 수렴에 시간이 걸릴 수 있어 최대 90초 대기한다
+            for i in $(seq 1 18); do
+              REPLICAS=$(docker service ls --filter name=server_spring-app --format '{{.Replicas}}')
+              [ "$REPLICAS" = "1/1" ] && break
+              echo "> 레플리카 수렴 대기 중 ($REPLICAS)"
+              sleep 5
+            done
+
             docker service ps server_spring-app --no-trunc
             docker service logs server_spring-app --tail 50
             test "$(docker service ls --filter name=server_spring-app --format '{{.Replicas}}')" = "1/1"
