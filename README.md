@@ -24,36 +24,36 @@
 
 ## 🏗️ System Architecture
 
-> 2026.09 iwinv + AWS RDS → Oracle Cloud 마이그레이션 완료
+> 2026.09 iwinv + AWS(RDS·EC2) → Oracle Cloud 마이그레이션 완료
 
 ### 런타임 구조
 
 ```mermaid
 flowchart TB
     FE["🌐 프론트엔드<br/>core.depromeet.com"]
-    DNS["Cloudflare DNS"]
 
     subgraph ORACLE["Oracle Cloud (Ampere ARM)"]
-        subgraph PROD["core-prod 인스턴스 — api.depromeet.com"]
-            TRAEFIK["Traefik v2.11<br/>:80/:443 · Let's Encrypt 자동 발급"]
-            APP["spring-app<br/>Docker Swarm · start-first 무중단 배포"]
+        subgraph PROD["core-prod 인스턴스"]
+            TRAEFIK["Traefik v2.11<br/>:80/:443 · Let's Encrypt 자동 발급<br/>호스트명 기반 라우팅"]
+            APP["spring-app (prod)<br/>Docker Swarm · start-first 무중단 배포"]
+            DEVAPP["dev-spring-app (dev)"]
         end
         subgraph DBHOST["core-db 인스턴스"]
             MYSQL[("MySQL 8.0.41 (Docker)<br/>dpm_core · dpm_core_dev<br/>스키마별 최소 권한 계정")]
         end
     end
 
-    subgraph AWSCLOUD["AWS"]
-        DEVAPP["dev 앱 (EC2)<br/>api.depromeet.shop<br/>nginx · blue/green 배포"]
-    end
-
-    FE -->|api.depromeet.com| DNS --> TRAEFIK --> APP
+    FE -->|api.depromeet.com| TRAEFIK
+    FE -.->|api.depromeet.shop| TRAEFIK
+    TRAEFIK -->|"Host(api.depromeet.com)"| APP
+    TRAEFIK -.->|"Host(api.depromeet.shop)"| DEVAPP
     APP -->|"dpm_core (TLS)"| MYSQL
-    DEVAPP -->|"dpm_core_dev (TLS)"| MYSQL
+    DEVAPP -.->|"dpm_core_dev (TLS)"| MYSQL
 ```
 
-- prod/dev가 **하나의 MySQL 인스턴스에서 스키마로 분리**되며, 계정도 스키마별 최소 권한(`core_prod`/`core_dev`)으로 격리됩니다.
-- core-db는 방화벽(VCN Security List + iptables)으로 **앱 서버 2대에서만 3306 접근**을 허용합니다.
+- prod/dev 앱이 **한 인스턴스(core-prod)에서 Swarm 서비스로 분리** 운영되고, Traefik이 호스트명으로 라우팅합니다.
+- prod/dev DB는 **하나의 MySQL 인스턴스에서 스키마로 분리**되며, 계정도 스키마별 최소 권한(`core_prod`/`core_dev`)으로 격리됩니다.
+- core-db는 방화벽(VCN Security List + iptables)으로 **앱 서버에서만 3306 접근**을 허용합니다.
 - core-db에서 매일 04:00(KST) `mysqldump` 백업이 요일별 7개 파일로 로테이션됩니다.
 
 ### 배포 파이프라인
@@ -64,12 +64,12 @@ flowchart LR
     MAIN["main push"] --> PRODCD["prod-cd"]
     DEVCD --> HUB[("DockerHub<br/>Jib 멀티아치<br/>amd64 + arm64")]
     PRODCD --> HUB
-    HUB -->|"dev-{sha}"| DEVDEPLOY["dev EC2<br/>deploy.sh (blue/green)"]
-    HUB -->|"prod-{sha}"| PRODDEPLOY["core-prod<br/>docker stack deploy"]
+    HUB -->|"dev-{sha}"| DEVDEPLOY["core-prod<br/>dev 스택 deploy"]
+    HUB -->|"prod-{sha}"| PRODDEPLOY["core-prod<br/>prod 스택 deploy"]
 ```
 
-- 이미지는 Jib으로 **멀티아치(amd64+arm64)** 빌드되어 x86(EC2)과 ARM(Oracle) 서버가 같은 태그를 사용합니다.
-- prod 환경변수는 **GitHub Actions Secrets가 원본**이며, prod-cd가 배포할 때마다 서버의 `.env`를 재생성해 컨테이너에 주입합니다. (dev는 EC2에 상주하는 `.env` 사용)
+- 이미지는 Jib으로 **멀티아치(amd64+arm64)** 빌드됩니다.
+- prod 환경변수는 **GitHub Actions Secrets가 원본**이며, prod-cd가 배포할 때마다 서버의 `.env`를 재생성해 컨테이너에 주입합니다. (dev는 서버에 상주하는 `.env.dev` 사용)
 
 ---
 
