@@ -107,6 +107,11 @@ foo-domain
 
 ## 👨🏻‍💻Contributors
 
+### 3rd Developers
+| ![](https://github.com/uykm.png?size=100) | ![](https://github.com/cowboysj.png?size=100) | ![](https://github.com/wjdwnsdnjs13.png?size=100) |
+|:-----------------------------------------:|:---------------------------------------------:|:-------------------------------------------------:|
+|                  **신민규**                  |                    **김수진**                    |                      **정준원**                      |
+
 ### 2nd Developers
 | ![](https://github.com/wjdwnsdnjs13.png?size=100) | ![](https://github.com/BlackBean99.png?size=100) |
 |:-------------------------------------------------:|:------------------------------------------------:|
