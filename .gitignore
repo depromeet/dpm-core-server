@@ -51,3 +51,9 @@ out/
 
 # Secrets
 secrets/
+
+# Superpowers plans (로컬 작업 문서)
+docs/superpowers/
+
+# 구조 안내 문서 (로컬 작업 문서)
+docs/architecture/
