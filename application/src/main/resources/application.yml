@@ -103,6 +103,10 @@ cors:
     - https://local.depromeet.shop
     - https://local-core.depromeet.shop:3010
     - https://local-admin.depromeet.shop:3020
+    - https://local-core.depromeet.com:3010
+    - https://local-core.depromeet.com:3020
+    - https://dev.depromeet.com
+    - https://dev-admin.depromeet.com
     - https://core.depromeet.shop
     - https://admin.depromeet.shop
     - https://api.depromeet.shop
