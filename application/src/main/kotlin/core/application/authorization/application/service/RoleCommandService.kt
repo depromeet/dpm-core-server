@@ -4,6 +4,7 @@ import core.application.authorization.presentation.request.UpdateMemberRoleReque
 import core.application.member.application.service.MemberQueryService
 import core.application.member.application.service.role.MemberRoleService
 import core.domain.authorization.vo.RoleType
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,25 +20,10 @@ class RoleCommandService(
         request: UpdateMemberRoleRequest,
     ) {
         memberQueryService.getMemberById(memberId)
-
-        val cohortValue = normalizeCohortValue(request.cohort)
-        require(cohortValue.all(Char::isDigit)) {
-            "cohort must be numeric (e.g. 17 or 17기)"
+        val roleType = RoleType.fromCode(request.roleType)
+        require(roleType == RoleType.Organizer || roleType == RoleType.Deeper) {
+            "roleType must be ORGANIZER or DEEPER"
         }
-        val roleType =
-            if (request.isAdmin) {
-                RoleType.Organizer
-            } else {
-                RoleType.Deeper
-            }
-        val roleName = "${cohortValue}기 ${roleType.aliases.first()}"
-
-        memberRoleService.replaceCohortRoleByName(
-            memberId = memberId,
-            roleName = roleName,
-            cohortRolePrefix = "${cohortValue}기 ",
-        )
+        memberRoleService.replaceCohortRole(memberId, roleType, CohortId(request.cohortId))
     }
-
-    private fun normalizeCohortValue(cohort: String): String = cohort.trim().removeSuffix("기")
 }

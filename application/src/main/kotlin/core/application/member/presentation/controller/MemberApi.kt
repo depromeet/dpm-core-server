@@ -2,7 +2,6 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
-import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.MemberNameHashValidationRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
@@ -421,20 +420,6 @@ interface MemberApi {
     )
     fun updateMemberStatus(request: UpdateMemberStatusRequest): CustomResponse<Void>
 
-    @Operation(
-        summary = "DEEPER를 ORGANIZER로 변환 API (dev)",
-        description = "지정한 멤버의 권한을 DEEPER에서 ORGANIZER로 변환합니다.",
-    )
-    @ApiResponse(responseCode = "200", description = "권한 변환 성공")
-    fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest): CustomResponse<Void>
-
-    @Operation(
-        summary = "신규 기수 참여 회원 init API (dev)",
-        description =
-            "신규 기수 참여 회원에 대해 초기화 합니다.\n" +
-                "해당 기수 출석부, 공지/과제, 회식 참여 등에 해당 멤버를 추가합니다.",
-    )
-    @ApiResponse(responseCode = "200", description = "신규 기수 참여 회원 init 성공")
     fun initMemberCohort(
         memberId: MemberId,
         cohortId: CohortId,

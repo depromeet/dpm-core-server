@@ -7,4 +7,6 @@ interface CohortJpaRepository : JpaRepository<CohortEntity, Long> {
     fun findByValue(value: String): CohortEntity?
 
     fun existsByValue(value: String): Boolean
+
+    fun findByIsActiveTrue(): CohortEntity?
 }

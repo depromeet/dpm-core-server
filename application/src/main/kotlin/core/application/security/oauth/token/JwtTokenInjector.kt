@@ -39,27 +39,30 @@ class JwtTokenInjector(
         refreshToken: String,
         response: HttpServletResponse,
     ) {
+        val secure = securityProperties.cookie.secure
         response.addHeader(
             SET_COOKIE_HEADER,
             buildCookie(
                 name = REFRESH_TOKEN_CAMEL_CASE,
                 value = refreshToken,
                 maxAgeSeconds = tokenProperties.expirationTime.refreshToken,
-                secure = true,
-                sameSite = SAME_SITE_NONE,
+                // SameSite=None requires Secure. Local HTTP must use Lax so the browser stores it.
+                secure = secure,
+                sameSite = if (secure) SAME_SITE_NONE else SAME_SITE_LAX,
             ),
         )
     }
 
     fun invalidateRefreshToken(response: HttpServletResponse) {
+        val secure = securityProperties.cookie.secure
         response.addHeader(
             SET_COOKIE_HEADER,
             buildCookie(
                 name = REFRESH_TOKEN_CAMEL_CASE,
                 value = "",
                 maxAgeSeconds = 0,
-                secure = true,
-                sameSite = SAME_SITE_NONE,
+                secure = secure,
+                sameSite = if (secure) SAME_SITE_NONE else SAME_SITE_LAX,
             ),
         )
     }

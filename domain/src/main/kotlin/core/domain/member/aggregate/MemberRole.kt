@@ -1,6 +1,7 @@
 package core.domain.member.aggregate
 
 import core.domain.authorization.vo.RoleId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberRoleId
 import java.time.Instant
@@ -9,6 +10,7 @@ class MemberRole(
     val id: MemberRoleId? = null,
     val memberId: MemberId,
     val roleId: RoleId,
+    val cohortId: CohortId? = null,
     grantedAt: Instant? = null,
     deletedAt: Instant? = null,
 ) {

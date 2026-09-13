@@ -129,11 +129,7 @@ class AfterPartyCommandService(
         cohortId: CohortId,
     ): Int {
         val now = Instant.now()
-        val memberRoleType =
-            memberAccessService.getRoleType(
-                memberId = memberId,
-                cohortValue = cohortQueryService.getCohort(cohortId).value,
-            )
+        val memberRoleType = memberAccessService.getRoleType(memberId = memberId)
         val memberAuthorityId = legacyAuthorityIdForInviteTag(memberRoleType) ?: return 0
 
         val afterParties: List<AfterParty> =
@@ -300,7 +296,7 @@ class AfterPartyCommandService(
                 when (roleType) {
                     RoleType.Deeper -> DEEPER_AUTHORITY_ID
                     RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
-                    RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
+                    RoleType.Master, RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
                 },
             )
 
@@ -332,13 +328,21 @@ class AfterPartyCommandService(
         roleType: RoleType,
     ): String {
         val latestCohort = cohortQueryService.getCohort(CohortId(cohortId))
-        return "${latestCohort.value}기 ${roleType.aliases.first()}"
+        return "${latestCohort.value}기 ${roleLabel(roleType)}"
+    }
+
+    private fun roleLabel(roleType: RoleType): String = when (roleType) {
+        RoleType.Organizer -> "운영진"
+        RoleType.Deeper -> "디퍼"
+        RoleType.Core -> "코어"
+        RoleType.Master -> "마스터"
+        RoleType.Guest -> "게스트"
     }
 
     private fun legacyAuthorityIdForInviteTag(roleType: RoleType): Long? =
         when (roleType) {
             RoleType.Deeper -> DEEPER_AUTHORITY_ID
             RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
-            RoleType.Core, RoleType.Guest -> null
+            RoleType.Master, RoleType.Core, RoleType.Guest -> null
         }
 }

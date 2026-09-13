@@ -59,4 +59,10 @@ class CohortCommandService(
         }
         cohortPersistencePort.deleteById(cohortId)
     }
+
+    fun activateCohort(cohortId: CohortId): Cohort {
+        cohortQueryService.getCohort(cohortId)
+        cohortPersistencePort.activate(cohortId)
+        return cohortQueryService.getCohort(cohortId)
+    }
 }
