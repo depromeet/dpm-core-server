@@ -188,7 +188,7 @@ class MemberRepository(
                 .where(COHORTS.COHORT_ID.eq(cohortId.value))
                 .fetchOne(COHORTS.VALUE)
                 ?: return emptyList()
-        val roleName = "${cohortValue}기 ${roleTypeFromLegacyAuthorityId(authorityId).aliases.firstOrNull() ?: "__unknown__"}"
+        val roleName = roleTypeFromLegacyAuthorityId(authorityId).code
         val latestMemberCohorts = latestMemberCohorts()
         val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
         val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
@@ -210,6 +210,7 @@ class MemberRepository(
             .and(MEMBERS.DELETED_AT.isNull)
             .and(MEMBER_ROLES.DELETED_AT.isNull)
             .and(ROLES.NAME.eq(roleName))
+            .and(org.jooq.impl.DSL.field(org.jooq.impl.DSL.name("member_roles", "cohort_id"), Long::class.java).eq(cohortId.value))
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map { MemberId(it) }
@@ -267,14 +268,8 @@ class MemberRepository(
                     .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
                     .where(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
                     .and(MEMBER_ROLES.DELETED_AT.isNull)
-                    .and(
-                        ROLES.NAME.eq(
-                            roleNameForCohortValue(
-                                latestCohortValueField,
-                                RoleType.Organizer,
-                            ),
-                        ),
-                    ),
+                    .and(ROLES.NAME.eq(RoleType.Organizer.code))
+                    .and(org.jooq.impl.DSL.field(org.jooq.impl.DSL.name("member_roles", "cohort_id"), Long::class.java).eq(latestCohortIdField)),
             ).`as`("is_admin")
 
         val statusPriority =
@@ -636,10 +631,6 @@ class MemberRepository(
     private fun latestMemberTeamsFieldMemberId(table: org.jooq.Table<*> = latestMemberTeams()) =
         table.field(MEMBER_TEAMS.MEMBER_ID)!!
 
-    private fun roleNameForCohortValue(
-        cohortValueField: org.jooq.Field<String?>,
-        roleType: RoleType,
-    ) = cohortValueField.concat(inline("기 ${roleType.aliases.firstOrNull() ?: "__unknown__"}"))
 
     companion object {
         private const val LEGACY_DEEPER_AUTHORITY_ID = 1L

@@ -13,48 +13,45 @@ import org.springframework.transaction.annotation.Transactional
 class CohortQueryService(
     private val cohortPersistencePort: CohortPersistencePort,
 ) : CohortQueryUseCase {
-    fun getLatestCohort(): Cohort =
-        cohortPersistencePort
-            .findAll()
-            .maxByOrNull { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
-            ?.takeIf { isNumericCohortValue(it.value) }
-            ?: throw CohortNotFoundException()
+    fun getActiveCohort(): Cohort = cohortPersistencePort.findActive() ?: getLatestCohortByMaxValue()
 
-    override fun getLatestCohortId(): CohortId =
-        getLatestCohort().id
-            ?: throw CohortNotFoundException()
+    fun getLatestCohort(): Cohort = getActiveCohort()
 
-    override fun getLatestCohortValue(): String = getLatestCohort().value
+    override fun getActiveCohortId(): CohortId = getActiveCohort().id ?: throw CohortNotFoundException()
+
+    override fun getActiveCohortValue(): String = getActiveCohort().value
+
+    override fun getLatestCohortId(): CohortId = getActiveCohortId()
+
+    override fun getLatestCohortValue(): String = getActiveCohortValue()
 
     fun getAllCohorts(): List<Cohort> =
-        cohortPersistencePort
-            .findAll()
-            .sortedWith(
-                compareByDescending<Cohort> { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
-                    .thenByDescending { it.createdAt ?: 0L },
-            )
+        cohortPersistencePort.findAll().sortedWith(
+            compareByDescending<Cohort> { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
+                .thenByDescending { it.createdAt ?: 0L },
+        )
 
     fun getCohort(cohortId: CohortId): Cohort =
-        cohortPersistencePort.findById(cohortId)
-            ?: throw CohortNotFoundException()
+        cohortPersistencePort.findById(cohortId) ?: throw CohortNotFoundException()
 
     fun getPreviousNumericCohortValue(targetValue: String): String? {
         val target = toNumericCohortValue(targetValue) ?: return null
-        return cohortPersistencePort
-            .findAll()
+        return cohortPersistencePort.findAll()
             .mapNotNull { cohort -> toNumericCohortValue(cohort.value)?.let { it to cohort.value } }
             .filter { (numericValue, _) -> numericValue < target }
-            .maxByOrNull { (numericValue, _) -> numericValue }
-            ?.second
+            .maxByOrNull { (numericValue, _) -> numericValue }?.second
     }
 
     fun isNumericCohortValue(value: String): Boolean = NUMERIC_COHORT_REGEX.matches(value.trim())
 
+    private fun getLatestCohortByMaxValue(): Cohort =
+        cohortPersistencePort.findAll()
+            .maxByOrNull { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
+            ?.takeIf { isNumericCohortValue(it.value) }
+            ?: throw CohortNotFoundException()
+
     private fun toNumericCohortValue(value: String): Int? =
-        value
-            .trim()
-            .takeIf { NUMERIC_COHORT_REGEX.matches(it) }
-            ?.toIntOrNull()
+        value.trim().takeIf { NUMERIC_COHORT_REGEX.matches(it) }?.toIntOrNull()
 
     companion object {
         private val NUMERIC_COHORT_REGEX = Regex("\\d+")

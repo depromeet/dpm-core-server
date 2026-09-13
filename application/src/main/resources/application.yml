@@ -64,8 +64,6 @@ logging:
     org.jooq.tools.LoggerListener: DEBUG
     org.springframework.security: ${SECURITY_LOGGING_LEVEL:DEBUG}
 
-cohort:
-  value: ${COHORT_VALUE}
 
 session:
   attendance:
@@ -84,6 +82,8 @@ cors:
     - https://local.depromeet.shop
     - https://local-core.depromeet.shop:3010
     - https://local-admin.depromeet.shop:3020
+    - https://local-core.depromeet.com:3010
+    - https://local-core.depromeet.com:3020
     - https://core.depromeet.shop
     - https://admin.depromeet.shop
     - https://api.depromeet.shop

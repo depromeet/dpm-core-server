@@ -57,7 +57,7 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 }
 
 springBoot {
-    mainClass.set("core.application.CoreApplication")
+    mainClass.set("core.application.CoreApplicationKt")
 }
 
 tasks.withType<Test> {

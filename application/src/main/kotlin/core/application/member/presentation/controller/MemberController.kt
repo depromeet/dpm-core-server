@@ -10,7 +10,6 @@ import core.application.member.application.service.auth.AuthTokenResponse
 import core.application.member.application.service.auth.EmailPasswordAuthService
 import core.application.member.presentation.controller.MemberLoginController.AppleLoginRequest
 import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
-import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.MemberNameHashValidationRequest
 import core.application.member.presentation.request.SetPasswordRequest
@@ -166,14 +165,6 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasAuthority('update:member')")
-    @PatchMapping("/authority/organizer")
-    override fun convertDeeperToOrganizer(
-        @Valid @RequestBody request: ConvertDeeperToOrganizerRequest,
-    ): CustomResponse<Void> {
-        memberCommandService.convertDeeperToOrganizer(request)
-        return CustomResponse.ok()
-    }
 
     @PostMapping("/authority/cohort/init/{cohortId}/{memberId}")
     override fun initMemberCohort(
