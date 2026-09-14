@@ -44,10 +44,9 @@ import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
-import org.jooq.impl.DSL.inline
-import org.jooq.impl.DSL.noCondition
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
+import org.jooq.impl.DSL.noCondition
 import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
@@ -137,21 +136,21 @@ class MemberRepository(
             val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
 
             dsl
-            .select(MEMBERS.MEMBER_ID)
-            .from(MEMBERS)
-            .join(latestMemberCohorts)
-            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
-            .join(MEMBER_COHORTS)
-            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
-            .join(COHORTS)
-            .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
-            .where(COHORTS.VALUE.eq(value))
-            .and(MEMBERS.DELETED_AT.isNull)
-            .fetch(MEMBERS.MEMBER_ID)
-            .filterNotNull()
-            .map {
-                MemberId(it)
-            }
+                .select(MEMBERS.MEMBER_ID)
+                .from(MEMBERS)
+                .join(latestMemberCohorts)
+                .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
+                .join(MEMBER_COHORTS)
+                .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
+                .join(COHORTS)
+                .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
+                .where(COHORTS.VALUE.eq(value))
+                .and(MEMBERS.DELETED_AT.isNull)
+                .fetch(MEMBERS.MEMBER_ID)
+                .filterNotNull()
+                .map {
+                    MemberId(it)
+                }
         }
 
     override fun findAllByCohortId(cohortId: CohortId): List<MemberId> =
@@ -161,17 +160,17 @@ class MemberRepository(
             val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
 
             dsl
-            .select(MEMBERS.MEMBER_ID)
-            .from(MEMBERS)
-            .join(latestMemberCohorts)
-            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
-            .join(MEMBER_COHORTS)
-            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
-            .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
-            .and(MEMBERS.DELETED_AT.isNull)
-            .fetch(MEMBERS.MEMBER_ID)
-            .filterNotNull()
-            .map { MemberId(it) }
+                .select(MEMBERS.MEMBER_ID)
+                .from(MEMBERS)
+                .join(latestMemberCohorts)
+                .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
+                .join(MEMBER_COHORTS)
+                .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
+                .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
+                .and(MEMBERS.DELETED_AT.isNull)
+                .fetch(MEMBERS.MEMBER_ID)
+                .filterNotNull()
+                .map { MemberId(it) }
         }
 
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
@@ -207,7 +206,12 @@ class MemberRepository(
             .and(MEMBERS.DELETED_AT.isNull)
             .and(MEMBER_ROLES.DELETED_AT.isNull)
             .and(ROLES.NAME.eq(roleName))
-            .and(org.jooq.impl.DSL.field(org.jooq.impl.DSL.name("member_roles", "cohort_id"), Long::class.java).eq(cohortId.value))
+            .and(
+                org.jooq.impl.DSL.field(
+                    org.jooq.impl.DSL.name("member_roles", "cohort_id"),
+                    Long::class.java,
+                ).eq(cohortId.value),
+            )
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map { MemberId(it) }
@@ -266,7 +270,12 @@ class MemberRepository(
                     .where(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
                     .and(MEMBER_ROLES.DELETED_AT.isNull)
                     .and(ROLES.NAME.eq(RoleType.Organizer.code))
-                    .and(org.jooq.impl.DSL.field(org.jooq.impl.DSL.name("member_roles", "cohort_id"), Long::class.java).eq(latestCohortIdField)),
+                    .and(
+                        org.jooq.impl.DSL.field(
+                            org.jooq.impl.DSL.name("member_roles", "cohort_id"),
+                            Long::class.java,
+                        ).eq(latestCohortIdField),
+                    ),
             ).`as`("is_admin")
 
         val statusPriority =
@@ -628,7 +637,6 @@ class MemberRepository(
 
     private fun latestMemberTeamsFieldMemberId(table: org.jooq.Table<*> = latestMemberTeams()) =
         table.field(MEMBER_TEAMS.MEMBER_ID)!!
-
 
     companion object {
         private const val LEGACY_DEEPER_AUTHORITY_ID = 1L

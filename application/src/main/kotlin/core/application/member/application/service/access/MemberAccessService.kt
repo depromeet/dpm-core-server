@@ -13,8 +13,7 @@ class MemberAccessService(
 ) {
     fun isAdmin(memberId: MemberId): Boolean = getRoleType(memberId) == RoleType.Organizer
 
-    fun getRoleType(memberId: MemberId): RoleType =
-        currentCohortRoleResolver.findPrimaryRoleTypeForMember(memberId)
+    fun getRoleType(memberId: MemberId): RoleType = currentCohortRoleResolver.findPrimaryRoleTypeForMember(memberId)
 
     fun getIsAdminByMemberIds(memberIds: List<MemberId>): Map<MemberId, Boolean> =
         memberIds.associateWith { memberId -> getRoleType(memberId) == RoleType.Organizer }

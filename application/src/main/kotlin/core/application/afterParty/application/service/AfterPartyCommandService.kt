@@ -331,13 +331,14 @@ class AfterPartyCommandService(
         return "${latestCohort.value}기 ${roleLabel(roleType)}"
     }
 
-    private fun roleLabel(roleType: RoleType): String = when (roleType) {
-        RoleType.Organizer -> "운영진"
-        RoleType.Deeper -> "디퍼"
-        RoleType.Core -> "코어"
-        RoleType.Master -> "마스터"
-        RoleType.Guest -> "게스트"
-    }
+    private fun roleLabel(roleType: RoleType): String =
+        when (roleType) {
+            RoleType.Organizer -> "운영진"
+            RoleType.Deeper -> "디퍼"
+            RoleType.Core -> "코어"
+            RoleType.Master -> "마스터"
+            RoleType.Guest -> "게스트"
+        }
 
     private fun legacyAuthorityIdForInviteTag(roleType: RoleType): Long? =
         when (roleType) {

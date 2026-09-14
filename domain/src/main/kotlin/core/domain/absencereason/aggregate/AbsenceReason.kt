@@ -68,8 +68,7 @@ class AbsenceReason(
         return result
     }
 
-    override fun toString(): String =
-        "AbsenceReason(id=$id, sessionId=$sessionId, memberId=$memberId, status=$status)"
+    override fun toString(): String = "AbsenceReason(id=$id, sessionId=$sessionId, memberId=$memberId, status=$status)"
 
     companion object {
         fun create(command: AbsenceReportCreateCommand): AbsenceReason =

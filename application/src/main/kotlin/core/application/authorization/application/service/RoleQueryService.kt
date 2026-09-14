@@ -18,7 +18,8 @@ class RoleQueryService(
     override fun getAllRoles(): List<Role> = getRolesByCohort("")
 
     override fun getRolesByCohort(cohort: String): List<Role> {
-        val canonicalNames = setOf(RoleType.Core.code, RoleType.Organizer.code, RoleType.Deeper.code, RoleType.Guest.code)
+        val canonicalNames =
+            setOf(RoleType.Core.code, RoleType.Organizer.code, RoleType.Deeper.code, RoleType.Guest.code)
         return rolePersistencePort.findAll().filter { it.name in canonicalNames }
     }
 
