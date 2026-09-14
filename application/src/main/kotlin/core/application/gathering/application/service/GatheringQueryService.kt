@@ -19,6 +19,7 @@ import core.domain.gathering.port.outbound.query.GatheringMemberIsJoinQueryModel
 import core.domain.gathering.port.outbound.query.SubmittedParticipantGathering
 import core.domain.gathering.vo.GatheringId
 import core.domain.member.port.inbound.MemberQueryUseCase
+import core.domain.member.aggregate.Member
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

@@ -4,6 +4,7 @@ import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.SessionAbsenceReasonItem
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
+import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.domain.absencereason.aggregate.AbsenceReason
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.member.port.inbound.MemberQueryUseCase
@@ -11,6 +12,8 @@ import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Service
@@ -72,4 +75,5 @@ class AbsenceReasonQueryService(
 
         return SessionAbsenceReasonsResponse(items)
     }
+
 }

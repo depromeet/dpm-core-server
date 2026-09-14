@@ -8,12 +8,11 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 
 class CurrentCohortRoleResolverTest {
-    private val resolver =
-        CurrentCohortRoleResolver(
-            cohortQueryService = mock(core.application.cohort.application.service.CohortQueryService::class.java),
-            memberCohortPersistencePort = mock(core.domain.member.port.outbound.MemberCohortPersistencePort::class.java),
-            memberRolePersistencePort = mock(core.domain.member.port.outbound.MemberRolePersistencePort::class.java),
-        )
+    private val resolver = CurrentCohortRoleResolver(
+        cohortQueryService = mock(core.application.cohort.application.service.CohortQueryService::class.java),
+        memberCohortPersistencePort = mock(core.domain.member.port.outbound.MemberCohortPersistencePort::class.java),
+        memberRolePersistencePort = mock(core.domain.member.port.outbound.MemberRolePersistencePort::class.java),
+    )
 
     @Test
     fun guestIsAlwaysEffective() {
@@ -69,8 +68,6 @@ class CurrentCohortRoleResolverTest {
         assertEquals(RoleType.Guest, resolver.findPrimaryRoleType(listOf(MemberRoleAssignment("DEEPER", CohortId(17L))), context))
     }
 
-    private fun context(
-        activeCohortId: Long?,
-        memberCohortIds: Set<Long>,
-    ) = CurrentCohortRoleResolver.CohortRoleContext(activeCohortId, memberCohortIds)
+    private fun context(activeCohortId: Long?, memberCohortIds: Set<Long>) =
+        CurrentCohortRoleResolver.CohortRoleContext(activeCohortId, memberCohortIds)
 }

@@ -5,10 +5,10 @@ import core.domain.member.aggregate.MemberRole
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberRoleAssignment
 import org.jooq.DSLContext
-import org.jooq.dsl.tables.references.MEMBER_ROLES
-import org.jooq.dsl.tables.references.ROLES
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.name
+import org.jooq.dsl.tables.references.MEMBER_ROLES
+import org.jooq.dsl.tables.references.ROLES
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -70,10 +70,7 @@ class MemberRoleRepository(
             .where(MEMBER_ROLES.MEMBER_ROLE_ID.eq(keptRoleId))
             .execute()
 
-        softDeleteDuplicates(
-            activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId },
-            now,
-        )
+        softDeleteDuplicates(activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId }, now)
     }
 
     override fun replaceCohortRole(
@@ -116,10 +113,7 @@ class MemberRoleRepository(
             .where(MEMBER_ROLES.MEMBER_ROLE_ID.eq(keptRoleId))
             .execute()
 
-        softDeleteDuplicates(
-            activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId },
-            now,
-        )
+        softDeleteDuplicates(activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId }, now)
     }
 
     override fun softDeleteAllByMemberId(memberId: Long) {
@@ -130,10 +124,7 @@ class MemberRoleRepository(
             .execute()
     }
 
-    override fun softDeleteByMemberIdAndRoleId(
-        memberId: Long,
-        roleId: Long,
-    ) {
+    override fun softDeleteByMemberIdAndRoleId(memberId: Long, roleId: Long) {
         dsl
             .update(MEMBER_ROLES)
             .set(MEMBER_ROLES.DELETED_AT, LocalDateTime.now(ZoneId.of(TIME_ZONE)))
@@ -178,10 +169,7 @@ class MemberRoleRepository(
             }.groupBy({ it.first }, { it.second })
     }
 
-    private fun softDeleteDuplicates(
-        roleIds: List<Long>,
-        now: LocalDateTime,
-    ) {
+    private fun softDeleteDuplicates(roleIds: List<Long>, now: LocalDateTime) {
         if (roleIds.isEmpty()) return
         dsl
             .update(MEMBER_ROLES)

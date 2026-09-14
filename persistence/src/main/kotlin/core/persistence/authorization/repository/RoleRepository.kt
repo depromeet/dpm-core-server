@@ -6,6 +6,7 @@ import core.domain.member.vo.MemberId
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_OAUTH
+import org.jooq.dsl.tables.references.MEMBER_PERMISSIONS
 import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.PERMISSIONS
 import org.jooq.dsl.tables.references.ROLES

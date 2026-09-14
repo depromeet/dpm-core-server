@@ -7,10 +7,7 @@ import jakarta.validation.constraints.Pattern
 
 data class UpdateMemberRoleRequest(
     @field:NotBlank
-    @field:Pattern(
-        regexp = "MASTER|CORE|ORGANIZER|DEEPER|GUEST",
-        message = "roleType must be one of MASTER, CORE, ORGANIZER, DEEPER, GUEST",
-    )
+    @field:Pattern(regexp = "MASTER|CORE|ORGANIZER|DEEPER|GUEST", message = "roleType must be one of MASTER, CORE, ORGANIZER, DEEPER, GUEST")
     @field:Schema(description = "역할 타입", example = "ORGANIZER", requiredMode = Schema.RequiredMode.REQUIRED)
     val roleType: String,
     @field:NotNull
