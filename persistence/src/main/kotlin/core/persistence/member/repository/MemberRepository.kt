@@ -51,12 +51,10 @@ import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
-import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Repository
-@Transactional(readOnly = true)
 class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val dsl: DSLContext,
@@ -66,7 +64,6 @@ class MemberRepository(
     override fun findAllBySignupEmail(email: String): List<Member> =
         memberJpaRepository.findAllBySignupEmail(email).map { it.toDomain() }
 
-    @Transactional
     override fun save(member: Member): Member =
         if (member.id == null) {
             val now = LocalDateTime.now()
@@ -279,7 +276,7 @@ class MemberRepository(
                 .otherwise(3)
 
         val hasLatestCohortCondition =
-            latestCohortIdField.eq(latestCohortId)
+            COHORTS.COHORT_ID.eq(latestCohortId)
 
         val filterCondition =
             when (latest) {
@@ -315,7 +312,8 @@ class MemberRepository(
                 MEMBERS.DELETED_AT.isNull
                     .and(filterCondition),
             ).orderBy(
-                latestCohortIdField.desc().nullsLast(),
+                // nullsLast() 가 별칭을 case 표현식 안에 넣어 렌더링하므로 여기서도 한정된 실제 컬럼을 쓴다.
+                COHORTS.COHORT_ID.desc().nullsLast(),
                 statusPriority.asc(),
                 MEMBERS.NAME.asc(),
             ).fetch { record ->

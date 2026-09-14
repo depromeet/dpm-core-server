@@ -3,14 +3,13 @@ package core.application.member.application.service.auth
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
+import core.application.refreshToken.application.service.RefreshTokenIssueService
 import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.redirect.OAuthRedirectUriValidator
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.refreshToken.aggregate.RefreshToken
-import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import core.domain.security.oauth.dto.OAuthAttributes
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
@@ -23,7 +22,7 @@ class KakaoAuthService(
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
     private val jwtTokenProvider: JwtTokenProvider,
-    private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
+    private val refreshTokenIssueService: RefreshTokenIssueService,
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
 ) {
@@ -31,6 +30,7 @@ class KakaoAuthService(
     fun login(
         authorizationCode: String,
         redirectUri: String? = null,
+        deviceId: String? = null,
     ): AuthTokenResponse {
         val validatedRedirectUri = redirectUri?.let { redirectUriValidator.validate(it) }
         val attributes =
@@ -78,14 +78,9 @@ class KakaoAuthService(
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
         val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())
-        val refreshToken = jwtTokenProvider.generateRefreshToken(member.id!!.toString())
-        val refreshTokenEntity =
-            refreshTokenPersistencePort.findByMemberId(member.id!!.value)
-                ?.apply { rotate(refreshToken) }
-                ?: RefreshToken.create(member.id!!, refreshToken)
-        refreshTokenPersistencePort.save(refreshTokenEntity)
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
 
-        return AuthTokenResponse(accessToken, refreshToken)
+        return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
 
     private fun recoverOrCreateMemberForOrphanedOAuth(attributes: OAuthAttributes): Member {
