@@ -1,8 +1,8 @@
 package core.domain.member.aggregate
 
-import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import java.time.Instant
 
@@ -85,7 +85,8 @@ class Member(
         updatedAt = Instant.now()
     }
 
-    fun latestMemberCohort(): MemberCohort? = memberCohorts.maxByOrNull { it.id?.value ?: Long.MIN_VALUE }
+    fun latestMemberCohort(): MemberCohort? =
+        memberCohorts.maxByOrNull { it.id?.value ?: Long.MIN_VALUE }
 
     fun latestCohortId(): CohortId? = latestMemberCohort()?.cohortId
 

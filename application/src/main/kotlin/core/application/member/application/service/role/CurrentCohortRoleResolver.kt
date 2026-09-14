@@ -30,9 +30,8 @@ class CurrentCohortRoleResolver(
         memberId: MemberId,
         roleNames: List<String>,
     ): String? {
-        val assignments =
-            memberRolePersistencePort.findActiveRoleAssignmentsByMemberId(memberId.value)
-                .filter { it.roleName in roleNames }
+        val assignments = memberRolePersistencePort.findActiveRoleAssignmentsByMemberId(memberId.value)
+            .filter { it.roleName in roleNames }
         return selectRepresentativeRole(assignments, buildContext(memberId))
     }
 
@@ -95,7 +94,6 @@ class CurrentCohortRoleResolver(
     )
 
     companion object {
-        private val ROLE_PRIORITY =
-            listOf(RoleType.Master, RoleType.Core, RoleType.Organizer, RoleType.Deeper, RoleType.Guest)
+        private val ROLE_PRIORITY = listOf(RoleType.Master, RoleType.Core, RoleType.Organizer, RoleType.Deeper, RoleType.Guest)
     }
 }

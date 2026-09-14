@@ -33,11 +33,7 @@ class MemberRoleService(
         )
     }
 
-    fun assignRole(
-        memberId: MemberId,
-        roleType: RoleType,
-        cohortId: CohortId? = null,
-    ) {
+    fun assignRole(memberId: MemberId, roleType: RoleType, cohortId: CohortId? = null) {
         val roleId = roleQueryUseCase.findIdByName(roleType.code)
         memberRolePersistencePort.save(
             MemberRole(
@@ -49,18 +45,12 @@ class MemberRoleService(
         )
     }
 
-    fun ensureRoleAssigned(
-        memberId: MemberId,
-        roleType: RoleType,
-    ) {
+    fun ensureRoleAssigned(memberId: MemberId, roleType: RoleType) {
         val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
         if (roles.none { it == roleType.code }) assignRole(memberId, roleType)
     }
 
-    fun revokeRole(
-        memberId: MemberId,
-        roleType: RoleType,
-    ) {
+    fun revokeRole(memberId: MemberId, roleType: RoleType) {
         val roleId = roleQueryUseCase.findIdByName(roleType.code)
         memberRolePersistencePort.softDeleteByMemberIdAndRoleId(memberId.value, roleId)
     }
@@ -69,11 +59,7 @@ class MemberRoleService(
         if (memberRolePersistencePort.findRoleNamesByMemberId(memberId.value).isEmpty()) assignGuestRole(memberId)
     }
 
-    fun replaceWithSingleRoleByType(
-        memberId: MemberId,
-        roleType: RoleType,
-        cohortId: CohortId? = null,
-    ) {
+    fun replaceWithSingleRoleByType(memberId: MemberId, roleType: RoleType, cohortId: CohortId? = null) {
         val roleId = roleQueryUseCase.findIdByName(roleType.code)
         memberRolePersistencePort.upsertSingleActiveRole(
             memberId = memberId.value,
@@ -82,11 +68,7 @@ class MemberRoleService(
         )
     }
 
-    fun replaceCohortRole(
-        memberId: MemberId,
-        roleType: RoleType,
-        cohortId: CohortId,
-    ) {
+    fun replaceCohortRole(memberId: MemberId, roleType: RoleType, cohortId: CohortId) {
         val roleId = roleQueryUseCase.findIdByName(roleType.code)
         memberRolePersistencePort.replaceCohortRole(memberId.value, roleId, cohortId.value)
     }
