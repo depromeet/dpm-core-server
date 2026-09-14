@@ -33,7 +33,7 @@ class JwtTokenInjector(
     fun injectRefreshToken(
         refreshToken: RefreshToken,
         response: HttpServletResponse,
-    ) = injectRefreshToken(refreshToken.token, response)
+    ) = injectRefreshToken(refreshToken.requirePlainToken(), response)
 
     fun injectRefreshToken(
         refreshToken: String,

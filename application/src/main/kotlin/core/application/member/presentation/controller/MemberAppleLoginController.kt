@@ -7,10 +7,12 @@ import core.application.member.application.service.auth.KakaoAuthService
 import core.application.member.presentation.request.EmailPasswordLoginRequest
 import core.application.security.oauth.service.OAuthAuthorizationUrl
 import core.application.security.oauth.service.OAuthAuthorizationUrlService
+import core.application.security.oauth.token.DeviceIdResolver
 import core.application.security.oauth.token.JwtTokenInjector
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
@@ -27,6 +29,7 @@ class MemberAppleLoginController(
     private val oAuthAuthorizationUrlService: OAuthAuthorizationUrlService,
     private val emailPasswordAuthService: EmailPasswordAuthService,
     private val tokenInjector: JwtTokenInjector,
+    private val deviceIdResolver: DeviceIdResolver,
 ) {
     @GetMapping("/login/oauth/authorization/{provider}")
     @Operation(
@@ -60,9 +63,11 @@ class MemberAppleLoginController(
     )
     fun emailLogin(
         @RequestBody @Valid request: EmailPasswordLoginRequest,
+        httpRequest: HttpServletRequest,
         httpResponse: HttpServletResponse,
     ): AuthTokenResponse {
-        val tokens = emailPasswordAuthService.login(request.email, request.password)
+        val deviceId = deviceIdResolver.resolve(httpRequest, httpResponse)
+        val tokens = emailPasswordAuthService.login(request.email, request.password, deviceId)
         addTokenCookies(httpResponse, tokens)
         return tokens
     }
@@ -81,6 +86,7 @@ class MemberAppleLoginController(
     )
     fun appleLoginV1(
         @RequestBody body: MemberLoginController.AppleLoginRequest,
+        request: HttpServletRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
         val tokens =
@@ -89,6 +95,7 @@ class MemberAppleLoginController(
                 fullName = body.fullName,
                 familyName = body.familyName,
                 givenName = body.givenName,
+                deviceId = deviceIdResolver.resolve(request, response),
             )
         addTokenCookies(response, tokens)
         return tokens
@@ -108,12 +115,14 @@ class MemberAppleLoginController(
     )
     fun kakaoLoginV1(
         @RequestBody body: MemberLoginController.KakaoLoginRequest,
+        request: HttpServletRequest,
         response: HttpServletResponse,
     ): AuthTokenResponse {
         val tokens =
             kakaoAuthService.login(
                 authorizationCode = body.authorizationCode,
                 redirectUri = body.redirectUri,
+                deviceId = deviceIdResolver.resolve(request, response),
             )
         addTokenCookies(response, tokens)
         return tokens

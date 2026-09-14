@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestHeader
@@ -37,9 +39,11 @@ class MemberKakaoNativeLoginController(
     fun login(
         @RequestHeader(HttpHeaders.AUTHORIZATION, required = false)
         authorizationHeader: String?,
+        request: HttpServletRequest,
+        response: HttpServletResponse,
     ): CustomResponse<KakaoNativeLoginResponse> {
         val kakaoAccessToken = extractBearerToken(authorizationHeader)
-        return CustomResponse.ok(kakaoNativeLoginService.login(kakaoAccessToken))
+        return CustomResponse.ok(kakaoNativeLoginService.login(kakaoAccessToken, request, response))
     }
 
     private fun extractBearerToken(authorizationHeader: String?): String {

@@ -9,8 +9,8 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authorization.AuthorizationDeniedException
-import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.HttpRequestMethodNotSupportedException
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -83,7 +83,8 @@ class GlobalExceptionHandler {
     @ExceptionHandler(Exception::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     protected fun handleException(exception: Exception): CustomResponse<Void> {
-        logger.error { "Exception: ${exception.javaClass.simpleName} - ${exception.message}" }
+        // 예상치 못한 500 은 스택트레이스가 없으면 사후 추적이 불가능하다. 레벨은 그대로 두고 예외만 함께 넘긴다.
+        logger.error(exception) { "Exception: ${exception.javaClass.simpleName} - ${exception.message}" }
         return CustomResponse.error(GlobalExceptionCode.SERVER_ERROR)
     }
 

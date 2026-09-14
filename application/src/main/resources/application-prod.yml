@@ -38,6 +38,8 @@ logging:
     org.jooq.tools.LoggerListener: INFO
     org.hibernate.SQL: INFO
     org.hibernate.orm.jdbc.bind: INFO
+  discord:
+    webhook-url: ${PROD_DISCORD_WEBHOOK_URL}
 
 apple:
   client-id: ${PROD_APPLE_CLIENT_ID}

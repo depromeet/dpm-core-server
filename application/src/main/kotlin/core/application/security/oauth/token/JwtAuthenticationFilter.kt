@@ -1,10 +1,12 @@
 package core.application.security.oauth.token
 
+import core.application.common.logging.MdcLoggingFilter
 import core.application.security.oauth.exception.InvalidAccessTokenException
 import core.application.security.oauth.exception.JwtExceptionCode
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.MDC
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
@@ -45,6 +47,9 @@ class JwtAuthenticationFilter(
         if (authenticatedToken != null) {
             val authentication = jwtTokenProvider.getAuthentication(authenticatedToken)
             SecurityContextHolder.getContext().authentication = authentication
+            // 알림은 AsyncAppender 의 워커 스레드에서 조립되어 SecurityContext 를 볼 수 없다.
+            // MDC 는 로그 이벤트에 스냅샷으로 실려 넘어가므로, 인증 직후 여기서 넣어둔다. 정리는 MdcLoggingFilter 가 한다.
+            MDC.put(MdcLoggingFilter.MEMBER_ID, authentication.name)
         } else if (authorizationHeader != null &&
             authorizationHeader.isNotEmpty() &&
             !authorizationHeader.startsWith(TOKEN_PREFIX)

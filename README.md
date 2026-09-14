@@ -16,14 +16,60 @@
 ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
 <br>
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Traefik](https://img.shields.io/badge/Traefik-2.11-24A1C1?logo=traefikproxy&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
+![Oracle Cloud](https://img.shields.io/badge/Oracle%20Cloud-Ampere%20ARM-F80000?logo=oracle&logoColor=white)
 
 ---
 
-## 🏗️System Architecture
-<p align="center">
-  <img src="./.github/image/core_architecture.png" alt="core_architecture" width="100%" />
-</p>
+## 🏗️ System Architecture
+
+> 2026.09 iwinv + AWS(RDS·EC2) → Oracle Cloud 마이그레이션 완료
+
+### 런타임 구조
+
+```mermaid
+flowchart TB
+    FE["🌐 프론트엔드<br/>core.depromeet.com"]
+
+    subgraph ORACLE["Oracle Cloud (Ampere ARM)"]
+        subgraph PROD["core-prod 인스턴스"]
+            TRAEFIK["Traefik v2.11<br/>:80/:443 · Let's Encrypt 자동 발급<br/>호스트명 기반 라우팅"]
+            APP["spring-app (prod)<br/>Docker Swarm · start-first 무중단 배포"]
+            DEVAPP["dev-spring-app (dev)"]
+        end
+        subgraph DBHOST["core-db 인스턴스"]
+            MYSQL[("MySQL 8.0.41 (Docker)<br/>dpm_core · dpm_core_dev<br/>스키마별 최소 권한 계정")]
+        end
+    end
+
+    FE -->|api.depromeet.com| TRAEFIK
+    FE -.->|api.depromeet.shop| TRAEFIK
+    TRAEFIK -->|"Host(api.depromeet.com)"| APP
+    TRAEFIK -.->|"Host(api.depromeet.shop)"| DEVAPP
+    APP -->|"dpm_core (TLS)"| MYSQL
+    DEVAPP -.->|"dpm_core_dev (TLS)"| MYSQL
+```
+
+- prod/dev 앱이 **한 인스턴스(core-prod)에서 Swarm 서비스로 분리** 운영되고, Traefik이 호스트명으로 라우팅합니다.
+- prod/dev DB는 **하나의 MySQL 인스턴스에서 스키마로 분리**되며, 계정도 스키마별 최소 권한(`core_prod`/`core_dev`)으로 격리됩니다.
+- core-db는 방화벽(VCN Security List + iptables)으로 **앱 서버에서만 3306 접근**을 허용합니다.
+- core-db에서 매일 04:00(KST) `mysqldump` 백업이 요일별 7개 파일로 로테이션됩니다.
+
+### 배포 파이프라인
+
+```mermaid
+flowchart LR
+    DEVELOP["develop push"] --> DEVCD["dev-cd"]
+    MAIN["main push"] --> PRODCD["prod-cd"]
+    DEVCD --> HUB[("DockerHub<br/>Jib 멀티아치<br/>amd64 + arm64")]
+    PRODCD --> HUB
+    HUB -->|"dev-{sha}"| DEVDEPLOY["core-prod<br/>dev 스택 deploy"]
+    HUB -->|"prod-{sha}"| PRODDEPLOY["core-prod<br/>prod 스택 deploy"]
+```
+
+- 이미지는 Jib으로 **멀티아치(amd64+arm64)** 빌드됩니다.
+- prod 환경변수는 **GitHub Actions Secrets가 원본**이며, prod-cd가 배포할 때마다 서버의 `.env`를 재생성해 컨테이너에 주입합니다. (dev는 서버에 상주하는 `.env.dev` 사용)
 
 ---
 
@@ -60,6 +106,11 @@ foo-domain
 ---
 
 ## 👨🏻‍💻Contributors
+
+### 3rd Developers
+| ![](https://github.com/wjdwnsdnjs13.png?size=100) | ![](https://github.com/uykm.png?size=100) | ![](https://github.com/cowboysj.png?size=100) |
+|:-------------------------------------------------:|:-----------------------------------------:|:---------------------------------------------:|
+|                      **정준원**                      |                  **신민규**                  |                    **김수진**                    |
 
 ### 2nd Developers
 | ![](https://github.com/wjdwnsdnjs13.png?size=100) | ![](https://github.com/BlackBean99.png?size=100) |

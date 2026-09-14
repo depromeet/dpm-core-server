@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
@@ -34,9 +35,10 @@ class MemberKakaoTokenController(
     )
     fun saveKakaoLoginTokens(
         @RequestBody @Valid request: KakaoLoginTokenSaveRequest,
+        httpRequest: HttpServletRequest,
         response: HttpServletResponse,
     ): CustomResponse<Void> {
-        kakaoLoginTokenSaveService.save(request.refreshToken, response)
+        kakaoLoginTokenSaveService.save(request.refreshToken, httpRequest, response)
         return CustomResponse.ok()
     }
 

@@ -19,7 +19,7 @@ class ReissueController(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): CustomResponse<TokenResponse> {
-        val tokenResult = refreshTokenService.reissueBasedOnRefreshToken(request, response)
-        return CustomResponse.ok(TokenResponse.of(tokenResult, tokenProperties))
+        val reissueResult = refreshTokenService.reissue(request, response)
+        return CustomResponse.ok(TokenResponse.of(reissueResult, tokenProperties))
     }
 }
