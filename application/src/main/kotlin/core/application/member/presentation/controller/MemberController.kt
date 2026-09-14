@@ -168,7 +168,6 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-
     @PostMapping("/authority/cohort/init/{cohortId}/{memberId}")
     override fun initMemberCohort(
         @PathVariable memberId: MemberId,

@@ -50,4 +50,3 @@ class MemberCohortRepository(
             .fetch(MEMBER_COHORTS.COHORT_ID)
             .filterNotNull()
 }
-
