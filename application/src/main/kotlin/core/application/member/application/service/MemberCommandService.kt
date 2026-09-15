@@ -138,7 +138,9 @@ class MemberCommandService(
 
     fun activate(member: Member) {
         val memberId = requireNotNull(member.id) { "Activated member must have id" }
-        memberRoleService.replaceWithSingleRoleByType(memberId, RoleType.Deeper, cohortQueryUseCase.getActiveCohortId())
+        // 승인 시 기존 이력을 유지하고 새 role 만 append (예: (DEEPER, 17) 유지 + (DEEPER, 18) 추가).
+        // 판정은 CurrentCohortRoleResolver 가 활성 기수 기준으로 필터링한다.
+        memberRoleService.ensureCohortRoleAssigned(memberId, RoleType.Deeper, cohortQueryUseCase.getActiveCohortId())
         member.activate()
         val activatedMember = memberPersistencePort.save(member)
         initializeMemberDataForActiveMember(activatedMember)

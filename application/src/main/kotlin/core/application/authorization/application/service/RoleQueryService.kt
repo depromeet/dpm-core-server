@@ -1,10 +1,13 @@
 package core.application.authorization.application.service
 
+import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.domain.authorization.aggregate.Role
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.port.outbound.RolePersistencePort
+import core.domain.authorization.vo.RoleDisplayName
 import core.domain.authorization.vo.RoleType
+import core.domain.cohort.vo.CohortId
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -14,6 +17,7 @@ class RoleQueryService(
     private val rolePersistencePort: RolePersistencePort,
     private val memberRolePersistencePort: MemberRolePersistencePort,
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
+    private val cohortQueryService: CohortQueryService,
 ) : RoleQueryUseCase {
     override fun getAllRoles(): List<Role> = getRolesByCohort("")
 
@@ -23,12 +27,16 @@ class RoleQueryService(
     }
 
     override fun getRoleNamesByMemberId(memberId: MemberId): List<String> =
-        memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
+        memberRolePersistencePort
+            .findActiveRoleAssignmentsByMemberId(memberId.value)
+            .map { assignment -> RoleDisplayName.of(assignment.roleName, resolveCohortValue(assignment.cohortId)) }
+            .distinct()
 
-    override fun getRoleNamesByMemberIds(memberIds: List<MemberId>): Map<MemberId, List<String>> {
-        val roleNamesByMemberId = memberRolePersistencePort.findRoleNamesByMemberIds(memberIds.map { it.value })
-        return memberIds.associateWith { memberId -> roleNamesByMemberId[memberId.value].orEmpty() }
-    }
+    override fun getRoleNamesByMemberIds(memberIds: List<MemberId>): Map<MemberId, List<String>> =
+        memberIds.associateWith { memberId -> getRoleNamesByMemberId(memberId) }
+
+    private fun resolveCohortValue(cohortId: CohortId?): Long? =
+        cohortId?.value?.let { runCatching { cohortQueryService.getCohort(cohortId).value.toLong() }.getOrNull() }
 
     override fun getRolesByExternalId(externalId: String): List<String> =
         rolePersistencePort.findAllByMemberExternalId(externalId).ifEmpty { listOf(RoleType.Guest.code) }

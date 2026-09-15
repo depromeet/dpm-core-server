@@ -21,8 +21,8 @@ class RoleCommandService(
     ) {
         memberQueryService.getMemberById(memberId)
         val roleType = RoleType.fromCode(request.roleType)
-        require(roleType == RoleType.Organizer || roleType == RoleType.Deeper) {
-            "roleType must be ORGANIZER or DEEPER"
+        require(roleType == RoleType.Core || roleType == RoleType.Organizer || roleType == RoleType.Deeper) {
+            "roleType must be CORE, ORGANIZER or DEEPER"
         }
         memberRoleService.replaceCohortRole(memberId, roleType, CohortId(request.cohortId))
     }
