@@ -1,12 +1,12 @@
 -- =============================================================================
--- 2026-09-13 · Phase 2 본작업: 스키마 정합화
+-- 2026-09-14 · Phase 2 본작업: 스키마 정합화
 -- =============================================================================
 -- 목적: 문서 §Phase 2 반영. 아래 4개 원본 스크립트를 하나로 합침.
 --       1) member_roles.cohort_id 컬럼 + 인덱스 idx_member_role_cohort
 --       2) legacy_role_name 에서 cohort_id 채우기 (ORGANIZER / DEEPER 만)
 --       3) canonical role (MASTER/CORE/ORGANIZER/DEEPER/GUEST) 외 아카이빙 + 삭제
 --       4) member_cohorts.cohort_value 컬럼 제거
--- 선행: 20260913_role_system_seed.sql, 20260913_backup_member_roles.sql
+-- 선행: 2609142320_role_system_seed.sql, 2609142310_backup_member_roles.sql
 -- 후행: 없음 (Phase 2 최종)
 -- 검증: 파일 하단 VERIFY 섹션 (읽기 전용)
 -- 주의: 스키마 삭제 포함 — 롤백 비용 큼. 실행 전 논리 백업 필수.
@@ -34,17 +34,31 @@ COMMIT;
 
 -- -----------------------------------------------------------------------------
 -- [2] legacy_role_name 에서 cohort_id 채우기
---     ORGANIZER / DEEPER 만 대상. MASTER / CORE / GUEST 는 NULL 유지
+--     ORGANIZER / DEEPER / CORE 대상. MASTER / GUEST 는 NULL 유지
 --     (애플리케이션 레이어에서 cohort_id=0 특수 슬롯으로 보정)
+--     legacy_role_name 예시:
+--       "17기 운영진", "18기 디퍼"  → 앞 숫자를 그대로 cohort_id 로 매핑
+--       "코어 1기", "코어 2기"       → 팀 규칙에 따라 1→17, 2→18 매핑 (활동한 실제 기수)
 -- -----------------------------------------------------------------------------
 START TRANSACTION;
 
+-- ORGANIZER / DEEPER: "N기 ..." 형식에서 앞의 숫자를 그대로 매핑
 UPDATE member_roles mr
 INNER JOIN cohorts c ON c.`value` = REGEXP_SUBSTR(mr.legacy_role_name, '^[0-9]+')
 INNER JOIN roles   r ON mr.role_id = r.role_id
 SET mr.cohort_id = c.cohort_id
 WHERE mr.legacy_role_name REGEXP '^[0-9]+기'
   AND r.name IN ('ORGANIZER', 'DEEPER');
+
+-- CORE: "코어 N기" 를 활동 실기수로 매핑 (1→17, 2→18)
+UPDATE member_roles mr
+INNER JOIN roles r ON mr.role_id = r.role_id
+SET mr.cohort_id = CASE mr.legacy_role_name
+    WHEN '코어 1기' THEN 17
+    WHEN '코어 2기' THEN 18
+END
+WHERE r.name = 'CORE'
+  AND mr.legacy_role_name IN ('코어 1기', '코어 2기');
 
 COMMIT;
 
@@ -53,7 +67,7 @@ COMMIT;
 -- -----------------------------------------------------------------------------
 START TRANSACTION;
 
-CREATE TABLE IF NOT EXISTS _archive_roles_20260913 AS SELECT * FROM roles;
+CREATE TABLE IF NOT EXISTS _archive_roles AS SELECT * FROM roles;
 
 DELETE rp FROM role_permissions rp
 INNER JOIN roles r ON rp.role_id = r.role_id
@@ -80,7 +94,7 @@ COMMIT;
 -- =============================================================================
 -- VERIFY (읽기 전용) — 문서 §7.5
 -- =============================================================================
--- cohort_id 채움 (기대: ORGANIZER/DEEPER 는 null_cohort=0, MASTER/CORE/GUEST 는 NULL 다수)
+-- cohort_id 채움 (기대: ORGANIZER/DEEPER/CORE 는 null_cohort=0, MASTER/GUEST 는 NULL 다수)
 SELECT r.name,
        COUNT(*)                       AS total,
        COUNT(mr.cohort_id)            AS with_cohort,
@@ -108,7 +122,7 @@ SHOW COLUMNS FROM member_cohorts LIKE 'cohort_value';
 --
 --  -- [3] 기수 문자열 role 복원 (아카이브에서 되돌리기)
 --  INSERT INTO roles (role_id, name)
---  SELECT role_id, name FROM _archive_roles_20260913
+--  SELECT role_id, name FROM _archive_roles
 --  WHERE name NOT IN ('MASTER','CORE','ORGANIZER','DEEPER','GUEST')
 --  ON DUPLICATE KEY UPDATE name = VALUES(name);
 --  -- role_permissions 는 별도 스냅샷이 없으면 재구성 불가.

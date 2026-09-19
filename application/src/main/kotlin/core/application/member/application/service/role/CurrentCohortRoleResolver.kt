@@ -82,7 +82,9 @@ class CurrentCohortRoleResolver(
             RoleType.Master.code, RoleType.Guest.code -> true
             RoleType.Core.code, RoleType.Organizer.code, RoleType.Deeper.code -> {
                 if (!isActiveMember) return false
-                assignment.cohortId?.value?.let { it in context.memberCohortIds } ?: isActiveMember
+                // role 의 cohortId 가 활성 기수와 정확히 일치하는 경우만 유효로 판정.
+                // (member_cohorts 에 다른 기수 참여 이력이 있어도 그 기수의 role 은 유효하지 않음)
+                assignment.cohortId?.value?.let { it == context.activeCohortId } ?: isActiveMember
             }
             else -> false
         }
