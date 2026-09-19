@@ -5,15 +5,13 @@ package core.domain.authorization.vo
  *
  * 규칙 (팀 컨벤션):
  * - MASTER               → "마스터"
- * - CORE + cohort N      → "${N-16} 코어"     (예: cohort=17 → "1 코어", cohort=18 → "2 코어")
+ * - CORE + cohort N      → "${N}기 코어"
  * - ORGANIZER + cohort N → "${N}기 운영진"
  * - DEEPER + cohort N    → "${N}기 디퍼"
  * - GUEST                → "게스트"
  * - cohort 매칭 불가      → 원본 canonical name 그대로 (fallback)
  */
 object RoleDisplayName {
-    private const val CORE_COHORT_OFFSET = 16L
-
     fun of(
         roleName: String?,
         cohortValue: Long?,
@@ -24,7 +22,7 @@ object RoleDisplayName {
             RoleType.Guest -> "게스트"
             RoleType.Organizer -> cohortValue?.let { "${it}기 운영진" } ?: roleType.code
             RoleType.Deeper -> cohortValue?.let { "${it}기 디퍼" } ?: roleType.code
-            RoleType.Core -> cohortValue?.let { "${it - CORE_COHORT_OFFSET} 코어" } ?: roleType.code
+            RoleType.Core -> cohortValue?.let { "${it}기 코어" } ?: roleType.code
         }
     }
 }

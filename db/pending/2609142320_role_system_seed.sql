@@ -1,5 +1,5 @@
 -- =============================================================================
--- 2026-09-13 · Phase 1 본작업: 역할·기수 시스템 시드 & 재매핑
+-- 2026-09-14 · Phase 1 본작업: 역할·기수 시스템 시드 & 재매핑
 -- =============================================================================
 -- 목적: 문서 §2-2 / §7 반영. 아래 5개 원본 스크립트를 하나로 합침.
 --       1) cohorts.is_active/activated_at 컬럼 + 활성 기수 세팅 + cohort_id=0 특수 슬롯
@@ -7,8 +7,8 @@
 --       3) member_roles.role_id 를 "N기 역할" → canonical role 로 재매핑
 --       4) member_cohorts 중복 제거 + UNIQUE(member_id, cohort_id)
 --       5) 구시스템 member_authorities / authorities 아카이빙 후 DROP
--- 선행: 20260913_backup_member_roles.sql
--- 후행: 20260913_schema_alignment.sql
+-- 선행: 2609142310_backup_member_roles.sql
+-- 후행: 2609142330_schema_alignment.sql
 -- 검증: 파일 하단 VERIFY 섹션 (읽기 전용)
 
 -- -----------------------------------------------------------------------------
@@ -152,8 +152,8 @@ COMMIT;
 -- -----------------------------------------------------------------------------
 START TRANSACTION;
 
-CREATE TABLE IF NOT EXISTS _archive_member_authorities_20260913 AS SELECT * FROM member_authorities;
-CREATE TABLE IF NOT EXISTS _archive_authorities_20260913        AS SELECT * FROM authorities;
+CREATE TABLE IF NOT EXISTS _archive_member_authorities AS SELECT * FROM member_authorities;
+CREATE TABLE IF NOT EXISTS _archive_authorities        AS SELECT * FROM authorities;
 
 DROP TABLE IF EXISTS member_authorities;
 DROP TABLE IF EXISTS authorities;
@@ -186,7 +186,8 @@ GROUP BY r.name;
 -- 구시스템 제거 (기대: member_authorities/authorities 부재, _archive_* 존재)
 SHOW TABLES LIKE 'member_authorities';
 SHOW TABLES LIKE 'authorities';
-SHOW TABLES LIKE '_archive_member_authorities_%';
+SHOW TABLES LIKE '_archive_member_authorities';
+SHOW TABLES LIKE '_archive_authorities';
 
 -- member_cohorts 유니크 (기대: 중복 0건, uk_member_cohort 인덱스 존재)
 SELECT member_id, cohort_id, COUNT(*) AS dup
@@ -201,8 +202,8 @@ SHOW INDEX FROM member_cohorts WHERE Key_name = 'uk_member_cohort';
 --  START TRANSACTION;
 --
 --  -- [5] 구시스템 복원
---  CREATE TABLE IF NOT EXISTS authorities        AS SELECT * FROM _archive_authorities_20260913;
---  CREATE TABLE IF NOT EXISTS member_authorities AS SELECT * FROM _archive_member_authorities_20260913;
+--  CREATE TABLE IF NOT EXISTS authorities        AS SELECT * FROM _archive_authorities;
+--  CREATE TABLE IF NOT EXISTS member_authorities AS SELECT * FROM _archive_member_authorities;
 --  -- 필요 시 원본 인덱스/PK/FK 재적용 (아카이브 테이블에는 제약이 포함되지 않음)
 --
 --  -- [4] member_cohorts UNIQUE 해제
