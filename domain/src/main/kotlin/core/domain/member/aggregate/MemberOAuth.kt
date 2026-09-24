@@ -9,6 +9,7 @@ class MemberOAuth(
     val externalId: String,
     val provider: OAuthProvider,
     val memberId: MemberId,
+    val email: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -17,7 +18,8 @@ class MemberOAuth(
         return id == other.id &&
             externalId == other.externalId &&
             provider == other.provider &&
-            memberId == other.memberId
+            memberId == other.memberId &&
+            email == other.email
     }
 
     override fun hashCode(): Int {
@@ -25,22 +27,25 @@ class MemberOAuth(
         result = 31 * result + externalId.hashCode()
         result = 31 * result + provider.hashCode()
         result = 31 * result + memberId.hashCode()
+        result = 31 * result + (email?.hashCode() ?: 0)
         return result
     }
 
     override fun toString(): String =
-        "MemberOAuth(id=$id, externalId='$externalId', provider=$provider, memberId=$memberId)"
+        "MemberOAuth(id=$id, externalId='$externalId', provider=$provider, memberId=$memberId, email=$email)"
 
     companion object {
         fun of(
             externalId: String,
             provider: OAuthProvider,
             memberId: MemberId,
+            email: String? = null,
         ): MemberOAuth =
             MemberOAuth(
                 externalId = externalId,
                 provider = provider,
                 memberId = memberId,
+                email = email?.takeIf { it.isNotBlank() },
             )
     }
 }
