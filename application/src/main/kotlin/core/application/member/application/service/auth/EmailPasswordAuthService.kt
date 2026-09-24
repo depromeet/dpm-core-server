@@ -1,6 +1,5 @@
 package core.application.member.application.service.auth
 
-import core.application.authorization.application.service.RoleQueryService
 import core.application.member.application.exception.InvalidEmailPasswordException
 import core.application.member.application.exception.MemberAllowedException
 import core.application.member.application.exception.MemberDeletedException
@@ -31,7 +30,6 @@ import java.time.Instant
 class EmailPasswordAuthService(
     private val memberCredentialPersistencePort: MemberCredentialPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
-    private val roleQueryService: RoleQueryService,
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
     private val jwtTokenProvider: JwtTokenProvider,
@@ -100,20 +98,7 @@ class EmailPasswordAuthService(
         memberRoleService.ensureGuestRoleAssigned(member.id!!)
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
-        // Generate JWT tokens
-        val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
-        val authorities =
-            permissionStrings.map {
-                org.springframework.security.core.authority.SimpleGrantedAuthority(
-                    it,
-                )
-            }
-
-        val accessToken =
-            jwtTokenProvider.generateAccessTokenWithPermissions(
-                member.id!!.toString(),
-                authorities,
-            )
+        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())
 
         val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
 
@@ -153,20 +138,7 @@ class EmailPasswordAuthService(
             )
         memberCredentialPersistencePort.save(newCredential)
 
-        // 4. Generate JWT tokens
-        val permissionStrings = roleQueryService.getPermissionsByMemberId(newMember.id!!)
-        val authorities =
-            permissionStrings.map {
-                org.springframework.security.core.authority.SimpleGrantedAuthority(
-                    it,
-                )
-            }
-
-        val accessToken =
-            jwtTokenProvider.generateAccessTokenWithPermissions(
-                newMember.id!!.toString(),
-                authorities,
-            )
+        val accessToken = jwtTokenProvider.generateAccessToken(newMember.id!!.toString())
 
         val issued = refreshTokenIssueService.issueForLogin(newMember.id!!, deviceId)
 

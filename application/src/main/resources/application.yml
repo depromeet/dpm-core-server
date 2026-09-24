@@ -83,8 +83,6 @@ logging:
       org.apache.catalina.connector.ClientAbortException
     excluded-loggers: ""
 
-cohort:
-  value: ${COHORT_VALUE}
 
 session:
   attendance:

@@ -1,6 +1,7 @@
 package core.entity.member
 
 import core.domain.authorization.vo.RoleId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberRole
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberRoleId
@@ -31,6 +32,8 @@ class MemberRoleEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val role: RoleEntity,
+    @Column(name = "cohort_id")
+    val cohortId: Long? = null,
     @Column(name = "granted_at", nullable = false, updatable = false)
     val grantedAt: Instant? = null,
     @Column(name = "deleted_at")
@@ -41,6 +44,7 @@ class MemberRoleEntity(
             id = MemberRoleId(this.id),
             memberId = MemberId(this.member.id),
             roleId = RoleId(this.role.id),
+            cohortId = this.cohortId?.let { CohortId(it) },
             grantedAt = this.grantedAt,
             deletedAt = this.deletedAt,
         )

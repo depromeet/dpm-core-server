@@ -57,6 +57,16 @@ class HttpCookieOAuth2AuthorizationRequestRepositoryTest {
                                 ),
                         ),
                 ),
+            securityProperties =
+                SecurityProperties(
+                    logoutUrl = "/logout",
+                    cookie =
+                        SecurityProperties.Cookie(
+                            domain = "depromeet.com",
+                            httpOnly = true,
+                            secure = true,
+                        ),
+                ),
         )
 
     private fun createAuthorizationRequest(): OAuth2AuthorizationRequest =

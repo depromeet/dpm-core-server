@@ -91,12 +91,11 @@ class GatheringQueryService(
             }.groupBy({ it.first }, { it.second })
 
     private fun getMemberNameRole(memberId: MemberId): Pair<String, String> {
-        val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
         val queryResults = memberQueryUseCase.getMemberNameRoleByMemberId(memberId)
         val representativeRole =
-            currentCohortRoleResolver.selectRepresentativeRole(
+            currentCohortRoleResolver.selectRepresentativeRoleForMember(
+                memberId = memberId,
                 roleNames = queryResults.map { it.role },
-                latestCohortValue = latestCohortValue,
             ) ?: queryResults.first().role
 
         val representativeQuery =

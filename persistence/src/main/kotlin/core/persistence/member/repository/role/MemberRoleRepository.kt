@@ -1,8 +1,12 @@
 package core.persistence.member.repository.role
 
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberRole
 import core.domain.member.port.outbound.MemberRolePersistencePort
+import core.domain.member.vo.MemberRoleAssignment
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
+import org.jooq.impl.DSL.name
 import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.ROLES
 import org.springframework.stereotype.Repository
@@ -18,6 +22,7 @@ class MemberRoleRepository(
             .insertInto(MEMBER_ROLES)
             .set(MEMBER_ROLES.MEMBER_ID, memberRole.memberId.value)
             .set(MEMBER_ROLES.ROLE_ID, memberRole.roleId.value)
+            .set(COHORT_ID_FIELD, memberRole.cohortId?.value)
             .set(
                 MEMBER_ROLES.GRANTED_AT,
                 memberRole.grantedAt
@@ -30,6 +35,7 @@ class MemberRoleRepository(
     override fun upsertSingleActiveRole(
         memberId: Long,
         roleId: Long,
+        cohortId: Long?,
     ) {
         val now = LocalDateTime.now(ZoneId.of(TIME_ZONE))
         val activeRoles =
@@ -46,172 +52,134 @@ class MemberRoleRepository(
                 .insertInto(MEMBER_ROLES)
                 .set(MEMBER_ROLES.MEMBER_ID, memberId)
                 .set(MEMBER_ROLES.ROLE_ID, roleId)
+                .set(COHORT_ID_FIELD, cohortId)
                 .set(MEMBER_ROLES.GRANTED_AT, now)
                 .execute()
             return
         }
 
-        val keptRole =
-            activeRoles.firstOrNull { it[MEMBER_ROLES.ROLE_ID] == roleId }
-                ?: activeRoles.first()
+        val keptRole = activeRoles.firstOrNull { it[MEMBER_ROLES.ROLE_ID] == roleId } ?: activeRoles.first()
         val keptRoleId = keptRole[MEMBER_ROLES.MEMBER_ROLE_ID] ?: return
 
         dsl
             .update(MEMBER_ROLES)
             .set(MEMBER_ROLES.ROLE_ID, roleId)
+            .set(COHORT_ID_FIELD, cohortId)
             .set(MEMBER_ROLES.GRANTED_AT, now)
             .set(MEMBER_ROLES.DELETED_AT, null as LocalDateTime?)
             .where(MEMBER_ROLES.MEMBER_ROLE_ID.eq(keptRoleId))
             .execute()
 
-        val duplicateRoleIds =
-            activeRoles
-                .mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }
-                .filter { it != keptRoleId }
-
-        if (duplicateRoleIds.isNotEmpty()) {
-            dsl
-                .update(MEMBER_ROLES)
-                .set(MEMBER_ROLES.DELETED_AT, now)
-                .where(MEMBER_ROLES.MEMBER_ROLE_ID.`in`(duplicateRoleIds))
-                .and(MEMBER_ROLES.DELETED_AT.isNull)
-                .execute()
-        }
+        softDeleteDuplicates(activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId }, now)
     }
 
-    override fun upsertCohortRole(
+    override fun replaceCohortRole(
         memberId: Long,
         roleId: Long,
-        cohortRolePrefix: String,
+        cohortId: Long,
     ) {
         val now = LocalDateTime.now(ZoneId.of(TIME_ZONE))
-        val activeCohortRoles =
+        val cohortBoundRoleNames = listOf("ORGANIZER", "DEEPER")
+        val activeRoles =
             dsl
-                .select(MEMBER_ROLES.MEMBER_ROLE_ID, MEMBER_ROLES.ROLE_ID)
+                .select(MEMBER_ROLES.MEMBER_ROLE_ID, MEMBER_ROLES.ROLE_ID, COHORT_ID_FIELD)
                 .from(MEMBER_ROLES)
-                .join(ROLES)
-                .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
+                .join(ROLES).on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
                 .where(MEMBER_ROLES.MEMBER_ID.eq(memberId))
                 .and(MEMBER_ROLES.DELETED_AT.isNull)
-                .and(ROLES.NAME.startsWith(cohortRolePrefix))
+                .and(ROLES.NAME.`in`(cohortBoundRoleNames))
+                .and(COHORT_ID_FIELD.eq(cohortId))
                 .orderBy(MEMBER_ROLES.MEMBER_ROLE_ID.asc())
                 .fetch()
 
-        if (activeCohortRoles.isEmpty()) {
+        if (activeRoles.isEmpty()) {
             dsl
                 .insertInto(MEMBER_ROLES)
                 .set(MEMBER_ROLES.MEMBER_ID, memberId)
                 .set(MEMBER_ROLES.ROLE_ID, roleId)
+                .set(COHORT_ID_FIELD, cohortId)
                 .set(MEMBER_ROLES.GRANTED_AT, now)
                 .execute()
             return
         }
 
-        val keptRole =
-            activeCohortRoles.firstOrNull { it[MEMBER_ROLES.ROLE_ID] == roleId }
-                ?: activeCohortRoles.first()
-        val keptRoleId = keptRole[MEMBER_ROLES.MEMBER_ROLE_ID] ?: return
-
+        val keptRoleId = activeRoles.first()[MEMBER_ROLES.MEMBER_ROLE_ID] ?: return
         dsl
             .update(MEMBER_ROLES)
             .set(MEMBER_ROLES.ROLE_ID, roleId)
+            .set(COHORT_ID_FIELD, cohortId)
             .set(MEMBER_ROLES.GRANTED_AT, now)
             .set(MEMBER_ROLES.DELETED_AT, null as LocalDateTime?)
             .where(MEMBER_ROLES.MEMBER_ROLE_ID.eq(keptRoleId))
             .execute()
 
-        val duplicateRoleIds =
-            activeCohortRoles
-                .mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }
-                .filter { it != keptRoleId }
-
-        if (duplicateRoleIds.isNotEmpty()) {
-            dsl
-                .update(MEMBER_ROLES)
-                .set(MEMBER_ROLES.DELETED_AT, now)
-                .where(MEMBER_ROLES.MEMBER_ROLE_ID.`in`(duplicateRoleIds))
-                .and(MEMBER_ROLES.DELETED_AT.isNull)
-                .execute()
-        }
+        softDeleteDuplicates(activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId }, now)
     }
 
-    /**
-     * 단순 soft delete를 위해 jOOQ 사용.
-     *
-     * MemberAuthority의 연관관계가 복잡해 JPA로 save를 시도하면 불필요한 연관 엔티티 조회가 발생함.
-     *
-     * 이에 jOOQ로 직접 update 쿼리를 작성하여, 성능을 최적화하고 불필요한 JPA 연산을 최소화함.
-     *
-     * @author LeeHanEum
-     * @since 2025.09.02
-     */
     override fun softDeleteAllByMemberId(memberId: Long) {
         dsl
             .update(MEMBER_ROLES)
-            .set(
-                MEMBER_ROLES.DELETED_AT,
-                LocalDateTime.now(ZoneId.of(TIME_ZONE)),
-            ).where(
-                MEMBER_ROLES.MEMBER_ID
-                    .eq(memberId)
-                    .and(MEMBER_ROLES.DELETED_AT.isNull()),
-            ).execute()
+            .set(MEMBER_ROLES.DELETED_AT, LocalDateTime.now(ZoneId.of(TIME_ZONE)))
+            .where(MEMBER_ROLES.MEMBER_ID.eq(memberId).and(MEMBER_ROLES.DELETED_AT.isNull))
+            .execute()
     }
 
-    override fun softDeleteByMemberIdAndRoleId(
-        memberId: Long,
-        roleId: Long,
-    ) {
+    override fun softDeleteByMemberIdAndRoleId(memberId: Long, roleId: Long) {
         dsl
             .update(MEMBER_ROLES)
             .set(MEMBER_ROLES.DELETED_AT, LocalDateTime.now(ZoneId.of(TIME_ZONE)))
             .where(
-                MEMBER_ROLES.MEMBER_ID
-                    .eq(memberId)
+                MEMBER_ROLES.MEMBER_ID.eq(memberId)
                     .and(MEMBER_ROLES.ROLE_ID.eq(roleId))
-                    .and(MEMBER_ROLES.DELETED_AT.isNull()),
+                    .and(MEMBER_ROLES.DELETED_AT.isNull),
             ).execute()
     }
 
     override fun findRoleNamesByMemberId(memberId: Long): List<String> =
+        findActiveRoleAssignmentsByMemberId(memberId).map { it.roleName }
+
+    override fun findActiveRoleAssignmentsByMemberId(memberId: Long): List<MemberRoleAssignment> =
         dsl
-            .select(ROLES.NAME)
+            .select(ROLES.NAME, COHORT_ID_FIELD)
             .from(MEMBER_ROLES)
-            .join(ROLES)
-            .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
-            .where(
-                MEMBER_ROLES.MEMBER_ID
-                    .eq(memberId)
-                    .and(MEMBER_ROLES.DELETED_AT.isNull()),
-            ).fetch(ROLES.NAME)
-            .filterNotNull()
+            .join(ROLES).on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
+            .where(MEMBER_ROLES.MEMBER_ID.eq(memberId).and(MEMBER_ROLES.DELETED_AT.isNull))
+            .fetch()
+            .mapNotNull { record ->
+                val roleName = record.get(ROLES.NAME) ?: return@mapNotNull null
+                val cohortIdValue = record.get(COHORT_ID_FIELD)
+                MemberRoleAssignment(
+                    roleName = roleName,
+                    cohortId = cohortIdValue?.let { CohortId(it) },
+                )
+            }
 
     override fun findRoleNamesByMemberIds(memberIds: List<Long>): Map<Long, List<String>> {
-        if (memberIds.isEmpty()) {
-            return emptyMap()
-        }
-
+        if (memberIds.isEmpty()) return emptyMap()
         return dsl
             .select(MEMBER_ROLES.MEMBER_ID, ROLES.NAME)
             .from(MEMBER_ROLES)
-            .join(ROLES)
-            .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
-            .where(
-                MEMBER_ROLES.MEMBER_ID
-                    .`in`(memberIds)
-                    .and(MEMBER_ROLES.DELETED_AT.isNull()),
-            ).fetch()
+            .join(ROLES).on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
+            .where(MEMBER_ROLES.MEMBER_ID.`in`(memberIds).and(MEMBER_ROLES.DELETED_AT.isNull))
+            .fetch()
             .mapNotNull { record ->
                 val memberId = record[MEMBER_ROLES.MEMBER_ID] ?: return@mapNotNull null
                 val roleName = record[ROLES.NAME] ?: return@mapNotNull null
                 memberId to roleName
-            }.groupBy(
-                keySelector = { (memberId, _) -> memberId },
-                valueTransform = { (_, roleName) -> roleName },
-            )
+            }.groupBy({ it.first }, { it.second })
+    }
+
+    private fun softDeleteDuplicates(roleIds: List<Long>, now: LocalDateTime) {
+        if (roleIds.isEmpty()) return
+        dsl
+            .update(MEMBER_ROLES)
+            .set(MEMBER_ROLES.DELETED_AT, now)
+            .where(MEMBER_ROLES.MEMBER_ROLE_ID.`in`(roleIds).and(MEMBER_ROLES.DELETED_AT.isNull))
+            .execute()
     }
 
     companion object {
         private const val TIME_ZONE = "Asia/Seoul"
+        private val COHORT_ID_FIELD = DSL.field(name("member_roles", "cohort_id"), Long::class.java)
     }
 }
