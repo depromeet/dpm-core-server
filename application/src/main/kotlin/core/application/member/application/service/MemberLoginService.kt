@@ -42,6 +42,7 @@ class MemberLoginService(
                     ?: recoverOrCreateMemberForOrphanedOAuth(authAttributes).also {
                         memberOAuthService.relinkMemberOAuthProvider(it, authAttributes)
                     }
+            memberOAuthService.syncEmail(authAttributes)
             return handleExistingMemberLogin(member, deviceId)
         }
 
