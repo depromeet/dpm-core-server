@@ -51,26 +51,37 @@ data class MemberDetailsResponse(
     )
     val status: String,
     @field:ArraySchema(
-        schema =
-            Schema(
-                description = "로그인 수단 (소셜 제공자 및 이메일/비밀번호)",
-                allowableValues = ["KAKAO", "APPLE", "EMAIL"],
-            ),
         arraySchema =
             Schema(
                 description = "연동된 로그인 수단 목록",
-                example = "[\"KAKAO\", \"EMAIL\"]",
                 requiredMode = Schema.RequiredMode.REQUIRED,
             ),
     )
-    val loginMethods: List<String>,
+    val loginMethods: List<LoginMethod>,
 ) {
+    data class LoginMethod(
+        @field:Schema(
+            description = "로그인 수단 (소셜 제공자 및 이메일/비밀번호)",
+            example = "KAKAO",
+            allowableValues = ["KAKAO", "APPLE", "EMAIL"],
+            requiredMode = Schema.RequiredMode.REQUIRED,
+        )
+        val type: String,
+        @field:Schema(
+            description = "해당 로그인 수단의 이메일. 이메일 저장 이전에 연동되어 아직 재로그인하지 않은 경우 null",
+            example = "depromeetcore@gmail.com",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+            nullable = true,
+        )
+        val email: String?,
+    )
+
     companion object {
         fun of(
             member: Member,
             isAdmin: Boolean,
             teamNumber: TeamNumber,
-            loginMethods: List<String>,
+            loginMethods: List<LoginMethod>,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = member.signupEmail,
