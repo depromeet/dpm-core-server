@@ -24,5 +24,7 @@ interface MemberOAuthPersistencePort {
 
     fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId>
 
+    fun findAllByMemberId(memberId: MemberId): List<MemberOAuth>
+
     fun deleteAllByMemberId(memberId: MemberId)
 }

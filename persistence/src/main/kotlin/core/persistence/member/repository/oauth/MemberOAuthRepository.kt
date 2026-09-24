@@ -24,6 +24,11 @@ class MemberOAuthRepository(
             .findAllByProvider(provider.name)
             .map { MemberId(it.member.id) }
 
+    override fun findAllByMemberId(memberId: MemberId): List<MemberOAuth> =
+        memberOAuthJpaRepository
+            .findAllByMemberId(memberId.value)
+            .map { it.toDomain() }
+
     override fun relinkToMember(
         provider: OAuthProvider,
         externalId: String,
