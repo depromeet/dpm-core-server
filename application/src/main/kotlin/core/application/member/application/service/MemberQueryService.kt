@@ -20,6 +20,7 @@ import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
+import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
 import core.domain.team.vo.TeamId
 import core.domain.team.vo.TeamNumber
 import org.springframework.beans.factory.annotation.Value
@@ -31,6 +32,7 @@ class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberAccessService: MemberAccessService,
     private val memberOAuthService: MemberOAuthService,
+    private val memberCredentialPersistencePort: MemberCredentialPersistencePort,
     private val cohortQueryUseCase: CohortQueryUseCase,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
@@ -49,7 +51,17 @@ class MemberQueryService(
             getMemberById(memberId),
             memberAccessService.isAdmin(memberId),
             getMemberTeamNumber(memberId),
+            getLoginMethods(memberId),
         )
+
+    /**
+     * 멤버가 로그인할 수 있는 수단(소셜 제공자 + 이메일/비밀번호)을 조회함.
+     */
+    private fun getLoginMethods(memberId: MemberId): List<String> {
+        val oAuthProviders = memberOAuthService.findProvidersByMemberId(memberId).map { it.name }
+        val hasCredential = memberCredentialPersistencePort.findByMemberId(memberId) != null
+        return if (hasCredential) oAuthProviders + EMAIL_LOGIN_METHOD else oAuthProviders
+    }
 
     /**
      * 멤버의 식별자를 기반으로 멤버 객체를 조회함.
@@ -177,6 +189,7 @@ class MemberQueryService(
     }
 
     private companion object {
+        private const val EMAIL_LOGIN_METHOD = "EMAIL"
         private val UUID_REGEX =
             Regex(
                 pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
