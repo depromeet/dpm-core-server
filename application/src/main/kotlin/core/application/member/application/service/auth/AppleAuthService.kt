@@ -79,24 +79,29 @@ class AppleAuthService(
                         externalId = externalId,
                         provider = OAuthProvider.APPLE,
                         memberId = targetMember.id!!,
+                        email = email,
                     ),
                     targetMember,
                 )
 
                 targetMember
             } else {
-                memberPersistencePort.findById(memberOAuth.memberId)
-                    ?: recoverOrCreateMemberForOrphanedOAuth(
-                        externalId = externalId,
-                        email = email,
-                        name =
-                            resolveMemberName(
-                                fullName = fullName,
-                                familyName = familyName,
-                                givenName = givenName,
-                                email = email,
-                            ),
-                    )
+                (
+                    memberPersistencePort.findById(memberOAuth.memberId)
+                        ?: recoverOrCreateMemberForOrphanedOAuth(
+                            externalId = externalId,
+                            email = email,
+                            name =
+                                resolveMemberName(
+                                    fullName = fullName,
+                                    familyName = familyName,
+                                    givenName = givenName,
+                                    email = email,
+                                ),
+                        )
+                ).also {
+                    memberOAuthPersistencePort.updateEmail(OAuthProvider.APPLE, externalId, email)
+                }
             }
 
         validateMemberForLogin(member)

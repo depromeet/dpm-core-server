@@ -31,6 +31,8 @@ class MemberOAuthEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = ForeignKey(ConstraintMode.NO_CONSTRAINT))
     val member: MemberEntity,
+    @Column(name = "email")
+    val email: String? = null,
 ) {
     fun toDomain(): MemberOAuth =
         MemberOAuth(
@@ -38,6 +40,7 @@ class MemberOAuthEntity(
             externalId = externalId,
             provider = OAuthProvider.valueOf(provider),
             memberId = MemberId(member.id),
+            email = email,
         )
 
     companion object {
@@ -50,6 +53,7 @@ class MemberOAuthEntity(
                 externalId = memberOAuth.externalId,
                 provider = memberOAuth.provider.name,
                 member = MemberEntity.from(member),
+                email = memberOAuth.email,
             )
     }
 }
