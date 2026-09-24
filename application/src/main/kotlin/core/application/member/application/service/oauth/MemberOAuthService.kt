@@ -20,12 +20,20 @@ class MemberOAuthService(
     fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId> =
         memberOAuthPersistencePort.findMemberIdsByProvider(provider)
 
-    fun findProvidersByMemberId(memberId: MemberId): List<OAuthProvider> =
+    fun findAllByMemberId(memberId: MemberId): List<MemberOAuth> =
         memberOAuthPersistencePort
             .findAllByMemberId(memberId)
-            .map { it.provider }
-            .distinct()
-            .sorted()
+            .sortedBy { it.provider }
+
+    /**
+     * 로그인 시 OAuth 제공자가 내려준 이메일로 연동 정보의 이메일을 최신화함.
+     */
+    fun syncEmail(authAttribute: OAuthAttributes) =
+        memberOAuthPersistencePort.updateEmail(
+            provider = authAttribute.getProvider(),
+            externalId = authAttribute.getExternalId(),
+            email = authAttribute.getEmail(),
+        )
 
     fun relinkMemberOAuthProvider(
         member: Member,
@@ -53,6 +61,7 @@ class MemberOAuthService(
                 authAttribute.getExternalId(),
                 authAttribute.getProvider(),
                 member.id!!,
+                authAttribute.getEmail(),
             ),
             member,
         )
