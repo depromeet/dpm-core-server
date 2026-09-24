@@ -24,6 +24,11 @@ class MemberOAuthRepository(
             .findAllByProvider(provider.name)
             .map { MemberId(it.member.id) }
 
+    override fun findAllByMemberId(memberId: MemberId): List<MemberOAuth> =
+        memberOAuthJpaRepository
+            .findAllByMemberId(memberId.value)
+            .map { it.toDomain() }
+
     override fun relinkToMember(
         provider: OAuthProvider,
         externalId: String,
@@ -39,6 +44,7 @@ class MemberOAuthRepository(
                 externalId = existing.externalId,
                 provider = existing.provider,
                 member = core.entity.member.MemberEntity.from(member),
+                email = existing.email,
             ),
         )
     }
@@ -48,6 +54,15 @@ class MemberOAuthRepository(
         externalId: String,
     ): MemberOAuth? {
         return memberOAuthJpaRepository.findByProviderAndExternalId(provider.name, externalId)?.toDomain()
+    }
+
+    override fun updateEmail(
+        provider: OAuthProvider,
+        externalId: String,
+        email: String,
+    ) {
+        if (email.isBlank()) return
+        memberOAuthJpaRepository.updateEmail(provider.name, externalId, email)
     }
 
     override fun deleteAllByMemberId(memberId: MemberId) {

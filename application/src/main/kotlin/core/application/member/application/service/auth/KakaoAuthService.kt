@@ -63,14 +63,23 @@ class KakaoAuthService(
                         externalId = attributes.getExternalId(),
                         provider = attributes.getProvider(),
                         memberId = targetMember.id!!,
+                        email = attributes.getEmail(),
                     ),
                     targetMember,
                 )
 
                 targetMember
             } else {
-                memberPersistencePort.findById(memberOAuth.memberId)
-                    ?: recoverOrCreateMemberForOrphanedOAuth(attributes)
+                (
+                    memberPersistencePort.findById(memberOAuth.memberId)
+                        ?: recoverOrCreateMemberForOrphanedOAuth(attributes)
+                ).also {
+                    memberOAuthPersistencePort.updateEmail(
+                        provider = attributes.getProvider(),
+                        externalId = attributes.getExternalId(),
+                        email = attributes.getEmail(),
+                    )
+                }
             }
 
         validateMemberForLogin(member)
