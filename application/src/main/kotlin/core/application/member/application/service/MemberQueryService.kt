@@ -55,12 +55,19 @@ class MemberQueryService(
         )
 
     /**
-     * 멤버가 로그인할 수 있는 수단(소셜 제공자 + 이메일/비밀번호)을 조회함.
+     * 멤버가 로그인할 수 있는 수단(소셜 제공자 + 이메일/비밀번호)과 수단별 이메일을 조회함.
      */
-    private fun getLoginMethods(memberId: MemberId): List<String> {
-        val oAuthProviders = memberOAuthService.findProvidersByMemberId(memberId).map { it.name }
-        val hasCredential = memberCredentialPersistencePort.findByMemberId(memberId) != null
-        return if (hasCredential) oAuthProviders + EMAIL_LOGIN_METHOD else oAuthProviders
+    private fun getLoginMethods(memberId: MemberId): List<MemberDetailsResponse.LoginMethod> {
+        val oAuthMethods =
+            memberOAuthService
+                .findAllByMemberId(memberId)
+                .map { MemberDetailsResponse.LoginMethod(type = it.provider.name, email = it.email) }
+                .distinct()
+        val credentialMethod =
+            memberCredentialPersistencePort
+                .findByMemberId(memberId)
+                ?.let { MemberDetailsResponse.LoginMethod(type = EMAIL_LOGIN_METHOD, email = it.email) }
+        return oAuthMethods + listOfNotNull(credentialMethod)
     }
 
     /**
