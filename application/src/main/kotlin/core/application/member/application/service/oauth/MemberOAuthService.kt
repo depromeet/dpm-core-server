@@ -20,6 +20,13 @@ class MemberOAuthService(
     fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId> =
         memberOAuthPersistencePort.findMemberIdsByProvider(provider)
 
+    fun findProvidersByMemberId(memberId: MemberId): List<OAuthProvider> =
+        memberOAuthPersistencePort
+            .findAllByMemberId(memberId)
+            .map { it.provider }
+            .distinct()
+            .sorted()
+
     fun relinkMemberOAuthProvider(
         member: Member,
         authAttribute: OAuthAttributes,
