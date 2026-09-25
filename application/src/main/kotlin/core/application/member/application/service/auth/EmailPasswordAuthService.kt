@@ -10,6 +10,7 @@ import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.membercredential.aggregate.MemberCredential
@@ -113,9 +114,10 @@ class EmailPasswordAuthService(
             jwtTokenProvider.generateAccessTokenWithPermissions(
                 member.id!!.toString(),
                 authorities,
+                LoginMethod.EMAIL,
             )
 
-        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, LoginMethod.EMAIL)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
@@ -166,9 +168,10 @@ class EmailPasswordAuthService(
             jwtTokenProvider.generateAccessTokenWithPermissions(
                 newMember.id!!.toString(),
                 authorities,
+                LoginMethod.EMAIL,
             )
 
-        val issued = refreshTokenIssueService.issueForLogin(newMember.id!!, deviceId)
+        val issued = refreshTokenIssueService.issueForLogin(newMember.id!!, deviceId, LoginMethod.EMAIL)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }

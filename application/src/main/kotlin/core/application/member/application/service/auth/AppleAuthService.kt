@@ -9,6 +9,7 @@ import core.application.security.oauth.redirect.OAuthRedirectUriValidator
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberOAuth
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -109,8 +110,8 @@ class AppleAuthService(
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
         // 4. Issue App Tokens
-        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())
-        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
+        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), LoginMethod.APPLE)
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, LoginMethod.APPLE)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
