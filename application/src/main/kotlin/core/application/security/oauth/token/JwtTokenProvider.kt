@@ -2,6 +2,7 @@ package core.application.security.oauth.token
 
 import core.application.security.properties.TokenProperties
 import core.domain.authorization.port.inbound.RoleQueryUseCase
+import core.domain.member.enums.LoginMethod
 import core.domain.member.vo.MemberId
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
@@ -21,12 +22,15 @@ class JwtTokenProvider(
     private val tokenProperties: TokenProperties,
     private val roleQueryUseCase: RoleQueryUseCase,
 ) {
-    fun generateAccessToken(memberId: String): String =
-        generateToken(memberId, tokenProperties.expirationTime.accessToken)
+    fun generateAccessToken(
+        memberId: String,
+        loginMethod: LoginMethod?,
+    ): String = generateToken(memberId, tokenProperties.expirationTime.accessToken, loginMethod)
 
     fun generateAccessTokenWithPermissions(
         memberId: String,
         permissions: List<SimpleGrantedAuthority>,
+        loginMethod: LoginMethod?,
     ): String {
         val currentTimeMillis = System.currentTimeMillis()
         val now = Date(currentTimeMillis)
@@ -37,6 +41,7 @@ class JwtTokenProvider(
             .builder()
             .subject(memberId)
             .claim("permissions", permissions.map { it.authority }) // Store permissions in token
+            .apply { loginMethod?.let { claim(LOGIN_METHOD_CLAIM, it.name) } }
             .issuedAt(now)
             .expiration(expiration)
             .signWith(secretKey)
@@ -50,8 +55,14 @@ class JwtTokenProvider(
      * 바이트 단위로 동일해진다. 그러면 회전이 이전 토큰과 같은 token_hash 를 만들어
      * uk_rt_token_hash 유니크 제약을 위반하고, 재사용 탐지도 새 토큰을 회전된 토큰으로 오인한다.
      * jti 로 발급 건마다 고유성을 준다.
+     *
+     * 웹 OAuth 로그인은 리프레시 토큰만 내려주고 액세스 토큰은 재발급으로 받는다.
+     * 그래서 로그인 수단을 리프레시 토큰에도 담아 두어야 재발급 이후까지 이어진다.
      */
-    fun generateRefreshToken(memberId: String): String {
+    fun generateRefreshToken(
+        memberId: String,
+        loginMethod: LoginMethod?,
+    ): String {
         val currentTimeMillis = System.currentTimeMillis()
         val now = Date(currentTimeMillis)
         val expiration = Date(currentTimeMillis + tokenProperties.expirationTime.refreshToken * 1000)
@@ -60,6 +71,7 @@ class JwtTokenProvider(
             .builder()
             .id(UUID.randomUUID().toString())
             .subject(memberId)
+            .apply { loginMethod?.let { claim(LOGIN_METHOD_CLAIM, it.name) } }
             .issuedAt(now)
             .expiration(expiration)
             .signWith(getSigningKey())
@@ -69,6 +81,7 @@ class JwtTokenProvider(
     fun generateToken(
         memberId: String,
         expirationTime: Long,
+        loginMethod: LoginMethod?,
     ): String {
         val currentTimeMillis = System.currentTimeMillis()
         val now = Date(currentTimeMillis)
@@ -78,6 +91,7 @@ class JwtTokenProvider(
         return Jwts
             .builder()
             .subject(memberId)
+            .apply { loginMethod?.let { claim(LOGIN_METHOD_CLAIM, it.name) } }
             .issuedAt(now)
             .expiration(expiration)
             .signWith(secretKey)
@@ -115,6 +129,10 @@ class JwtTokenProvider(
         return claims.subject.toLong()
     }
 
+    /** 로그인 수단 클레임이 없는 토큰(배포 전 발급분)이면 null 을 반환한다. */
+    fun getLoginMethod(token: String?): LoginMethod? =
+        LoginMethod.fromOrNull(getClaims(token).get(LOGIN_METHOD_CLAIM, String::class.java))
+
     private fun getClaims(token: String?): Claims =
         Jwts
             .parser()
@@ -126,5 +144,9 @@ class JwtTokenProvider(
     private fun getSigningKey(): SecretKey {
         val keyBytes = Decoders.BASE64.decode(tokenProperties.secretKey)
         return Keys.hmacShaKeyFor(keyBytes)
+    }
+
+    companion object {
+        private const val LOGIN_METHOD_CLAIM = "loginMethod"
     }
 }
