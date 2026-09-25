@@ -40,11 +40,11 @@ class KakaoLoginTokenSaveService(
         }
 
         val memberId = MemberId(jwtTokenProvider.getMemberId(refreshToken))
-        val loginMethod = jwtTokenProvider.getLoginMethod(refreshToken)
+        val loginIdentity = jwtTokenProvider.getLoginIdentity(refreshToken)
         val deviceId = deviceIdResolver.resolve(request, response)
-        val issued = refreshTokenIssueService.issueForLogin(memberId, deviceId, loginMethod)
+        val issued = refreshTokenIssueService.issueForLogin(memberId, deviceId, loginIdentity)
 
-        val accessToken = jwtTokenProvider.generateAccessToken(memberId.toString(), loginMethod)
+        val accessToken = jwtTokenProvider.generateAccessToken(memberId.toString(), loginIdentity)
         jwtTokenInjector.injectAccessToken(accessToken, response)
         jwtTokenInjector.injectRefreshToken(issued, response)
     }
