@@ -15,6 +15,11 @@ interface MemberOAuthJpaRepository : JpaRepository<MemberOAuthEntity, Long> {
         externalId: String,
     ): MemberOAuthEntity?
 
+    fun findFirstByMemberIdAndProviderOrderByIdDesc(
+        memberId: Long,
+        provider: String,
+    ): MemberOAuthEntity?
+
     fun deleteAllByMemberId(memberId: Long)
 
     @Transactional
