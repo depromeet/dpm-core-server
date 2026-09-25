@@ -2,18 +2,21 @@ package core.application.member.application.service
 
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.LoginMethod
-import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
+import core.domain.member.vo.MemberOAuthId
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
 import org.springframework.stereotype.Component
 
 /**
- * 현재 세션의 로그인 수단에 해당하는 이메일을 고른다.
+ * 현재 세션에 로그인한 계정의 이메일을 고른다.
  *
- * - KAKAO / APPLE: 해당 제공자 연동 정보(member_oauth)의 이메일. 같은 제공자 연동이 여럿이면 가장 최근 것.
- * - EMAIL: 이메일/비밀번호 자격 증명의 이메일.
- * 로그인 수단이 없는 토큰(배포 전 발급분)이거나 이메일이 저장되어 있지 않으면 가입 이메일로 대신한다.
+ * - KAKAO / APPLE: 토큰에 담긴 member_oauth_id 의 연동 정보 이메일
+ * - EMAIL: 토큰에 담긴 member_credential_id 의 자격 증명 이메일
+ *
+ * 로그인 계정이 없는 토큰(배포 전 발급분)이거나, 그 계정이 더 이상 이 회원의 것이 아니거나,
+ * 이메일이 저장되어 있지 않으면 추측하지 않고 가입 이메일로 대신한다.
  */
 @Component
 class MemberLoginEmailResolver(
@@ -22,14 +25,13 @@ class MemberLoginEmailResolver(
 ) {
     fun resolve(
         member: Member,
-        loginMethod: LoginMethod?,
+        loginIdentity: LoginIdentity?,
     ): String {
         val memberId = requireNotNull(member.id) { "Member must have id" }
         val loginEmail =
-            when (loginMethod) {
-                LoginMethod.KAKAO -> findOAuthEmail(memberId, OAuthProvider.KAKAO)
-                LoginMethod.APPLE -> findOAuthEmail(memberId, OAuthProvider.APPLE)
-                LoginMethod.EMAIL -> memberCredentialPersistencePort.findByMemberId(memberId)?.email
+            when (loginIdentity?.method) {
+                LoginMethod.KAKAO, LoginMethod.APPLE -> findOAuthEmail(memberId, loginIdentity)
+                LoginMethod.EMAIL -> findCredentialEmail(memberId, loginIdentity)
                 null -> null
             }
         return loginEmail ?: member.signupEmail
@@ -37,6 +39,19 @@ class MemberLoginEmailResolver(
 
     private fun findOAuthEmail(
         memberId: MemberId,
-        provider: OAuthProvider,
-    ): String? = memberOAuthPersistencePort.findLatestByMemberIdAndProvider(memberId, provider)?.email
+        loginIdentity: LoginIdentity,
+    ): String? =
+        memberOAuthPersistencePort
+            .findById(MemberOAuthId(loginIdentity.accountId))
+            ?.takeIf { it.memberId == memberId && LoginMethod.from(it.provider) == loginIdentity.method }
+            ?.email
+
+    private fun findCredentialEmail(
+        memberId: MemberId,
+        loginIdentity: LoginIdentity,
+    ): String? =
+        memberCredentialPersistencePort
+            .findByMemberId(memberId)
+            ?.takeIf { it.id?.value == loginIdentity.accountId }
+            ?.email
 }
