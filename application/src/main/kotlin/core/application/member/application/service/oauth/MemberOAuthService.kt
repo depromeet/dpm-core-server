@@ -20,11 +20,6 @@ class MemberOAuthService(
     fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId> =
         memberOAuthPersistencePort.findMemberIdsByProvider(provider)
 
-    fun findAllByMemberId(memberId: MemberId): List<MemberOAuth> =
-        memberOAuthPersistencePort
-            .findAllByMemberId(memberId)
-            .sortedBy { it.provider }
-
     /**
      * 로그인 시 OAuth 제공자가 내려준 이메일로 연동 정보의 이메일을 최신화함.
      */

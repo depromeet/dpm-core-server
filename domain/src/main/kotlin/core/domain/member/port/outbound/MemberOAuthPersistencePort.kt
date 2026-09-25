@@ -24,8 +24,6 @@ interface MemberOAuthPersistencePort {
 
     fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId>
 
-    fun findAllByMemberId(memberId: MemberId): List<MemberOAuth>
-
     fun updateEmail(
         provider: OAuthProvider,
         externalId: String,

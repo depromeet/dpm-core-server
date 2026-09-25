@@ -15,8 +15,6 @@ interface MemberOAuthJpaRepository : JpaRepository<MemberOAuthEntity, Long> {
         externalId: String,
     ): MemberOAuthEntity?
 
-    fun findAllByMemberId(memberId: Long): List<MemberOAuthEntity>
-
     fun deleteAllByMemberId(memberId: Long)
 
     @Transactional
