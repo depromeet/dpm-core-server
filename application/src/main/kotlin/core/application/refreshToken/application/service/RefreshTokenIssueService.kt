@@ -3,7 +3,7 @@ package core.application.refreshToken.application.service
 import core.application.refreshToken.application.support.TokenHasher
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.properties.TokenProperties
-import core.domain.member.enums.LoginMethod
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
@@ -34,10 +34,10 @@ class RefreshTokenIssueService(
     fun issueForLogin(
         memberId: MemberId,
         deviceId: String?,
-        loginMethod: LoginMethod?,
+        loginIdentity: LoginIdentity?,
     ): RefreshToken {
         deviceId?.let { refreshTokenPersistencePort.deleteByMemberIdAndDeviceId(memberId.value, it) }
-        return issue(memberId, deviceId, loginMethod)
+        return issue(memberId, deviceId, loginIdentity)
     }
 
     /**
@@ -50,15 +50,15 @@ class RefreshTokenIssueService(
     fun issueForRotation(
         memberId: MemberId,
         deviceId: String?,
-        loginMethod: LoginMethod?,
-    ): RefreshToken = issue(memberId, deviceId, loginMethod)
+        loginIdentity: LoginIdentity?,
+    ): RefreshToken = issue(memberId, deviceId, loginIdentity)
 
     private fun issue(
         memberId: MemberId,
         deviceId: String?,
-        loginMethod: LoginMethod?,
+        loginIdentity: LoginIdentity?,
     ): RefreshToken {
-        val plainToken = tokenProvider.generateRefreshToken(memberId.toString(), loginMethod)
+        val plainToken = tokenProvider.generateRefreshToken(memberId.toString(), loginIdentity)
         val now = Instant.now()
 
         val saved =
