@@ -12,8 +12,10 @@ import core.application.member.presentation.response.AppleMemberProfileUpdateRes
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.member.presentation.response.MemberNameHashValidationResponse
 import core.application.member.presentation.response.MemberOverviewResponse
+import core.application.security.annotation.CurrentLoginMethod
 import core.application.security.annotation.CurrentMemberId
 import core.domain.cohort.vo.CohortId
+import core.domain.member.enums.LoginMethod
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -208,6 +210,7 @@ interface MemberApi {
     @Operation(summary = "로그인 한 멤버 조회 API", description = "현재 로그인한 멤버의 기본 정보를 조회 합니다.")
     fun me(
         @CurrentMemberId memberId: MemberId,
+        @CurrentLoginMethod loginMethod: LoginMethod?,
     ): CustomResponse<MemberDetailsResponse>
 
     @ApiResponse(

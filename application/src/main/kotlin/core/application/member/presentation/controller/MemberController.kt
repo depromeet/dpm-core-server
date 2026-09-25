@@ -25,6 +25,7 @@ import core.application.security.annotation.CurrentMemberId
 import core.application.security.oauth.token.DeviceIdResolver
 import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.cohort.vo.CohortId
+import core.domain.member.enums.LoginMethod
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -88,8 +89,11 @@ class MemberController(
     //    @PreAuthorize("hasAuthority('read:member')")
     @PreAuthorize("permitAll()")
     @GetMapping("/me")
-    override fun me(memberId: MemberId): CustomResponse<MemberDetailsResponse> {
-        val response: MemberDetailsResponse = memberQueryService.memberMe(memberId)
+    override fun me(
+        memberId: MemberId,
+        loginMethod: LoginMethod?,
+    ): CustomResponse<MemberDetailsResponse> {
+        val response: MemberDetailsResponse = memberQueryService.memberMe(memberId, loginMethod)
         return CustomResponse.ok(response)
     }
 
