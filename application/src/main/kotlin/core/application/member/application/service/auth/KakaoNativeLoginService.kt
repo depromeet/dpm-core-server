@@ -8,6 +8,7 @@ import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.token.DeviceIdResolver
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
+import core.domain.member.enums.LoginMethod
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.security.oauth.dto.OAuthAttributes
@@ -47,7 +48,8 @@ class KakaoNativeLoginService(
         val refreshToken = loginResult.refreshToken ?: throw MemberDeletedException()
 
         val memberId = refreshToken.memberId.value
-        val accessToken = jwtTokenProvider.generateAccessToken(memberId.toString())
+        val accessToken =
+            jwtTokenProvider.generateAccessToken(memberId.toString(), LoginMethod.from(loginAttributes.getProvider()))
         val memberStatus = memberPersistencePort.findById(refreshToken.memberId)?.status
 
         jwtTokenInjector.injectAccessToken(accessToken, response)

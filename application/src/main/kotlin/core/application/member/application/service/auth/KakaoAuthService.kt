@@ -8,6 +8,7 @@ import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.redirect.OAuthRedirectUriValidator
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.security.oauth.dto.OAuthAttributes
@@ -86,8 +87,9 @@ class KakaoAuthService(
         memberRoleService.ensureGuestRoleAssigned(member.id!!)
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
-        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())
-        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
+        val loginMethod = LoginMethod.from(attributes.getProvider())
+        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), loginMethod)
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, loginMethod)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
