@@ -6,6 +6,7 @@ import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberStatus
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
 import core.domain.membercredential.aggregate.MemberCredential
@@ -26,14 +27,14 @@ class MemberLoginEmailResolverTest {
         )
 
     @Test
-    fun `카카오로 로그인하면 카카오 연동 정보의 이메일을 반환한다`() {
+    fun `카카오로 로그인하면 로그인한 카카오 연동 정보의 이메일을 반환한다`() {
         val resolver = resolver(oAuths = listOf(oAuth(1L, OAuthProvider.KAKAO, "kakao@kakao.com")))
 
-        assertThat(resolver.resolve(member, LoginMethod.KAKAO)).isEqualTo("kakao@kakao.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.KAKAO, 1L))).isEqualTo("kakao@kakao.com")
     }
 
     @Test
-    fun `여러 소셜이 연동되어 있으면 현재 로그인한 제공자의 이메일을 반환한다`() {
+    fun `여러 소셜이 연동되어 있으면 로그인한 연동 정보의 이메일을 반환한다`() {
         val resolver =
             resolver(
                 oAuths =
@@ -43,81 +44,106 @@ class MemberLoginEmailResolverTest {
                     ),
             )
 
-        assertThat(resolver.resolve(member, LoginMethod.APPLE)).isEqualTo("abc@privaterelay.appleid.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.APPLE, 2L)))
+            .isEqualTo("abc@privaterelay.appleid.com")
+    }
+
+    @Test
+    fun `같은 제공자 연동이 여러 개여도 로그인한 계정의 이메일을 반환한다`() {
+        val resolver =
+            resolver(
+                oAuths =
+                    listOf(
+                        oAuth(1L, OAuthProvider.KAKAO, "first@kakao.com"),
+                        oAuth(5L, OAuthProvider.KAKAO, "second@kakao.com"),
+                    ),
+            )
+
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.KAKAO, 1L))).isEqualTo("first@kakao.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.KAKAO, 5L))).isEqualTo("second@kakao.com")
     }
 
     @Test
     fun `이메일로 로그인하면 자격 증명의 이메일을 반환한다`() {
-        val resolver = resolver(credentialEmail = "login@naver.com")
+        val resolver = resolver(credential = credential(3L, "login@naver.com"))
 
-        assertThat(resolver.resolve(member, LoginMethod.EMAIL)).isEqualTo("login@naver.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.EMAIL, 3L))).isEqualTo("login@naver.com")
     }
 
     @Test
-    fun `로그인 수단이 없는 토큰이면 가입 이메일을 반환한다`() {
+    fun `로그인 계정 정보가 없는 토큰이면 가입 이메일을 반환한다`() {
         val resolver = resolver(oAuths = listOf(oAuth(1L, OAuthProvider.KAKAO, "kakao@kakao.com")))
 
         assertThat(resolver.resolve(member, null)).isEqualTo("signup@gmail.com")
     }
 
     @Test
-    fun `로그인 수단의 이메일이 저장되어 있지 않으면 가입 이메일을 반환한다`() {
+    fun `로그인한 계정의 이메일이 저장되어 있지 않으면 가입 이메일을 반환한다`() {
         val resolver = resolver(oAuths = listOf(oAuth(1L, OAuthProvider.KAKAO, null)))
 
-        assertThat(resolver.resolve(member, LoginMethod.KAKAO)).isEqualTo("signup@gmail.com")
-        assertThat(resolver.resolve(member, LoginMethod.EMAIL)).isEqualTo("signup@gmail.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.KAKAO, 1L))).isEqualTo("signup@gmail.com")
     }
 
+    /** 연동 해제·재연결 등으로 토큰의 계정이 더 이상 이 회원의 것이 아니면 추측하지 않는다. */
     @Test
-    fun `같은 제공자 연동이 여러 개면 가장 최근에 연동된 이메일을 반환한다`() {
+    fun `토큰의 계정이 이 회원의 것이 아니거나 없으면 가입 이메일을 반환한다`() {
         val resolver =
             resolver(
                 oAuths =
                     listOf(
-                        oAuth(1L, OAuthProvider.KAKAO, "old@kakao.com"),
-                        oAuth(5L, OAuthProvider.KAKAO, "new@kakao.com"),
+                        oAuth(1L, OAuthProvider.KAKAO, "kakao@kakao.com"),
+                        oAuth(9L, OAuthProvider.KAKAO, "other@kakao.com", MemberId(99L)),
                     ),
+                credential = credential(3L, "login@naver.com"),
             )
 
-        assertThat(resolver.resolve(member, LoginMethod.KAKAO)).isEqualTo("new@kakao.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.KAKAO, 9L))).isEqualTo("signup@gmail.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.APPLE, 1L))).isEqualTo("signup@gmail.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.KAKAO, 404L))).isEqualTo("signup@gmail.com")
+        assertThat(resolver.resolve(member, LoginIdentity(LoginMethod.EMAIL, 4L))).isEqualTo("signup@gmail.com")
     }
 
     private fun oAuth(
         id: Long,
         provider: OAuthProvider,
         email: String?,
+        owner: MemberId = memberId,
     ) = MemberOAuth(
         id = MemberOAuthId(id),
         externalId = "$provider-$id",
         provider = provider,
+        memberId = owner,
+        email = email,
+    )
+
+    private fun credential(
+        id: Long,
+        email: String,
+    ) = MemberCredential(
+        id = MemberCredentialId(id),
         memberId = memberId,
         email = email,
+        password = "encoded",
     )
 
     private fun resolver(
         oAuths: List<MemberOAuth> = emptyList(),
-        credentialEmail: String? = null,
+        credential: MemberCredential? = null,
     ) = MemberLoginEmailResolver(
         memberOAuthPersistencePort = FakeMemberOAuthPersistencePort(oAuths),
-        memberCredentialPersistencePort = FakeMemberCredentialPersistencePort(memberId, credentialEmail),
+        memberCredentialPersistencePort = FakeMemberCredentialPersistencePort(credential),
     )
 }
 
 private class FakeMemberOAuthPersistencePort(
     private val oAuths: List<MemberOAuth>,
 ) : MemberOAuthPersistencePort {
-    override fun findLatestByMemberIdAndProvider(
-        memberId: MemberId,
-        provider: OAuthProvider,
-    ): MemberOAuth? =
-        oAuths
-            .filter { it.memberId == memberId && it.provider == provider }
-            .maxByOrNull { it.id!!.value }
+    override fun findById(id: MemberOAuthId): MemberOAuth? = oAuths.firstOrNull { it.id == id }
 
     override fun save(
         memberOAuth: MemberOAuth,
         member: Member,
-    ) = throw UnsupportedOperationException()
+    ): MemberOAuth = throw UnsupportedOperationException()
 
     override fun relinkToMember(
         provider: OAuthProvider,
@@ -142,18 +168,9 @@ private class FakeMemberOAuthPersistencePort(
 }
 
 private class FakeMemberCredentialPersistencePort(
-    private val memberId: MemberId,
-    private val email: String?,
+    private val credential: MemberCredential?,
 ) : MemberCredentialPersistencePort {
-    override fun findByMemberId(memberId: MemberId): MemberCredential? =
-        email?.takeIf { memberId == this.memberId }?.let {
-            MemberCredential(
-                id = MemberCredentialId(1L),
-                memberId = memberId,
-                email = it,
-                password = "encoded",
-            )
-        }
+    override fun findByMemberId(memberId: MemberId): MemberCredential? = credential?.takeIf { it.memberId == memberId }
 
     override fun save(credential: MemberCredential): MemberCredential = throw UnsupportedOperationException()
 
