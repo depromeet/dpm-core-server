@@ -32,6 +32,7 @@ class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberAccessService: MemberAccessService,
     private val memberOAuthService: MemberOAuthService,
+    private val memberLoginEmailResolver: MemberLoginEmailResolver,
     private val cohortQueryUseCase: CohortQueryUseCase,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
@@ -39,6 +40,7 @@ class MemberQueryService(
     MemberQueryUseCase {
     /**
      * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
+     * 이메일은 현재 세션의 로그인 수단에 해당하는 이메일을 내려줌.
      *
      * @throws MemberNotFoundException
      *
@@ -48,13 +50,16 @@ class MemberQueryService(
     fun memberMe(
         memberId: MemberId,
         loginMethod: LoginMethod?,
-    ): MemberDetailsResponse =
-        MemberDetailsResponse.of(
-            getMemberById(memberId),
+    ): MemberDetailsResponse {
+        val member = getMemberById(memberId)
+        return MemberDetailsResponse.of(
+            member,
+            memberLoginEmailResolver.resolve(member, loginMethod),
             memberAccessService.isAdmin(memberId),
             getMemberTeamNumber(memberId),
             loginMethod,
         )
+    }
 
     /**
      * 멤버의 식별자를 기반으로 멤버 객체를 조회함.

@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 data class MemberDetailsResponse(
     @field:Schema(
-        description = "이메일",
+        description = "현재 세션의 로그인 수단에 해당하는 이메일. 로그인 수단을 알 수 없거나 저장된 이메일이 없으면 가입 이메일",
         example = "depromeetcore@gmail.com",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
@@ -62,12 +62,13 @@ data class MemberDetailsResponse(
     companion object {
         fun of(
             member: Member,
+            email: String,
             isAdmin: Boolean,
             teamNumber: TeamNumber,
             loginMethod: LoginMethod?,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
-                email = member.signupEmail,
+                email = email,
                 name = member.name,
                 part = member.part?.name,
                 cohort = member.latestCohortValue(),
