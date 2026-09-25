@@ -13,6 +13,7 @@ import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.vo.LoginIdentity
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -53,7 +54,7 @@ class AppleAuthService(
         val memberOAuth =
             memberOAuthPersistencePort.findByProviderAndExternalId(OAuthProvider.APPLE, externalId)
 
-        val member =
+        val (member, linkedOAuth) =
             if (memberOAuth == null) {
                 val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
                 val existingMember = selectLoginCandidate(existingMembers)
@@ -75,19 +76,20 @@ class AppleAuthService(
                             name = memberName,
                         )
 
-                memberOAuthPersistencePort.save(
-                    MemberOAuth.of(
-                        externalId = externalId,
-                        provider = OAuthProvider.APPLE,
-                        memberId = targetMember.id!!,
-                        email = email,
-                    ),
-                    targetMember,
-                )
+                val savedOAuth =
+                    memberOAuthPersistencePort.save(
+                        MemberOAuth.of(
+                            externalId = externalId,
+                            provider = OAuthProvider.APPLE,
+                            memberId = targetMember.id!!,
+                            email = email,
+                        ),
+                        targetMember,
+                    )
 
-                targetMember
+                targetMember to savedOAuth
             } else {
-                (
+                val targetMember =
                     memberPersistencePort.findById(memberOAuth.memberId)
                         ?: recoverOrCreateMemberForOrphanedOAuth(
                             externalId = externalId,
@@ -100,9 +102,9 @@ class AppleAuthService(
                                     email = email,
                                 ),
                         )
-                ).also {
-                    memberOAuthPersistencePort.updateEmail(OAuthProvider.APPLE, externalId, email)
-                }
+                memberOAuthPersistencePort.updateEmail(OAuthProvider.APPLE, externalId, email)
+
+                targetMember to memberOAuth
             }
 
         validateMemberForLogin(member)
@@ -110,8 +112,9 @@ class AppleAuthService(
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
         // 4. Issue App Tokens
-        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), LoginMethod.APPLE)
-        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, LoginMethod.APPLE)
+        val loginIdentity = LoginIdentity(LoginMethod.APPLE, linkedOAuth.id!!.value)
+        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), loginIdentity)
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, loginIdentity)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }

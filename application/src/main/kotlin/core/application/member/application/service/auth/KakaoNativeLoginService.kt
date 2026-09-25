@@ -8,7 +8,6 @@ import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.token.DeviceIdResolver
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
-import core.domain.member.enums.LoginMethod
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.security.oauth.dto.OAuthAttributes
@@ -48,8 +47,9 @@ class KakaoNativeLoginService(
         val refreshToken = loginResult.refreshToken ?: throw MemberDeletedException()
 
         val memberId = refreshToken.memberId.value
-        val accessToken =
-            jwtTokenProvider.generateAccessToken(memberId.toString(), LoginMethod.from(loginAttributes.getProvider()))
+        // 로그인 계정은 방금 발급된 리프레시 토큰에 담겨 있으므로 액세스 토큰에도 그대로 싣는다.
+        val loginIdentity = jwtTokenProvider.getLoginIdentity(refreshToken.requirePlainToken())
+        val accessToken = jwtTokenProvider.generateAccessToken(memberId.toString(), loginIdentity)
         val memberStatus = memberPersistencePort.findById(refreshToken.memberId)?.status
 
         jwtTokenInjector.injectAccessToken(accessToken, response)
