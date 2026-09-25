@@ -50,7 +50,7 @@ class MemberOAuthService(
     fun addMemberOAuthProvider(
         member: Member,
         authAttribute: OAuthAttributes,
-    ) {
+    ): MemberOAuth =
         memberOAuthPersistencePort.save(
             MemberOAuth.of(
                 authAttribute.getExternalId(),
@@ -60,7 +60,6 @@ class MemberOAuthService(
             ),
             member,
         )
-    }
 
     fun deleteAllByMemberId(memberId: MemberId) = memberOAuthPersistencePort.deleteAllByMemberId(memberId)
 }
