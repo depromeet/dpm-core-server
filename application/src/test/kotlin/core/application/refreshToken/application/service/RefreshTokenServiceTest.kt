@@ -11,6 +11,7 @@ import core.application.security.properties.SecurityProperties
 import core.application.security.properties.TokenProperties
 import core.domain.authorization.aggregate.Role
 import core.domain.authorization.port.inbound.RoleQueryUseCase
+import core.domain.member.enums.LoginMethod
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
@@ -34,13 +35,13 @@ class RefreshTokenServiceTest {
     @Test
     fun `Authorization 에 액세스 토큰이 실려 있어도 쿠키의 리프레시 토큰으로 재발급된다`() {
         val provider = createProvider()
-        val storedToken = provider.generateRefreshToken(memberId.toString())
+        val storedToken = provider.generateRefreshToken(memberId.toString(), LoginMethod.KAKAO)
         val port = FakeRefreshTokenPersistencePort(stored(storedToken))
         val service = createService(provider, port)
 
         val request =
             MockHttpServletRequest().apply {
-                addHeader("Authorization", "Bearer ${provider.generateAccessToken(memberId.toString())}")
+                addHeader("Authorization", "Bearer ${provider.generateAccessToken(memberId.toString(), LoginMethod.KAKAO)}")
                 setCookies(Cookie("refreshToken", storedToken))
             }
 
@@ -53,8 +54,8 @@ class RefreshTokenServiceTest {
     @Test
     fun `쿠키가 폐기된 값이어도 헤더의 유효한 리프레시 토큰으로 재발급된다`() {
         val provider = createProvider()
-        val liveToken = provider.generateRefreshToken(memberId.toString())
-        val staleToken = provider.generateRefreshToken("999")
+        val liveToken = provider.generateRefreshToken(memberId.toString(), LoginMethod.KAKAO)
+        val staleToken = provider.generateRefreshToken("999", LoginMethod.KAKAO)
         val port = FakeRefreshTokenPersistencePort(stored(liveToken))
         val service = createService(provider, port)
 
@@ -72,7 +73,7 @@ class RefreshTokenServiceTest {
     @Test
     fun `재발급에 성공하면 이전 토큰이 회전 표시되고 새 토큰이 쿠키로 내려간다`() {
         val provider = createProvider()
-        val storedToken = provider.generateRefreshToken(memberId.toString())
+        val storedToken = provider.generateRefreshToken(memberId.toString(), LoginMethod.KAKAO)
         val port = FakeRefreshTokenPersistencePort(stored(storedToken))
         val service = createService(provider, port)
 
@@ -88,13 +89,44 @@ class RefreshTokenServiceTest {
     }
 
     @Test
+    fun `재발급된 토큰은 이전 리프레시 토큰의 로그인 수단을 이어받는다`() {
+        val provider = createProvider()
+        val storedToken = provider.generateRefreshToken(memberId.toString(), LoginMethod.APPLE)
+        val port = FakeRefreshTokenPersistencePort(stored(storedToken))
+        val service = createService(provider, port)
+
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", storedToken)) }
+
+        val result = service.reissue(request, MockHttpServletResponse())
+
+        assertThat(provider.getLoginMethod(result.accessToken)).isEqualTo(LoginMethod.APPLE)
+        assertThat(provider.getLoginMethod(result.refreshToken)).isEqualTo(LoginMethod.APPLE)
+    }
+
+    /** 배포 전에 발급된 토큰에는 클레임이 없다. 추측하지 않고 null 로 이어간다. */
+    @Test
+    fun `로그인 수단이 없는 이전 토큰으로 재발급하면 로그인 수단은 null 이다`() {
+        val provider = createProvider()
+        val storedToken = provider.generateRefreshToken(memberId.toString(), null)
+        val port = FakeRefreshTokenPersistencePort(stored(storedToken))
+        val service = createService(provider, port)
+
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", storedToken)) }
+
+        val result = service.reissue(request, MockHttpServletResponse())
+
+        assertThat(provider.getLoginMethod(result.accessToken)).isNull()
+        assertThat(provider.getLoginMethod(result.refreshToken)).isNull()
+    }
+
+    @Test
     fun `후보가 모두 저장소에 없으면 TOKEN_NOT_FOUND 를 던진다`() {
         val provider = createProvider()
         val service = createService(provider, FakeRefreshTokenPersistencePort())
 
         val request =
             MockHttpServletRequest().apply {
-                addHeader("Authorization", "Bearer ${provider.generateAccessToken(memberId.toString())}")
+                addHeader("Authorization", "Bearer ${provider.generateAccessToken(memberId.toString(), LoginMethod.KAKAO)}")
             }
 
         assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }

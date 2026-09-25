@@ -3,6 +3,7 @@ package core.application.refreshToken.application.service
 import core.application.refreshToken.application.support.TokenHasher
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.properties.TokenProperties
+import core.domain.member.enums.LoginMethod
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
@@ -32,10 +33,11 @@ class RefreshTokenIssueService(
     @Transactional
     fun issueForLogin(
         memberId: MemberId,
-        deviceId: String? = null,
+        deviceId: String?,
+        loginMethod: LoginMethod?,
     ): RefreshToken {
         deviceId?.let { refreshTokenPersistencePort.deleteByMemberIdAndDeviceId(memberId.value, it) }
-        return issue(memberId, deviceId)
+        return issue(memberId, deviceId, loginMethod)
     }
 
     /**
@@ -48,13 +50,15 @@ class RefreshTokenIssueService(
     fun issueForRotation(
         memberId: MemberId,
         deviceId: String?,
-    ): RefreshToken = issue(memberId, deviceId)
+        loginMethod: LoginMethod?,
+    ): RefreshToken = issue(memberId, deviceId, loginMethod)
 
     private fun issue(
         memberId: MemberId,
         deviceId: String?,
+        loginMethod: LoginMethod?,
     ): RefreshToken {
-        val plainToken = tokenProvider.generateRefreshToken(memberId.toString())
+        val plainToken = tokenProvider.generateRefreshToken(memberId.toString(), loginMethod)
         val now = Instant.now()
 
         val saved =

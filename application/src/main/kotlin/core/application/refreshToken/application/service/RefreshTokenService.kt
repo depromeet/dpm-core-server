@@ -10,6 +10,7 @@ import core.application.security.oauth.token.JwtTokenConstant.REFRESH_TOKEN_CAME
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.oauth.token.JwtTokenResolver
+import core.domain.member.enums.LoginMethod
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -36,7 +37,7 @@ class RefreshTokenService(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ReissueResult {
-        val stored = resolveStoredToken(request)
+        val (presentedToken, stored) = resolveStoredToken(request)
         val now = Instant.now()
 
         if (stored.isExpired(now)) {
@@ -59,15 +60,18 @@ class RefreshTokenService(
         }
 
         val deviceId = stored.deviceId ?: deviceIdResolver.resolve(request, response)
-        val issued = refreshTokenIssueService.issueForRotation(stored.memberId, deviceId)
-        return respond(issued, response)
+        // 로그인 수단은 로그인 시점에만 알 수 있으므로, 제시된 리프레시 토큰의 값을 새 토큰으로 이어준다.
+        val loginMethod = tokenProvider.getLoginMethod(presentedToken)
+        val issued = refreshTokenIssueService.issueForRotation(stored.memberId, deviceId, loginMethod)
+        return respond(issued, loginMethod, response)
     }
 
     private fun respond(
         issued: RefreshToken,
+        loginMethod: LoginMethod?,
         response: HttpServletResponse,
     ): ReissueResult {
-        val accessToken = tokenProvider.generateAccessToken(issued.memberId.toString())
+        val accessToken = tokenProvider.generateAccessToken(issued.memberId.toString(), loginMethod)
         tokenInjector.injectAccessToken(accessToken, response)
         tokenInjector.injectRefreshToken(issued, response)
 
@@ -86,8 +90,10 @@ class RefreshTokenService(
      * 구분되지 않는다. 그래서 Bearer 의 액세스 토큰이 리프레시 토큰으로 채택되고, 쿠키에 멀쩡한
      * 리프레시 토큰이 함께 실려 있어도 TOKEN_NOT_FOUND 로 떨어진다.
      * 저장소에 있는지를 판정 기준으로 삼으면 액세스 토큰은 자연히 건너뛴다.
+     *
+     * 저장소에는 해시만 있으므로, 클레임(로그인 수단)을 읽을 수 있도록 채택된 평문 토큰도 함께 돌려준다.
      */
-    private fun resolveStoredToken(request: HttpServletRequest): RefreshToken {
+    private fun resolveStoredToken(request: HttpServletRequest): Pair<String, RefreshToken> {
         val candidates =
             tokenResolver
                 .resolveRefreshTokenCandidatesFromRequest(request)
@@ -98,8 +104,8 @@ class RefreshTokenService(
             throw TokenInvalidException()
         }
 
-        return candidates.firstNotNullOfOrNull {
-            refreshTokenPersistencePort.findByTokenHash(TokenHasher.sha256Hex(it))
+        return candidates.firstNotNullOfOrNull { candidate ->
+            refreshTokenPersistencePort.findByTokenHash(TokenHasher.sha256Hex(candidate))?.let { candidate to it }
         } ?: run {
             logDiagnostics(request)
             throw TokenNotFoundException()
