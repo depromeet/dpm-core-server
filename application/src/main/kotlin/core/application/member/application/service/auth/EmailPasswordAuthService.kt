@@ -10,7 +10,9 @@ import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.membercredential.aggregate.MemberCredential
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
@@ -52,7 +54,7 @@ class EmailPasswordAuthService(
         // 1. Find credential by email
         val credential = memberCredentialPersistencePort.findByEmail(email)
 
-        val member =
+        val (member, loginCredential) =
             if (credential == null) {
                 // 신규 회원 가입 (Signup) 또는 기존 회원 연동
                 val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
@@ -64,15 +66,16 @@ class EmailPasswordAuthService(
                 validateMemberForLogin(existingMember)
 
                 val encodedPassword = passwordEncoder.encode(password)
-                memberCredentialPersistencePort.save(
-                    MemberCredential.create(
-                        memberId = existingMember.id!!,
-                        email = email,
-                        encodedPassword = encodedPassword,
-                    ),
-                )
+                val savedCredential =
+                    memberCredentialPersistencePort.save(
+                        MemberCredential.create(
+                            memberId = existingMember.id!!,
+                            email = email,
+                            encodedPassword = encodedPassword,
+                        ),
+                    )
 
-                existingMember
+                existingMember to savedCredential
             } else {
                 // 2. Verify password
                 if (!passwordEncoder.matches(password, credential.password)) {
@@ -82,7 +85,7 @@ class EmailPasswordAuthService(
                 // 3. Find member and validate status (re-link if needed)
                 val existingMember = memberPersistencePort.findById(credential.memberId)
                 if (existingMember != null) {
-                    existingMember
+                    existingMember to credential
                 } else {
                     val membersByEmail = memberPersistencePort.findAllBySignupEmail(email)
                     if (membersByEmail.isEmpty()) {
@@ -90,8 +93,7 @@ class EmailPasswordAuthService(
                     }
                     val memberByEmail = selectLoginCandidate(membersByEmail)
                     validateMemberForLogin(memberByEmail)
-                    relinkCredentialToMember(credential, memberByEmail)
-                    memberByEmail
+                    memberByEmail to relinkCredentialToMember(credential, memberByEmail)
                 }
             }
 
@@ -101,6 +103,7 @@ class EmailPasswordAuthService(
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
         // Generate JWT tokens
+        val loginIdentity = LoginIdentity(LoginMethod.EMAIL, loginCredential.id!!.value)
         val permissionStrings = roleQueryService.getPermissionsByMemberId(member.id!!)
         val authorities =
             permissionStrings.map {
@@ -113,9 +116,10 @@ class EmailPasswordAuthService(
             jwtTokenProvider.generateAccessTokenWithPermissions(
                 member.id!!.toString(),
                 authorities,
+                loginIdentity,
             )
 
-        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, loginIdentity)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
@@ -146,12 +150,14 @@ class EmailPasswordAuthService(
         // 3. Create MemberCredential with encoded password
         val encodedPassword = passwordEncoder.encode(password)
         val newCredential =
-            MemberCredential.create(
-                memberId = newMember.id!!,
-                email = email,
-                encodedPassword = encodedPassword,
+            memberCredentialPersistencePort.save(
+                MemberCredential.create(
+                    memberId = newMember.id!!,
+                    email = email,
+                    encodedPassword = encodedPassword,
+                ),
             )
-        memberCredentialPersistencePort.save(newCredential)
+        val loginIdentity = LoginIdentity(LoginMethod.EMAIL, newCredential.id!!.value)
 
         // 4. Generate JWT tokens
         val permissionStrings = roleQueryService.getPermissionsByMemberId(newMember.id!!)
@@ -166,9 +172,10 @@ class EmailPasswordAuthService(
             jwtTokenProvider.generateAccessTokenWithPermissions(
                 newMember.id!!.toString(),
                 authorities,
+                loginIdentity,
             )
 
-        val issued = refreshTokenIssueService.issueForLogin(newMember.id!!, deviceId)
+        val issued = refreshTokenIssueService.issueForLogin(newMember.id!!, deviceId, loginIdentity)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
@@ -186,9 +193,9 @@ class EmailPasswordAuthService(
     private fun relinkCredentialToMember(
         credential: MemberCredential,
         member: Member,
-    ) {
+    ): MemberCredential {
         memberCredentialPersistencePort.deleteByMemberId(credential.memberId)
-        memberCredentialPersistencePort.save(
+        return memberCredentialPersistencePort.save(
             MemberCredential.create(
                 memberId = member.id!!,
                 email = credential.email,
