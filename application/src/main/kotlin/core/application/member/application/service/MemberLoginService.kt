@@ -6,9 +6,11 @@ import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.HandleMemberLoginUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.security.oauth.dto.LoginResult
 import core.domain.security.oauth.dto.OAuthAttributes
@@ -31,6 +33,7 @@ class MemberLoginService(
     ): LoginResult {
         val provider = authAttributes.getProvider()
         val externalId = authAttributes.getExternalId()
+        val loginMethod = LoginMethod.from(provider)
 
         // 1. OAuth 연동 계정 존재 여부 확인
         val memberOAuth =
@@ -43,21 +46,23 @@ class MemberLoginService(
                         memberOAuthService.relinkMemberOAuthProvider(it, authAttributes)
                     }
             memberOAuthService.syncEmail(authAttributes)
-            return handleExistingMemberLogin(member, deviceId)
+            return handleExistingMemberLogin(member, deviceId, LoginIdentity(loginMethod, memberOAuth.id!!.value))
         }
 
         // 2. OAuth 연동 없음 → 신규 회원 플로우
-        return handleUnregisteredMember(authAttributes, deviceId)
+        return handleUnregisteredMember(authAttributes, deviceId, loginMethod)
     }
 
     private fun generateLoginResult(
         memberId: MemberId,
         deviceId: String?,
-    ): LoginResult = LoginResult(refreshTokenIssueService.issueForLogin(memberId, deviceId))
+        loginIdentity: LoginIdentity,
+    ): LoginResult = LoginResult(refreshTokenIssueService.issueForLogin(memberId, deviceId, loginIdentity))
 
     private fun handleExistingMemberLogin(
         member: Member,
         deviceId: String?,
+        loginIdentity: LoginIdentity,
     ): LoginResult {
         val memberId = member.id ?: return LoginResult(null)
 
@@ -72,15 +77,16 @@ class MemberLoginService(
         memberRoleService.ensureGuestRoleAssigned(memberId)
 
         if (member.status == MemberStatus.PENDING) {
-            return generateLoginResult(memberId, deviceId)
+            return generateLoginResult(memberId, deviceId, loginIdentity)
         }
 
-        return generateLoginResult(memberId, deviceId)
+        return generateLoginResult(memberId, deviceId, loginIdentity)
     }
 
     private fun handleUnregisteredMember(
         authAttributes: OAuthAttributes,
         deviceId: String?,
+        loginMethod: LoginMethod,
     ): LoginResult {
         val existingMembers = memberPersistencePort.findAllBySignupEmail(authAttributes.getEmail())
         val member =
@@ -93,10 +99,10 @@ class MemberLoginService(
                 )
             }
 
-        memberOAuthService.addMemberOAuthProvider(member, authAttributes)
+        val savedOAuth = memberOAuthService.addMemberOAuthProvider(member, authAttributes)
         memberRoleService.ensureGuestRoleAssigned(member.id ?: throw MemberIdRequiredException())
 
-        return handleExistingMemberLogin(member, deviceId)
+        return handleExistingMemberLogin(member, deviceId, LoginIdentity(loginMethod, savedOAuth.id!!.value))
     }
 
     private fun selectLoginCandidate(members: List<Member>): Member {

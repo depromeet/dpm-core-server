@@ -5,6 +5,7 @@ import core.domain.member.aggregate.MemberOAuth
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.vo.MemberId
+import core.domain.member.vo.MemberOAuthId
 import core.entity.member.MemberOAuthEntity
 import org.springframework.stereotype.Repository
 
@@ -15,19 +16,18 @@ class MemberOAuthRepository(
     override fun save(
         memberOAuth: MemberOAuth,
         member: Member,
-    ) {
-        memberOAuthJpaRepository.save(MemberOAuthEntity.of(memberOAuth, member))
-    }
+    ): MemberOAuth = memberOAuthJpaRepository.save(MemberOAuthEntity.of(memberOAuth, member)).toDomain()
 
     override fun findMemberIdsByProvider(provider: OAuthProvider): List<MemberId> =
         memberOAuthJpaRepository
             .findAllByProvider(provider.name)
             .map { MemberId(it.member.id) }
 
-    override fun findAllByMemberId(memberId: MemberId): List<MemberOAuth> =
+    override fun findById(id: MemberOAuthId): MemberOAuth? =
         memberOAuthJpaRepository
-            .findAllByMemberId(memberId.value)
-            .map { it.toDomain() }
+            .findById(id.value)
+            .orElse(null)
+            ?.toDomain()
 
     override fun relinkToMember(
         provider: OAuthProvider,

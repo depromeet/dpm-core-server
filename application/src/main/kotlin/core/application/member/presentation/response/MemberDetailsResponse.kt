@@ -1,13 +1,13 @@
 package core.application.member.presentation.response
 
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.team.vo.TeamNumber
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class MemberDetailsResponse(
     @field:Schema(
-        description = "이메일",
+        description = "현재 세션의 로그인 수단에 해당하는 이메일. 로그인 수단을 알 수 없거나 저장된 이메일이 없으면 가입 이메일",
         example = "depromeetcore@gmail.com",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
@@ -50,48 +50,32 @@ data class MemberDetailsResponse(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val status: String,
-    @field:ArraySchema(
-        arraySchema =
-            Schema(
-                description = "연동된 로그인 수단 목록",
-                requiredMode = Schema.RequiredMode.REQUIRED,
-            ),
+    @field:Schema(
+        description = "현재 세션의 로그인 수단. 로그인 수단이 기록되기 전에 발급된 토큰이면 null",
+        example = "KAKAO",
+        allowableValues = ["KAKAO", "APPLE", "EMAIL"],
+        requiredMode = Schema.RequiredMode.REQUIRED,
+        nullable = true,
     )
-    val loginMethods: List<LoginMethod>,
+    val loginMethod: String?,
 ) {
-    data class LoginMethod(
-        @field:Schema(
-            description = "로그인 수단 (소셜 제공자 및 이메일/비밀번호)",
-            example = "KAKAO",
-            allowableValues = ["KAKAO", "APPLE", "EMAIL"],
-            requiredMode = Schema.RequiredMode.REQUIRED,
-        )
-        val type: String,
-        @field:Schema(
-            description = "해당 로그인 수단의 이메일. 이메일 저장 이전에 연동되어 아직 재로그인하지 않은 경우 null",
-            example = "depromeetcore@gmail.com",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-            nullable = true,
-        )
-        val email: String?,
-    )
-
     companion object {
         fun of(
             member: Member,
+            email: String,
             isAdmin: Boolean,
             teamNumber: TeamNumber,
-            loginMethods: List<LoginMethod>,
+            loginMethod: LoginMethod?,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
-                email = member.signupEmail,
+                email = email,
                 name = member.name,
                 part = member.part?.name,
                 cohort = member.latestCohortValue(),
                 teamNumber = teamNumber,
                 isAdmin = isAdmin,
                 status = member.status.name,
-                loginMethods = loginMethods,
+                loginMethod = loginMethod?.name,
             )
     }
 }

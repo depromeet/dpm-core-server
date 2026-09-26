@@ -19,8 +19,8 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
-import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
 import core.domain.team.vo.TeamId
 import core.domain.team.vo.TeamNumber
 import org.springframework.beans.factory.annotation.Value
@@ -32,7 +32,7 @@ class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberAccessService: MemberAccessService,
     private val memberOAuthService: MemberOAuthService,
-    private val memberCredentialPersistencePort: MemberCredentialPersistencePort,
+    private val memberLoginEmailResolver: MemberLoginEmailResolver,
     private val cohortQueryUseCase: CohortQueryUseCase,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
@@ -40,34 +40,25 @@ class MemberQueryService(
     MemberQueryUseCase {
     /**
      * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
+     * 이메일은 현재 세션에 로그인한 계정의 이메일을 내려줌.
      *
      * @throws MemberNotFoundException
      *
      * @author LeeHanEum
      * @since 2025.07.17
      */
-    fun memberMe(memberId: MemberId): MemberDetailsResponse =
-        MemberDetailsResponse.of(
-            getMemberById(memberId),
+    fun memberMe(
+        memberId: MemberId,
+        loginIdentity: LoginIdentity?,
+    ): MemberDetailsResponse {
+        val member = getMemberById(memberId)
+        return MemberDetailsResponse.of(
+            member,
+            memberLoginEmailResolver.resolve(member, loginIdentity),
             memberAccessService.isAdmin(memberId),
             getMemberTeamNumber(memberId),
-            getLoginMethods(memberId),
+            loginIdentity?.method,
         )
-
-    /**
-     * 멤버가 로그인할 수 있는 수단(소셜 제공자 + 이메일/비밀번호)과 수단별 이메일을 조회함.
-     */
-    private fun getLoginMethods(memberId: MemberId): List<MemberDetailsResponse.LoginMethod> {
-        val oAuthMethods =
-            memberOAuthService
-                .findAllByMemberId(memberId)
-                .map { MemberDetailsResponse.LoginMethod(type = it.provider.name, email = it.email) }
-                .distinct()
-        val credentialMethod =
-            memberCredentialPersistencePort
-                .findByMemberId(memberId)
-                ?.let { MemberDetailsResponse.LoginMethod(type = EMAIL_LOGIN_METHOD, email = it.email) }
-        return oAuthMethods + listOfNotNull(credentialMethod)
     }
 
     /**
@@ -196,7 +187,6 @@ class MemberQueryService(
     }
 
     private companion object {
-        private const val EMAIL_LOGIN_METHOD = "EMAIL"
         private val UUID_REGEX =
             Regex(
                 pattern = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
