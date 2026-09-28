@@ -44,9 +44,9 @@ flowchart TB
     end
 
     FE -->|api.depromeet.com| TRAEFIK
-    FE -.->|api.depromeet.shop| TRAEFIK
+    FE -.->|dev-api.depromeet.com| TRAEFIK
     TRAEFIK -->|"Host(api.depromeet.com)"| APP
-    TRAEFIK -.->|"Host(api.depromeet.shop)"| DEVAPP
+    TRAEFIK -.->|"Host(dev-api.depromeet.com)"| DEVAPP
     APP -->|"dpm_core (TLS)"| MYSQL
     DEVAPP -.->|"dpm_core_dev (TLS)"| MYSQL
 ```
