@@ -168,7 +168,7 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-
+    @PreAuthorize("hasAuthority('update:member')")
     @PostMapping("/authority/cohort/init/{cohortId}/{memberId}")
     override fun initMemberCohort(
         @PathVariable memberId: MemberId,
