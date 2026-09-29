@@ -85,8 +85,12 @@ class Member(
         updatedAt = Instant.now()
     }
 
+    /** 가장 높은 기수의 소속을 반환한다. 입력 순서(id)는 같은 기수 행이 중복될 때만 비교한다. */
     fun latestMemberCohort(): MemberCohort? =
-        memberCohorts.maxByOrNull { it.id?.value ?: Long.MIN_VALUE }
+        memberCohorts.maxWithOrNull(
+            compareBy<MemberCohort> { it.cohortId.value }
+                .thenBy { it.id?.value ?: Long.MIN_VALUE },
+        )
 
     fun latestCohortId(): CohortId? = latestMemberCohort()?.cohortId
 
