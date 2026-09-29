@@ -1,12 +1,13 @@
 package core.application.member.presentation.response
 
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.team.vo.TeamNumber
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class MemberDetailsResponse(
     @field:Schema(
-        description = "이메일",
+        description = "현재 세션의 로그인 수단에 해당하는 이메일. 로그인 수단을 알 수 없거나 저장된 이메일이 없으면 가입 이메일",
         example = "depromeetcore@gmail.com",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
@@ -49,21 +50,32 @@ data class MemberDetailsResponse(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val status: String,
+    @field:Schema(
+        description = "현재 세션의 로그인 수단. 로그인 수단이 기록되기 전에 발급된 토큰이면 null",
+        example = "KAKAO",
+        allowableValues = ["KAKAO", "APPLE", "EMAIL"],
+        requiredMode = Schema.RequiredMode.REQUIRED,
+        nullable = true,
+    )
+    val loginMethod: String?,
 ) {
     companion object {
         fun of(
             member: Member,
+            email: String,
             isAdmin: Boolean,
             teamNumber: TeamNumber,
+            loginMethod: LoginMethod?,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
-                email = member.signupEmail,
+                email = email,
                 name = member.name,
                 part = member.part?.name,
                 cohort = member.latestCohortValue(),
                 teamNumber = teamNumber,
                 isAdmin = isAdmin,
                 status = member.status.name,
+                loginMethod = loginMethod?.name,
             )
     }
 }
