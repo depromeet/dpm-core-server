@@ -51,6 +51,16 @@ out/
 
 # Secrets
 secrets/
+.env
+.env.*
+!.env.example
+
+# OS metadata
+.DS_Store
+
+# IDE / agent 로컬 설정
+.claude/
+.cursor/
 
 # Superpowers plans (로컬 작업 문서)
 docs/superpowers/

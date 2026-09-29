@@ -3,7 +3,11 @@ package core.domain.cohort.port.inbound
 import core.domain.cohort.vo.CohortId
 
 interface CohortQueryUseCase {
-    fun getLatestCohortId(): CohortId
+    fun getActiveCohortId(): CohortId
 
-    fun getLatestCohortValue(): String
+    fun getActiveCohortValue(): String
+
+    fun getLatestCohortId(): CohortId = getActiveCohortId()
+
+    fun getLatestCohortValue(): String = getActiveCohortValue()
 }

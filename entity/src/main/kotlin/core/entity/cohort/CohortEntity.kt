@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import java.time.Instant
 
 @Entity
 @Table(name = "cohorts")
@@ -23,6 +24,10 @@ class CohortEntity(
     val id: Long,
     @Column(name = "\"value\"", nullable = false, unique = true)
     val value: String,
+    @Column(name = "is_active", nullable = false)
+    val isActive: Boolean = false,
+    @Column(name = "activated_at")
+    val activatedAt: Instant? = null,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Long,
     @Column(name = "updated_at", nullable = false)
@@ -36,6 +41,8 @@ class CohortEntity(
         Cohort(
             id = CohortId(id),
             value = value,
+            isActive = isActive,
+            activatedAt = activatedAt,
             createdAt = createdAt,
             updatedAt = updatedAt,
         )

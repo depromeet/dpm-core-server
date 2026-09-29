@@ -62,7 +62,7 @@ class OAuthCallbackRedirectService(
 
     private fun resolveClientRedirectUri(request: HttpServletRequest): String? =
         listOfNotNull(request.getHeader(REFERER), request.getHeader(ORIGIN))
-            .firstNotNullOfOrNull(::validateClientRedirectUri)
+            .firstNotNullOfOrNull(::toAppOriginRedirect)
 
     private fun loadClientRedirectUri(request: HttpServletRequest): String? =
         request.cookies
@@ -70,18 +70,23 @@ class OAuthCallbackRedirectService(
             ?.value
             ?.takeIf { it.isNotBlank() }
             ?.let(::decode)
-            ?.let(::validateClientRedirectUri)
+            ?.let(::toAppOriginRedirect)
 
-    private fun validateClientRedirectUri(candidate: String): String? =
+    /**
+     * Remember only the FE origin root ("https://host:port/").
+     * Using the full Referer would bounce users back to /login after Kakao OAuth.
+     */
+    private fun toAppOriginRedirect(candidate: String): String? =
         runCatching {
             val validatedUri = redirectUriValidator.validate(candidate)
-            val host = URI.create(validatedUri).host.lowercase()
+            val uri = URI.create(validatedUri)
+            val host = uri.host.lowercase()
 
             require(host !in DISALLOWED_REDIRECT_HOSTS && DISALLOWED_REDIRECT_PREFIXES.none(host::startsWith)) {
                 "Disallowed OAuth browser redirect target: $host"
             }
 
-            validatedUri
+            URI(uri.scheme, uri.authority, "/", null, null).toString()
         }.getOrNull()
 
     private fun buildRedirectUri(
@@ -111,11 +116,14 @@ class OAuthCallbackRedirectService(
 
         return when {
             requestHost == "localhost" || requestHost == "127.0.0.1" || requestHost == "::1" ->
-                "https://localhost:3000/"
+                // Prefer remembered FE origin cookie; this is only a last-resort fallback.
+                "https://local-admin.depromeet.shop:3020/"
             requestHost.startsWith("api.") ->
                 "https://${requestHost.replaceFirst("api.", "core.")}/"
             requestHost.startsWith("local-api.") ->
                 "https://${requestHost.replaceFirst("local-api.", "local-core.")}/"
+            requestHost.startsWith("dev-api.") ->
+                "https://${requestHost.replaceFirst("dev-api.", "dev-core.")}/"
             else -> {
                 val portSuffix =
                     when {
@@ -134,13 +142,17 @@ class OAuthCallbackRedirectService(
         value: String,
         maxAgeSeconds: Long,
     ): String {
+        // SameSite=None requires Secure. On local HTTP (secure=false) use Lax so the
+        // browser actually stores OAUTH2_REDIRECT_URI and returns to the right FE.
+        val secure = securityProperties.cookie.secure
+        val sameSite = if (secure) SAME_SITE_NONE else SAME_SITE_LAX
         val builder =
             ResponseCookie
                 .from(name, value)
                 .path("/")
                 .httpOnly(true)
-                .secure(securityProperties.cookie.secure)
-                .sameSite(SAME_SITE_NONE)
+                .secure(secure)
+                .sameSite(sameSite)
                 .maxAge(Duration.ofSeconds(maxAgeSeconds))
 
         resolveCookieDomain()?.let(builder::domain)
@@ -172,6 +184,7 @@ class OAuthCallbackRedirectService(
         private const val REFERER = "Referer"
         private const val ORIGIN = "Origin"
         private const val SAME_SITE_NONE = "None"
+        private const val SAME_SITE_LAX = "Lax"
         private const val AUTHENTICATED_PARAM = "authenticated"
         private const val ERROR_CODE_PARAM = "errorCode"
 

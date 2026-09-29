@@ -18,6 +18,11 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.Instant
 
+/**
+ * ⚠️ [2026-09] 리팩토링 시점 기준 이 테이블은 아무 곳에서도 READ 되지 않음.
+ *   - 신규 코드에서 이 테이블 조회를 추가할 예정이라면 그 전에 반드시 이 주석 확인할 것.
+ *   - 예외 권한 부여 기능이 실제 필요해질 때 조회 로직을 활성화하고 이 주석을 제거할 것.
+ */
 @Entity
 @Table(name = "member_permissions")
 class MemberPermissionEntity(

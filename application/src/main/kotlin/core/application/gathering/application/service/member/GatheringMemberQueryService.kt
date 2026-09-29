@@ -1,6 +1,5 @@
 package core.application.gathering.application.service.member
 
-import core.application.cohort.application.service.CohortQueryService
 import core.application.gathering.application.exception.member.GatheringMemberNotFoundException
 import core.application.gathering.application.validator.GatheringMemberValidator
 import core.application.member.application.service.role.CurrentCohortRoleResolver
@@ -10,7 +9,6 @@ import core.domain.gathering.port.inbound.GatheringMemberQueryUseCase
 import core.domain.gathering.port.outbound.GatheringMemberPersistencePort
 import core.domain.gathering.port.outbound.query.GatheringMemberIsJoinQueryModel
 import core.domain.gathering.vo.GatheringId
-import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional
 class GatheringMemberQueryService(
     private val gatheringMemberPersistencePort: GatheringMemberPersistencePort,
     private val gatheringMemberValidator: GatheringMemberValidator,
-    private val memberQueryUseCase: MemberQueryUseCase,
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) : GatheringMemberQueryUseCase {
     override fun getGatheringMemberByGatheringId(gatheringId: GatheringId): List<GatheringMember> =
@@ -46,11 +43,10 @@ class GatheringMemberQueryService(
             val queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsJoinByGatheringIdAndMemberId(gatheringId, memberId)
-            val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
             val representativeAuthority =
-                currentCohortRoleResolver.selectRepresentativeRole(
+                currentCohortRoleResolver.selectRepresentativeRoleForMember(
+                    memberId = memberId,
                     roleNames = queryResults.map { it.authority },
-                    latestCohortValue = latestCohortValue,
                 ) ?: queryResults.first().authority
             queryResults.first { it.authority == representativeAuthority }
         }
@@ -64,11 +60,10 @@ class GatheringMemberQueryService(
             val queryResults =
                 gatheringMemberPersistencePort
                     .findGatheringMemberWithIsInvitationSubmittedByGatheringIdAndMemberId(gatheringId, memberId)
-            val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
             val representativeAuthority =
-                currentCohortRoleResolver.selectRepresentativeRole(
+                currentCohortRoleResolver.selectRepresentativeRoleForMember(
+                    memberId = memberId,
                     roleNames = queryResults.map { it.authority },
-                    latestCohortValue = latestCohortValue,
                 ) ?: queryResults.first().authority
             queryResults.firstOrNull { it.authority == representativeAuthority }
                 ?: throw GatheringMemberNotFoundException()
@@ -82,13 +77,6 @@ class GatheringMemberQueryService(
         gatheringMemberPersistencePort
             .findGatheringMembersByGatheringIdsAndMemberIds(gatheringIds, memberIds)
 
-    /**
-     * 각 회식 멤버가 회식 참여자에 속하는지 확인한 후, 참여자 수를 카운트합니다.
-     *
-     * @throws GatheringNotParticipantMemberException 회식 멤버가 해당 회식에 속하지 않는 경우
-     * @author LeeHanEum
-     * @since 2025.09.13
-     */
     fun countGatheringParticipants(
         gatheringId: GatheringId,
         gatheringMembers: List<GatheringMember>,
