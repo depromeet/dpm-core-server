@@ -17,4 +17,10 @@ interface CohortPersistencePort {
     fun existsByValue(value: String): Boolean
 
     fun hasAnyReference(cohortId: CohortId): Boolean
+
+    fun findActive(): Cohort?
+
+    fun deactivateAll()
+
+    fun activate(cohortId: CohortId)
 }

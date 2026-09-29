@@ -9,7 +9,6 @@ import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
-import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.response.AppleMemberProfileUpdateResponse
@@ -139,28 +138,12 @@ class MemberCommandService(
 
     fun activate(member: Member) {
         val memberId = requireNotNull(member.id) { "Activated member must have id" }
-        val latestCohortValue = cohortQueryUseCase.getLatestCohortValue()
-        val deeperRoleName = "${latestCohortValue}기 ${RoleType.Deeper.aliases.first()}"
-
-        // Whitelist approval keeps exactly one active latest cohort DEEPER role.
-        memberRoleService.replaceWithSingleRoleByName(memberId, deeperRoleName)
-
+        // 승인 시 기존 이력을 유지하고 새 role 만 append (예: (DEEPER, 17) 유지 + (DEEPER, 18) 추가).
+        // 판정은 CurrentCohortRoleResolver 가 활성 기수 기준으로 필터링한다.
+        memberRoleService.ensureCohortRoleAssigned(memberId, RoleType.Deeper, cohortQueryUseCase.getActiveCohortId())
         member.activate()
         val activatedMember = memberPersistencePort.save(member)
         initializeMemberDataForActiveMember(activatedMember)
-    }
-
-    fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest) {
-        val memberId = request.memberId
-        memberQueryService.getMemberById(memberId)
-        if (memberRoleService.resolvePrimaryRoleType(memberId) != RoleType.Deeper) {
-            return
-        }
-
-        memberRoleService.replaceWithSingleRoleByName(
-            memberId = memberId,
-            roleName = "${cohortQueryUseCase.getLatestCohortValue()}기 ${RoleType.Organizer.aliases.first()}",
-        )
     }
 
     /**
@@ -204,7 +187,7 @@ class MemberCommandService(
 
         val memberId = requireNotNull(member.id) { "Active member must have id" }
         memberTeamService.ensureMemberTeamInitialized(memberId)
-        val latestCohortId = cohortQueryUseCase.getLatestCohortId()
+        val latestCohortId = cohortQueryUseCase.getActiveCohortId()
         memberCohortService.addMemberToCohort(memberId, latestCohortId)
         publishMemberActivatedEvent(memberId, latestCohortId)
     }

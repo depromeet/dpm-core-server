@@ -2,51 +2,32 @@ package core.domain.authorization.vo
 
 sealed class RoleType(
     val code: String,
-    val aliases: Set<String>,
 ) {
-    data object Core : RoleType(
-        code = "CORE",
-        aliases = setOf("코어", "core"),
-    )
-
-    data object Organizer : RoleType(
-        code = "ORGANIZER",
-        aliases = setOf("운영진", "운영", "관리자"),
-    )
-
-    data object Deeper : RoleType(
-        code = "DEEPER",
-        aliases = setOf("디퍼", "deeper"),
-    )
-
-    data object Guest : RoleType(
-        code = "GUEST",
-        aliases = emptySet(),
-    )
+    data object Master : RoleType("MASTER")
+    data object Core : RoleType("CORE")
+    data object Organizer : RoleType("ORGANIZER")
+    data object Deeper : RoleType("DEEPER")
+    data object Guest : RoleType("GUEST")
 
     companion object {
         private val values: List<RoleType> by lazy {
-            RoleType::class.sealedSubclasses
-                .mapNotNull { it.objectInstance }
-                .filter { it != Guest }
+            RoleType::class.sealedSubclasses.mapNotNull { it.objectInstance }
         }
+
+        fun fromCode(raw: String?): RoleType =
+            values.firstOrNull { it.code.equals(raw?.trim(), ignoreCase = true) } ?: Guest
 
         fun from(raw: String?): RoleType {
             if (raw.isNullOrBlank()) return Guest
-
-            val tokens =
-                raw
-                    .lowercase()
-                    .split(Regex("[^가-힣a-z]+"))
-                    .filter { it.isNotBlank() }
-
-            return values.firstOrNull { role ->
-                role.aliases.any { alias ->
-                    tokens.any { token ->
-                        token == alias.lowercase()
-                    }
-                }
-            } ?: Guest
+            fromCode(raw).takeIf { it != Guest }?.let { return it }
+            val tokens = raw.lowercase().split(Regex("[^가-힣a-z]+")).filter { it.isNotBlank() }
+            val aliasMap = mapOf(
+                "master" to Master, "마스터" to Master,
+                "core" to Core, "코어" to Core,
+                "organizer" to Organizer, "운영진" to Organizer, "운영" to Organizer, "관리자" to Organizer,
+                "deeper" to Deeper, "디퍼" to Deeper,
+            )
+            return tokens.firstNotNullOfOrNull { aliasMap[it] } ?: Guest
         }
     }
 }
