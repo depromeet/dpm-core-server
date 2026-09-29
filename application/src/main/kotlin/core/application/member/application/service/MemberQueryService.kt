@@ -19,6 +19,7 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamId
 import core.domain.team.vo.TeamNumber
@@ -31,6 +32,7 @@ class MemberQueryService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberAccessService: MemberAccessService,
     private val memberOAuthService: MemberOAuthService,
+    private val memberLoginEmailResolver: MemberLoginEmailResolver,
     private val cohortQueryUseCase: CohortQueryUseCase,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
@@ -38,18 +40,26 @@ class MemberQueryService(
     MemberQueryUseCase {
     /**
      * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
+     * 이메일은 현재 세션에 로그인한 계정의 이메일을 내려줌.
      *
      * @throws MemberNotFoundException
      *
      * @author LeeHanEum
      * @since 2025.07.17
      */
-    fun memberMe(memberId: MemberId): MemberDetailsResponse =
-        MemberDetailsResponse.of(
-            getMemberById(memberId),
+    fun memberMe(
+        memberId: MemberId,
+        loginIdentity: LoginIdentity?,
+    ): MemberDetailsResponse {
+        val member = getMemberById(memberId)
+        return MemberDetailsResponse.of(
+            member,
+            memberLoginEmailResolver.resolve(member, loginIdentity),
             memberAccessService.isAdmin(memberId),
             getMemberTeamNumber(memberId),
+            loginIdentity?.method,
         )
+    }
 
     /**
      * 멤버의 식별자를 기반으로 멤버 객체를 조회함.
