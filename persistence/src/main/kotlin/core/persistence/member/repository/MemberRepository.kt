@@ -130,49 +130,33 @@ class MemberRepository(
             .fetch(MEMBERS.MEMBER_ID)
             .map { MemberId(it ?: 0L) }
 
+    /** 해당 기수 소속 행이 있는 멤버를 모두 반환한다. 여러 기수에 소속된 멤버는 각 기수 명단에 모두 포함된다. */
     override fun findAllByCohort(value: String): List<MemberId> =
-        run {
-            val latestMemberCohorts = latestMemberCohorts()
-            val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
-            val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
-
-            dsl
-            .select(MEMBERS.MEMBER_ID)
+        dsl
+            .selectDistinct(MEMBERS.MEMBER_ID)
             .from(MEMBERS)
-            .join(latestMemberCohorts)
-            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_COHORTS)
-            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
+            .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(COHORTS)
             .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
             .where(COHORTS.VALUE.eq(value))
             .and(MEMBERS.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
-            .map {
-                MemberId(it)
-            }
-        }
+            .map { MemberId(it) }
 
+    /** 해당 기수 소속 행이 있는 멤버를 모두 반환한다. 여러 기수에 소속된 멤버는 각 기수 명단에 모두 포함된다. */
     override fun findAllByCohortId(cohortId: CohortId): List<MemberId> =
-        run {
-            val latestMemberCohorts = latestMemberCohorts()
-            val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
-            val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
-
-            dsl
-            .select(MEMBERS.MEMBER_ID)
+        dsl
+            .selectDistinct(MEMBERS.MEMBER_ID)
             .from(MEMBERS)
-            .join(latestMemberCohorts)
-            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_COHORTS)
-            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
+            .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .where(MEMBER_COHORTS.COHORT_ID.eq(cohortId.value))
             .and(MEMBERS.DELETED_AT.isNull)
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map { MemberId(it) }
-        }
 
     override fun findAllMemberIdsByCohortIdAndAuthorityId(
         cohortId: CohortId,
@@ -186,19 +170,12 @@ class MemberRepository(
                 .fetchOne(COHORTS.VALUE)
                 ?: return emptyList()
         val roleName = roleTypeFromLegacyAuthorityId(authorityId).code
-        val latestMemberCohorts = latestMemberCohorts()
-        val latestMemberCohortMemberIdField = latestMemberCohortsFieldMemberId(latestMemberCohorts)
-        val latestMemberCohortIdField = latestMemberCohortsFieldId(latestMemberCohorts)
 
         return dsl
             .selectDistinct(MEMBERS.MEMBER_ID)
             .from(MEMBERS)
-            .join(latestMemberCohorts)
-            .on(latestMemberCohortMemberIdField.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_COHORTS)
-            .on(MEMBER_COHORTS.MEMBER_COHORT_ID.eq(latestMemberCohortIdField))
-            .join(COHORTS)
-            .on(MEMBER_COHORTS.COHORT_ID.eq(COHORTS.COHORT_ID))
+            .on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(MEMBER_ROLES)
             .on(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .join(ROLES)
@@ -585,21 +562,40 @@ class MemberRepository(
             else -> RoleType.Guest
         }
 
-    private fun latestMemberCohorts(memberIds: Collection<Long>? = null) =
-        DSL.select(
-            MEMBER_COHORTS.MEMBER_ID,
-            max(MEMBER_COHORTS.MEMBER_COHORT_ID).`as`("latest_member_cohort_id"),
-        )
-            .from(MEMBER_COHORTS)
-            .where(
-                if (memberIds.isNullOrEmpty()) {
-                    noCondition()
-                } else {
-                    MEMBER_COHORTS.MEMBER_ID.`in`(memberIds)
-                },
+    /**
+     * 멤버별 대표 소속(회원 목록의 기수 표시 등)을 member_cohort_id(입력 순서)가 아니라 가장 높은 기수로 결정한다.
+     * 과거 기수 행이 나중에 추가돼도(예: 기수 init API) 대표 기수가 바뀌지 않도록 하기 위함.
+     * 같은 기수 행이 중복된 경우에만 member_cohort_id 최댓값을 사용한다.
+     */
+    private fun latestMemberCohorts(memberIds: Collection<Long>? = null): org.jooq.Table<*> {
+        val memberIdCondition =
+            if (memberIds.isNullOrEmpty()) {
+                noCondition()
+            } else {
+                MEMBER_COHORTS.MEMBER_ID.`in`(memberIds)
+            }
+        val highestCohorts =
+            DSL.select(
+                MEMBER_COHORTS.MEMBER_ID,
+                max(MEMBER_COHORTS.COHORT_ID).`as`("highest_cohort_id"),
             )
-            .groupBy(MEMBER_COHORTS.MEMBER_ID)
+                .from(MEMBER_COHORTS)
+                .where(memberIdCondition)
+                .groupBy(MEMBER_COHORTS.MEMBER_ID)
+                .asTable("highest_member_cohorts")
+        val memberCohorts = MEMBER_COHORTS.`as`("mc")
+
+        return DSL.select(
+            memberCohorts.MEMBER_ID,
+            max(memberCohorts.MEMBER_COHORT_ID).`as`("latest_member_cohort_id"),
+        )
+            .from(memberCohorts)
+            .join(highestCohorts)
+            .on(highestCohorts.field(MEMBER_COHORTS.MEMBER_ID)!!.eq(memberCohorts.MEMBER_ID))
+            .and(highestCohorts.field(name("highest_cohort_id"), Long::class.java)!!.eq(memberCohorts.COHORT_ID))
+            .groupBy(memberCohorts.MEMBER_ID)
             .asTable("latest_member_cohorts")
+    }
 
     private fun latestMemberTeams(memberIds: Collection<Long>? = null) =
         DSL.select(
@@ -621,7 +617,7 @@ class MemberRepository(
         table.field(name("latest_member_cohort_id"), Long::class.java)!!
 
     private fun latestMemberCohortsFieldMemberId(table: org.jooq.Table<*> = latestMemberCohorts()) =
-        table.field(MEMBER_COHORTS.MEMBER_ID)!!
+        table.field(name(MEMBER_COHORTS.MEMBER_ID.name), Long::class.java)!!
 
     private fun latestMemberTeamsFieldId(table: org.jooq.Table<*> = latestMemberTeams()) =
         table.field(name("latest_member_team_id"), Long::class.java)!!
