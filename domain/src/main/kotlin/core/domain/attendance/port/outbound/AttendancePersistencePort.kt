@@ -58,13 +58,14 @@ interface AttendancePersistencePort {
 
     /*
      * 아래 쓰기 메서드는 모두 DB 에서 조건을 확인하는 단일 UPDATE 문입니다.
-     * 읽은 엔티티 전체를 다시 저장하지 않으므로 다른 쓰기(인증/운영진 변경/정책 재계산/삭제)의 결과를 덮어쓰지 않습니다.
+     * 읽은 엔티티 전체를 다시 저장하지 않으므로 다른 쓰기(인증/운영진 변경/자동 결석/삭제)의 결과를 덮어쓰지 않습니다.
      * 호출하는 트랜잭션은 세션 행 잠금을 먼저 잡은 뒤 출석 행을 갱신합니다(잠금 순서: session -> attendance).
      */
 
     /**
-     * 인증 결과를 기록합니다. 삭제되지 않았고, 운영진 변경과 인증 기록이 없는 PENDING 행만 갱신합니다.
-     * updatedAt 은 기록하지 않습니다.
+     * 인증 결과를 기록합니다. 삭제되지 않았고, 운영진 변경과 인증 기록이 없으며,
+     * PENDING 이거나 자동 결석 표지(autoAbsentAt)가 있는 ABSENT 인 행만 갱신합니다.
+     * updatedAt 은 기록하지 않고 자동 결석 표지는 해제합니다. 표지 없는 기존 ABSENT 는 덮어쓰지 않습니다.
      *
      * @return 실제로 기록했으면 true
      */
@@ -75,7 +76,8 @@ interface AttendancePersistencePort {
     ): Boolean
 
     /**
-     * 운영진 변경. 지정한 멤버들의 삭제되지 않은 출석 행의 상태와 updatedAt 을 바꿉니다(attendedAt 보존).
+     * 운영진 변경. 지정한 멤버들의 삭제되지 않은 출석 행의 상태와 updatedAt 을 바꾸고 자동 결석 표지를 해제합니다
+     * (attendedAt 보존).
      *
      * @return 갱신한 행 수
      */
@@ -101,6 +103,23 @@ interface AttendancePersistencePort {
         expectedStatus: AttendanceStatus,
         newStatus: AttendanceStatus,
     ): Boolean
+
+    /**
+     * 마감 연장으로 자동 결석을 미인증(PENDING)으로 되돌립니다. 자동 결석 표지가 있고 인증/운영진 변경 기록이 없는
+     * 삭제되지 않은 ABSENT 행만 바꾸며 표지를 해제합니다. 표지 없는 기존 ABSENT 는 바꾸지 않습니다.
+     */
+    fun reopenAutoAbsence(attendanceId: Long): Boolean
+
+    /**
+     * 자동 결석. 세션의 삭제되지 않은 미인증(PENDING, attendedAt/updatedAt 없음) 행만 ABSENT 로 바꾸고
+     * 자동 결석 표지에 [autoAbsentAt] 을 기록합니다. updatedAt 은 기록하지 않습니다.
+     *
+     * @return 갱신한 행 수
+     */
+    fun markAutoAbsence(
+        sessionId: Long,
+        autoAbsentAt: Instant,
+    ): Int
 
     /** 세션의 삭제되지 않은 출석 행을 소프트 삭제합니다. 이미 삭제된 행은 건드리지 않습니다. */
     fun softDeleteAllBySessionId(

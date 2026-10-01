@@ -28,7 +28,8 @@ interface AttendanceCommandApi {
                 "t < 인증 시작이면 SESSION-400-03(너무 이름), 인증 시작 <= t < 지각 시작이면 PRESENT, " +
                 "지각 시작 <= t < 인증 마감이면 LATE, 인증 마감 <= t 이면 SESSION-400-06(마감)이며 저장하지 않습니다. " +
                 "코드 불일치(SESSION-400-02)도 저장하지 않습니다. 이미 인증한 경우 SESSION-400-04, " +
-                "운영진이 상태를 확정한 경우 SESSION-400-07 입니다.",
+                "운영진이 상태를 확정한 경우 SESSION-400-07 입니다. " +
+                "마감 전에 접수된 요청은 자동 결석 처리보다 늦게 저장되더라도 정상 판정으로 저장됩니다.",
         requestBody =
             RequestBody(
                 description = "출석 생성 요청",

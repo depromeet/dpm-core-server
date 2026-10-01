@@ -32,7 +32,7 @@ class AttendanceTestFixture(
 ) {
     val clock = MutableClock(now)
     val attendances = FakeAttendancePersistencePort()
-    val sessions = FakeSessionPersistencePort()
+    val sessions = FakeSessionPersistencePort(attendances)
     val cohorts = FakeCohortPersistencePort()
     val notifications = RecordingSentSessionNotificationCommandUseCase()
     val events: MutableList<Any> = Collections.synchronizedList(mutableListOf())
@@ -112,6 +112,7 @@ class AttendanceTestFixture(
         status: AttendanceStatus = AttendanceStatus.PENDING,
         attendedAt: Instant? = null,
         updatedAt: Instant? = null,
+        autoAbsentAt: Instant? = null,
     ): Long =
         attendances.insert(
             sessionId = session.id!!.value,
@@ -119,6 +120,7 @@ class AttendanceTestFixture(
             status = status,
             attendedAt = attendedAt,
             updatedAt = updatedAt,
+            autoAbsentAt = autoAbsentAt,
         )
 
     companion object {
