@@ -1,12 +1,14 @@
 package core.application.security.oauth.token
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import core.application.common.exception.CustomResponse
 import core.application.common.logging.MdcLoggingFilter
-import core.application.security.oauth.exception.InvalidAccessTokenException
 import core.application.security.oauth.exception.JwtExceptionCode
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.MDC
+import org.springframework.http.MediaType
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
@@ -15,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
     private val jwtTokenResolver: JwtTokenResolver,
+    private val objectMapper: ObjectMapper,
 ) : OncePerRequestFilter() {
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
@@ -25,6 +28,13 @@ class JwtAuthenticationFilter(
                 "/v1/auth/kakao/native",
                 "/api/v1/auth/kakao/native",
             )
+
+        // 인증이 필요 없는 문서 경로라 토큰을 읽지 않는다.
+        private val EXCLUDED_PATH_PREFIXES =
+            listOf(
+                "/swagger-ui",
+                "/v3/api-docs",
+            )
     }
 
     override fun doFilterInternal(
@@ -33,9 +43,10 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain,
     ) {
         val authorizationHeader = request.getHeader(HEADER_AUTHORIZATION)
+        val bearerToken = getAccessToken(authorizationHeader)
         val tokenCandidates =
             buildList {
-                getAccessToken(authorizationHeader)?.let(::add)
+                bearerToken?.let(::add)
                 getAccessTokenFromCookie(request)?.let(::add)
                 jwtTokenResolver.resolveRefreshTokenCandidatesFromRequest(request)
                     .forEach(::add)
@@ -54,15 +65,33 @@ class JwtAuthenticationFilter(
             authorizationHeader.isNotEmpty() &&
             !authorizationHeader.startsWith(TOKEN_PREFIX)
         ) {
-            throw InvalidAccessTokenException(JwtExceptionCode.AUTHORIZATION_HEADER_INVALID)
-        } else if (tokenCandidates.isNotEmpty()) {
-            throw InvalidAccessTokenException(JwtExceptionCode.TOKEN_INVALID)
+            writeUnauthorized(response, JwtExceptionCode.AUTHORIZATION_HEADER_INVALID)
+            return
+        } else if (bearerToken != null) {
+            writeUnauthorized(response, JwtExceptionCode.TOKEN_INVALID)
+            return
         }
+        // 쿠키 토큰만 유효하지 않은 경우(만료, 다른 환경에서 발급 등)는 무시하고 비로그인 요청으로 진행한다.
+        // 쿠키는 Domain=depromeet.com 으로 prod·dev 간에 공유되므로, 여기서 막으면 공개 경로까지 실패한다.
+        // 인증이 필요한 경로는 이후 AuthenticationEntryPoint 가 401 로 응답한다.
 
         filterChain.doFilter(request, response)
     }
 
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI in EXCLUDED_PATHS
+    /** 필터에서 던진 예외는 GlobalExceptionHandler 가 잡지 못해 500 이 되므로 직접 401 로 응답한다. */
+    private fun writeUnauthorized(
+        response: HttpServletResponse,
+        exceptionCode: JwtExceptionCode,
+    ) {
+        response.status = HttpServletResponse.SC_UNAUTHORIZED
+        response.contentType = MediaType.APPLICATION_JSON_VALUE
+        response.characterEncoding = "UTF-8"
+        response.writer.write(objectMapper.writeValueAsString(CustomResponse.error(exceptionCode)))
+    }
+
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+        request.requestURI in EXCLUDED_PATHS ||
+            EXCLUDED_PATH_PREFIXES.any { request.requestURI.startsWith(it) }
 
     private fun getAccessToken(authorizationHeader: String?): String? {
         if (authorizationHeader.isNullOrEmpty() || !authorizationHeader.startsWith(TOKEN_PREFIX)) {
