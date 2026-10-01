@@ -31,10 +31,12 @@ import java.time.Instant
  *
  * 동시성 규칙
  * - 모든 쓰기는 세션 행 잠금을 먼저 잡고 출석 행을 갱신한다(잠금 순서: session -> attendance).
- * - 인증만 세션 공유 잠금(FOR SHARE)을 써서 서로 동시에 진행한다. 인증은 PK 로 한 행만 잠근다.
+ * - 인증과 자동 결석만 세션 공유 잠금(FOR SHARE)을 써서 서로 동시에 진행한다. 인증은 PK 로 한 행만, 자동 결석은
+ *   단일 UPDATE 로만 출석 행을 잠그므로 둘 사이에 교착이 생기지 않는다.
  * - 운영진 변경(단건/일괄/사유 승인), 세션 시각 변경, 정책 재계산, 삭제는 세션 쓰기 잠금(FOR UPDATE)으로 직렬화한다.
  * - 출석 행은 읽은 엔티티 전체를 저장하지 않고 DB 에서 조건을 확인하는 UPDATE 로만 바꾼다.
- * - 운영진 변경만 updatedAt 을 기록한다. 정책 재계산은 updatedAt 을 기록하지 않는다.
+ * - 운영진 변경만 updatedAt 을 기록한다. 자동 결석과 정책 재계산은 updatedAt 을 기록하지 않는다.
+ * - 자동 결석 출처는 autoAbsentAt 표지로만 판단한다. 자동 결석만 표지를 기록하고, 인증/운영진 변경/재개는 표지를 해제한다.
  */
 @Service
 @Transactional
@@ -51,6 +53,7 @@ class AttendanceCommandService(
      * - 정확히 지각 시작 시각이면 LATE, 정확히 마감 시각부터는 마감 오류이며 아무것도 저장하지 않는다.
      * - 코드가 틀리거나 너무 이르면 아무것도 저장하지 않는다.
      * - 운영진이 정한 기록(updatedAt 존재)은 attendedAt 이 없어도 덮어쓰지 않는다.
+     * - 마감 전에 접수된 요청은 자동 결석이 먼저 저장됐더라도 정상 판정으로 저장한다.
      * - 실제로 저장된 경우에만 판정 결과를 반환한다. 동시에 다른 요청이 먼저 저장했다면 이미 출석 오류다.
      */
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
@@ -143,7 +146,12 @@ class AttendanceCommandService(
                     attendance.recalculateStatusByPolicy(policy.lateStart, policy.absentStart, now)
                         ?: return@count false
                 val attendanceId = attendance.id?.value ?: return@count false
-                attendancePersistencePort.updateStatusByPolicy(attendanceId, attendance.status, newStatus)
+                if (newStatus == AttendanceStatus.PENDING) {
+                    // 자동 결석(표지 있음) 재개. 표지 없는 기존 결석은 조건에서 걸러진다.
+                    attendancePersistencePort.reopenAutoAbsence(attendanceId)
+                } else {
+                    attendancePersistencePort.updateStatusByPolicy(attendanceId, attendance.status, newStatus)
+                }
             }
     }
 
@@ -153,6 +161,25 @@ class AttendanceCommandService(
     fun reconcileAttendancesWithLatestPolicy(sessionId: SessionId): Int {
         val session = sessionPersistencePort.findSessionByIdForUpdate(sessionId.value) ?: return 0
         return applySessionPolicyChange(session, clock.instant())
+    }
+
+    /**
+     * 마감이 지난 세션의 미인증 기록을 자동 결석 처리한다.
+     *
+     * 세션 공유 잠금을 잡은 뒤 최신 마감 시각을 다시 확인한다. 그 사이 마감이 연장됐거나 세션이 삭제됐으면 처리하지 않는다.
+     * 과거 기수의 세션도 마감이 지났다면 대상이다. 미인증(PENDING, 인증/운영진 변경 없음) 기록만 바꾼다.
+     *
+     * @return 자동 결석 처리한 기록 수
+     */
+    fun closeExpiredAttendances(
+        sessionId: SessionId,
+        now: Instant,
+    ): Int {
+        val session = sessionPersistencePort.findSessionByIdForShare(sessionId.value) ?: return 0
+
+        if (!session.isAttendanceClosedAt(now)) return 0
+
+        return attendancePersistencePort.markAutoAbsence(sessionId.value, now)
     }
 
     /**
@@ -191,7 +218,7 @@ class AttendanceCommandService(
      * 새로 활성화된 멤버의 출석 기록을 만든다.
      *
      * - 처리 시각 기준으로 인증 마감이 아직 지나지 않은(마감 > 현재) 세션에만 만든다. 정확히 마감 시각인 세션도 제외한다.
-     *   가입 전에 이미 끝난 세션의 미인증 기록을 만들어 가입 전 결석이 부과될 여지를 남기지 않기 위해서다.
+     *   이미 마감된 세션에 미인증 기록을 만들면 다음 자동 결석 실행에서 가입 전 결석이 소급 부과되기 때문이다.
      * - 이미 있는 기록은 그대로 둔다.
      * - 세션 공유 잠금을 세션 ID 오름차순으로 잡고 다시 읽어, 동시에 진행되는 세션 삭제/시각 변경과 직렬화한다.
      */

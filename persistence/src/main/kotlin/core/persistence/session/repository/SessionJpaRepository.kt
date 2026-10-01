@@ -27,4 +27,21 @@ interface SessionJpaRepository : JpaRepository<SessionEntity, Long> {
         @Param("id") id: Long,
     ): SessionEntity?
 
+    @Query(
+        "select s.id from SessionEntity s " +
+            "where s.deletedAt is null " +
+            "and s.attendancePolicy.absentStart <= :absentStartTo " +
+            "and exists (" +
+            "select 1 from AttendanceEntity a " +
+            "where a.sessionId = s.id " +
+            "and a.status = 'PENDING' " +
+            "and a.attendedAt is null " +
+            "and a.updatedAt is null " +
+            "and a.deletedAt is null" +
+            ") " +
+            "order by s.attendancePolicy.absentStart asc, s.id asc",
+    )
+    fun findIdsToAutoClose(
+        @Param("absentStartTo") absentStartTo: Instant,
+    ): List<Long>
 }

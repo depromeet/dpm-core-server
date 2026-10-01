@@ -18,12 +18,20 @@ class AttendanceStatusRuleTest {
     private val decidedAt = sessionStart.minusSeconds(3600)
 
     @Test
-    fun `미인증만 인증으로 기록할 수 있다`() {
+    fun `미인증과 표지가 있는 자동 결석만 인증으로 기록할 수 있다`() {
+        val recordable =
+            listOf(
+                attendance(AttendanceStatus.PENDING),
+                attendance(AttendanceStatus.ABSENT, autoAbsentAt = absentStart),
+            )
         val notRecordable =
             listOf(
                 attendance(AttendanceStatus.PRESENT, attendedAt = sessionStart),
                 attendance(AttendanceStatus.LATE, attendedAt = lateStart),
+                // 표지 없는 기존 결석은 기록이 비어 있어도 자동 결석으로 추정하지 않는다
                 attendance(AttendanceStatus.ABSENT),
+                // 운영진 변경이 있으면 표지가 있어도 자동 결석이 아니다
+                attendance(AttendanceStatus.ABSENT, updatedAt = decidedAt, autoAbsentAt = absentStart),
                 attendance(AttendanceStatus.EXCUSED_ABSENT),
                 attendance(AttendanceStatus.EARLY_LEAVE),
                 attendance(AttendanceStatus.PENDING, updatedAt = decidedAt),
@@ -31,7 +39,7 @@ class AttendanceStatusRuleTest {
                 attendance(AttendanceStatus.EXCUSED_ABSENT, updatedAt = decidedAt),
             )
 
-        assertThat(attendance(AttendanceStatus.PENDING).canRecordAttendance()).isTrue()
+        recordable.forEach { assertThat(it.canRecordAttendance()).describedAs(it.describe()).isTrue() }
         notRecordable.forEach { assertThat(it.canRecordAttendance()).describedAs(it.describe()).isFalse() }
     }
 
@@ -75,6 +83,18 @@ class AttendanceStatusRuleTest {
     }
 
     @Test
+    fun `표지가 있는 자동 결석만 마감 연장 시 새 마감 전이면 미인증으로 되돌린다`() {
+        val autoAbsent = attendance(AttendanceStatus.ABSENT, autoAbsentAt = absentStart)
+        val legacyAbsent = attendance(AttendanceStatus.ABSENT)
+        val extendedClose = afterClose.plusSeconds(600)
+
+        assertThat(autoAbsent.recalculateStatusByPolicy(lateStart, extendedClose, extendedClose.minusNanos(1)))
+            .isEqualTo(AttendanceStatus.PENDING)
+        assertThat(autoAbsent.recalculateStatusByPolicy(lateStart, extendedClose, extendedClose)).isNull()
+        assertThat(legacyAbsent.recalculateStatusByPolicy(lateStart, extendedClose, afterClose)).isNull()
+    }
+
+    @Test
     fun `인정 결석과 조퇴는 재계산 대상이 아니다`() {
         assertThat(
             attendance(AttendanceStatus.EXCUSED_ABSENT, attendedAt = sessionStart)
@@ -86,12 +106,13 @@ class AttendanceStatusRuleTest {
         ).isNull()
     }
 
-    private fun Attendance.describe() = "status=$status attendedAt=$attendedAt updatedAt=$updatedAt"
+    private fun Attendance.describe() = "status=$status attendedAt=$attendedAt updatedAt=$updatedAt autoAbsentAt=$autoAbsentAt"
 
     private fun attendance(
         status: AttendanceStatus,
         attendedAt: Instant? = null,
         updatedAt: Instant? = null,
+        autoAbsentAt: Instant? = null,
     ) = Attendance(
         id = AttendanceId(1L),
         sessionId = SessionId(1L),
@@ -99,5 +120,6 @@ class AttendanceStatusRuleTest {
         status = status,
         attendedAt = attendedAt,
         updatedAt = updatedAt,
+        autoAbsentAt = autoAbsentAt,
     )
 }
