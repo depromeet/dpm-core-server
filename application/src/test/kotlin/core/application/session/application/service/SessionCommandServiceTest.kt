@@ -4,12 +4,20 @@ import core.application.attendance.application.properties.AttendancePolicyProper
 import core.application.session.application.exception.InvalidAttendanceTimeOrderException
 import core.application.session.application.exception.PartialAttendanceTimesException
 import core.application.support.AttendanceTestFixture
+import core.domain.attendance.enums.AttendanceStatus
+import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
+import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberStatus
+import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
+import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyList
+import org.mockito.BDDMockito.given
 import org.springframework.context.ApplicationEventPublisher
 import java.time.Duration
 import java.time.Instant
@@ -79,14 +87,17 @@ class SessionCommandServiceTest {
     }
 
     @Test
-    fun `기본값 설정을 바꿔 재시작해도 기존 세션은 그대로이고 이후 생성 세션에만 적용된다`() {
+    fun `기본값 설정을 바꿔 재시작해도 기존 세션과 출석 기록은 그대로이고 이후 생성 세션에만 적용된다`() {
         fixture.sessionCommandService.createSession(createCommand(sessionStart))
         val before = onlySession()
+        val attendanceId = fixture.addAttendance(before, memberId = 1L)
+        attend(before, 1L, sessionStart.plus(Duration.ofMinutes(20))) // 기존 정책상 LATE
 
         val restarted = restartedWith(AttendancePolicyProperties(5, 25, 40))
 
         val unchanged = fixture.sessions.stored(before.id!!.value)
         assertThat(unchanged.attendancePolicy).usingRecursiveComparison().isEqualTo(before.attendancePolicy)
+        assertThat(fixture.attendances.row(attendanceId).status).isEqualTo(AttendanceStatus.LATE)
 
         val nextStart = sessionStart.plus(Duration.ofDays(7))
         restarted.createSession(createCommand(nextStart))
@@ -130,6 +141,69 @@ class SessionCommandServiceTest {
             .isEqualTo(session.attendancePolicy)
     }
 
+    @Test
+    fun `세션 시각 변경은 같은 호출 안에서 인증 기록을 재판정하고 운영진 기록은 보호한다`() {
+        fixture.sessionCommandService.createSession(createCommand(sessionStart))
+        val session = onlySession()
+        val late = fixture.addAttendance(session, memberId = 1L)
+        attend(session, 1L, sessionStart.plus(Duration.ofMinutes(20))) // LATE
+        val manual =
+            fixture.addAttendance(
+                session,
+                memberId = 2L,
+                status = AttendanceStatus.LATE,
+                attendedAt = sessionStart.plus(Duration.ofMinutes(20)),
+                updatedAt = now,
+            )
+
+        fixture.sessionCommandService.updateSession(
+            updateCommand(session, sessionStart.plus(Duration.ofMinutes(25)), session.attendancePolicy.absentStart),
+        )
+
+        assertThat(fixture.attendances.row(late).status).isEqualTo(AttendanceStatus.PRESENT)
+        assertThat(fixture.attendances.row(late).updatedAt).isNull()
+        assertThat(fixture.attendances.row(manual).status).isEqualTo(AttendanceStatus.LATE)
+        assertThat(fixture.attendances.row(manual).updatedAt).isEqualTo(now)
+    }
+
+    @Test
+    fun `변경 대상 미리보기와 실제 반영 결과가 같다`() {
+        fixture.sessionCommandService.createSession(createCommand(sessionStart))
+        val session = onlySession()
+        val sessionId = session.id!!
+        fixture.addAttendance(session, memberId = 1L) // 미인증
+        fixture.addAttendance(session, memberId = 2L)
+        attend(session, 2L, sessionStart.plus(Duration.ofMinutes(20))) // LATE
+        fixture.addAttendance(session, memberId = 3L, status = AttendanceStatus.ABSENT, updatedAt = now) // 수동
+        fixture.addAttendance(session, memberId = 4L)
+        attend(session, 4L, sessionStart) // PRESENT
+        fixture.addAttendance(session, memberId = 5L, status = AttendanceStatus.ABSENT) // 인증 기록 없는 결석
+
+        val newLate = sessionStart.plus(Duration.ofMinutes(25))
+        val newAbsent = session.attendancePolicy.absentStart.plus(Duration.ofMinutes(20))
+        given(fixture.memberQueryUseCase.getMembersByIds(anyList())).willReturn(
+            (1L..5L).map { Member(id = MemberId(it), name = "m$it", signupEmail = "m$it@test", status = MemberStatus.ACTIVE) },
+        )
+
+        val preview =
+            fixture.sessionQueryService.queryTargetAttendancesByPolicyChange(
+                SessionAttendancePolicyCommand(sessionId, session.attendancePolicy.attendanceStart, newLate, newAbsent),
+            )
+        val before = (1L..5L).associateWith { fixture.attendances.rowOf(sessionId.value, it).status }
+
+        fixture.sessionCommandService.updateSession(updateCommand(session, newLate, newAbsent))
+
+        val after = (1L..5L).associateWith { fixture.attendances.rowOf(sessionId.value, it).status }
+        val actualChanges =
+            after.filter { (memberId, status) -> before[memberId] != status }
+                .map { (memberId, status) -> "m$memberId:${before[memberId]}->$status" }
+        val previewChanges = preview.targeted.map { "${it.name}:${it.currentStatus}->${it.targetStatus}" }
+
+        assertThat(previewChanges).containsExactlyInAnyOrderElementsOf(actualChanges)
+        assertThat(actualChanges).containsExactlyInAnyOrder("m2:LATE->PRESENT")
+        assertThat(preview.untargeted.map { it.name }).containsExactly("m3")
+    }
+
     private fun onlySession(): Session = fixture.sessions.all().single()
 
     /** 같은 저장소(DB)를 쓰면서 기본값 설정만 바꿔 재시작한 서버를 흉내 낸다. */
@@ -141,6 +215,17 @@ class SessionCommandServiceTest {
             cohortQueryService = fixture.cohortQueryService,
             sentSessionNotificationCommandUseCase = fixture.notifications,
             attendancePolicyProperties = properties,
+            attendanceCommandService = fixture.attendanceCommandService,
+            clock = fixture.clock,
+        )
+
+    private fun attend(
+        session: Session,
+        memberId: Long,
+        at: Instant,
+    ): AttendanceStatus =
+        fixture.attendanceCommandService.attendSession(
+            AttendanceRecordCommand(session.id!!, MemberId(memberId), at, session.attendancePolicy.attendanceCode),
         )
 
     private fun createCommand(

@@ -35,6 +35,7 @@ import org.jooq.impl.DSL.sum
 import org.jooq.impl.DSL.`when`
 import org.jooq.impl.SQLDataType
 import org.springframework.stereotype.Repository
+import java.time.Instant
 import java.time.ZoneId
 
 @Repository
@@ -398,22 +399,41 @@ class AttendanceRepository(
         dsl.batchInsert(records).execute()
     }
 
-    override fun updateInBatch(attendances: List<Attendance>) {
-        val records =
-            attendances.map { attendance ->
-                dsl.newRecord(ATTENDANCES).apply {
-                    attendanceId = attendance.id?.value // ← PK 세팅
-                    memberId = attendance.memberId.value
-                    sessionId = attendance.sessionId.value
-                    status = attendance.status.name
-                    attendedAt = attendance.attendedAt
-                    updatedAt = attendance.updatedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
-                    deletedAt = attendance.deletedAt?.atZone(ZoneId.of("UTC"))?.toLocalDateTime()
-                }
-            }
+    override fun recordAttendanceIfAllowed(
+        attendanceId: Long,
+        status: AttendanceStatus,
+        attendedAt: Instant,
+    ): Boolean = attendanceJpaRepository.recordAttendanceIfAllowed(attendanceId, status.name, attendedAt) == 1
 
-        dsl.batchUpdate(records).execute()
+    override fun updateStatusByAdmin(
+        sessionId: Long,
+        memberIds: List<Long>,
+        status: AttendanceStatus,
+        updatedAt: Instant,
+    ): Int {
+        if (memberIds.isEmpty()) return 0
+        val sortedMemberIds = memberIds.distinct().sorted()
+        return attendanceJpaRepository.updateStatusByAdmin(sessionId, sortedMemberIds, status.name, updatedAt)
     }
+
+    override fun countActiveAttendances(
+        sessionId: Long,
+        memberIds: List<Long>,
+    ): Int {
+        if (memberIds.isEmpty()) return 0
+        return attendanceJpaRepository.countActiveMembers(sessionId, memberIds.distinct()).toInt()
+    }
+
+    override fun updateStatusByPolicy(
+        attendanceId: Long,
+        expectedStatus: AttendanceStatus,
+        newStatus: AttendanceStatus,
+    ): Boolean = attendanceJpaRepository.updateStatusByPolicy(attendanceId, expectedStatus.name, newStatus.name) == 1
+
+    override fun softDeleteAllBySessionId(
+        sessionId: Long,
+        deletedAt: Instant,
+    ): Int = attendanceJpaRepository.softDeleteAllBySessionId(sessionId, deletedAt)
 
     override fun countSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
