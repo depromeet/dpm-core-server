@@ -51,10 +51,15 @@ class Session(
 
     fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
+    /** 인증 마감 시각(포함)이 지났는지 여부 */
+    fun isAttendanceClosedAt(now: Instant): Boolean = !now.isBefore(attendancePolicy.absentStart)
+
     /**
      * 현재 시각을 기준으로 출석 상태를 결정하고 해당 상태를 sealed class 의 형태로 반환합니다.
      *
      * 디프만 출석 도메인 정책에 의거, 출석 시작 전 상태는 저장하지 않습니다.
+     * 경계는 모두 포함입니다. 정확히 지각 시작 시각이면 LATE, 정확히 마감 시각이면 Closed 입니다.
+     * 마감 이후 인증은 성공(ABSENT)으로 저장하지 않고 거절합니다.
      *
      * @param now 현재 시각
      * @author LeeHanEum
@@ -66,7 +71,7 @@ class Session(
             now.isBefore(attendancePolicy.attendanceStart) -> AttendanceResult.TooEarly
             now.isBefore(attendancePolicy.lateStart) -> AttendanceResult.Success(AttendanceStatus.PRESENT)
             now.isBefore(attendancePolicy.absentStart) -> AttendanceResult.Success(AttendanceStatus.LATE)
-            else -> AttendanceResult.Success(AttendanceStatus.ABSENT)
+            else -> AttendanceResult.Closed
         }
 
     override fun equals(other: Any?): Boolean {
