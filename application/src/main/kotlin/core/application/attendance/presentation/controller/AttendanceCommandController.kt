@@ -28,12 +28,14 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import java.time.Clock
 import java.time.Instant
 
 @RestController
 class AttendanceCommandController(
     private val attendanceCommandService: AttendanceCommandService,
     private val absenceReasonCommandService: AbsenceReasonCommandService,
+    private val clock: Clock,
 ) : AttendanceCommandApi {
     @PreAuthorize("hasAuthority('create:attendance')")
     @PostMapping("/v1/sessions/{sessionId}/attendances")
@@ -42,7 +44,8 @@ class AttendanceCommandController(
         @CurrentMemberId memberId: MemberId,
         @RequestBody request: AttendanceRecordRequest,
     ): CustomResponse<AttendanceResponse> {
-        val attendedAt = Instant.now()
+        // 요청을 받은 시각을 한 번만 기록해 판정과 저장, 응답에 같은 값을 쓴다.
+        val attendedAt = Instant.now(clock)
         val attendanceStatus =
             attendanceCommandService.attendSession(
                 AttendanceRecordCommand(

@@ -18,7 +18,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 interface SessionCommandApi {
     @Operation(
         summary = "세션 출석시간 갱신",
-        description = "세션 ID를 통해 해당 세션의 출석 시작 시간을 갱신합니다. 출석 시작 시간의 날짜는 세션의 날짜와 동일해야 합니다.",
+        description =
+            "세션 ID를 통해 해당 세션의 출석 시작 시간을 갱신합니다. " +
+                "출석 시작 < 지각 시작 < 출석 마감 순서를 지켜야 하며(SESSION-400-08), " +
+                "세션과 다른 날짜여도 됩니다(예: 00:05 세션의 출석 시작 전날 23:55).",
         requestBody =
             RequestBody(
                 description = "세션 출석시간 갱신 요청",
@@ -62,7 +65,13 @@ interface SessionCommandApi {
 
     @Operation(
         summary = "세션 추가",
-        description = "세션 기본 정보를 입력하고 출결 시간을 설정합니다.",
+        description =
+            "세션 기본 정보를 입력하고 출결 시간을 설정합니다. " +
+                "attendanceStart/lateStart/absentStart 를 모두 생략하면 서버 설정 기본값" +
+                "(기본: 시작 10분 전 출석 시작, 15분 후 지각, 30분 후 마감)으로 세션 시작(date) 기준 시각을 계산해 저장합니다. " +
+                "기본값을 바꿔도 이미 만든 세션의 시각은 바뀌지 않습니다. " +
+                "모두 입력하면 입력값을 이 세션만의 시각으로 사용하며 출석 시작 < 지각 시작 < 출석 마감 순서여야 합니다" +
+                "(SESSION-400-08). 일부만 입력하면 SESSION-400-09 입니다.",
         requestBody =
             RequestBody(
                 description = "세션 추가 요청",
@@ -72,7 +81,7 @@ interface SessionCommandApi {
                         schema = Schema(implementation = SessionCreateRequest::class),
                         examples = [
                             ExampleObject(
-                                name = "세션 추가 요청 예시",
+                                name = "세션 추가 요청 예시 (출석 시각 명시)",
                                 value = """
                                 {
                                   "name": "OT & 팀빌딩",
@@ -83,6 +92,18 @@ interface SessionCommandApi {
                                   "attendanceStart": "2025-08-02T14:00:00",
                                   "lateStart": "2025-08-02T14:20:00",
                                   "absentStart": "2025-08-02T14:35:00"
+                                }
+                            """,
+                            ),
+                            ExampleObject(
+                                name = "세션 추가 요청 예시 (서버 기본 출석 시간 적용)",
+                                value = """
+                                {
+                                  "name": "OT & 팀빌딩",
+                                  "date": "2025-08-02T14:00:00",
+                                  "isOnline": false,
+                                  "place": "서울시공익활동지원센터",
+                                  "week": 1
                                 }
                             """,
                             ),
@@ -103,13 +124,22 @@ interface SessionCommandApi {
                     ),
                 ],
             ),
+            ApiResponse(
+                responseCode = "400",
+                description = "SESSION-400-08 출석 시각 순서 오류, SESSION-400-09 출석 시각 일부만 입력",
+            ),
         ],
     )
     fun createSession(request: SessionCreateRequest): CustomResponse<Void>
 
     @Operation(
         summary = "세션 수정",
-        description = "세션을 수정하고 연관된 멤버의 출석 상태를 갱신 합니다.",
+        description =
+            "세션을 수정하고 연관된 멤버의 출석 상태를 갱신 합니다. 출석 시각 세 개는 모두 필요하며 " +
+                "출석 시작 < 지각 시작 < 출석 마감 순서여야 합니다(SESSION-400-08). " +
+                "인증 기록은 새 시각으로 다시 판정하고, 운영진이 변경한 기록은 유지합니다. " +
+                "마감이 연장돼 아직 새 마감 전이면 자동 결석 처리된 미인증자는 다시 인증할 수 있도록 PENDING 으로 돌아갑니다. " +
+                "자동 결석 표지가 없는 결석(운영진 결정, 기능 도입 전 기록)은 유지됩니다.",
         requestBody =
             RequestBody(
                 description = "세션 수정 요청",
