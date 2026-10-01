@@ -60,7 +60,6 @@ class AttendanceTestFixture(
     val attendanceCommandService =
         AttendanceCommandService(
             attendancePersistencePort = attendances,
-            sessionQueryService = sessionQueryService,
             sessionPersistencePort = sessions,
             memberQueryUseCase = memberQueryUseCase,
             sessionValidator = sessionValidator,

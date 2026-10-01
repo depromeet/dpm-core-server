@@ -3,7 +3,6 @@ package core.it.attendance
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.service.SessionCommandService
-import core.application.session.application.service.SessionQueryService
 import core.application.support.MutableClock
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
@@ -80,9 +79,6 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     @Autowired lateinit var transactionManager: PlatformTransactionManager
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
-
-    /** 신규 멤버 초기화가 세션 조회 서비스를 쓰는 동안 필요한 의존성(이 테스트에서는 사용하지 않음) */
-    @MockitoBean lateinit var sessionQueryService: SessionQueryService
 
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
 
@@ -183,6 +179,101 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         }
     }
 
+    // ---------------------------------------------------------------- 신규 멤버
+
+    @Test
+    fun `신규 멤버는 마감 전 세션에만 기록이 생기고 기존 기록은 유지된다`() {
+        val cohortId = newCohort()
+        val now = Instant.parse("2026-11-01T10:00:00Z")
+        clock.now = now
+        val expired = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.minus(Duration.ofHours(2))))
+        val exactDeadline = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.minus(Duration.ofMinutes(30))))
+        val future = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.plus(Duration.ofDays(1))))
+        val existing = addAttendance(expired, memberId = 70L, status = AttendanceStatus.EXCUSED_ABSENT, updatedAt = decidedAt)
+
+        attendanceCommandService.initializeForNewCohortMember(MemberId(70L), cohortId)
+
+        assertThat(countOf(expired, 70L)).isEqualTo(1L)
+        assertThat(statusOf(existing)).isEqualTo("EXCUSED_ABSENT")
+        assertThat(countOf(exactDeadline, 70L)).isZero()
+        assertThat(countOf(future, 70L)).isEqualTo(1L)
+        assertThat(attendancePort.findAttendanceBy(future.id!!.value, 70L)!!.status).isEqualTo(AttendanceStatus.PENDING)
+    }
+
+    @Test
+    fun `신규 멤버 초기화와 세션 삭제가 경쟁해도 삭제된 세션에 살아 있는 기록이 남지 않는다`() {
+        repeat(5) {
+            val cohortId = newCohort()
+            clock.now = Instant.parse("2026-10-01T03:00:00Z")
+            val sessions = (1..3).map { day -> newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(sessionStart.plus(Duration.ofDays(day.toLong())))) }
+
+            runConcurrently(2) { index ->
+                if (index == 0) {
+                    attendanceCommandService.initializeForNewCohortMember(MemberId(80L), cohortId)
+                } else {
+                    sessionCommandService.softDeleteSession(sessions[1].id!!)
+                }
+            }
+
+            assertThat(attendancePort.findAttendanceBy(sessions[1].id!!.value, 80L)).isNull()
+            assertThat(countOf(sessions[0], 80L)).isEqualTo(1L)
+            assertThat(countOf(sessions[2], 80L)).isEqualTo(1L)
+        }
+    }
+
+    // ---------------------------------------------------------------- 세션 생성 트랜잭션
+
+    @Test
+    fun `새 세션과 초기 출석 기록은 같은 트랜잭션으로 커밋된다`() {
+        val cohortId = newCohort()
+        cohortPort.activate(cohortId)
+        org.mockito.BDDMockito
+            .given(memberQueryUseCase.getMemberIdsByCohortId(cohortId))
+            .willReturn(listOf(MemberId(1L), MemberId(2L), MemberId(3L)))
+
+        sessionCommandService.createSession(createCommand())
+
+        val session = inReadTransaction { sessionPort.findAllCohortSessions(cohortId.value).single() }
+        assertThat(attendancePort.findAllBySessionId(session.id!!.value).map { it.memberId.value })
+            .containsExactlyInAnyOrder(1L, 2L, 3L)
+        assertThat(session.attendancePolicy.absentStart).isEqualTo(sessionStart.plus(Duration.ofMinutes(30)))
+    }
+
+    @Test
+    fun `초기 출석 기록 생성이 실패하면 세션 생성도 롤백된다`() {
+        val cohortId = newCohort()
+        cohortPort.activate(cohortId)
+        org.mockito.BDDMockito
+            .given(memberQueryUseCase.getMemberIdsByCohortId(cohortId))
+            .willThrow(IllegalStateException("member lookup failed"))
+
+        val failure = runCatching { sessionCommandService.createSession(createCommand()) }.exceptionOrNull()
+
+        assertThat(failure).isNotNull()
+        assertThat(inReadTransaction { sessionPort.findAllCohortSessions(cohortId.value) }).isEmpty()
+        assertThat(
+            jdbcTemplate.queryForObject(
+                "select count(*) from sessions where cohort_id = ?",
+                Long::class.javaObjectType,
+                cohortId.value,
+            ),
+        ).isZero()
+    }
+
+    @Test
+    fun `멤버가 없는 기수도 세션은 만들어진다`() {
+        val cohortId = newCohort()
+        cohortPort.activate(cohortId)
+        org.mockito.BDDMockito
+            .given(memberQueryUseCase.getMemberIdsByCohortId(cohortId))
+            .willReturn(emptyList())
+
+        sessionCommandService.createSession(createCommand())
+
+        val session = inReadTransaction { sessionPort.findAllCohortSessions(cohortId.value).single() }
+        assertThat(attendancePort.findAllBySessionId(session.id!!.value)).isEmpty()
+    }
+
     // ---------------------------------------------------------------- helpers
 
     /**
@@ -192,6 +283,26 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         TransactionTemplate(transactionManager)
             .apply { isReadOnly = true }
             .execute { block() }!!
+
+    private fun createCommand(date: Instant = sessionStart) =
+        core.domain.session.port.inbound.command.SessionCreateCommand(
+            date = date,
+            week = 1,
+            place = null,
+            eventName = null,
+            isOnline = null,
+        )
+
+    private fun countOf(
+        session: Session,
+        memberId: Long,
+    ): Long =
+        jdbcTemplate.queryForObject(
+            "select count(*) from attendances where session_id = ? and member_id = ? and deleted_at is null",
+            Long::class.javaObjectType,
+            session.id!!.value,
+            memberId,
+        )!!
 
     private fun newCohort(): CohortId = cohortPort.save(Cohort(value = uniqueValue())).id!!
 
@@ -259,6 +370,8 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         lateStart = lateStart,
         absentStart = absentStart,
     )
+
+    private fun statusOf(attendanceId: Long): String = jdbcTemplate.queryForObject("select status from attendances where attendance_id = ?", String::class.java, attendanceId)!!
 
     private fun deletedAtOf(attendanceId: Long): Any? = jdbcTemplate.queryForList("select deleted_at from attendances where attendance_id = ?", attendanceId).single()["deleted_at"]
 
