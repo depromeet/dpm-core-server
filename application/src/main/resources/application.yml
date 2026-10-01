@@ -92,6 +92,12 @@ attendance:
   graduation:
     impossible-threshold: ${ATTENDANCE_GRADUATION_IMPOSSIBLE_THRESHOLD:4}
     at-risk-threshold: ${ATTENDANCE_GRADUATION_AT_RISK_THRESHOLD:3}
+  # 세션 생성 시 출석 시각을 모두 생략했을 때 쓰는 기본값(분). 생성된 세션에는 절대 시각으로 저장되므로
+  # 값을 바꿔도 이미 만든 세션은 바뀌지 않는다. 범위/순서가 잘못되면 기동에 실패한다.
+  policy:
+    open-minutes-before-start: ${ATTENDANCE_OPEN_MINUTES_BEFORE_START:10}
+    late-after-start-minutes: ${ATTENDANCE_LATE_AFTER_START_MINUTES:15}
+    absent-after-start-minutes: ${ATTENDANCE_ABSENT_AFTER_START_MINUTES:30}
 member:
   default-team-id: ${DEFAULT_TEAM_ID:0}
 cors:
