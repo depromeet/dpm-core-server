@@ -76,5 +76,17 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().authentication).isEqualTo(authentication)
     }
 
-    private fun request() = MockHttpServletRequest("GET", "/swagger-ui/index.html")
+    @Test
+    fun `Swagger 경로는 잘못된 Bearer 토큰이 있어도 토큰을 검사하지 않는다`() {
+        val request = MockHttpServletRequest("GET", "/swagger-ui/index.html").apply { addHeader("Authorization", "Bearer invalid") }
+        val response = MockHttpServletResponse()
+        val chain = MockFilterChain()
+
+        filter.doFilter(request, response, chain)
+
+        assertThat(chain.request).isNotNull()
+        assertThat(response.status).isEqualTo(200)
+    }
+
+    private fun request() = MockHttpServletRequest("GET", "/v1/sessions")
 }

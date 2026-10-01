@@ -28,6 +28,13 @@ class JwtAuthenticationFilter(
                 "/v1/auth/kakao/native",
                 "/api/v1/auth/kakao/native",
             )
+
+        // 인증이 필요 없는 문서 경로라 토큰을 읽지 않는다.
+        private val EXCLUDED_PATH_PREFIXES =
+            listOf(
+                "/swagger-ui",
+                "/v3/api-docs",
+            )
     }
 
     override fun doFilterInternal(
@@ -82,7 +89,9 @@ class JwtAuthenticationFilter(
         response.writer.write(objectMapper.writeValueAsString(CustomResponse.error(exceptionCode)))
     }
 
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI in EXCLUDED_PATHS
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean =
+        request.requestURI in EXCLUDED_PATHS ||
+            EXCLUDED_PATH_PREFIXES.any { request.requestURI.startsWith(it) }
 
     private fun getAccessToken(authorizationHeader: String?): String? {
         if (authorizationHeader.isNullOrEmpty() || !authorizationHeader.startsWith(TOKEN_PREFIX)) {
