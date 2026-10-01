@@ -1,13 +1,11 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
-import core.application.member.application.exception.CohortMembersNotFoundException
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.AttendanceClosedException
 import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.exception.TooEarlyAttendanceException
-import core.application.session.application.service.SessionQueryService
 import core.application.session.application.validator.SessionValidator
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
@@ -42,7 +40,6 @@ import java.time.Instant
 @Transactional
 class AttendanceCommandService(
     private val attendancePersistencePort: AttendancePersistencePort,
-    private val sessionQueryService: SessionQueryService,
     private val sessionPersistencePort: SessionPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
     private val sessionValidator: SessionValidator,
@@ -158,14 +155,18 @@ class AttendanceCommandService(
         return applySessionPolicyChange(session, clock.instant())
     }
 
+    /**
+     * 새 세션의 초기 출석 기록을 만든다. 세션 생성 트랜잭션 안(BEFORE_COMMIT)에서 호출되어 세션과 함께 커밋/롤백된다.
+     *
+     * 멤버가 아직 없는 기수는 기록 없이 끝낸다. (이전에는 커밋 이후 예외를 던졌지만 세션은 이미 저장된 상태였다.
+     * 같은 트랜잭션으로 옮기면서 예외를 그대로 두면 멤버 없는 기수의 세션 생성 자체가 실패하므로 동작을 유지하려고 건너뛴다.)
+     */
     fun createAttendances(
         sessionId: SessionId,
         cohortId: CohortId,
     ) {
         val memberIds: List<MemberId> = memberQueryUseCase.getMemberIdsByCohortId(cohortId)
-        if (memberIds.isEmpty()) {
-            throw CohortMembersNotFoundException()
-        }
+        if (memberIds.isEmpty()) return
 
         val attendances =
             memberIds
@@ -186,24 +187,35 @@ class AttendanceCommandService(
         attendancePersistencePort.softDeleteAllBySessionId(sessionId.value, deletedAt)
     }
 
+    /**
+     * 새로 활성화된 멤버의 출석 기록을 만든다.
+     *
+     * - 처리 시각 기준으로 인증 마감이 아직 지나지 않은(마감 > 현재) 세션에만 만든다. 정확히 마감 시각인 세션도 제외한다.
+     *   가입 전에 이미 끝난 세션의 미인증 기록을 만들어 가입 전 결석이 부과될 여지를 남기지 않기 위해서다.
+     * - 이미 있는 기록은 그대로 둔다.
+     * - 세션 공유 잠금을 세션 ID 오름차순으로 잡고 다시 읽어, 동시에 진행되는 세션 삭제/시각 변경과 직렬화한다.
+     */
     fun initializeForNewCohortMember(
         memberId: MemberId,
         cohortId: CohortId,
     ) {
-        val cohortSessions: List<Session> = sessionQueryService.getAllCohortSessions(cohortId)
+        val now = clock.instant()
+        val sessionIds =
+            sessionPersistencePort
+                .findAllCohortSessions(cohortId.value)
+                .mapNotNull { it.id?.value }
+                .distinct()
+                .sorted()
 
         val attendances =
-            cohortSessions
-                .filter { session ->
-                    attendancePersistencePort.findAttendanceBy(session.id!!.value, memberId.value) == null
-                }.map { session ->
-                    Attendance.create(
-                        AttendanceCreateCommand(
-                            sessionId = session.id ?: throw SessionNotFoundException(),
-                            memberId = memberId,
-                        ),
-                    )
-                }
+            sessionIds.mapNotNull { sessionId ->
+                val session = sessionPersistencePort.findSessionByIdForShare(sessionId) ?: return@mapNotNull null
+                if (session.isAttendanceClosedAt(now)) return@mapNotNull null
+                val existing = attendancePersistencePort.findAttendanceBy(sessionId, memberId.value)
+                if (existing != null) return@mapNotNull null
+
+                Attendance.create(AttendanceCreateCommand(sessionId = SessionId(sessionId), memberId = memberId))
+            }
 
         attendancePersistencePort.saveInBatch(attendances)
     }

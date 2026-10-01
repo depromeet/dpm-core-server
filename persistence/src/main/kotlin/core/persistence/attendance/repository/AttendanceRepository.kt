@@ -385,18 +385,13 @@ class AttendanceRepository(
                 )
             }
 
+    /**
+     * JPA 로 저장해 호출한 트랜잭션과 함께 커밋/롤백된다.
+     * (JooqDslConfig 의 DSLContext 는 JPA 트랜잭션 밖의 커넥션을 쓰므로 출석 쓰기에는 사용하지 않는다.)
+     */
     override fun saveInBatch(attendances: List<Attendance>) {
-        val records =
-            attendances.map { attendance ->
-                dsl.newRecord(ATTENDANCES).apply {
-                    memberId = attendance.memberId.value
-                    sessionId = attendance.sessionId.value
-                    status = attendance.status.name
-                    attendedAt = attendance.attendedAt
-                }
-            }
-
-        dsl.batchInsert(records).execute()
+        if (attendances.isEmpty()) return
+        attendanceJpaRepository.saveAll(attendances.map { AttendanceEntity.from(it) })
     }
 
     override fun recordAttendanceIfAllowed(

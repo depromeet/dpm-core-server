@@ -140,6 +140,29 @@ class AttendanceCommandServiceTest {
         }
     }
 
+    // ---------------------------------------------------------------- 신규 멤버
+
+    @Test
+    fun `신규 멤버는 마감이 지나지 않은 세션에만 출석 기록이 생긴다`() {
+        val now = Instant.parse("2026-10-20T10:00:00Z")
+        fixture.clock.now = now
+        val exactDeadline =
+            fixture.createSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.minusSeconds(30 * 60)))
+        val justOpen =
+            fixture.createSession(
+                cohortId,
+                AttendanceTimeOffsets.DEFAULT.resolveFor(now.minusSeconds(30 * 60).plusNanos(1)),
+            )
+        val future = fixture.createSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.plusSeconds(86_400)))
+
+        fixture.attendanceCommandService.initializeForNewCohortMember(MemberId(50L), cohortId)
+
+        val created = fixture.attendances.all().filter { it.memberId == 50L }
+        assertThat(created.map { it.sessionId }).containsExactlyInAnyOrder(justOpen.id!!.value, future.id!!.value)
+        assertThat(created.map { it.sessionId }).doesNotContain(exactDeadline.id!!.value, sessionId.value)
+        assertThat(created).allMatch { it.status == AttendanceStatus.PENDING }
+    }
+
     private fun attend(
         memberId: Long,
         at: Instant,
