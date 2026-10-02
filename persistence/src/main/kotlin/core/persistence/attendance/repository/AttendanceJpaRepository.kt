@@ -16,10 +16,7 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
 
     fun findAllBySessionIdAndDeletedAtIsNull(sessionId: Long): List<AttendanceEntity>
 
-    /*
-     * 아래 갱신은 모두 조건부 단일 UPDATE 다. 읽어 둔 엔티티 전체를 저장하지 않으므로
-     * 다른 쓰기가 먼저 반영한 상태/인증 시각/삭제 표시를 덮어쓰지 않는다.
-     */
+    // 아래 갱신은 모두 조건부 단일 UPDATE 라 다른 쓰기가 먼저 반영한 값을 덮어쓰지 않는다.
 
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)

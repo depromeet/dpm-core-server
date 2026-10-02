@@ -28,10 +28,7 @@ import core.domain.team.vo.TeamNumber
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 
-/**
- * 출석 행 저장소 가짜 구현. 서비스 흐름 검증용으로 JPQL 조건부 UPDATE 와 같은 조건을 흉내 낸다.
- * SQL 조건 자체와 잠금/격리 수준 동작은 MySQL 통합 테스트에서만 검증한다.
- */
+/** JPQL 조건부 UPDATE 와 같은 조건을 흉내 낸다. SQL 과 잠금 동작은 MySQL 통합 테스트에서 검증한다. */
 class FakeAttendancePersistencePort : AttendancePersistencePort {
     data class Row(
         val id: Long,
