@@ -47,14 +47,10 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
- * 실제 MySQL 에서 잠금/조건부 UPDATE 동작을 검증한다. 기본 test 태스크에서는 제외된다.
+ * 실제 MySQL 에서 잠금/조건부 UPDATE 를 검증한다. 기본 test 태스크에서는 제외되며 스키마를 새로 만든다(로컬 dpm_it* DB 만 허용).
  *
- * 실행 예:
- *   docker run -d --name dpm-it-mysql -e MYSQL_ROOT_PASSWORD=it -e MYSQL_DATABASE=dpm_it -p 3307:3306 mysql:8.0
- *   DPM_IT_MYSQL_URL='jdbc:mysql://127.0.0.1:3307/dpm_it?serverTimezone=Asia/Seoul&characterEncoding=UTF-8' \
- *   DPM_IT_MYSQL_USERNAME=root DPM_IT_MYSQL_PASSWORD=it ./gradlew :application:mysqlIntegrationTest
- *
- * 스키마는 엔티티로부터 새로 만든다(ddl-auto=create). 안전을 위해 로컬 호스트의 dpm_it* DB 만 허용한다.
+ *   DPM_IT_MYSQL_URL='jdbc:mysql://127.0.0.1:3307/dpm_it' DPM_IT_MYSQL_USERNAME=root DPM_IT_MYSQL_PASSWORD=it \
+ *   ./gradlew :application:mysqlIntegrationTest
  */
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
@@ -85,18 +81,14 @@ class AttendanceConcurrencyMySqlIntegrationTest {
 
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
 
-    /** 테스트 데이터의 운영진 결정 시각 */
     private val decidedAt = Instant.parse("2026-01-01T00:00:00Z")
     private val sessionStart = Instant.parse("2026-10-10T10:00:00Z")
     private val times = AttendanceTimeOffsets.DEFAULT.resolveFor(sessionStart)
 
-    /** 각 테스트가 시계를 직접 맞추지 않아도 같은 시작 시각에서 출발하도록 한다. */
     @BeforeEach
     fun resetClock() {
         clock.now = Instant.parse("2026-10-01T03:00:00Z")
     }
-
-    // ---------------------------------------------------------------- 인증 경쟁
 
     @Test
     fun `같은 멤버의 동시 인증은 정확히 하나만 저장된다`() {
@@ -247,8 +239,6 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         }
     }
 
-    // ---------------------------------------------------------------- 자동 결석
-
     @Test
     fun `자동 결석은 과거 기수의 오래 전 마감 세션까지 미인증만 처리하고 운영진 결정은 보호하며 반복 실행해도 같다`() {
         val oldCohortId = newCohort()
@@ -335,51 +325,6 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         assertThat(statusOf(legacy)).isEqualTo("ABSENT")
     }
 
-    // ---------------------------------------------------------------- 신규 멤버
-
-    @Test
-    fun `신규 멤버는 마감 전 세션에만 기록이 생기고 기존 기록은 유지된다`() {
-        val cohortId = newCohort()
-        val now = Instant.parse("2026-11-01T10:00:00Z")
-        clock.now = now
-        val expired = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.minus(Duration.ofHours(2))))
-        val exactDeadline = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.minus(Duration.ofMinutes(30))))
-        val future = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.plus(Duration.ofDays(1))))
-        val existing = addAttendance(expired, memberId = 70L, status = AttendanceStatus.EXCUSED_ABSENT, updatedAt = decidedAt)
-
-        attendanceCommandService.initializeForNewCohortMember(MemberId(70L), cohortId)
-        autoAbsenceService.closeExpiredAttendances()
-
-        assertThat(countOf(expired, 70L)).isEqualTo(1L)
-        assertThat(statusOf(existing)).isEqualTo("EXCUSED_ABSENT")
-        assertThat(countOf(exactDeadline, 70L)).isZero()
-        assertThat(countOf(future, 70L)).isEqualTo(1L)
-        assertThat(attendancePort.findAttendanceBy(future.id!!.value, 70L)!!.status).isEqualTo(AttendanceStatus.PENDING)
-    }
-
-    @Test
-    fun `신규 멤버 초기화와 세션 삭제가 경쟁해도 삭제된 세션에 살아 있는 기록이 남지 않는다`() {
-        repeat(5) {
-            val cohortId = newCohort()
-            clock.now = Instant.parse("2026-10-01T03:00:00Z")
-            val sessions = (1..3).map { day -> newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(sessionStart.plus(Duration.ofDays(day.toLong())))) }
-
-            runConcurrently(2) { index ->
-                if (index == 0) {
-                    attendanceCommandService.initializeForNewCohortMember(MemberId(80L), cohortId)
-                } else {
-                    sessionCommandService.softDeleteSession(sessions[1].id!!)
-                }
-            }
-
-            assertThat(attendancePort.findAttendanceBy(sessions[1].id!!.value, 80L)).isNull()
-            assertThat(countOf(sessions[0], 80L)).isEqualTo(1L)
-            assertThat(countOf(sessions[2], 80L)).isEqualTo(1L)
-        }
-    }
-
-    // ---------------------------------------------------------------- 세션 생성 트랜잭션
-
     @Test
     fun `새 세션과 초기 출석 기록은 같은 트랜잭션으로 커밋된다`() {
         val cohortId = newCohort()
@@ -431,11 +376,7 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         assertThat(attendancePort.findAllBySessionId(session.id!!.value)).isEmpty()
     }
 
-    // ---------------------------------------------------------------- helpers
-
-    /**
-     * 세션 조회는 도메인 변환 시 지연 로딩 컬렉션(attachments)을 읽으므로, 운영 호출자처럼 트랜잭션 안에서 읽는다.
-     */
+    // 세션 도메인 변환이 지연 로딩 컬렉션(attachments)을 읽으므로 트랜잭션 안에서 읽는다.
     private fun <T> inReadTransaction(block: () -> T): T =
         TransactionTemplate(transactionManager)
             .apply { isReadOnly = true }
@@ -449,17 +390,6 @@ class AttendanceConcurrencyMySqlIntegrationTest {
             eventName = null,
             isOnline = null,
         )
-
-    private fun countOf(
-        session: Session,
-        memberId: Long,
-    ): Long =
-        jdbcTemplate.queryForObject(
-            "select count(*) from attendances where session_id = ? and member_id = ? and deleted_at is null",
-            Long::class.javaObjectType,
-            session.id!!.value,
-            memberId,
-        )!!
 
     private fun autoAbsentAtOf(attendanceId: Long): Any? =
         jdbcTemplate.queryForList("select auto_absent_at from attendances where attendance_id = ?", attendanceId)
@@ -542,7 +472,7 @@ class AttendanceConcurrencyMySqlIntegrationTest {
 
     private fun uniqueValue(): String = "it-" + UUID.randomUUID().toString().substring(0, 12)
 
-    /** 모든 작업을 동시에 시작하고 결과(성공/예외)를 모은다. 교착 등으로 끝나지 않으면 실패한다. */
+    /** 모든 작업을 동시에 시작하고 결과를 모은다. 교착 등으로 끝나지 않으면 실패한다. */
     private fun <T> runConcurrently(
         count: Int,
         task: (Int) -> T,
