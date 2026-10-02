@@ -246,10 +246,7 @@ class AttendanceRepository(
         }
     }
 
-    /**
-     * 세션 목록의 결석 사유서를 한 번에 조회한다(세션마다 조회하지 않는다).
-     * 같은 세션에 사유서가 여러 건이면 가장 최근(id 가 가장 큰) 것을 쓴다.
-     */
+    /** 결석 사유서를 한 번에 조회한다. 같은 세션에 여러 건이면 가장 최근 것을 쓴다. */
     private fun findAbsenceReasonsBySession(
         memberId: Long,
         sessionIds: List<Long>,
@@ -388,11 +385,8 @@ class AttendanceRepository(
             .fetchOne(0, Int::class.java) ?: 0
 
     /**
-     * (멤버, 기수) 단위 출석 집계. 수료 판정을 쓰는 조회들이 같은 집계를 공유한다.
-     *
-     * 팀 메타데이터와 조인하기 전에 집계하므로 팀 조인으로 출석 행이 곱해지지 않는다.
-     * 삭제된 세션과 삭제된 출석 기록은 빼고, 분모로 쓸 그 기수의 전체 세션 수(삭제 제외, 아직 열리지 않은 세션 포함)를 함께 구한다.
-     * 미인증(PENDING)과 레거시 조퇴(EARLY_LEAVE)는 어느 카운트에도 넣지 않는다.
+     * 수료 판정 조회들이 공유하는 (멤버, 기수) 단위 출석 집계. 팀과 조인하지 않아 카운트가 곱해지지 않는다.
+     * 삭제된 세션/기록은 빼고 분모로 쓸 기수 전체 세션 수(삭제 제외)를 함께 구한다.
      */
     private val attendanceSummary: Table<*> =
         run {
@@ -455,17 +449,14 @@ class AttendanceRepository(
             offlineAbsentCount = this[summaryOfflineAbsentCount] ?: 0,
         )
 
-    /** 집계 행에 멤버와 기수를 붙인다. 팀은 조인하지 않으므로 팀 매핑 수와 무관하게 (멤버, 기수)당 한 행이다. */
+    /** 팀은 조인하지 않아 팀 매핑 수와 무관하게 (멤버, 기수)당 한 행이다. */
     private fun <R : Record> SelectJoinStep<R>.joinMemberCohort(): SelectJoinStep<R> =
         join(MEMBERS)
             .on(MEMBERS.MEMBER_ID.eq(summaryMemberId))
             .join(COHORTS)
             .on(COHORTS.COHORT_ID.eq(summaryCohortId))
 
-    /**
-     * 집계 행 기수에서의 멤버 팀 번호(표시용). 팀이 여러 개면 기존 규칙대로 가장 최근 배정(member_team_id 최대)을 쓰고,
-     * 그 기수에 팀이 없으면 null 이다(TeamNumber 기본값 0 으로 표시).
-     */
+    /** 표시용 팀 번호: 그 기수의 가장 최근 배정(member_team_id 최대). 없으면 null(팀 0). */
     private val summaryTeamNumber =
         field(
             select(TEAMS.NUMBER)
@@ -477,7 +468,7 @@ class AttendanceRepository(
                 .limit(1),
         ).`as`(TEAM_NUMBER)
 
-    /** 집계 행 기수에서 멤버가 주어진 번호의 팀에 속하는지. 행을 늘리거나 없애지 않고 고르기만 한다. */
+    /** 그 기수 팀 소속으로 멤버만 고른다(행을 늘리거나 없애지 않는다). */
     private fun belongsToTeamIn(teamNumbers: Collection<Int>): Condition =
         exists(
             selectOne()

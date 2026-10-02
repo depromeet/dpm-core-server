@@ -34,11 +34,7 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
-/**
- * 수료 판정에 쓰는 출석 집계 조회를 실제 MySQL 에서 검증한다.
- * (팀 조인으로 인한 카운트 곱셈, 기수 범위, 삭제된 세션, 결석 사유서 연결)
- * 실행 방법과 안전 조건은 [AttendanceConcurrencyMySqlIntegrationTest] 와 같다.
- */
+/** 수료 판정용 출석 집계 조회를 MySQL 에서 검증한다. 실행 조건은 [AttendanceConcurrencyMySqlIntegrationTest] 와 같다. */
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(
@@ -68,7 +64,7 @@ class AttendanceOverviewMySqlIntegrationTest {
         val name = uniqueName()
         val (oldCohort, currentCohort) = newCohortPair()
         val memberId = newMember(name)
-        // 두 기수 모두에 팀이 있고 현재 기수에는 팀이 두 번 배정됐다. 예전에는 출석 행이 팀 수만큼 곱해졌다.
+        // 두 기수 모두에 팀이 있고 현재 기수에는 팀이 두 번 배정됐다.
         joinTeam(memberId, oldCohort, teamNumber = 3)
         joinTeam(memberId, currentCohort, teamNumber = 5)
         joinTeam(memberId, currentCohort, teamNumber = 7)
@@ -188,8 +184,6 @@ class AttendanceOverviewMySqlIntegrationTest {
         assertThat(team2Rows.single { it.id == absentMember }.summary.lateCount).isEqualTo(1)
         assertThat(attendancePort.countMemberAttendancesByQuery(team2, TeamNumber.defaultValue())).isEqualTo(2)
     }
-
-    // ---------------------------------------------------------------- helpers
 
     /** 최신 기수 선택(기수 값의 숫자 크기)을 확인할 수 있도록 숫자 값의 이전/현재 기수를 만든다. */
     private fun newCohortPair(): Pair<CohortId, CohortId> {
