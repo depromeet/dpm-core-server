@@ -25,10 +25,7 @@ class Attendance(
     var status: AttendanceStatus = status
         private set
 
-    /**
-     * 자동 결석 처리 시각. 자동 결석(스케줄러)으로 ABSENT 가 된 경우에만 기록되며,
-     * 인증/운영진 변경/마감 연장에 따른 재개 시 해제됩니다. 기능 도입 전 기록은 null 입니다.
-     */
+    /** 자동 결석 출처 표지. 자동 결석에서만 기록하고 인증/운영진 변경/재개 시 지운다. 기능 도입 전 기록은 null. */
     var autoAbsentAt: Instant? = autoAbsentAt
         private set
 
@@ -127,7 +124,7 @@ class Attendance(
         this.autoAbsentAt = null
     }
 
-    /** 자동 결석 처리. 운영진 변경 표지는 기록하지 않고 자동 결석 표지만 기록합니다. */
+    /** updatedAt 은 남기지 않고 자동 결석 표지만 기록한다. */
     fun markAutoAbsent(at: Instant) {
         this.status = AttendanceStatus.ABSENT
         this.autoAbsentAt = at

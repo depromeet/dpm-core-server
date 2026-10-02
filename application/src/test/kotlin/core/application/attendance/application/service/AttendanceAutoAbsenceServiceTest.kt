@@ -8,10 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
-/**
- * 어떤 세션이 대상인지와 어떤 행을 바꾸는지는 SQL 조건이라 MySQL 통합 테스트에서 검증한다.
- * 여기서는 실패를 주입해야만 확인할 수 있는 세션별 실패 격리만 검증한다.
- */
+/** 대상 선정과 갱신 조건은 MySQL 통합 테스트에서 검증하고, 여기서는 세션별 실패 격리만 본다. */
 class AttendanceAutoAbsenceServiceTest {
     private val now = Instant.parse("2026-10-01T03:00:00Z")
     private val fixture = AttendanceTestFixture(now = now)
@@ -47,7 +44,7 @@ class AttendanceAutoAbsenceServiceTest {
         assertThat(fixture.attendances.row(secondId).status).isEqualTo(AttendanceStatus.ABSENT)
     }
 
-    /** 실제 AttendanceCommandService 와 같은 의존성으로 만든 하위 클래스 (kotlin-spring 으로 open 됨) */
+    // kotlin-spring 으로 open 된 실제 서비스의 하위 클래스로 실패를 주입한다.
     private open class AttendanceCommandServiceDelegate(
         fixture: AttendanceTestFixture,
     ) : AttendanceCommandService(
