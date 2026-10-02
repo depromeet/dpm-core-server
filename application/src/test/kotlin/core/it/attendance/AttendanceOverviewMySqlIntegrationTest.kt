@@ -83,8 +83,13 @@ class AttendanceOverviewMySqlIntegrationTest {
         addAttendance(absent, memberId, AttendanceStatus.ABSENT)
         addAttendance(upcoming, memberId, AttendanceStatus.PENDING)
         addAttendance(deleted, memberId, AttendanceStatus.ABSENT)
-        addAbsenceReason(absent, memberId, "예전 사유", "REJECTED")
-        addAbsenceReason(absent, memberId, "병원 진료", "PENDING")
+        val oldReasonId = addAbsenceReason(absent, memberId, "예전 사유", "REJECTED")
+        val reasonId = addAbsenceReason(absent, memberId, "병원 진료", "PENDING")
+        val imageBase = uniqueId()
+        // 최신 사유서의 첨부만, 표시 순서대로 붙는다
+        linkImage(reasonId, imageBase + 2, displayOrder = 0)
+        linkImage(reasonId, imageBase + 1, displayOrder = 1)
+        linkImage(oldReasonId, imageBase + 3, displayOrder = 0)
 
         val expectedSummary =
             AttendanceSummaryQueryModel(
@@ -108,7 +113,14 @@ class AttendanceOverviewMySqlIntegrationTest {
         assertThat(sessions.single { it.sessionId == absent.id!!.value }.absenceReason)
             .usingRecursiveComparison()
             .ignoringFields("id")
-            .isEqualTo(MemberSessionAttendanceQueryModel.AbsenceReason(id = 0, contents = "병원 진료", status = "PENDING"))
+            .isEqualTo(
+                MemberSessionAttendanceQueryModel.AbsenceReason(
+                    id = 0,
+                    contents = "병원 진료",
+                    status = "PENDING",
+                    imageIds = listOf(imageBase + 2, imageBase + 1),
+                ),
+            )
 
         // 같은 세션별 개인 상세의 수료 판정도 같은 집계를 쓴다
         val sessionDetail =
@@ -257,13 +269,27 @@ class AttendanceOverviewMySqlIntegrationTest {
         memberId: Long,
         contents: String,
         status: String,
-    ) {
+    ): Long {
         jdbcTemplate.update(
             "insert into absence_reasons (session_id, member_id, contents, status, created_at) values (?, ?, ?, ?, now(6))",
             session.id!!.value,
             memberId,
             contents,
             status,
+        )
+        return jdbcTemplate.queryForObject("select max(absence_reason_id) from absence_reasons where member_id = ?", Long::class.javaObjectType, memberId)!!
+    }
+
+    private fun linkImage(
+        absenceReasonId: Long,
+        imageId: Long,
+        displayOrder: Int,
+    ) {
+        jdbcTemplate.update(
+            "insert into absence_reason_images (absence_reason_id, image_id, display_order) values (?, ?, ?)",
+            absenceReasonId,
+            imageId,
+            displayOrder,
         )
     }
 
