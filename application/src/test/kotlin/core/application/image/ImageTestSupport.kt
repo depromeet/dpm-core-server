@@ -79,6 +79,8 @@ class FakeImagePersistencePort : ImagePersistencePort {
     }
 
     override fun findById(imageId: ImageId): Image? = images[imageId]
+
+    override fun findAllByIds(imageIds: List<ImageId>): List<Image> = imageIds.mapNotNull { images[it] }
 }
 
 class FakeImageStoragePort : ImageStoragePort {

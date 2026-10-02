@@ -1,5 +1,6 @@
 package core.application.attendance.presentation.controller
 
+import core.application.attendance.application.service.AbsenceReasonImageQueryService
 import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.attendance.application.service.AttendanceQueryService
 import core.application.attendance.presentation.response.DetailAttendancesBySessionResponse
@@ -10,6 +11,7 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
+import core.application.image.presentation.mapper.ImageResponseMapper
 import core.application.security.annotation.CurrentMemberId
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
@@ -17,8 +19,10 @@ import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQue
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
+import core.domain.image.vo.ImageId
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -29,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController
 class AttendanceQueryController(
     private val attendanceQueryService: AttendanceQueryService,
     private val absenceReasonQueryService: AbsenceReasonQueryService,
+    private val absenceReasonImageQueryService: AbsenceReasonImageQueryService,
 ) : AttendanceQueryApi {
     @PreAuthorize("hasAuthority('create:attendance')")
     @GetMapping("/v1/sessions/{sessionId}/attendances")
@@ -164,4 +169,15 @@ class AttendanceQueryController(
         @PathVariable sessionId: SessionId,
     ): CustomResponse<SessionAbsenceReasonsResponse> =
         CustomResponse.ok(absenceReasonQueryService.getSessionAbsenceReasons(sessionId))
+
+    @PreAuthorize("hasAuthority('update:attendance')")
+    @GetMapping("/v2/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId}")
+    override fun getAbsenceReasonImage(
+        @PathVariable sessionId: SessionId,
+        @PathVariable memberId: MemberId,
+        @PathVariable imageId: ImageId,
+    ): ResponseEntity<ByteArray> =
+        ImageResponseMapper.toInlineResponse(
+            absenceReasonImageQueryService.getAbsenceReasonImage(sessionId, memberId, imageId),
+        )
 }

@@ -7,4 +7,6 @@ interface ImagePersistencePort {
     fun save(image: Image): Image
 
     fun findById(imageId: ImageId): Image?
+
+    fun findAllByIds(imageIds: List<ImageId>): List<Image>
 }

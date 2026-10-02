@@ -153,6 +153,7 @@ object AttendanceMapper {
                                     id = it.id,
                                     contents = it.contents,
                                     status = it.status,
+                                    imageIds = it.imageIds,
                                 )
                             },
                     )

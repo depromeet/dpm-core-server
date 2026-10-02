@@ -1,5 +1,6 @@
 package core.application.attendance.presentation.controller
 
+import core.application.attendance.application.exception.translateAbsenceReasonImageConflict
 import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
@@ -95,13 +96,16 @@ class AttendanceCommandController(
         @CurrentMemberId memberId: MemberId,
         @RequestBody request: AbsenceReportCreateRequest,
     ): CustomResponse<Void> {
-        absenceReasonCommandService.submitAbsenceReason(
-            AbsenceReportCreateCommand(
-                sessionId = sessionId,
-                memberId = memberId,
-                contents = request.contents,
-            ),
-        )
+        translateAbsenceReasonImageConflict {
+            absenceReasonCommandService.submitAbsenceReason(
+                AbsenceReportCreateCommand(
+                    sessionId = sessionId,
+                    memberId = memberId,
+                    contents = request.contents,
+                    imageIds = request.toImageIds(),
+                ),
+            )
+        }
 
         return CustomResponse.ok()
     }
@@ -113,13 +117,16 @@ class AttendanceCommandController(
         @CurrentMemberId memberId: MemberId,
         @RequestBody request: AbsenceReportUpdateRequest,
     ): CustomResponse<Void> {
-        absenceReasonCommandService.updateAbsenceReason(
-            AbsenceReportUpdateCommand(
-                sessionId = sessionId,
-                memberId = memberId,
-                contents = request.contents,
-            ),
-        )
+        translateAbsenceReasonImageConflict {
+            absenceReasonCommandService.updateAbsenceReason(
+                AbsenceReportUpdateCommand(
+                    sessionId = sessionId,
+                    memberId = memberId,
+                    contents = request.contents,
+                    imageIds = request.toImageIds(),
+                ),
+            )
+        }
 
         return CustomResponse.ok()
     }
