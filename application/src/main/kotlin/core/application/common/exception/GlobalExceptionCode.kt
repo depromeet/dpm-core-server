@@ -15,6 +15,7 @@ enum class GlobalExceptionCode(
     NOT_FOUND(HttpStatus.NOT_FOUND, "GLOBAL-404-01", "요청한 리소스를 찾을 수 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "GLOBAL-401-01", "로그인이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "GLOBAL-403-01", "요청 권한이 없습니다."),
+    PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "GLOBAL-413-01", "업로드 가능한 크기를 초과했습니다."),
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL-500-01", "예상치 못한 서버 에러가 발생했습니다"),
     ;
 

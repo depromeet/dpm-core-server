@@ -29,6 +29,9 @@ jjwt = "0.12.6"
 # MySQL
 mysql = "8.0.33"
 
+# OCI SDK
+oci_sdk = "3.97.1"
+
 
 [plugins]
 
@@ -79,6 +82,11 @@ jsonwebtoken_jjwt = { module = "io.jsonwebtoken:jjwt", version.ref = "jjwt" }
 
 # MySQL
 mysql_connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
+
+# OCI SDK (Object Storage, Jakarta/Jersey 3 HTTP client)
+oci_sdk_bom = { module = "com.oracle.oci.sdk:oci-java-sdk-bom", version.ref = "oci_sdk" }
+oci_sdk_objectstorage = { module = "com.oracle.oci.sdk:oci-java-sdk-objectstorage" }
+oci_sdk_common_httpclient_jersey3 = { module = "com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3" }
 
 # Junit
 kotlin_test_junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
