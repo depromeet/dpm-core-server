@@ -23,7 +23,9 @@ import io.swagger.v3.oas.annotations.tags.Tag
 interface AttendanceCommandApi {
     @Operation(
         summary = "세션 출석",
-        description = "세션에 대한 출석을 합니다. 요청 시 현재 시간을 기준으로 미리 생성된 출석 기록의 상태를 변경합니다",
+        description =
+            "서버가 요청을 받은 시각으로 출석을 판정합니다. 인증 시작부터 PRESENT, 지각 시작부터 LATE 이며 " +
+                "인증 마감 시각부터는 저장하지 않고 거절합니다(SESSION-400-06).",
         requestBody =
             RequestBody(
                 description = "출석 생성 요청",
@@ -73,6 +75,12 @@ interface AttendanceCommandApi {
                         ],
                     ),
                 ],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description =
+                    "SESSION-400-02 코드 불일치, SESSION-400-03 너무 이름, SESSION-400-04 이미 출석, " +
+                        "SESSION-400-06 인증 마감, SESSION-400-07 운영진이 상태 확정",
             ),
         ],
     )

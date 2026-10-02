@@ -74,6 +74,25 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+// MySQL 통합 테스트(@Tag("mysql-integration"))는 기본 test 에서 빼고 mysqlIntegrationTest 로만 실행한다.
+// DPM_IT_MYSQL_URL 등이 필요하며 스키마를 새로 만들므로 로컬 일회용 DB(dpm_it*)만 허용한다.
+tasks.named<Test>("test") {
+    useJUnitPlatform {
+        excludeTags("mysql-integration")
+    }
+}
+
+tasks.register<Test>("mysqlIntegrationTest") {
+    description = "Runs MySQL integration tests (requires DPM_IT_MYSQL_URL)."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform {
+        includeTags("mysql-integration")
+    }
+    shouldRunAfter(tasks.named("test"))
+}
+
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")

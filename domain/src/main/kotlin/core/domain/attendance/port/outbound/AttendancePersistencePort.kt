@@ -1,6 +1,7 @@
 package core.domain.attendance.port.outbound
 
 import core.domain.attendance.aggregate.Attendance
+import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
@@ -13,6 +14,7 @@ import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.domain.team.vo.TeamNumber
+import java.time.Instant
 
 interface AttendancePersistencePort {
     fun findAttendanceBy(
@@ -42,8 +44,6 @@ interface AttendancePersistencePort {
 
     fun saveInBatch(attendances: List<Attendance>)
 
-    fun updateInBatch(attendances: List<Attendance>)
-
     fun countSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
         myTeamNumber: TeamNumber,
@@ -55,4 +55,39 @@ interface AttendancePersistencePort {
     ): Int
 
     fun findAllBySessionId(sessionId: Long): List<Attendance>
+
+    // 아래 쓰기는 모두 조건부 단일 UPDATE 라 다른 쓰기의 결과를 덮어쓰지 않는다. 호출 측은 세션 행 잠금을 먼저 잡는다.
+
+    /** 삭제되지 않았고 운영진 변경과 인증 기록이 없는 PENDING 행만 갱신한다. */
+    fun recordAttendanceIfAllowed(
+        attendanceId: Long,
+        status: AttendanceStatus,
+        attendedAt: Instant,
+    ): Boolean
+
+    /** 상태와 updatedAt 을 바꾸고 attendedAt 은 보존한다. 갱신한 행 수를 반환한다. */
+    fun updateStatusByAdmin(
+        sessionId: Long,
+        memberIds: List<Long>,
+        status: AttendanceStatus,
+        updatedAt: Instant,
+    ): Int
+
+    /** 지정한 멤버들 중 삭제되지 않은 출석 행이 있는 멤버 수 */
+    fun countActiveAttendances(
+        sessionId: Long,
+        memberIds: List<Long>,
+    ): Int
+
+    /** 상태가 [expectedStatus] 이고 인증 기록이 있으며 운영진 변경이 없는 행만 바꾼다. updatedAt 은 남기지 않는다. */
+    fun updateStatusByPolicy(
+        attendanceId: Long,
+        expectedStatus: AttendanceStatus,
+        newStatus: AttendanceStatus,
+    ): Boolean
+
+    fun softDeleteAllBySessionId(
+        sessionId: Long,
+        deletedAt: Instant,
+    ): Int
 }

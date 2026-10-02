@@ -1,6 +1,7 @@
 package core.application.session.application.service
 
 import core.application.attendance.application.properties.AttendancePolicyProperties
+import core.application.attendance.application.service.AttendanceCommandService
 import core.application.cohort.application.service.CohortQueryService
 import core.application.session.application.exception.InvalidSessionIdException
 import core.application.session.application.exception.PartialAttendanceTimesException
@@ -14,17 +15,19 @@ import core.domain.session.aggregate.Session
 import core.domain.session.event.SessionCreateEvent
 import core.domain.session.event.SessionDeleteEvent
 import core.domain.session.event.SessionUpdateEvent
+import core.domain.session.extension.hasChangedComparedTo
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.outbound.SessionPersistencePort
-import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionAttendanceTimes
 import core.domain.session.vo.SessionId
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.Instant
 
+/** 세션 행 쓰기 잠금을 먼저 잡고 출석 행을 바꿔 인증/운영진 변경과 직렬화한다(잠금 순서: session -> attendance). */
 @Service
 @Transactional
 class SessionCommandService(
@@ -34,6 +37,8 @@ class SessionCommandService(
     private val cohortQueryService: CohortQueryService,
     private val sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase,
     private val attendancePolicyProperties: AttendancePolicyProperties,
+    private val attendanceCommandService: AttendanceCommandService,
+    private val clock: Clock,
 ) {
     // 판정 경계(지각 시작, 마감)는 그대로라 출석 기록은 재판정하지 않는다.
     fun updateSessionStartTime(
@@ -41,7 +46,7 @@ class SessionCommandService(
         attendanceStartTime: Instant,
     ) {
         val session =
-            sessionPersistencePort.findSessionById(sessionId.value)
+            sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)
                 ?: throw SessionNotFoundException()
 
         sessionValidator.validateAttendanceTimes(
@@ -84,9 +89,10 @@ class SessionCommandService(
         )
     }
 
+    // 오래된 이벤트 값이 이후 변경을 덮어쓰지 않도록 같은 트랜잭션에서 잠금을 유지한 채 재계산한다.
     fun updateSession(command: SessionUpdateCommand) {
         val session =
-            sessionPersistencePort.findSessionById(command.sessionId.value)
+            sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
                 ?: throw SessionNotFoundException()
 
         sessionValidator.validateAttendanceTimes(command.attendanceStart, command.lateStart, command.absentStart)
@@ -96,53 +102,38 @@ class SessionCommandService(
         session.updateSession(command)
         sessionPersistencePort.save(session)
 
-        publishIfAttendancePolicyChanged(
-            previousAttendancePolicy,
-            command.attendanceStart,
-            command.lateStart,
-            command.absentStart,
-            session,
+        val attendanceTimesChanged =
+            previousAttendancePolicy.hasChangedComparedTo(
+                attendanceStart = command.attendanceStart,
+                lateStart = command.lateStart,
+                absentStart = command.absentStart,
+            )
+        if (!attendanceTimesChanged) return
+
+        attendanceCommandService.applySessionPolicyChange(session, clock.instant())
+
+        eventPublisher.publishEvent(
+            SessionUpdateEvent(
+                sessionId = session.id ?: throw InvalidSessionIdException(),
+                lateStart = command.lateStart,
+                absentStart = command.absentStart,
+            ),
         )
     }
 
+    // 세션 잠금을 잡고 함께 삭제해 진행 중인 인증/운영진 변경이 삭제된 기록을 되살리지 않게 한다.
     fun softDeleteSession(sessionId: SessionId) {
         val session =
-            sessionPersistencePort.findSessionById(sessionId.value)
+            sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)
                 ?: throw SessionNotFoundException()
 
-        val now = Instant.now()
+        val now = clock.instant()
 
         session.delete(now)
         sessionPersistencePort.save(session)
+        attendanceCommandService.deleteAttendancesBySessionId(sessionId, now)
 
         eventPublisher.publishEvent(SessionDeleteEvent(sessionId, now))
-    }
-
-    private fun publishIfAttendancePolicyChanged(
-        previous: AttendancePolicy,
-        attendanceStart: Instant,
-        lateStart: Instant,
-        absentStart: Instant,
-        session: Session,
-    ) {
-        if (
-            previous.attendanceStart == attendanceStart &&
-            previous.lateStart == lateStart &&
-            previous.absentStart == absentStart
-        ) {
-            return
-        }
-
-        val sessionId = session.id ?: throw InvalidSessionIdException()
-
-        val event =
-            SessionUpdateEvent(
-                sessionId = sessionId,
-                lateStart = lateStart,
-                absentStart = absentStart,
-            )
-
-        eventPublisher.publishEvent(event)
     }
 
     private fun resolveAttendanceTimes(command: SessionCreateCommand): SessionAttendanceTimes {

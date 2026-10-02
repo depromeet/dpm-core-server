@@ -132,7 +132,8 @@ interface SessionCommandApi {
         summary = "세션 수정",
         description =
             "세션을 수정하고 연관된 멤버의 출석 상태를 갱신 합니다. 출석 시각 세 개는 모두 필요하며 " +
-                "출석 시작 < 지각 시작 < 출석 마감 순서여야 합니다(SESSION-400-08).",
+                "출석 시작 < 지각 시작 < 출석 마감 순서여야 합니다(SESSION-400-08). " +
+                "인증 기록은 새 시각으로 다시 판정하고, 운영진이 변경한 기록은 유지합니다.",
         requestBody =
             RequestBody(
                 description = "세션 수정 요청",
