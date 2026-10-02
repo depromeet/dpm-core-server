@@ -85,12 +85,7 @@ class AttendanceQueryService(
                             teamNumber = member.teamNumber,
                             isAdmin = member.isAdmin,
                             part = member.part,
-                            attendanceStatus =
-                                attendanceGraduationEvaluator.evaluate(
-                                    onlineAbsentCount = member.onlineAbsentCount,
-                                    offlineAbsentCount = member.offlineAbsentCount,
-                                    lateCount = member.lateCount,
-                                ),
+                            attendanceStatus = attendanceGraduationEvaluator.evaluate(member.summary).name,
                         )
                     }.toList(),
             onlyMyTeam = (query.teams?.contains(myTeamNumber.value) == true) || (query.onlyMyTeam ?: false),
@@ -109,12 +104,7 @@ class AttendanceQueryService(
 
         return AttendanceMapper.toDetailAttendanceBySessionResponse(
             queryResult,
-            evaluation =
-                attendanceGraduationEvaluator.evaluate(
-                    onlineAbsentCount = queryResult.onlineAbsentCount,
-                    offlineAbsentCount = queryResult.offlineAbsentCount,
-                    lateCount = queryResult.lateCount,
-                ),
+            evaluation = attendanceGraduationEvaluator.evaluate(queryResult.summary).name,
         )
     }
 
@@ -137,12 +127,7 @@ class AttendanceQueryService(
         return AttendanceMapper.toDetailMemberAttendancesResponse(
             memberAttendanceModel = memberAttendanceQueryResult,
             sessionAttendancesModel = sessionAttendanceQueryResult,
-            evaluation =
-                attendanceGraduationEvaluator.evaluate(
-                    onlineAbsentCount = memberAttendanceQueryResult.onlineAbsentCount,
-                    offlineAbsentCount = memberAttendanceQueryResult.offlineAbsentCount,
-                    lateCount = memberAttendanceQueryResult.lateCount,
-                ),
+            evaluation = attendanceGraduationEvaluator.evaluate(memberAttendanceQueryResult.summary).name,
         )
     }
 

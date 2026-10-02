@@ -261,7 +261,7 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "사람별 출석 상세 조회",
-        description = "사람별 출석을 상세하게 조회합니다.",
+        description = "사람별 출석을 상세하게 조회합니다. " + MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION,
     )
     @ApiResponses(
         value = [
@@ -293,8 +293,7 @@ interface AttendanceQueryApi {
                                                 "presentCount": 1,
                                                 "lateCount": 1,
                                                 "excusedAbsentCount": 0,
-                                                "absentCount": 0,
-                                                "earlyLeaveCount": 0
+                                                "absentCount": 1
                                             },
                                             "sessions": [
                                                 {
@@ -302,14 +301,31 @@ interface AttendanceQueryApi {
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
                                                     "date": "2025-08-02T14:03:42.000000",
-                                                    "attendanceStatus": "PRESENT"
+                                                    "attendanceStatus": "PRESENT",
+                                                    "isOnline": false,
+                                                    "absenceReason": null
                                                 },
                                                 {
                                                     "id": 6,
                                                     "week": 2,
                                                     "eventName": "2주차 세션",
                                                     "date": "2025-08-09T14:09:12.000000",
-                                                    "attendanceStatus": "LATE"
+                                                    "attendanceStatus": "LATE",
+                                                    "isOnline": true,
+                                                    "absenceReason": null
+                                                },
+                                                {
+                                                    "id": 9,
+                                                    "week": 3,
+                                                    "eventName": "3주차 세션",
+                                                    "date": "2025-08-16T14:00:00.000000",
+                                                    "attendanceStatus": "ABSENT",
+                                                    "isOnline": false,
+                                                    "absenceReason": {
+                                                        "id": 3,
+                                                        "contents": "병원 진료",
+                                                        "status": "PENDING"
+                                                    }
                                                 }
                                             ]
                                         }
@@ -326,7 +342,7 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "나의 출석 리스트 상세 조회",
-        description = "나의 출석 리스트를 상세하게 조회합니다.",
+        description = "나의 출석 리스트를 상세하게 조회합니다. " + MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION,
     )
     @ApiResponses(
         value = [
@@ -358,8 +374,7 @@ interface AttendanceQueryApi {
                                                 "presentCount": 1,
                                                 "lateCount": 1,
                                                 "excusedAbsentCount": 0,
-                                                "absentCount": 0,
-                                                "earlyLeaveCount": 0
+                                                "absentCount": 1
                                             },
                                             "sessions": [
                                                 {
@@ -367,14 +382,31 @@ interface AttendanceQueryApi {
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
                                                     "date": "2025-08-02T14:03:42.000000",
-                                                    "attendanceStatus": "PRESENT"
+                                                    "attendanceStatus": "PRESENT",
+                                                    "isOnline": false,
+                                                    "absenceReason": null
                                                 },
                                                 {
                                                     "id": 6,
                                                     "week": 2,
                                                     "eventName": "2주차 세션",
                                                     "date": "2025-08-09T14:09:12.000000",
-                                                    "attendanceStatus": "LATE"
+                                                    "attendanceStatus": "LATE",
+                                                    "isOnline": true,
+                                                    "absenceReason": null
+                                                },
+                                                {
+                                                    "id": 9,
+                                                    "week": 3,
+                                                    "eventName": "3주차 세션",
+                                                    "date": "2025-08-16T14:00:00.000000",
+                                                    "attendanceStatus": "ABSENT",
+                                                    "isOnline": false,
+                                                    "absenceReason": {
+                                                        "id": 3,
+                                                        "contents": "병원 진료",
+                                                        "status": "PENDING"
+                                                    }
                                                 }
                                             ]
                                         }
@@ -420,3 +452,11 @@ interface AttendanceQueryApi {
     )
     fun getSessionAbsenceReasons(sessionId: SessionId): CustomResponse<SessionAbsenceReasonsResponse>
 }
+
+private const val MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION =
+    "member.attendanceStatus 는 조회 시점에 계산한 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE)이다. " +
+        "결석 1회, 지각 0.5회로 환산하고 인정 결석은 출석으로, 미인증(PENDING)과 조퇴(EARLY_LEAVE)는 0으로 본다. " +
+        "IMPOSSIBLE: 남은 세션을 모두 출석해도 출석률 80% 미만(분모는 해당 기수의 삭제되지 않은 전체 세션 수), " +
+        "환산 결석 4회 초과(4.5회부터), 오프라인 결석 3회 이상 중 하나. " +
+        "AT_RISK: 환산 결석 3회 이상 또는 오프라인 결석 2회. " +
+        "sessions[].absenceReason 은 해당 세션에 제출한 결석 사유서이며 없으면 null 이다."
