@@ -23,7 +23,6 @@ data class MemberDetailAttendanceCountInfo(
     val lateCount: Int,
     val excusedAbsentCount: Int,
     val absentCount: Int,
-    val earlyLeaveCount: Int,
 )
 
 data class MemberDetailSessionInfo(
@@ -32,4 +31,14 @@ data class MemberDetailSessionInfo(
     val eventName: String,
     val date: LocalDateTime,
     val attendanceStatus: String,
+    val isOnline: Boolean,
+    /** 이 세션에 제출한 결석 사유서. 없으면 null */
+    val absenceReason: MemberDetailAbsenceReasonInfo?,
+)
+
+data class MemberDetailAbsenceReasonInfo(
+    val id: Long,
+    val contents: String,
+    /** 검토 상태: PENDING, APPROVED, REJECTED */
+    val status: String,
 )
