@@ -8,9 +8,6 @@ import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource
 
-/**
- * application.yml 의 attendance.policy 설정이 기동 시 어떻게 바인딩/검증되는지 실제 스프링 Binder 로 확인한다.
- */
 class AttendancePolicyPropertiesTest {
     @Test
     fun `설정이 없으면 기본값 10_15_30 이다`() {

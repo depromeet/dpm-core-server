@@ -307,10 +307,7 @@ class AttendanceRepository(
                 )
             }
 
-    /**
-     * JPA 로 저장해 호출한 트랜잭션과 함께 커밋/롤백된다.
-     * (JooqDslConfig 의 DSLContext 는 JPA 트랜잭션 밖의 커넥션을 쓰므로 출석 쓰기에는 사용하지 않는다.)
-     */
+    // jOOQ DSLContext 는 JPA 트랜잭션 밖 커넥션을 쓰므로, 호출 트랜잭션과 함께 커밋되도록 JPA 로 저장한다.
     override fun saveInBatch(attendances: List<Attendance>) {
         if (attendances.isEmpty()) return
         attendanceJpaRepository.saveAll(attendances.map { AttendanceEntity.from(it) })
