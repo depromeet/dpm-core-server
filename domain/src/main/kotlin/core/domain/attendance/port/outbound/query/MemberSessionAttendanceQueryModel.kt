@@ -7,5 +7,14 @@ data class MemberSessionAttendanceQueryModel(
     val sessionWeek: Int,
     val sessionEventName: String,
     val sessionDate: Instant,
+    val sessionIsOnline: Boolean,
     val sessionAttendanceStatus: String,
-)
+    /** 이 세션에 제출한 결석 사유서. 없으면 null */
+    val absenceReason: AbsenceReason?,
+) {
+    data class AbsenceReason(
+        val id: Long,
+        val contents: String,
+        val status: String,
+    )
+}
