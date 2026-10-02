@@ -74,10 +74,8 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-// 실제 MySQL 이 필요한 통합 테스트(@Tag("mysql-integration"))는 기본 test 에서 제외하고 별도 태스크로만 실행한다.
-// 실행: DPM_IT_MYSQL_URL=jdbc:mysql://127.0.0.1:3307/dpm_it DPM_IT_MYSQL_USERNAME=root DPM_IT_MYSQL_PASSWORD=... \
-//       ./gradlew :application:mysqlIntegrationTest
-// 주의: 테스트가 스키마를 새로 만든다(ddl-auto=create). 로컬의 일회용 DB(dpm_it*)만 허용한다.
+// MySQL 통합 테스트(@Tag("mysql-integration"))는 기본 test 에서 빼고 mysqlIntegrationTest 로만 실행한다.
+// DPM_IT_MYSQL_URL 등이 필요하며 스키마를 새로 만들므로 로컬 일회용 DB(dpm_it*)만 허용한다.
 tasks.named<Test>("test") {
     useJUnitPlatform {
         excludeTags("mysql-integration")

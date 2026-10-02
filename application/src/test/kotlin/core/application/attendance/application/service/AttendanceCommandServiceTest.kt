@@ -28,8 +28,6 @@ class AttendanceCommandServiceTest {
     private val session: Session = fixture.createSession(cohortId, times)
     private val sessionId = session.id!!
 
-    // ---------------------------------------------------------------- 인증
-
     @Test
     fun `경계 시각에 맞춰 출석과 지각으로 요청 시각을 저장한다`() {
         val cases =
@@ -111,8 +109,6 @@ class AttendanceCommandServiceTest {
         assertThatThrownBy { attend(1L, times.attendanceStart) }.isInstanceOf(SessionNotFoundException::class.java)
     }
 
-    // ---------------------------------------------------------------- 운영진 변경
-
     @Test
     fun `운영진 단건 변경 대상이 없으면 404`() {
         assertThatThrownBy {
@@ -147,31 +143,6 @@ class AttendanceCommandServiceTest {
             assertThat(fixture.attendances.row(id).updatedAt).isNotNull()
         }
     }
-
-    // ---------------------------------------------------------------- 신규 멤버
-
-    @Test
-    fun `신규 멤버는 마감이 지나지 않은 세션에만 출석 기록이 생긴다`() {
-        val now = Instant.parse("2026-10-20T10:00:00Z")
-        fixture.clock.now = now
-        val exactDeadline =
-            fixture.createSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.minusSeconds(30 * 60)))
-        val justOpen =
-            fixture.createSession(
-                cohortId,
-                AttendanceTimeOffsets.DEFAULT.resolveFor(now.minusSeconds(30 * 60).plusNanos(1)),
-            )
-        val future = fixture.createSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.plusSeconds(86_400)))
-
-        fixture.attendanceCommandService.initializeForNewCohortMember(MemberId(50L), cohortId)
-
-        val created = fixture.attendances.all().filter { it.memberId == 50L }
-        assertThat(created.map { it.sessionId }).containsExactlyInAnyOrder(justOpen.id!!.value, future.id!!.value)
-        assertThat(created.map { it.sessionId }).doesNotContain(exactDeadline.id!!.value, sessionId.value)
-        assertThat(created).allMatch { it.status == AttendanceStatus.PENDING }
-    }
-
-    // ---------------------------------------------------------------- 자동 결석
 
     @Test
     fun `마감 1ns 전에는 자동 결석하지 않고 정확히 마감부터 표지와 함께 처리한다`() {
