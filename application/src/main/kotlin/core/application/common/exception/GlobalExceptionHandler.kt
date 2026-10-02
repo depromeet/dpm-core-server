@@ -14,6 +14,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.multipart.MaxUploadSizeExceededException
+import org.springframework.web.multipart.MultipartException
+import org.springframework.web.multipart.support.MissingServletRequestPartException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
@@ -78,6 +81,25 @@ class GlobalExceptionHandler {
     ): CustomResponse<Void> {
         logger.error { "Exception: ${exception.javaClass.simpleName} - ${exception.message}" }
         return CustomResponse.error(GlobalExceptionCode.METHOD_NOT_ALLOWED)
+    }
+
+    // 멀티파트 크기 초과는 컨트롤러 진입 전(파싱 단계)에 나므로 Exception 핸들러의 500 으로 떨어지지 않게 따로 받는다.
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    fun handleMaxUploadSizeExceededException(exception: MaxUploadSizeExceededException): CustomResponse<Void> =
+        CustomResponse.error(GlobalExceptionCode.PAYLOAD_TOO_LARGE)
+
+    @ExceptionHandler(MissingServletRequestPartException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleMissingServletRequestPartException(exception: MissingServletRequestPartException): CustomResponse<Void> =
+        CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, "${exception.requestPartName}: 필수 입력값입니다")
+
+    @ExceptionHandler(MultipartException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleMultipartException(exception: MultipartException): CustomResponse<Void> {
+        // 임시 디렉터리 오류 같은 서버 측 파싱 실패도 여기로 오므로 원인을 남긴다.
+        logger.warn(exception) { "Multipart 요청을 처리하지 못했습니다: ${exception.message}" }
+        return CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, "올바른 multipart/form-data 요청이 아닙니다")
     }
 
     @ExceptionHandler(Exception::class)
