@@ -36,21 +36,10 @@ class Attendance(
     /** 출석 상태가 PENDING가 아니고, 출석 시각이 존재하는지 여부를 확인합니다.*/
     fun isAttended(): Boolean = status != AttendanceStatus.PENDING && attendedAt != null
 
-    /**
-     * 운영진에 의해 이미 상태가 변경되었는지 여부를 확인합니다.
-     *
-     * updatedAt 은 운영진 변경(단건/일괄/결석 사유 승인)에서만 기록됩니다.
-     * 세션 정책 재계산은 updatedAt 을 기록하지 않습니다.
-     * 과거 데이터에 updatedAt 이 있으면 출처와 관계없이 운영진 변경으로 보고 보호합니다.
-     */
+    /** updatedAt 은 운영진 변경에서만 기록한다. 과거 데이터의 updatedAt 도 운영진 변경으로 보고 보호한다. */
     fun isAlreadyUpdated(): Boolean = updatedAt != null
 
-    /**
-     * 출석 인증으로 상태를 기록할 수 있는지 여부.
-     *
-     * 미인증(PENDING)인 경우만 가능합니다.
-     * 운영진이 변경한 기록(updatedAt 존재)은 attendedAt 이 없어도 인증으로 덮어쓰지 않습니다.
-     */
+    /** 미인증(PENDING)만 인증으로 기록할 수 있다. 운영진이 정한 기록은 덮어쓰지 않는다. */
     fun canRecordAttendance(): Boolean =
         updatedAt == null &&
             attendedAt == null &&
@@ -71,7 +60,7 @@ class Attendance(
         this.attendedAt = attendedAt
     }
 
-    /** 운영진 변경. 운영진 변경 표지(updatedAt)를 기록합니다. */
+    /** 운영진 변경 표지(updatedAt)를 기록한다. */
     fun updateStatus(
         newStatus: AttendanceStatus,
         updatedAt: Instant = Instant.now(),
@@ -85,14 +74,8 @@ class Attendance(
     }
 
     /**
-     * 세션 출석 시각이 바뀌었을 때 이 기록이 가져야 할 새 상태를 계산합니다.
-     *
-     * 실제 반영과 변경 대상 미리보기가 같은 규칙을 쓰도록 이 함수 하나로 계산합니다.
-     * - 운영진이 변경한 기록은 바꾸지 않습니다.
-     * - 인증 기록이 있으면(PRESENT/LATE/ABSENT) 인증 시각으로 다시 판정합니다.
-     * - 미인증(PENDING)은 그대로 둡니다.
-     *
-     * @return 바뀌어야 할 새 상태. 바뀌지 않으면 null
+     * 출석 시각 변경 후의 새 상태(바뀌지 않으면 null). 미리보기와 실제 반영이 이 규칙 하나를 쓴다.
+     * 인증 기록만 인증 시각으로 다시 판정하고, 운영진 변경 기록과 미인증은 그대로 둔다.
      */
     fun recalculateStatusByPolicy(
         lateStart: Instant,
@@ -116,7 +99,7 @@ class Attendance(
         return newStatus?.takeIf { it != status }
     }
 
-    /** 정책 재계산 결과를 반영합니다. 운영진 변경 표지(updatedAt)는 기록하지 않습니다. */
+    /** 정책 재계산은 운영진 변경 표지(updatedAt)를 남기지 않는다. */
     fun applyPolicyStatus(newStatus: AttendanceStatus) {
         this.status = newStatus
     }

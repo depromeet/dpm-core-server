@@ -27,12 +27,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Instant
 
-/**
- * 세션 생성/수정/삭제.
- *
- * 세션 행을 바꾸는 쓰기는 세션 행 쓰기 잠금을 먼저 잡고, 그 다음 출석 행을 갱신한다(잠금 순서: session -> attendance).
- * 인증은 세션 공유 잠금, 운영진 출석 변경은 세션 쓰기 잠금을 잡으므로 세션 시각 변경/삭제와 직렬화된다.
- */
+/** 세션 행 쓰기 잠금을 먼저 잡고 출석 행을 바꿔 인증/운영진 변경과 직렬화한다(잠금 순서: session -> attendance). */
 @Service
 @Transactional
 class SessionCommandService(
@@ -94,10 +89,7 @@ class SessionCommandService(
         )
     }
 
-    /**
-     * 세션을 수정한다. 출석 시각이 바뀌면 같은 트랜잭션에서 세션 잠금을 유지한 채 출석 기록을 재계산한다.
-     * (비동기 이벤트의 오래된 시각 값이 이후 변경을 덮어쓰지 않도록)
-     */
+    // 오래된 이벤트 값이 이후 변경을 덮어쓰지 않도록 같은 트랜잭션에서 잠금을 유지한 채 재계산한다.
     fun updateSession(command: SessionUpdateCommand) {
         val session =
             sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
@@ -129,10 +121,7 @@ class SessionCommandService(
         )
     }
 
-    /**
-     * 세션과 출석 기록을 같은 트랜잭션에서 소프트 삭제한다.
-     * 세션 잠금을 잡고 삭제하므로 동시에 진행 중인 인증/운영진 변경이 삭제된 기록을 되살리지 않는다.
-     */
+    // 세션 잠금을 잡고 함께 삭제해 진행 중인 인증/운영진 변경이 삭제된 기록을 되살리지 않게 한다.
     fun softDeleteSession(sessionId: SessionId) {
         val session =
             sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)
