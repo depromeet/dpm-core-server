@@ -58,14 +58,17 @@ interface AttendancePersistencePort {
 
     // 아래 쓰기는 모두 조건부 단일 UPDATE 라 다른 쓰기의 결과를 덮어쓰지 않는다. 호출 측은 세션 행 잠금을 먼저 잡는다.
 
-    /** 삭제되지 않았고 운영진 변경과 인증 기록이 없는 PENDING 행만 갱신한다. */
+    /**
+     * 운영진 변경과 인증 기록이 없는 PENDING 또는 자동 결석(표지 있음) 행만 갱신하고 표지를 지운다.
+     * 표지 없는 기존 ABSENT 는 덮어쓰지 않는다.
+     */
     fun recordAttendanceIfAllowed(
         attendanceId: Long,
         status: AttendanceStatus,
         attendedAt: Instant,
     ): Boolean
 
-    /** 상태와 updatedAt 을 바꾸고 attendedAt 은 보존한다. 갱신한 행 수를 반환한다. */
+    /** 상태와 updatedAt 을 바꾸고 자동 결석 표지를 지운다. attendedAt 은 보존한다. 갱신한 행 수를 반환한다. */
     fun updateStatusByAdmin(
         sessionId: Long,
         memberIds: List<Long>,
@@ -85,6 +88,15 @@ interface AttendancePersistencePort {
         expectedStatus: AttendanceStatus,
         newStatus: AttendanceStatus,
     ): Boolean
+
+    /** 마감 연장 시 자동 결석(표지 있음)만 PENDING 으로 되돌린다. 표지 없는 기존 ABSENT 는 바꾸지 않는다. */
+    fun reopenAutoAbsence(attendanceId: Long): Boolean
+
+    /** 미인증 행만 ABSENT 로 바꾸고 자동 결석 표지를 남긴다. updatedAt 은 기록하지 않는다. */
+    fun markAutoAbsence(
+        sessionId: Long,
+        autoAbsentAt: Instant,
+    ): Int
 
     fun softDeleteAllBySessionId(
         sessionId: Long,

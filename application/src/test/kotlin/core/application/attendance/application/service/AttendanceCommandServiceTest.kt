@@ -14,6 +14,7 @@ import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.vo.AttendanceTimeOffsets
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
+import core.domain.session.port.inbound.command.SessionUpdateCommand
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -64,14 +65,21 @@ class AttendanceCommandServiceTest {
     @Test
     fun `너무 이르거나 코드가 틀린 요청은 아무것도 바꾸지 않는다`() {
         val pending = fixture.addAttendance(session, memberId = 1L)
+        val autoAbsent =
+            fixture.addAttendance(session, memberId = 2L, status = AttendanceStatus.ABSENT, autoAbsentAt = times.absentStart)
 
         assertThatThrownBy { attend(1L, times.attendanceStart.minusNanos(1)) }
             .isInstanceOf(TooEarlyAttendanceException::class.java)
         assertThatThrownBy { attend(1L, times.attendanceStart, code = "0000") }
             .isInstanceOf(InvalidAttendanceCodeException::class.java)
+        assertThatThrownBy { attend(2L, times.lateStart, code = "0000") }
+            .isInstanceOf(InvalidAttendanceCodeException::class.java)
 
         assertThat(fixture.attendances.row(pending).status).isEqualTo(AttendanceStatus.PENDING)
         assertThat(fixture.attendances.row(pending).attendedAt).isNull()
+        assertThat(fixture.attendances.row(autoAbsent).status).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(fixture.attendances.row(autoAbsent).autoAbsentAt).isEqualTo(times.absentStart)
+        assertThat(fixture.attendances.row(autoAbsent).attendedAt).isNull()
     }
 
     @Test
@@ -136,6 +144,38 @@ class AttendanceCommandServiceTest {
         }
     }
 
+    @Test
+    fun `마감 1ns 전에는 자동 결석하지 않고 정확히 마감부터 표지와 함께 처리한다`() {
+        val id = fixture.addAttendance(session, memberId = 1L)
+
+        val before = fixture.attendanceCommandService.closeExpiredAttendances(sessionId, times.absentStart.minusNanos(1))
+        assertThat(before).isZero()
+        assertThat(fixture.attendances.row(id).status).isEqualTo(AttendanceStatus.PENDING)
+
+        val atClose = fixture.attendanceCommandService.closeExpiredAttendances(sessionId, times.absentStart)
+        assertThat(atClose).isEqualTo(1)
+        assertThat(fixture.attendances.row(id).status).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(fixture.attendances.row(id).updatedAt).isNull()
+        assertThat(fixture.attendances.row(id).autoAbsentAt).isEqualTo(times.absentStart)
+    }
+
+    @Test
+    fun `자동 결석은 잠근 뒤 다시 읽은 세션으로 연장된 마감과 삭제를 확인한다`() {
+        val extendedId = fixture.addAttendance(session, memberId = 1L)
+        // 스케줄러가 후보를 고른 뒤 운영진이 마감을 연장한 상황
+        fixture.sessionCommandService.updateSession(updateCommandFor(session, times.lateStart, times.absentStart.plusSeconds(600)))
+
+        assertThat(fixture.attendanceCommandService.closeExpiredAttendances(sessionId, times.absentStart)).isZero()
+        assertThat(fixture.attendances.row(extendedId).status).isEqualTo(AttendanceStatus.PENDING)
+
+        val deleted = fixture.createSession(cohortId, times)
+        val deletedId = fixture.addAttendance(deleted, memberId = 1L)
+        fixture.sessionCommandService.softDeleteSession(deleted.id!!)
+
+        assertThat(fixture.attendanceCommandService.closeExpiredAttendances(deleted.id!!, times.absentStart)).isZero()
+        assertThat(fixture.attendances.row(deletedId).status).isEqualTo(AttendanceStatus.PENDING)
+    }
+
     private fun attend(
         memberId: Long,
         at: Instant,
@@ -149,4 +189,20 @@ class AttendanceCommandServiceTest {
                 attendanceCode = code,
             ),
         )
+
+    private fun updateCommandFor(
+        session: Session,
+        lateStart: Instant,
+        absentStart: Instant,
+    ) = SessionUpdateCommand(
+        sessionId = session.id!!,
+        date = session.date,
+        week = session.week,
+        place = session.place,
+        eventName = session.eventName,
+        isOnline = session.isOnline,
+        attendanceStart = session.attendancePolicy.attendanceStart,
+        lateStart = lateStart,
+        absentStart = absentStart,
+    )
 }

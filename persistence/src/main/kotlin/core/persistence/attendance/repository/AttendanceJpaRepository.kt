@@ -21,12 +21,12 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :status, a.attendedAt = :attendedAt " +
+        "update AttendanceEntity a set a.status = :status, a.attendedAt = :attendedAt, a.autoAbsentAt = null " +
             "where a.id = :attendanceId " +
             "and a.deletedAt is null " +
             "and a.attendedAt is null " +
             "and a.updatedAt is null " +
-            "and a.status = 'PENDING'",
+            "and (a.status = 'PENDING' or (a.status = 'ABSENT' and a.autoAbsentAt is not null))",
     )
     fun recordAttendanceIfAllowed(
         @Param("attendanceId") attendanceId: Long,
@@ -37,7 +37,7 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :status, a.updatedAt = :updatedAt " +
+        "update AttendanceEntity a set a.status = :status, a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
             "where a.sessionId = :sessionId " +
             "and a.memberId in :memberIds " +
             "and a.deletedAt is null",
@@ -63,7 +63,7 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :newStatus " +
+        "update AttendanceEntity a set a.status = :newStatus, a.autoAbsentAt = null " +
             "where a.id = :attendanceId " +
             "and a.status = :expectedStatus " +
             "and a.attendedAt is not null " +
@@ -74,6 +74,36 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         @Param("attendanceId") attendanceId: Long,
         @Param("expectedStatus") expectedStatus: String,
         @Param("newStatus") newStatus: String,
+    ): Int
+
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+        "update AttendanceEntity a set a.status = 'PENDING', a.autoAbsentAt = null " +
+            "where a.id = :attendanceId " +
+            "and a.status = 'ABSENT' " +
+            "and a.autoAbsentAt is not null " +
+            "and a.attendedAt is null " +
+            "and a.updatedAt is null " +
+            "and a.deletedAt is null",
+    )
+    fun reopenAutoAbsence(
+        @Param("attendanceId") attendanceId: Long,
+    ): Int
+
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+        "update AttendanceEntity a set a.status = 'ABSENT', a.autoAbsentAt = :autoAbsentAt " +
+            "where a.sessionId = :sessionId " +
+            "and a.status = 'PENDING' " +
+            "and a.attendedAt is null " +
+            "and a.updatedAt is null " +
+            "and a.deletedAt is null",
+    )
+    fun markAutoAbsence(
+        @Param("sessionId") sessionId: Long,
+        @Param("autoAbsentAt") autoAbsentAt: Instant,
     ): Int
 
     @Transactional

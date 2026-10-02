@@ -38,6 +38,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         var attendedAt: Instant? = null,
         var updatedAt: Instant? = null,
         var deletedAt: Instant? = null,
+        var autoAbsentAt: Instant? = null,
     ) {
         fun toDomain(): Attendance =
             Attendance(
@@ -48,6 +49,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 attendedAt = attendedAt,
                 updatedAt = updatedAt,
                 deletedAt = deletedAt,
+                autoAbsentAt = autoAbsentAt,
             )
     }
 
@@ -62,9 +64,10 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         attendedAt: Instant? = null,
         updatedAt: Instant? = null,
         deletedAt: Instant? = null,
+        autoAbsentAt: Instant? = null,
     ): Long {
         val id = sequence.incrementAndGet()
-        rows[id] = Row(id, sessionId, memberId, status, attendedAt, updatedAt, deletedAt)
+        rows[id] = Row(id, sessionId, memberId, status, attendedAt, updatedAt, deletedAt, autoAbsentAt)
         return id
     }
 
@@ -98,6 +101,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 attendedAt = attendance.attendedAt,
                 updatedAt = attendance.updatedAt,
                 deletedAt = attendance.deletedAt,
+                autoAbsentAt = attendance.autoAbsentAt,
             )
     }
 
@@ -111,6 +115,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 it.attendedAt,
                 it.updatedAt,
                 it.deletedAt,
+                it.autoAbsentAt,
             )
         }
     }
@@ -133,10 +138,14 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
             row.deletedAt == null &&
                 row.attendedAt == null &&
                 row.updatedAt == null &&
-                row.status == AttendanceStatus.PENDING
+                (
+                    row.status == AttendanceStatus.PENDING ||
+                        (row.status == AttendanceStatus.ABSENT && row.autoAbsentAt != null)
+                )
         if (!allowed) return false
         row.status = status
         row.attendedAt = attendedAt
+        row.autoAbsentAt = null
         return true
     }
 
@@ -152,6 +161,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         targets.forEach {
             it.status = status
             it.updatedAt = updatedAt
+            it.autoAbsentAt = null
         }
         return targets.size
     }
@@ -178,7 +188,43 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
             row.status == expectedStatus && row.attendedAt != null && row.updatedAt == null && row.deletedAt == null
         if (!allowed) return false
         row.status = newStatus
+        row.autoAbsentAt = null
         return true
+    }
+
+    @Synchronized
+    override fun reopenAutoAbsence(attendanceId: Long): Boolean {
+        val row = rows[attendanceId] ?: return false
+        val allowed =
+            row.status == AttendanceStatus.ABSENT &&
+                row.autoAbsentAt != null &&
+                row.attendedAt == null &&
+                row.updatedAt == null &&
+                row.deletedAt == null
+        if (!allowed) return false
+        row.status = AttendanceStatus.PENDING
+        row.autoAbsentAt = null
+        return true
+    }
+
+    @Synchronized
+    override fun markAutoAbsence(
+        sessionId: Long,
+        autoAbsentAt: Instant,
+    ): Int {
+        val targets =
+            rows.values.filter {
+                it.sessionId == sessionId &&
+                    it.status == AttendanceStatus.PENDING &&
+                    it.attendedAt == null &&
+                    it.updatedAt == null &&
+                    it.deletedAt == null
+            }
+        targets.forEach {
+            it.status = AttendanceStatus.ABSENT
+            it.autoAbsentAt = autoAbsentAt
+        }
+        return targets.size
     }
 
     @Synchronized
@@ -190,6 +236,16 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         targets.forEach { it.deletedAt = deletedAt }
         return targets.size
     }
+
+    @Synchronized
+    fun hasAutoAbsenceTarget(sessionId: Long): Boolean =
+        rows.values.any {
+            it.sessionId == sessionId &&
+                it.status == AttendanceStatus.PENDING &&
+                it.attendedAt == null &&
+                it.updatedAt == null &&
+                it.deletedAt == null
+        }
 
     override fun findSessionAttendancesByQuery(
         query: GetAttendancesBySessionWeekQuery,
@@ -228,7 +284,9 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
 }
 
 /** 세션 저장소 가짜 구현. 조회마다 사본을 돌려줘 저장하지 않은 변경이 새지 않도록 한다. */
-class FakeSessionPersistencePort : SessionPersistencePort {
+class FakeSessionPersistencePort(
+    private val attendances: FakeAttendancePersistencePort,
+) : SessionPersistencePort {
     private val sequence = AtomicLong(0)
     private val sessions = linkedMapOf<Long, Session>()
 
@@ -272,6 +330,14 @@ class FakeSessionPersistencePort : SessionPersistencePort {
         startTime: Instant,
         endTime: Instant,
     ): List<Session> = throw UnsupportedOperationException()
+
+    @Synchronized
+    override fun findSessionIdsToAutoClose(absentStartTo: Instant): List<SessionId> =
+        sessions.values
+            .filter { it.deletedAt == null && !it.attendancePolicy.absentStart.isAfter(absentStartTo) }
+            .filter { attendances.hasAutoAbsenceTarget(it.id!!.value) }
+            .sortedWith(compareBy({ it.attendancePolicy.absentStart }, { it.id!!.value }))
+            .map { it.id!! }
 
     private fun copyOf(
         session: Session,

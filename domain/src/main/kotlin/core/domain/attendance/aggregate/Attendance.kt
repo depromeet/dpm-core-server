@@ -20,8 +20,13 @@ class Attendance(
     attendedAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
+    autoAbsentAt: Instant? = null,
 ) {
     var status: AttendanceStatus = status
+        private set
+
+    /** 자동 결석 출처 표지. 자동 결석에서만 기록하고 인증/운영진 변경/재개 시 지운다. 기능 도입 전 기록은 null. */
+    var autoAbsentAt: Instant? = autoAbsentAt
         private set
 
     var attendedAt: Instant? = attendedAt
@@ -39,11 +44,21 @@ class Attendance(
     /** updatedAt 은 운영진 변경에서만 기록한다. 과거 데이터의 updatedAt 도 운영진 변경으로 보고 보호한다. */
     fun isAlreadyUpdated(): Boolean = updatedAt != null
 
-    /** 미인증(PENDING)만 인증으로 기록할 수 있다. 운영진이 정한 기록은 덮어쓰지 않는다. */
+    /** 자동 결석 출처는 [autoAbsentAt] 표지로만 판단한다. 표지 없는 기존 결석은 자동 결석으로 추정하지 않는다. */
+    fun isAutomaticallyAbsent(): Boolean =
+        status == AttendanceStatus.ABSENT && autoAbsentAt != null && attendedAt == null && updatedAt == null
+
+    /**
+     * 미인증 또는 자동 결석만 인증으로 기록할 수 있다. 자동 결석은 마감 전에 접수된 인증이 늦게 저장될 때를 위해 허용한다.
+     * 운영진이 정한 기록은 덮어쓰지 않는다.
+     */
     fun canRecordAttendance(): Boolean =
         updatedAt == null &&
             attendedAt == null &&
-            status == AttendanceStatus.PENDING
+            (status == AttendanceStatus.PENDING || isAutomaticallyAbsent())
+
+    /** 자동 결석 대상(운영진 변경과 인증 기록이 없는 미인증) 여부 */
+    fun isAutoAbsenceTarget(): Boolean = status == AttendanceStatus.PENDING && attendedAt == null && updatedAt == null
 
     /**
      * 출석 기록을 생성합니다.
@@ -58,15 +73,17 @@ class Attendance(
     ) {
         this.status = status
         this.attendedAt = attendedAt
+        this.autoAbsentAt = null
     }
 
-    /** 운영진 변경 표지(updatedAt)를 기록한다. */
+    /** 운영진 변경 표지(updatedAt)를 기록하고 자동 결석 표지를 지운다. */
     fun updateStatus(
         newStatus: AttendanceStatus,
         updatedAt: Instant = Instant.now(),
     ) {
         this.status = newStatus
         this.updatedAt = updatedAt
+        this.autoAbsentAt = null
     }
 
     fun delete(deletedAt: Instant?) {
@@ -75,7 +92,8 @@ class Attendance(
 
     /**
      * 출석 시각 변경 후의 새 상태(바뀌지 않으면 null). 미리보기와 실제 반영이 이 규칙 하나를 쓴다.
-     * 인증 기록만 인증 시각으로 다시 판정하고, 운영진 변경 기록과 미인증은 그대로 둔다.
+     * 인증 기록은 인증 시각으로 다시 판정하고, 자동 결석은 마감이 연장돼 [now] 가 새 마감 전이면 PENDING 으로 되돌린다.
+     * 운영진 변경 기록과 미인증은 그대로 둔다.
      */
     fun recalculateStatusByPolicy(
         lateStart: Instant,
@@ -93,15 +111,23 @@ class Attendance(
                         attendedAt.isBefore(absentStart) -> AttendanceStatus.LATE
                         else -> AttendanceStatus.ABSENT
                     }
+                isAutomaticallyAbsent() && now.isBefore(absentStart) -> AttendanceStatus.PENDING
                 else -> null
             }
 
         return newStatus?.takeIf { it != status }
     }
 
-    /** 정책 재계산은 운영진 변경 표지(updatedAt)를 남기지 않는다. */
+    /** 정책 재계산은 updatedAt 을 남기지 않고 자동 결석 표지를 지운다. */
     fun applyPolicyStatus(newStatus: AttendanceStatus) {
         this.status = newStatus
+        this.autoAbsentAt = null
+    }
+
+    /** updatedAt 은 남기지 않고 자동 결석 표지만 기록한다. */
+    fun markAutoAbsent(at: Instant) {
+        this.status = AttendanceStatus.ABSENT
+        this.autoAbsentAt = at
     }
 
     override fun equals(other: Any?): Boolean {

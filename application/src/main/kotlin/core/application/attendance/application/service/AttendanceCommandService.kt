@@ -27,8 +27,9 @@ import java.time.Clock
 import java.time.Instant
 
 /**
- * 잠금 순서는 세션 행 -> 출석 행이다. 인증은 세션 공유 잠금으로 서로 동시에 진행하고,
- * 운영진 변경/시각 변경/삭제는 세션 쓰기 잠금으로 직렬화한다. 출석 행은 조건부 UPDATE 로만 바꾼다.
+ * 잠금 순서는 세션 행 -> 출석 행이다. 인증과 자동 결석은 세션 공유 잠금으로 서로 동시에 진행하고
+ * (둘 다 출석 행을 단일 UPDATE 로만 잠가 교착이 없다), 운영진 변경/시각 변경/삭제는 세션 쓰기 잠금으로 직렬화한다.
+ * 출석 행은 조건부 UPDATE 로만 바꾼다. 자동 결석만 autoAbsentAt 표지를 남기고 인증/운영진 변경/재개는 표지를 지운다.
  */
 @Service
 @Transactional
@@ -39,7 +40,10 @@ class AttendanceCommandService(
     private val sessionValidator: SessionValidator,
     private val clock: Clock,
 ) {
-    /** 조건부 UPDATE 가 실패하면(다른 요청이 먼저 저장) 이미 출석 오류다. */
+    /**
+     * 마감 전에 접수된 요청은 자동 결석이 먼저 저장됐어도 정상 판정으로 저장한다.
+     * 조건부 UPDATE 가 실패하면(다른 요청이 먼저 저장) 이미 출석 오류다.
+     */
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
         val session =
             sessionPersistencePort.findSessionByIdForShare(command.sessionId.value)
@@ -123,7 +127,12 @@ class AttendanceCommandService(
                     attendance.recalculateStatusByPolicy(policy.lateStart, policy.absentStart, now)
                         ?: return@count false
                 val attendanceId = attendance.id?.value ?: return@count false
-                attendancePersistencePort.updateStatusByPolicy(attendanceId, attendance.status, newStatus)
+                if (newStatus == AttendanceStatus.PENDING) {
+                    // 자동 결석(표지 있음) 재개. 표지 없는 기존 결석은 조건에서 걸러진다.
+                    attendancePersistencePort.reopenAutoAbsence(attendanceId)
+                } else {
+                    attendancePersistencePort.updateStatusByPolicy(attendanceId, attendance.status, newStatus)
+                }
             }
     }
 
@@ -131,6 +140,21 @@ class AttendanceCommandService(
     fun reconcileAttendancesWithLatestPolicy(sessionId: SessionId): Int {
         val session = sessionPersistencePort.findSessionByIdForUpdate(sessionId.value) ?: return 0
         return applySessionPolicyChange(session, clock.instant())
+    }
+
+    /**
+     * 공유 잠금 후 최신 마감을 다시 확인해, 그 사이 마감이 연장됐거나 세션이 삭제됐으면 처리하지 않는다.
+     * 과거 기수 세션도 대상이며 미인증 기록만 바꾼다.
+     */
+    fun closeExpiredAttendances(
+        sessionId: SessionId,
+        now: Instant,
+    ): Int {
+        val session = sessionPersistencePort.findSessionByIdForShare(sessionId.value) ?: return 0
+
+        if (!session.isAttendanceClosedAt(now)) return 0
+
+        return attendancePersistencePort.markAutoAbsence(sessionId.value, now)
     }
 
     /**

@@ -27,7 +27,10 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Instant
 
-/** 세션 행 쓰기 잠금을 먼저 잡고 출석 행을 바꿔 인증/운영진 변경과 직렬화한다(잠금 순서: session -> attendance). */
+/**
+ * 세션 행 쓰기 잠금을 먼저 잡고 출석 행을 바꿔 인증/자동 결석/운영진 변경과 직렬화한다
+ * (잠금 순서: session -> attendance).
+ */
 @Service
 @Transactional
 class SessionCommandService(
@@ -121,7 +124,7 @@ class SessionCommandService(
         )
     }
 
-    // 세션 잠금을 잡고 함께 삭제해 진행 중인 인증/운영진 변경이 삭제된 기록을 되살리지 않게 한다.
+    // 세션 잠금을 잡고 함께 삭제해 진행 중인 인증/운영진 변경/자동 결석이 삭제된 기록을 되살리지 않게 한다.
     fun softDeleteSession(sessionId: SessionId) {
         val session =
             sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)
