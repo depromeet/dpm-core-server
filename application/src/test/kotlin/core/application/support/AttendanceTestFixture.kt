@@ -21,13 +21,9 @@ import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant
 import java.util.Collections
 
-/**
- * 가짜 저장소 위에 실제 서비스들을 조립한다. 스프링 프록시가 없으므로 트랜잭션/잠금은 동작하지 않으며,
- * 이 픽스처로는 서비스 규칙만 검증한다. DB 잠금과 동시성은 MySQL 통합 테스트에서 검증한다.
- */
+/** 가짜 저장소 위에 실제 서비스를 조립한다. 트랜잭션/잠금은 동작하지 않는다(DB 잠금과 동시성은 MySQL 통합 테스트에서 검증). */
 class AttendanceTestFixture(
     now: Instant,
-    /** 서버 설정(attendance.policy). 기본은 10/15/30분. */
     val policyProperties: AttendancePolicyProperties = AttendancePolicyProperties(),
 ) {
     val clock = MutableClock(now)

@@ -45,10 +45,7 @@ class SessionCommandService(
     private val attendanceCommandService: AttendanceCommandService,
     private val clock: Clock,
 ) {
-    /**
-     * 인증 시작 시각만 변경한다. 출석/지각 판정 경계(지각 시작, 마감)는 그대로이므로 출석 기록은 재계산하지 않는다.
-     * 세션 날짜와 다른 날이어도 된다(자정 직후 세션의 T-10 등). 순서(인증 시작 < 지각 시작 < 마감)만 검증한다.
-     */
+    // 판정 경계(지각 시작, 마감)는 그대로라 출석 기록은 재판정하지 않는다.
     fun updateSessionStartTime(
         sessionId: SessionId,
         attendanceStartTime: Instant,
@@ -150,10 +147,6 @@ class SessionCommandService(
         eventPublisher.publishEvent(SessionDeleteEvent(sessionId, now))
     }
 
-    /**
-     * 출석 시각 세 개를 모두 생략하면 환경 설정 기본값(attendance.policy)으로 계산하고, 모두 제공하면 명시적인 세션별 예외로 사용한다.
-     * 일부만 제공하면 거절한다.
-     */
     private fun resolveAttendanceTimes(command: SessionCreateCommand): SessionAttendanceTimes {
         val attendanceStart = command.attendanceStart
         val lateStart = command.lateStart
