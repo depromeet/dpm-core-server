@@ -51,15 +51,14 @@ class Session(
 
     fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
-    /** 인증 마감 시각(포함)이 지났는지 여부 */
+    /** 마감 시각 정각부터 마감이다. */
     fun isAttendanceClosedAt(now: Instant): Boolean = !now.isBefore(attendancePolicy.absentStart)
 
     /**
      * 현재 시각을 기준으로 출석 상태를 결정하고 해당 상태를 sealed class 의 형태로 반환합니다.
      *
      * 디프만 출석 도메인 정책에 의거, 출석 시작 전 상태는 저장하지 않습니다.
-     * 경계는 모두 포함입니다. 정확히 지각 시작 시각이면 LATE, 정확히 마감 시각이면 Closed 입니다.
-     * 마감 이후 인증은 성공(ABSENT)으로 저장하지 않고 거절합니다.
+     * 경계 시각은 다음 구간에 포함됩니다(지각 시작 정각은 LATE, 마감 정각부터 Closed).
      *
      * @param now 현재 시각
      * @author LeeHanEum
@@ -87,12 +86,6 @@ class Session(
         return result
     }
 
-    /**
-     * 인증 시작 시각만 변경합니다.
-     *
-     * 세션 시작 직전(예: 00:05 세션의 T-10 = 전날 23:55)처럼 날짜가 달라도 되며,
-     * 인증 시작 < 지각 시작 < 인증 마감 순서만 유지하면 됩니다.
-     */
     fun updateAttendanceStartTime(newStartTime: Instant) {
         val ordered =
             SessionAttendanceTimes.isOrdered(newStartTime, attendancePolicy.lateStart, attendancePolicy.absentStart)
@@ -126,12 +119,7 @@ class Session(
     }
 
     companion object {
-        /**
-         * 세션을 생성합니다.
-         *
-         * @param attendanceTimes 서버 설정 기본값 또는 명시적 입력으로 이미 확정된 출석 시각.
-         * 커맨드의 nullable 출석 시각은 사용하지 않습니다.
-         */
+        /** [attendanceTimes] 는 기본값/입력값으로 확정된 시각이다. 커맨드의 nullable 시각은 쓰지 않는다. */
         fun create(
             command: SessionCreateCommand,
             cohortId: CohortId,

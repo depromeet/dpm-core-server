@@ -119,7 +119,7 @@ class SessionQueryService(
         val targeted = mutableListOf<SessionPolicyUpdateTargetResponse.TargetedResponse>()
         val untargeted = mutableListOf<SessionPolicyUpdateTargetResponse.UntargetedResponse>()
 
-        // 실제 반영(AttendanceCommandService.applySessionPolicyChange)과 같은 규칙으로 미리 계산한다.
+        // 실제 반영과 같은 규칙(recalculateStatusByPolicy)으로 미리 계산한다.
         val now = clock.instant()
         validAttendances.forEach { attendance ->
             val targetStatus = attendance.recalculateStatusByPolicy(command.lateStart, command.absentStart, now)
