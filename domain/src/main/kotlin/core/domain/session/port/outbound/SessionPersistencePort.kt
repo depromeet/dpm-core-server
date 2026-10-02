@@ -26,10 +26,6 @@ interface SessionPersistencePort {
         endTime: Instant,
     ): List<Session>
 
-    /**
-     * 모든 기수에서 자동 결석 후보 세션 ID 를 조회합니다.
-     * 삭제되지 않았고, 인증 마감이 [absentStartTo] 이하(과거 기수 포함, 하한 없음)이며,
-     * 자동 결석 대상 출석 행이 하나 이상 남은 세션만 반환합니다.
-     */
+    /** 모든 기수에서 마감이 [absentStartTo] 이하(하한 없음)이고 미인증 행이 남은 삭제되지 않은 세션. */
     fun findSessionIdsToAutoClose(absentStartTo: Instant): List<SessionId>
 }

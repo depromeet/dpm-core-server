@@ -5,10 +5,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
-/**
- * 30초마다 자동 결석을 실행한다. 이전 실행이 끝난 뒤 30초 후 다시 실행한다(fixedDelay).
- * 정상 동작 중에도 마감 이후 DB 반영까지 최대 한 주기 정도의 지연이 있다.
- */
+/** 이전 실행이 끝나고 30초 뒤 다시 실행한다(fixedDelay). 마감 후 반영까지 최대 한 주기 지연이 있다. */
 @Component
 class AttendanceAutoAbsenceScheduler(
     private val attendanceAutoAbsenceService: AttendanceAutoAbsenceService,
