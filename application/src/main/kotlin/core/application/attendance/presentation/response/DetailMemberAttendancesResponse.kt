@@ -41,4 +41,6 @@ data class MemberDetailAbsenceReasonInfo(
     val contents: String,
     /** 검토 상태: PENDING, APPROVED, REJECTED */
     val status: String,
+    /** 첨부 이미지 id, 표시 순서대로. 없으면 빈 목록 */
+    val imageIds: List<Long>,
 )

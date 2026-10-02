@@ -18,4 +18,9 @@ class ImageRepository(
             .findById(imageId.value)
             .orElse(null)
             ?.toDomain()
+
+    override fun findAllByIds(imageIds: List<ImageId>): List<Image> {
+        if (imageIds.isEmpty()) return emptyList()
+        return imageJpaRepository.findAllById(imageIds.map { it.value }).map { it.toDomain() }
+    }
 }

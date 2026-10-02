@@ -16,5 +16,7 @@ data class MemberSessionAttendanceQueryModel(
         val id: Long,
         val contents: String,
         val status: String,
+        /** 첨부 이미지 id, 표시 순서대로 */
+        val imageIds: List<Long> = emptyList(),
     )
 }
