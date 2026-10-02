@@ -22,8 +22,6 @@ class SessionCommandServiceTest {
     private val cohortId = fixture.createActiveCohort()
     private val sessionStart = Instant.parse("2026-10-10T10:00:00Z")
 
-    // ---------------------------------------------------------------- 생성
-
     @Test
     fun `출석 시각을 모두 생략하면 설정한 기본값으로 계산한다`() {
         val custom = AttendanceTestFixture(now = now, policyProperties = AttendancePolicyProperties(20, 5, 45))
@@ -95,8 +93,6 @@ class SessionCommandServiceTest {
         assertThat(after.attendancePolicy.lateStart).isEqualTo(nextStart.plus(Duration.ofMinutes(25)))
         assertThat(after.attendancePolicy.absentStart).isEqualTo(nextStart.plus(Duration.ofMinutes(40)))
     }
-
-    // ---------------------------------------------------------------- 시각 수정
 
     @Test
     fun `인증 시작만 바꿀 때 날짜가 달라도 순서만 맞으면 허용한다`() {
