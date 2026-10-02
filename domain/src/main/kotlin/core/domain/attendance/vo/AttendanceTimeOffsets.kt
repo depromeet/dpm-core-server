@@ -4,17 +4,7 @@ import core.domain.session.vo.SessionAttendanceTimes
 import java.time.Duration
 import java.time.Instant
 
-/**
- * 세션 시작 시각(T)을 기준으로 한 기본 출석 시간(분 단위)입니다. 서버 설정(attendance.policy)에서 읽습니다.
- *
- * - 인증 시작: T - [attendanceOpenMinutesBeforeStart] (포함)
- * - 지각 시작: T + [lateAfterStartMinutes] (포함)
- * - 인증 마감: T + [absentAfterStartMinutes] (포함, 이 시각부터 인증 거절 및 자동 결석 대상)
- *
- * 모든 값은 [MIN_MINUTES] 이상 [MAX_MINUTES] 이하이며,
- * 인증 시작 < 지각 시작 < 인증 마감 이 되도록 지각 시작은 마감보다 작아야 하고
- * 인증 시작과 지각 시작이 같은 시각(두 값이 모두 0)이 될 수 없습니다.
- */
+/** 세션 시작(T) 기준 기본 출석 시간(분): 인증 시작 T-open, 지각 시작 T+late, 인증 마감 T+absent. */
 data class AttendanceTimeOffsets(
     val attendanceOpenMinutesBeforeStart: Int,
     val lateAfterStartMinutes: Int,
@@ -33,17 +23,14 @@ data class AttendanceTimeOffsets(
         )
 
     enum class Violation {
-        /** 값이 [MIN_MINUTES]..[MAX_MINUTES] 범위를 벗어남 */
         OUT_OF_RANGE,
-
-        /** 인증 시작 < 지각 시작 < 인증 마감 순서가 아님 */
         NOT_ORDERED,
     }
 
     companion object {
         const val MIN_MINUTES = 0
 
-        /** 하루(24시간). 세션 시작 기준 앞뒤 하루를 넘는 정책은 오입력으로 간주합니다. */
+        /** 하루를 넘는 값은 오입력으로 본다. */
         const val MAX_MINUTES = 1440
 
         const val DEFAULT_ATTENDANCE_OPEN_MINUTES_BEFORE_START = 10
