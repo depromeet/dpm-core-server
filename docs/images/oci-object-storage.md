@@ -27,7 +27,10 @@
 
 - 값이 비어 있어도 서버는 뜬다. 클라이언트는 첫 이미지 요청에서 만들며 실패하면 503 과 ERROR 로그(디스코드 알림)를 남긴다. 다음 요청이 다시 시도한다.
 - 타임아웃: 연결 3초, 읽기 15초, SDK 재시도 없음. Instance Principal 의 metadata 탐지는 1회 재시도·2초.
-- prod 는 `prod-cd.yml` 이 배포마다 `~/.env` 를 새로 쓰므로 위 세 값을 그 heredoc 에 추가해야 유지된다. dev 는 서버 `~/.env` 에 추가한다.
+- 세 값은 GitHub 저장소 변수(Variables, 시크릿 아님) `DEV_OCI_OBJECT_STORAGE_BUCKET`, `DEV_OCI_REGION`, `DEV_OCI_OBJECT_STORAGE_NAMESPACE` 와 `PROD_` 버전에서 온다. `OCI_AUTH_MODE` 는 워크플로에서 `instance-principal` 로 고정한다. 값이 비었거나 `A-Za-z0-9._-` 밖의 문자가 있으면 배포 job 이 처음에 실패한다.
+- prod(`prod-cd.yml`): `~/.env` heredoc 에 네 값을 쓰고, `~/server-stack.oci.yml`(`spring-app` 의 `environment` 만 담은 오버라이드)을 만들어 `docker stack deploy -c server-stack.yml -c server-stack.oci.yml server` 로 배포한다. 그래서 서버의 `server-stack.yml` 에 매핑이 없어도 값이 들어간다.
+- dev(`dev-cd.yml`): 서버 `~/.env` 의 OCI 키 네 개만 교체(다른 키·파일 권한 유지)하고 export 한 뒤 `deploy.sh` 를 실행한다. 배포 후 새 이미지 태그로 뜬 컨테이너를 찾아 env 를 비교하고, 다르면 `com.docker.swarm.service.name` 라벨의 서비스에 `docker service update --env-add` 로 넣는다.
+- 두 워크플로 모두 마지막에 새 컨테이너의 OCI env 네 개가 기대값과 정확히 같은지 확인하고, 다르면 실패한다. dev 컨테이너가 Swarm 서비스가 아니면 env 를 바꿀 수 없으므로 실패 메시지대로 `deploy.sh` 가 `~/.env` 를 `--env-file` 로 넘기게 고쳐야 한다.
 
 ### Instance Principal (dev/prod 기본)
 
@@ -63,7 +66,7 @@ API 키는 개인 사용자에 발급하고 위와 같은 범위의 정책을 �
 
 1. `db/pending/2610021200_images.sql` 적용 (`ddl-auto: validate` 라 테이블이 없으면 기동 실패)
 2. 버킷(비공개), Dynamic Group, Policy 준비
-3. 환경 변수 추가 후 배포, 업로드/조회 한 번씩 확인
+3. GitHub 저장소 변수(`DEV_OCI_*`, `PROD_OCI_*`) 등록 후 배포. 워크플로가 컨테이너 env 까지 확인하므로 로그의 `> OCI env 확인 완료` 를 보고, 업로드/조회 한 번씩 확인
 
 ## 한계
 

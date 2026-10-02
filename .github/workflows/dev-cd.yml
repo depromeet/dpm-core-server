@@ -50,7 +50,17 @@ jobs:
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       IMAGE_TAG: dev-${{ github.sha }}
+      OCI_OBJECT_STORAGE_BUCKET: ${{ vars.DEV_OCI_OBJECT_STORAGE_BUCKET }}
+      OCI_REGION: ${{ vars.DEV_OCI_REGION }}
+      OCI_OBJECT_STORAGE_NAMESPACE: ${{ vars.DEV_OCI_OBJECT_STORAGE_NAMESPACE }}
+      OCI_AUTH_MODE: instance-principal
     steps:
+      - name: "OCI 설정값을 검증한다."
+        run: |
+          for v in "$OCI_OBJECT_STORAGE_BUCKET" "$OCI_REGION" "$OCI_OBJECT_STORAGE_NAMESPACE" "$OCI_AUTH_MODE"; do
+            case "$v" in ''|*[!A-Za-z0-9._-]*) echo "OCI 저장소 변수(DEV_OCI_*)가 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
+          done
+
       - name: "레포지토리를 체크아웃한다."
         uses: actions/checkout@v4
 
@@ -85,11 +95,95 @@ jobs:
           host: ${{ secrets.DEV_SERVER_HOST }}
           username: ${{ secrets.DEV_SERVER_USERNAME }}
           key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          envs: OCI_OBJECT_STORAGE_BUCKET,OCI_REGION,OCI_OBJECT_STORAGE_NAMESPACE,OCI_AUTH_MODE
           script: |
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             cd ~
+
+            for v in "$OCI_OBJECT_STORAGE_BUCKET" "$OCI_REGION" "$OCI_OBJECT_STORAGE_NAMESPACE" "$OCI_AUTH_MODE"; do
+              case "$v" in ''|*[!A-Za-z0-9._-]*) echo "OCI 설정값이 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
+            done
+
+            # ~/.env 의 OCI 키만 교체한다 (다른 키·권한 유지, mv 로 원자적 교체)
+            (
+              set -e
+              umask 077
+              tmp=$(mktemp ./.env.oci.XXXXXX)
+              trap 'rm -f "$tmp"' EXIT
+              if [ -f .env ]; then
+                cp -p .env "$tmp"
+                { grep -vE '^(export[[:space:]]+)?OCI_(OBJECT_STORAGE_BUCKET|REGION|OBJECT_STORAGE_NAMESPACE|AUTH_MODE)=' .env || [ $? -eq 1 ]; } > "$tmp"
+              fi
+              printf '%s=%s\n' \
+                OCI_OBJECT_STORAGE_BUCKET "$OCI_OBJECT_STORAGE_BUCKET" \
+                OCI_REGION "$OCI_REGION" \
+                OCI_OBJECT_STORAGE_NAMESPACE "$OCI_OBJECT_STORAGE_NAMESPACE" \
+                OCI_AUTH_MODE "$OCI_AUTH_MODE" >> "$tmp"
+              mv -f "$tmp" .env
+              trap - EXIT
+            )
+            [ $? -eq 0 ] || { echo "~/.env 의 OCI 설정 갱신에 실패했다"; exit 1; }
+
+            export OCI_OBJECT_STORAGE_BUCKET OCI_REGION OCI_OBJECT_STORAGE_NAMESPACE OCI_AUTH_MODE
             chmod +x deploy.sh
-            ./deploy.sh ${{ env.IMAGE_TAG }}
+            ./deploy.sh ${{ env.IMAGE_TAG }} || exit 1
+
+            # 새 이미지 컨테이너의 OCI env 를 확인한다. Swarm 서비스면 --env-add 로 맞춘다
+            (
+              set -e
+              TAG="${{ env.IMAGE_TAG }}"
+              oci_env_ok() {
+                got=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$1" | grep -E '^OCI_(OBJECT_STORAGE_BUCKET|REGION|OBJECT_STORAGE_NAMESPACE|AUTH_MODE)=' | sort)
+                want=$(printf '%s\n' "OCI_AUTH_MODE=$OCI_AUTH_MODE" "OCI_OBJECT_STORAGE_BUCKET=$OCI_OBJECT_STORAGE_BUCKET" "OCI_OBJECT_STORAGE_NAMESPACE=$OCI_OBJECT_STORAGE_NAMESPACE" "OCI_REGION=$OCI_REGION" | sort)
+                [ "$got" = "$want" ]
+              }
+              tag_containers() {
+                docker ps --filter status=running --format '{{.ID}} {{.Image}}' \
+                  | awk -v t=":$TAG" '{ i = $2; sub(/@sha256:.*/, "", i); if (length(i) > length(t) && substr(i, length(i) - length(t) + 1) == t) print $1 }'
+              }
+              all_ok() {
+                [ -n "$1" ] || return 1
+                for id in $1; do oci_env_ok "$id" || return 1; done
+              }
+
+              ids=""
+              for i in $(seq 1 18); do
+                ids=$(tag_containers)
+                [ -n "$ids" ] && break
+                sleep 5
+              done
+              [ -n "$ids" ] || { echo "$TAG 이미지로 실행 중인 컨테이너를 찾지 못했다"; exit 1; }
+
+              svcs=$(for id in $ids; do docker inspect --format '{{index .Config.Labels "com.docker.swarm.service.name"}}' "$id"; done | sort -u)
+              [ "$(printf '%s\n' "$svcs" | wc -l)" -eq 1 ] || { echo "$TAG 컨테이너가 여러 서비스에 걸쳐 있어 대상을 정할 수 없다"; exit 1; }
+
+              if all_ok "$ids"; then
+                echo "> OCI env 확인 완료"
+                exit 0
+              fi
+
+              if [ -z "$svcs" ]; then
+                echo "dev 컨테이너가 Swarm 서비스가 아니라 OCI env 를 바꿀 수 없다. deploy.sh 가 ~/.env 를 --env-file 로 넘기도록 수정해야 한다"
+                exit 1
+              fi
+
+              echo "> $svcs 서비스에 OCI env 를 추가한다"
+              docker service update --quiet --detach=false \
+                --env-add "OCI_OBJECT_STORAGE_BUCKET=$OCI_OBJECT_STORAGE_BUCKET" \
+                --env-add "OCI_REGION=$OCI_REGION" \
+                --env-add "OCI_OBJECT_STORAGE_NAMESPACE=$OCI_OBJECT_STORAGE_NAMESPACE" \
+                --env-add "OCI_AUTH_MODE=$OCI_AUTH_MODE" \
+                "$svcs"
+
+              for i in $(seq 1 18); do
+                ids=$(docker ps -q --filter status=running --filter "label=com.docker.swarm.service.name=$svcs")
+                all_ok "$ids" && { echo "> OCI env 확인 완료"; exit 0; }
+                sleep 5
+              done
+              echo "$svcs 서비스를 갱신했지만 실행 중인 컨테이너의 OCI env 가 기대값과 다르다"
+              exit 1
+            )
+            [ $? -eq 0 ] || exit 1
 
       - name: "Discord로 Development 배포 실패를 알린다."
         if: failure()
