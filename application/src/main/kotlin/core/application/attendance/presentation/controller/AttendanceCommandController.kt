@@ -1,6 +1,5 @@
 package core.application.attendance.presentation.controller
 
-import core.application.attendance.application.exception.translateAbsenceReasonImageConflict
 import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.presentation.mapper.AttendanceMapper.toAttendanceResponse
@@ -96,16 +95,14 @@ class AttendanceCommandController(
         @CurrentMemberId memberId: MemberId,
         @RequestBody request: AbsenceReportCreateRequest,
     ): CustomResponse<Void> {
-        translateAbsenceReasonImageConflict {
-            absenceReasonCommandService.submitAbsenceReason(
-                AbsenceReportCreateCommand(
-                    sessionId = sessionId,
-                    memberId = memberId,
-                    contents = request.contents,
-                    imageIds = request.toImageIds(),
-                ),
-            )
-        }
+        absenceReasonCommandService.submitAbsenceReason(
+            AbsenceReportCreateCommand(
+                sessionId = sessionId,
+                memberId = memberId,
+                contents = request.contents,
+                imageIds = request.toImageIds(),
+            ),
+        )
 
         return CustomResponse.ok()
     }
@@ -117,16 +114,14 @@ class AttendanceCommandController(
         @CurrentMemberId memberId: MemberId,
         @RequestBody request: AbsenceReportUpdateRequest,
     ): CustomResponse<Void> {
-        translateAbsenceReasonImageConflict {
-            absenceReasonCommandService.updateAbsenceReason(
-                AbsenceReportUpdateCommand(
-                    sessionId = sessionId,
-                    memberId = memberId,
-                    contents = request.contents,
-                    imageIds = request.toImageIds(),
-                ),
-            )
-        }
+        absenceReasonCommandService.updateAbsenceReason(
+            AbsenceReportUpdateCommand(
+                sessionId = sessionId,
+                memberId = memberId,
+                contents = request.contents,
+                imageIds = request.toImageIds(),
+            ),
+        )
 
         return CustomResponse.ok()
     }

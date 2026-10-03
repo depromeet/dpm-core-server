@@ -11,6 +11,7 @@ import core.domain.absencereason.aggregate.AbsenceReason
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
+import core.domain.absencereason.port.outbound.AbsenceReasonImageConflictException
 import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
@@ -167,7 +168,11 @@ class AbsenceReasonCommandService(
                 .any { (_, linkedReasonId) -> linkedReasonId != absenceReasonId }
         if (attachedElsewhere) throw AbsenceReasonImageAlreadyAttachedException()
 
-        absenceReasonImagePersistencePort.replaceImages(absenceReasonId, imageIds)
+        try {
+            absenceReasonImagePersistencePort.replaceImages(absenceReasonId, imageIds)
+        } catch (_: AbsenceReasonImageConflictException) {
+            throw AbsenceReasonImageAlreadyAttachedException()
+        }
     }
 
     companion object {

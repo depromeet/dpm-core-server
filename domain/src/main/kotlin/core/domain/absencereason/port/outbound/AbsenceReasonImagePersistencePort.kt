@@ -18,16 +18,18 @@ interface AbsenceReasonImagePersistencePort {
         imageId: ImageId,
     ): Boolean
 
-    /** 기존 링크를 지우고 [imageIds] 순서로 다시 건다. 호출자가 세션 쓰기 잠금을 잡은 트랜잭션이어야 한다. */
+    /**
+     * 기존 링크를 지우고 [imageIds] 순서로 다시 건다. 호출자가 세션 쓰기 잠금을 잡은 트랜잭션이어야 한다.
+     * 다른 사유서가 먼저 붙인 이미지면 [AbsenceReasonImageConflictException] (트랜잭션은 롤백해야 한다).
+     */
     fun replaceImages(
         absenceReasonId: Long,
         imageIds: List<ImageId>,
     )
 
     fun deleteAll(absenceReasonId: Long)
-
-    companion object {
-        /** 동시 첨부 충돌을 409 로 바꿀 때 오류 메시지에서 찾는 제약 이름 */
-        const val IMAGE_UNIQUE_CONSTRAINT = "uk_absence_reason_images_image_id"
-    }
 }
+
+class AbsenceReasonImageConflictException(
+    cause: Throwable,
+) : RuntimeException(cause)

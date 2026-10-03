@@ -4,7 +4,6 @@ import core.application.attendance.application.exception.AbsenceReasonImageAlrea
 import core.application.attendance.application.exception.AbsenceReasonTooLongException
 import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
-import core.application.attendance.application.exception.translateAbsenceReasonImageConflict
 import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AbsenceReasonImageQueryService
 import core.application.attendance.application.service.AbsenceReasonQueryService
@@ -168,7 +167,7 @@ class AbsenceReasonImageMySqlIntegrationTest {
                 runConcurrently(sessions.size) { index ->
                     // 겹치는 이미지를 서로 다른 순서로 넣어도 교착 없이 UNIQUE 로 끝나야 한다
                     val imageIds = if (index % 2 == 0) listOf(x, y) else listOf(y, x)
-                    translateAbsenceReasonImageConflict { submit(sessions[index], member, "동시 $index", imageIds) }
+                    submit(sessions[index], member, "동시 $index", imageIds)
                 }
 
             assertThat(results.count { it.isSuccess }).isEqualTo(1)
