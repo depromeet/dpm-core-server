@@ -268,7 +268,7 @@ interface AttendanceCommandApi {
             ApiResponse(responseCode = "400", description = ABSENCE_REASON_400_DESCRIPTION),
             ApiResponse(
                 responseCode = "404",
-                description = "제출한 결석 사유서가 존재하지 않음",
+                description = "SESSION-404-01 세션 없음(삭제된 세션 포함), ATTENDANCE-404-02 제출한 결석 사유서가 존재하지 않음",
             ),
             ApiResponse(responseCode = "409", description = "ATTENDANCE-409-02 다른 결석 사유서에 첨부된 이미지"),
         ],
@@ -333,7 +333,7 @@ interface AttendanceCommandApi {
             ),
             ApiResponse(
                 responseCode = "404",
-                description = "제출된 결석 사유서가 존재하지 않음",
+                description = "SESSION-404-01 세션 없음(삭제된 세션 포함), ATTENDANCE-404-02 제출된 결석 사유서가 존재하지 않음",
             ),
         ],
     )

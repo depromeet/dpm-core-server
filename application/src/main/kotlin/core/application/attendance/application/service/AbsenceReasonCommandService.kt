@@ -142,7 +142,7 @@ class AbsenceReasonCommandService(
 
     /**
      * [imageIds] 가 null 이면 첨부는 그대로 두고 사유서만 저장한다.
-     * 다른 사유서 첨부 사전 확인은 친절한 409 용이고, 동시 첨부는 UNIQUE(image_id) 가 막는다.
+     * 일반 중복 첨부는 DB 오류 로그를 남기지 않도록 미리 거른다. 동시 요청은 UNIQUE 제약으로 막는다.
      */
     private fun saveWithImages(
         absenceReason: AbsenceReason,
