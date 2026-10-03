@@ -2,9 +2,7 @@ package core.application.attendance
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import core.application.attendance.application.exception.AbsenceReasonImageAlreadyAttachedException
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
-import core.application.attendance.application.exception.translateAbsenceReasonImageConflict
 import core.application.attendance.presentation.controller.AttendanceQueryController
 import core.application.attendance.presentation.request.AbsenceReportCreateRequest
 import core.application.attendance.presentation.request.AbsenceReportUpdateRequest
@@ -13,10 +11,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.core.annotation.AnnotatedElementUtils
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.access.prepost.PreAuthorize
 
-/** 요청 본문 의미(생략=유지, []=해제, 순서), 동시 첨부 409 변환, 운영진 원본 조회 권한을 확인한다. 저장 동작은 MySQL 통합 테스트에서 본다. */
+/** 요청 본문 의미(생략=유지, []=해제, 순서)와 운영진 원본 조회 권한을 확인한다. 저장 동작은 MySQL 통합 테스트에서 본다. */
 class AbsenceReasonImageContractTest {
     private val objectMapper = jacksonObjectMapper()
 
@@ -34,20 +31,6 @@ class AbsenceReasonImageContractTest {
         val request = objectMapper.readValue<AbsenceReportCreateRequest>("""{"contents":"사유","imageIds":[1,null]}""")
 
         assertThatThrownBy { request.toImageIds() }.isInstanceOf(InvalidAbsenceReasonImageException::class.java)
-    }
-
-    @Test
-    fun `이미지 UNIQUE 위반만 409 로 바꾸고 다른 무결성 오류는 그대로 던진다`() {
-        val imageConflict =
-            DataIntegrityViolationException(
-                "could not execute statement",
-                RuntimeException("Duplicate entry '5' for key 'absence_reason_images.uk_absence_reason_images_image_id'"),
-            )
-        val otherConflict = DataIntegrityViolationException("Duplicate entry 'x' for key 'cohorts.value'")
-
-        assertThatThrownBy { translateAbsenceReasonImageConflict { throw imageConflict } }
-            .isInstanceOf(AbsenceReasonImageAlreadyAttachedException::class.java)
-        assertThatThrownBy { translateAbsenceReasonImageConflict { throw otherConflict } }.isSameAs(otherConflict)
     }
 
     @Test

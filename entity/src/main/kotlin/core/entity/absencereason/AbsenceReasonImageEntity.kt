@@ -1,6 +1,5 @@
 package core.entity.absencereason
 
-import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -16,7 +15,7 @@ import jakarta.persistence.UniqueConstraint
     name = "absence_reason_images",
     uniqueConstraints = [
         UniqueConstraint(
-            name = AbsenceReasonImagePersistencePort.IMAGE_UNIQUE_CONSTRAINT,
+            name = AbsenceReasonImageEntity.IMAGE_UNIQUE_CONSTRAINT,
             columnNames = ["image_id"],
         ),
     ],
@@ -35,4 +34,8 @@ class AbsenceReasonImageEntity(
     val imageId: Long,
     @Column(name = "display_order", nullable = false, updatable = false)
     val displayOrder: Int,
-)
+) {
+    companion object {
+        const val IMAGE_UNIQUE_CONSTRAINT = "uk_absence_reason_images_image_id"
+    }
+}

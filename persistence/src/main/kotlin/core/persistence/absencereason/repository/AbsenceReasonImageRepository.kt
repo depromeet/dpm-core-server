@@ -1,8 +1,11 @@
 package core.persistence.absencereason.repository
 
+import core.domain.absencereason.port.outbound.AbsenceReasonImageConflictException
 import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.image.vo.ImageId
 import core.entity.absencereason.AbsenceReasonImageEntity
+import org.hibernate.exception.ConstraintViolationException
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -51,9 +54,21 @@ class AbsenceReasonImageRepository(
                         displayOrder = order,
                     )
                 }.sortedBy { it.imageId }
-        absenceReasonImageJpaRepository.saveAll(links)
-        absenceReasonImageJpaRepository.flush()
+        try {
+            absenceReasonImageJpaRepository.saveAll(links)
+            absenceReasonImageJpaRepository.flush()
+        } catch (e: DataIntegrityViolationException) {
+            if (isImageUniqueViolation(e)) throw AbsenceReasonImageConflictException(e)
+            throw e
+        }
     }
+
+    // MySQL 은 "테이블.제약" 으로 보고한다
+    private fun isImageUniqueViolation(e: DataIntegrityViolationException): Boolean =
+        (e.cause as? ConstraintViolationException)
+            ?.constraintName
+            ?.substringAfterLast('.')
+            .equals(AbsenceReasonImageEntity.IMAGE_UNIQUE_CONSTRAINT, ignoreCase = true)
 
     override fun deleteAll(absenceReasonId: Long) {
         val linkIds =
