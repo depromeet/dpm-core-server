@@ -42,12 +42,9 @@ class AbsenceReasonCommandService(
 ) {
     /** 사유서를 저장(이미 있으면 PENDING 으로 재제출)하고 커밋 후 운영진 알림 이벤트를 발행한다. */
     fun submitAbsenceReason(command: AbsenceReportCreateCommand) {
-        validateContents(command.contents)
-        command.imageIds?.let { validateImageIdFormat(it) }
+        validateRequest(command.contents, command.imageIds)
 
-        val session: Session =
-            sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
-                ?: throw SessionNotFoundException()
+        val session: Session = lockSession(command.sessionId)
 
         val absenceReason: AbsenceReason =
             absenceReasonPersistencePort
@@ -55,9 +52,7 @@ class AbsenceReasonCommandService(
                 ?.apply { resubmit(command.contents) }
                 ?: AbsenceReason.create(command)
 
-        command.imageIds?.let { validateOwnedImages(it, command.memberId) }
-        val saved = absenceReasonPersistencePort.save(absenceReason)
-        command.imageIds?.let { replaceImages(saved, it) }
+        saveWithImages(absenceReason, command.memberId, command.imageIds)
 
         val submitter = memberQueryUseCase.getMemberById(command.memberId)
 
@@ -74,21 +69,17 @@ class AbsenceReasonCommandService(
 
     /** 본인 사유서를 수정하고 PENDING 으로 되돌린다. 없으면 [AbsenceReasonNotFoundException]. */
     fun updateAbsenceReason(command: AbsenceReportUpdateCommand) {
-        validateContents(command.contents)
-        command.imageIds?.let { validateImageIdFormat(it) }
+        validateRequest(command.contents, command.imageIds)
 
-        sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
-            ?: throw SessionNotFoundException()
+        lockSession(command.sessionId)
 
         val absenceReason =
             absenceReasonPersistencePort
                 .findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
                 ?: throw AbsenceReasonNotFoundException()
 
-        command.imageIds?.let { validateOwnedImages(it, command.memberId) }
         absenceReason.resubmit(command.contents)
-        val saved = absenceReasonPersistencePort.save(absenceReason)
-        command.imageIds?.let { replaceImages(saved, it) }
+        saveWithImages(absenceReason, command.memberId, command.imageIds)
     }
 
     /** 첨부 링크와 함께 삭제한다. 삭제된 세션의 사유서도 지울 수 있도록 세션이 없으면 잠금 없이 진행한다. */
@@ -109,8 +100,7 @@ class AbsenceReasonCommandService(
 
     /** 승인 시 출석을 인정결석([AttendanceStatus.EXCUSED_ABSENT])으로 바꾸고, 반려 시 출석은 그대로 둔다. */
     fun reviewAbsenceReason(command: AbsenceReasonReviewCommand) {
-        sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
-            ?: throw SessionNotFoundException()
+        lockSession(command.sessionId)
 
         val absenceReason =
             absenceReasonPersistencePort
@@ -133,35 +123,41 @@ class AbsenceReasonCommandService(
         absenceReasonPersistencePort.save(absenceReason)
     }
 
-    private fun validateContents(contents: String) {
+    private fun lockSession(sessionId: SessionId): Session =
+        sessionPersistencePort.findSessionByIdForUpdate(sessionId.value) ?: throw SessionNotFoundException()
+
+    private fun validateRequest(
+        contents: String,
+        imageIds: List<ImageId>?,
+    ) {
         if (contents.isBlank()) throw AbsenceReasonRequiredException()
         // VARCHAR(50) 은 문자 수 기준이라 UTF-16 길이가 아니라 코드 포인트로 센다.
         if (contents.codePointCount(0, contents.length) > MAX_CONTENTS_LENGTH) throw AbsenceReasonTooLongException()
-    }
-
-    private fun validateImageIdFormat(imageIds: List<ImageId>) {
+        if (imageIds == null) return
         if (imageIds.any { it.value <= 0 }) throw InvalidAbsenceReasonImageException()
         if (imageIds.toSet().size != imageIds.size) {
             throw InvalidAbsenceReasonImageException(AttendanceExceptionCode.DUPLICATE_ABSENCE_REASON_IMAGE)
         }
     }
 
-    /** 없는 이미지와 남의 이미지는 같은 400 이다. */
-    private fun validateOwnedImages(
-        imageIds: List<ImageId>,
+    /**
+     * [imageIds] 가 null 이면 첨부는 그대로 두고 사유서만 저장한다.
+     * 다른 사유서 첨부 사전 확인은 친절한 409 용이고, 동시 첨부는 UNIQUE(image_id) 가 막는다.
+     */
+    private fun saveWithImages(
+        absenceReason: AbsenceReason,
         memberId: MemberId,
+        imageIds: List<ImageId>?,
     ) {
-        if (imageIds.isEmpty()) return
+        if (imageIds == null) {
+            absenceReasonPersistencePort.save(absenceReason)
+            return
+        }
+
         val owned = imagePersistencePort.findAllByIds(imageIds).count { it.isOwnedBy(memberId) }
         if (owned != imageIds.size) throw InvalidAbsenceReasonImageException()
-    }
 
-    /** 사전 확인은 친절한 409 용이고, 동시 첨부는 UNIQUE(image_id) 가 막는다. */
-    private fun replaceImages(
-        absenceReason: AbsenceReason,
-        imageIds: List<ImageId>,
-    ) {
-        val absenceReasonId = requireNotNull(absenceReason.id) { "저장된 결석 사유서에 id 가 없습니다" }.value
+        val absenceReasonId = requireNotNull(absenceReasonPersistencePort.save(absenceReason).id).value
         val attachedElsewhere =
             absenceReasonImagePersistencePort
                 .findAbsenceReasonIdsByImageIds(imageIds)

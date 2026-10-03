@@ -12,7 +12,6 @@ import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.ZoneId
 
 @Service
 @Transactional(readOnly = true)
@@ -21,10 +20,6 @@ class AbsenceReasonQueryService(
     private val absenceReasonImagePersistencePort: AbsenceReasonImagePersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
 ) {
-    companion object {
-        private val KST: ZoneId = ZoneId.of("Asia/Seoul")
-    }
-
     /**
      * 로그인한 디퍼가 해당 세션에 제출한 결석 사유서를 조회한다. 제출 이력이 없으면 null 을 반환한다.
      */

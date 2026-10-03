@@ -5,7 +5,6 @@ import core.application.image.application.exception.ImageNotFoundException
 import core.application.image.application.service.ImageQueryService
 import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
-import core.domain.image.port.outbound.ImagePersistencePort
 import core.domain.image.vo.ImageId
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service
 class AbsenceReasonImageQueryService(
     private val absenceReasonPersistencePort: AbsenceReasonPersistencePort,
     private val absenceReasonImagePersistencePort: AbsenceReasonImagePersistencePort,
-    private val imagePersistencePort: ImagePersistencePort,
     private val imageQueryService: ImageQueryService,
 ) {
     fun getAbsenceReasonImage(
@@ -32,10 +30,6 @@ class AbsenceReasonImageQueryService(
                 ?: throw ImageNotFoundException()
         if (!absenceReasonImagePersistencePort.exists(absenceReasonId.value, imageId)) throw ImageNotFoundException()
 
-        val image =
-            imagePersistencePort.findById(imageId)?.takeIf { it.isOwnedBy(memberId) }
-                ?: throw ImageNotFoundException()
-
-        return imageQueryService.loadContent(image)
+        return imageQueryService.getImage(memberId, imageId)
     }
 }
