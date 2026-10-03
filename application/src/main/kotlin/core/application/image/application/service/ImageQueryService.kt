@@ -4,7 +4,6 @@ import core.application.image.application.dto.ImageContent
 import core.application.image.application.exception.ImageNotFoundException
 import core.application.image.application.exception.ImageStorageUnavailableException
 import core.application.image.application.validator.ImageValidator
-import core.domain.image.aggregate.Image
 import core.domain.image.port.outbound.ImagePersistencePort
 import core.domain.image.port.outbound.ImageStoragePort
 import core.domain.image.vo.ImageId
@@ -31,14 +30,9 @@ class ImageQueryService(
             imagePersistencePort.findById(imageId)?.takeIf { it.isOwnedBy(memberId) }
                 ?: throw ImageNotFoundException()
 
-        return loadContent(image)
-    }
-
-    /** 접근 확인을 마친 이미지의 원본을 읽는다. 호출자는 DB 트랜잭션 밖이어야 한다. */
-    fun loadContent(image: Image): ImageContent {
         val bytes = imageStoragePort.get(image.objectKey, minOf(image.size, ImageValidator.MAX_BYTES.toLong()))
         if (bytes.size.toLong() != image.size) {
-            logger.error { "이미지 크기가 메타데이터와 다릅니다: imageId=${image.id}, expected=${image.size}, actual=${bytes.size}" }
+            logger.error { "이미지 크기가 메타데이터와 다릅니다: imageId=$imageId, expected=${image.size}, actual=${bytes.size}" }
             throw ImageStorageUnavailableException()
         }
         return ImageContent(image.contentType, bytes)
