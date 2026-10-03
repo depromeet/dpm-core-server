@@ -11,7 +11,7 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
-import core.application.image.presentation.mapper.ImageResponseMapper
+import core.application.image.presentation.response.ImageResponseFactory
 import core.application.security.annotation.CurrentMemberId
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
@@ -177,7 +177,7 @@ class AttendanceQueryController(
         @PathVariable memberId: MemberId,
         @PathVariable imageId: ImageId,
     ): ResponseEntity<ByteArray> =
-        ImageResponseMapper.toInlineResponse(
+        ImageResponseFactory.toInlineResponse(
             absenceReasonImageQueryService.getAbsenceReasonImage(sessionId, memberId, imageId),
         )
 }

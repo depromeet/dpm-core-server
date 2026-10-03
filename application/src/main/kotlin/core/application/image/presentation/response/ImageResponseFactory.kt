@@ -1,4 +1,4 @@
-package core.application.image.presentation.mapper
+package core.application.image.presentation.response
 
 import core.application.image.application.dto.ImageContent
 import org.springframework.http.CacheControl
@@ -8,7 +8,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import java.util.UUID
 
-object ImageResponseMapper {
+object ImageResponseFactory {
     /** 비공개 이미지 원본 응답. 캐시하지 않고 내용 추측을 막는다. */
     fun toInlineResponse(image: ImageContent): ResponseEntity<ByteArray> {
         // 저장소 키나 원본 파일명을 드러내지 않도록 응답마다 새 UUID 파일명을 쓴다.

@@ -3,7 +3,7 @@ package core.application.image.presentation.controller
 import core.application.common.exception.CustomResponse
 import core.application.image.application.service.ImageCommandService
 import core.application.image.application.service.ImageQueryService
-import core.application.image.presentation.mapper.ImageResponseMapper
+import core.application.image.presentation.response.ImageResponseFactory
 import core.application.image.presentation.response.ImageUploadResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.image.vo.ImageId
@@ -35,5 +35,5 @@ class ImageController(
     override fun getImage(
         @CurrentMemberId memberId: MemberId,
         @PathVariable imageId: ImageId,
-    ): ResponseEntity<ByteArray> = ImageResponseMapper.toInlineResponse(imageQueryService.getImage(memberId, imageId))
+    ): ResponseEntity<ByteArray> = ImageResponseFactory.toInlineResponse(imageQueryService.getImage(memberId, imageId))
 }
