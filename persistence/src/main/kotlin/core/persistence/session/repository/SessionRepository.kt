@@ -34,9 +34,12 @@ class SessionRepository(
     override fun findSessionByIdForShare(sessionId: Long): Session? =
         sessionJpaRepository.findByIdForShare(sessionId)?.toDomain()
 
-    override fun findSessionIdsToAutoClose(absentStartTo: Instant): List<SessionId> =
+    override fun findSessionIdsToAutoClose(
+        cohortId: CohortId,
+        absentStartTo: Instant,
+    ): List<SessionId> =
         sessionJpaRepository
-            .findIdsToAutoClose(absentStartTo)
+            .findIdsToAutoClose(cohortId.value, absentStartTo)
             .map { SessionId(it) }
 
     override fun findSessionsWithAttendanceStartTimeBetween(
