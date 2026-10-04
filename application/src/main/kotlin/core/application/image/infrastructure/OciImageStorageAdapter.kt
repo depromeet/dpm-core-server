@@ -1,20 +1,38 @@
 package core.application.image.infrastructure
 
 import com.oracle.bmc.model.BmcException
+import com.oracle.bmc.objectstorage.model.CopyObjectDetails
+import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails
+import com.oracle.bmc.objectstorage.model.PreauthenticatedRequest
+import com.oracle.bmc.objectstorage.model.WorkRequest
+import com.oracle.bmc.objectstorage.requests.CopyObjectRequest
+import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestRequest
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest
+import com.oracle.bmc.objectstorage.requests.DeletePreauthenticatedRequestRequest
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest
-import com.oracle.bmc.objectstorage.requests.PutObjectRequest
-import core.application.image.application.exception.ImageNotFoundException
+import com.oracle.bmc.objectstorage.requests.GetWorkRequestRequest
+import com.oracle.bmc.objectstorage.requests.HeadObjectRequest
 import core.application.image.application.exception.ImageStorageUnavailableException
 import core.application.image.application.properties.ImageStorageProperties
+import core.domain.image.port.outbound.CopyStart
+import core.domain.image.port.outbound.CopyStatus
+import core.domain.image.port.outbound.DownloadedObject
 import core.domain.image.port.outbound.ImageStoragePort
+import core.domain.image.port.outbound.PreauthenticatedUrl
+import core.domain.image.port.outbound.StoredObject
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
-import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.util.Date
+import java.util.UUID
 
 /**
- * 비공개 버킷에 대한 put/get/delete. 오류 상세(버킷, 키, SDK 메시지)는 로그에만 남기고 응답은 404/503 으로만 낸다.
- * 본문을 바이트 배열로 넘겨 SDK 가 인증 갱신 후 재전송할 때도 스트림을 다시 읽을 수 있게 한다.
+ * 비공개 버킷에 대한 PAR 발급/회수, 검증용 내려받기, 확정 키 복사. 오류 상세(버킷, 키, SDK 메시지)는 로그에만 남기고 503 으로 낸다.
+ * PAR URL 은 권한 그 자체라 로그에 남기지 않는다(키, parId, opc-request-id 만 남긴다).
  */
 @Component
 class OciImageStorageAdapter(
@@ -23,33 +41,37 @@ class OciImageStorageAdapter(
 ) : ImageStoragePort {
     private val logger = KotlinLogging.logger { }
 
-    override fun put(
+    override fun createUploadUrl(
         objectKey: String,
-        content: ByteArray,
-        contentType: String,
-    ) {
-        call("put", objectKey) {
-            clientProvider.get().putObject(
-                PutObjectRequest
+        expiresAt: Instant,
+    ): PreauthenticatedUrl =
+        createPar(objectKey, expiresAt, CreatePreauthenticatedRequestDetails.AccessType.ObjectWrite)
+
+    override fun createReadUrl(
+        objectKey: String,
+        expiresAt: Instant,
+    ): PreauthenticatedUrl =
+        createPar(objectKey, expiresAt, CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
+
+    override fun revokeUrl(parId: String) {
+        call("revoke-par", "parId=$parId", notFound = { }) {
+            clientProvider.get().deletePreauthenticatedRequest(
+                DeletePreauthenticatedRequestRequest
                     .builder()
                     .namespaceName(properties.namespace)
                     .bucketName(properties.bucket)
-                    .objectName(objectKey)
-                    .contentLength(content.size.toLong())
-                    .contentType(contentType)
-                    // 새 UUID 키라 덮어쓸 일이 없다. 덮어쓰기 권한(OBJECT_OVERWRITE)도 필요 없게 한다.
-                    .ifNoneMatch("*")
-                    .putObjectBody(ByteArrayInputStream(content))
+                    .parId(parId)
                     .build(),
             )
         }
     }
 
-    override fun get(
+    override fun download(
         objectKey: String,
         maxBytes: Long,
-    ): ByteArray =
-        call("get", objectKey) {
+        target: Path,
+    ): DownloadedObject? =
+        call("download", objectKey, notFound = { null }) {
             val response =
                 clientProvider.get().getObject(
                     GetObjectRequest
@@ -59,36 +81,135 @@ class OciImageStorageAdapter(
                         .objectName(objectKey)
                         .build(),
                 )
+            val etag = checkNotNull(response.eTag) { "ETag 가 없습니다" }
             val input = response.inputStream ?: throw IllegalStateException("응답 본문이 없습니다")
             input.use {
                 val declaredLength = response.contentLength
-                check(declaredLength == null || declaredLength <= maxBytes) { "객체가 상한보다 큽니다: $declaredLength" }
-                val bytes = it.readNBytes(Math.toIntExact(maxBytes + 1))
-                check(bytes.size <= maxBytes) { "객체가 상한보다 큽니다" }
-                bytes
+                val size =
+                    if (declaredLength != null && declaredLength > maxBytes) {
+                        declaredLength
+                    } else {
+                        Files.newOutputStream(target).use { output -> it.copyAtMost(output, maxBytes + 1) }
+                    }
+                DownloadedObject(etag, size, response.contentType, response.contentEncoding)
             }
         }
 
-    override fun delete(objectKey: String) {
-        try {
-            call("delete", objectKey) {
-                clientProvider.get().deleteObject(
-                    DeleteObjectRequest
+    override fun head(objectKey: String): StoredObject? =
+        call("head", objectKey, notFound = { null }) {
+            val response =
+                clientProvider.get().headObject(
+                    HeadObjectRequest
                         .builder()
                         .namespaceName(properties.namespace)
                         .bucketName(properties.bucket)
                         .objectName(objectKey)
                         .build(),
                 )
+            StoredObject(checkNotNull(response.eTag) { "ETag 가 없습니다" }, checkNotNull(response.contentLength))
+        }
+
+    override fun startCopy(
+        sourceKey: String,
+        sourceEtag: String,
+        destinationKey: String,
+    ): CopyStart =
+        try {
+            call("copy", "$sourceKey -> $destinationKey", rethrowPrecondition = true) {
+                val response =
+                    clientProvider.get().copyObject(
+                        CopyObjectRequest
+                            .builder()
+                            .namespaceName(properties.namespace)
+                            .bucketName(properties.bucket)
+                            .copyObjectDetails(
+                                CopyObjectDetails
+                                    .builder()
+                                    .sourceObjectName(sourceKey)
+                                    // 검증한 바이트와 같은 객체일 때만, 확정 키가 비어 있을 때만 복사한다.
+                                    .sourceObjectIfMatchETag(sourceEtag)
+                                    .destinationRegion(properties.region)
+                                    .destinationNamespace(properties.namespace)
+                                    .destinationBucket(properties.bucket)
+                                    .destinationObjectName(destinationKey)
+                                    .destinationObjectIfNoneMatchETag("*")
+                                    .build(),
+                            ).build(),
+                    )
+                CopyStart.Started(checkNotNull(response.opcWorkRequestId) { "work request id 가 없습니다" })
             }
-        } catch (e: ImageNotFoundException) {
-            // 이미 없으면 지울 것도 없다.
+        } catch (e: PreconditionRejected) {
+            CopyStart.PreconditionFailed
+        }
+
+    override fun copyStatus(workRequestId: String): CopyStatus =
+        call("copy-status", "workRequestId=$workRequestId", notFound = { CopyStatus.FAILED }) {
+            val status =
+                clientProvider
+                    .get()
+                    .getWorkRequest(GetWorkRequestRequest.builder().workRequestId(workRequestId).build())
+                    .workRequest
+                    ?.status
+            when (status) {
+                WorkRequest.Status.Completed -> CopyStatus.COMPLETED
+                WorkRequest.Status.Failed, WorkRequest.Status.Canceled -> CopyStatus.FAILED
+                // 모르는 값은 진행 중으로 둔다. 정리 작업이 확정 키를 지우지 않게 하기 위해서다.
+                else -> CopyStatus.IN_PROGRESS
+            }
+        }
+
+    override fun delete(objectKey: String) {
+        call("delete", objectKey, notFound = { }) {
+            clientProvider.get().deleteObject(
+                DeleteObjectRequest
+                    .builder()
+                    .namespaceName(properties.namespace)
+                    .bucketName(properties.bucket)
+                    .objectName(objectKey)
+                    .build(),
+            )
         }
     }
 
+    private fun createPar(
+        objectKey: String,
+        expiresAt: Instant,
+        accessType: CreatePreauthenticatedRequestDetails.AccessType,
+    ): PreauthenticatedUrl =
+        call("create-par", objectKey) {
+            val client = clientProvider.get()
+            val par =
+                client
+                    .createPreauthenticatedRequest(
+                        CreatePreauthenticatedRequestRequest
+                            .builder()
+                            .namespaceName(properties.namespace)
+                            .bucketName(properties.bucket)
+                            .createPreauthenticatedRequestDetails(
+                                CreatePreauthenticatedRequestDetails
+                                    .builder()
+                                    // 이름은 PAR 목록에서 구분하는 용도다. 회원 정보는 넣지 않는다.
+                                    .name("${accessType.value}-${UUID.randomUUID()}")
+                                    .objectName(objectKey)
+                                    .accessType(accessType)
+                                    .bucketListingAction(PreauthenticatedRequest.BucketListingAction.Deny)
+                                    .timeExpires(Date.from(expiresAt))
+                                    .build(),
+                            ).build(),
+                    ).preauthenticatedRequest
+            val url = par.fullPath?.takeIf { it.isNotBlank() } ?: (client.endpoint.trimEnd('/') + par.accessUri)
+            PreauthenticatedUrl(
+                parId = checkNotNull(par.id) { "PAR id 가 없습니다" },
+                url = url,
+                expiresAt = par.timeExpires?.toInstant() ?: expiresAt,
+            )
+        }
+
     private fun <T> call(
         operation: String,
-        objectKey: String,
+        target: String,
+        notFound: (() -> T)? = null,
+        rethrowPrecondition: Boolean = false,
         block: () -> T,
     ): T =
         try {
@@ -96,19 +217,48 @@ class OciImageStorageAdapter(
         } catch (e: ImageStorageUnavailableException) {
             throw e
         } catch (e: BmcException) {
+            if (e.statusCode == NOT_FOUND && notFound != null) return notFound()
+            if (rethrowPrecondition && e.statusCode in PRECONDITION_STATUSES) {
+                logger.info {
+                    "OCI Object Storage $operation 조건 불일치: $target, " +
+                        "status=${e.statusCode}, opcRequestId=${e.opcRequestId}"
+                }
+                throw PreconditionRejected()
+            }
+            // 버킷 권한이 없을 때도 OCI 는 404 를 주므로 상태 코드와 요청 id 를 남긴다.
             logger.error {
-                "OCI Object Storage $operation 실패: key=$objectKey, status=${e.statusCode}, " +
+                "OCI Object Storage $operation 실패: $target, status=${e.statusCode}, " +
                     "serviceCode=${e.serviceCode}, timeout=${e.isTimeout}, opcRequestId=${e.opcRequestId}"
             }
-            // 버킷 권한이 없을 때도 OCI 는 404 를 주므로 로그는 남긴다. 업로드의 404 는 설정/권한 문제라 503 이다.
-            if (e.statusCode == NOT_FOUND && operation != "put") throw ImageNotFoundException()
             throw ImageStorageUnavailableException()
         } catch (e: Exception) {
-            logger.error(e) { "OCI Object Storage $operation 실패: key=$objectKey" }
+            logger.error(e) { "OCI Object Storage $operation 실패: $target" }
             throw ImageStorageUnavailableException()
         }
 
+    /** [limit] 바이트까지만 옮기고 옮긴 수를 돌려준다. */
+    private fun InputStream.copyAtMost(
+        output: OutputStream,
+        limit: Long,
+    ): Long {
+        val buffer = ByteArray(BUFFER_SIZE)
+        var copied = 0L
+        while (copied < limit) {
+            val read = read(buffer, 0, minOf(buffer.size.toLong(), limit - copied).toInt())
+            if (read < 0) break
+            output.write(buffer, 0, read)
+            copied += read
+        }
+        return copied
+    }
+
+    private class PreconditionRejected : RuntimeException()
+
     companion object {
         private const val NOT_FOUND = 404
+        private const val BUFFER_SIZE = 64 * 1024
+
+        // 원본 ETag 불일치(412), 대상 존재(409/412), 원본 없음(404) 은 복사 거절로 본다.
+        private val PRECONDITION_STATUSES = setOf(404, 409, 412)
     }
 }

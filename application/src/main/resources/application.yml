@@ -14,12 +14,6 @@ spring:
   jooq:
     sql-dialect: mysql
 
-  servlet:
-    multipart:
-      # 이미지 업로드(/v1/images) 상한. 파일 10MiB, 요청 전체는 multipart 오버헤드를 감안해 11MiB.
-      max-file-size: 10MB
-      max-request-size: 11MB
-
   security:
     jwt:
       secret_key: ${JWT_SECRET_KEY}

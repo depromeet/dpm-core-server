@@ -3,9 +3,11 @@ package core.application.common.exception
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.databind.exc.InvalidNullException
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
+import core.application.image.application.exception.ImageVerificationBusyException
 import core.application.security.oauth.exception.InvalidAccessTokenException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authorization.AuthorizationDeniedException
@@ -14,9 +16,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
-import org.springframework.web.multipart.MaxUploadSizeExceededException
-import org.springframework.web.multipart.MultipartException
-import org.springframework.web.multipart.support.MissingServletRequestPartException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
@@ -83,23 +82,15 @@ class GlobalExceptionHandler {
         return CustomResponse.error(GlobalExceptionCode.METHOD_NOT_ALLOWED)
     }
 
-    // 멀티파트 크기 초과는 컨트롤러 진입 전(파싱 단계)에 나므로 Exception 핸들러의 500 으로 떨어지지 않게 따로 받는다.
-    @ExceptionHandler(MaxUploadSizeExceededException::class)
-    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
-    fun handleMaxUploadSizeExceededException(exception: MaxUploadSizeExceededException): CustomResponse<Void> =
-        CustomResponse.error(GlobalExceptionCode.PAYLOAD_TOO_LARGE)
-
-    @ExceptionHandler(MissingServletRequestPartException::class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleMissingServletRequestPartException(exception: MissingServletRequestPartException): CustomResponse<Void> =
-        CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, "${exception.requestPartName}: 필수 입력값입니다")
-
-    @ExceptionHandler(MultipartException::class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleMultipartException(exception: MultipartException): CustomResponse<Void> {
-        // 임시 디렉터리 오류 같은 서버 측 파싱 실패도 여기로 오므로 원인을 남긴다.
-        logger.warn(exception) { "Multipart 요청을 처리하지 못했습니다: ${exception.message}" }
-        return CustomResponse.error(GlobalExceptionCode.INVALID_INPUT, "올바른 multipart/form-data 요청이 아닙니다")
+    // 처리 중 경합(429)은 재시도 시점을 함께 알려준다.
+    @ExceptionHandler(ImageVerificationBusyException::class)
+    fun handleImageVerificationBusyException(
+        exception: ImageVerificationBusyException,
+        response: HttpServletResponse,
+    ): CustomResponse<Void> {
+        response.status = exception.getCode().getStatus().value()
+        response.setHeader(HttpHeaders.RETRY_AFTER, ImageVerificationBusyException.RETRY_AFTER_SECONDS.toString())
+        return CustomResponse.error(exception.getCode())
     }
 
     @ExceptionHandler(Exception::class)
