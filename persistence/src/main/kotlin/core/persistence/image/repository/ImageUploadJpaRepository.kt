@@ -1,8 +1,10 @@
 package core.persistence.image.repository
 
 import core.entity.image.ImageUploadEntity
+import jakarta.persistence.LockModeType
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -134,6 +136,14 @@ interface ImageUploadJpaRepository : JpaRepository<ImageUploadEntity, String> {
         @Param("token") token: String,
         @Param("failureCode") failureCode: String,
     ): Int
+
+    /** 완료 직전 같은 조건(COPYING, lease token)을 행 잠금으로 확인한다. 잠금은 호출 트랜잭션 끝까지 유지된다. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from ImageUploadEntity u where u.id = :id and u.status = 'COPYING' and u.leaseToken = :token")
+    fun findCompletableForUpdate(
+        @Param("id") id: String,
+        @Param("token") token: String,
+    ): ImageUploadEntity?
 
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)

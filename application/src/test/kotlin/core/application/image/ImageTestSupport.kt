@@ -356,7 +356,7 @@ class FakeImageStoragePort : ImageStoragePort {
         target: Path,
     ): DownloadedObject? {
         calls += "download"
-        downloadTargets += target
+        downloadTargets.add(target)
         beforeDownload()
         downloadFailure?.let {
             Files.write(target, byteArrayOf(1, 2, 3))

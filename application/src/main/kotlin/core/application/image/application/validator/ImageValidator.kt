@@ -49,9 +49,10 @@ class ImageValidator {
             else -> null
         }
 
+    // 파라미터는 보지 않는다. charset=binary 처럼 모르는 charset 이 있으면 Spring 파서가 통째로 거절하므로 먼저 뗀다.
     private fun normalize(contentType: String): String? =
         try {
-            MediaType.parseMediaType(contentType).let { "${it.type}/${it.subtype}".lowercase() }
+            MediaType.parseMediaType(contentType.substringBefore(';')).let { "${it.type}/${it.subtype}".lowercase() }
         } catch (e: InvalidMediaTypeException) {
             null
         }

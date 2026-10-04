@@ -71,13 +71,17 @@ class ImageUploadRepository(
         failureCode: String,
     ): Boolean = imageUploadJpaRepository.fail(uploadId, token, failureCode) == 1
 
-    /** 이미지 INSERT 와 세션 COMPLETED 를 함께 커밋한다. 세션 조건이 맞지 않으면 INSERT 까지 되돌린다. */
+    /**
+     * 이미지 INSERT 와 세션 COMPLETED 를 함께 커밋한다. 세션 조건이 맞지 않으면 INSERT 까지 되돌린다.
+     * 먼저 세션 행을 잠그고 조건을 확인해, 이미 완료됐거나 lease 를 잃은 요청이 같은 확정 키로 INSERT 하다 UNIQUE 위반을 내지 않게 한다.
+     */
     @Transactional
     override fun complete(
         uploadId: String,
         token: String,
         image: Image,
     ): Image? {
+        imageUploadJpaRepository.findCompletableForUpdate(uploadId, token) ?: return null
         val saved = imageJpaRepository.save(ImageEntity.from(image))
         if (imageUploadJpaRepository.markCompleted(uploadId, token, saved.id) != 1) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()

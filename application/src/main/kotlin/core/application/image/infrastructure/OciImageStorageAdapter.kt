@@ -50,8 +50,7 @@ class OciImageStorageAdapter(
     override fun createReadUrl(
         objectKey: String,
         expiresAt: Instant,
-    ): PreauthenticatedUrl =
-        createPar(objectKey, expiresAt, CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
+    ): PreauthenticatedUrl = createPar(objectKey, expiresAt, CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
 
     override fun revokeUrl(parId: String) {
         call("revoke-par", "parId=$parId", notFound = { }) {
@@ -211,8 +210,8 @@ class OciImageStorageAdapter(
         notFound: (() -> T)? = null,
         rethrowPrecondition: Boolean = false,
         block: () -> T,
-    ): T =
-        try {
+    ): T {
+        return try {
             block()
         } catch (e: ImageStorageUnavailableException) {
             throw e
@@ -235,6 +234,7 @@ class OciImageStorageAdapter(
             logger.error(e) { "OCI Object Storage $operation 실패: $target" }
             throw ImageStorageUnavailableException()
         }
+    }
 
     /** [limit] 바이트까지만 옮기고 옮긴 수를 돌려준다. */
     private fun InputStream.copyAtMost(

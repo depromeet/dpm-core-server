@@ -17,7 +17,6 @@ import core.application.support.MutableClock
 import core.domain.image.aggregate.ImageUpload
 import core.domain.image.enums.ImageContentType
 import core.domain.image.enums.ImageUploadStatus
-import core.domain.image.port.outbound.CopyStatus
 import core.domain.member.vo.MemberId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
