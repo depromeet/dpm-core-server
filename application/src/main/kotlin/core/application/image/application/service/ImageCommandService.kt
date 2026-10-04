@@ -241,9 +241,17 @@ class ImageCommandService(
         // 확정 객체가 있으면 복사 상태와 무관하게 확정한다(상태 조회 권한·지연에 막히지 않게).
         imageStoragePort.head(upload.finalKey)?.let { return finalize(upload, token, it) }
         if (workRequestId != null) {
-            if (imageStoragePort.copyStatus(workRequestId) == CopyStatus.IN_PROGRESS) return releaseCopy(upload, token)
-            // 알고 있는 복사가 끝났는데(실패 포함) 확정 객체가 없다.
-            return fail(upload, token, ImageExceptionCode.UPLOAD_FAILED)
+            return when (imageStoragePort.copyStatus(workRequestId)) {
+                CopyStatus.IN_PROGRESS -> releaseCopy(upload, token)
+                // 첫 HEAD 와 상태 조회 사이에 복사가 끝났을 수 있어 다시 본다. 그래도 없으면 단정하지 않고 503 으로 재시도하게 한다.
+                CopyStatus.COMPLETED -> {
+                    imageStoragePort.head(upload.finalKey)?.let { return finalize(upload, token, it) }
+                    logger.error { "복사는 완료됐는데 확정 객체가 보이지 않습니다: uploadId=${upload.id}, workRequestId=$workRequestId" }
+                    throw ImageStorageUnavailableException()
+                }
+                // 알고 있는 복사가 실패했고 확정 객체가 없다.
+                CopyStatus.FAILED -> fail(upload, token, ImageExceptionCode.UPLOAD_FAILED)
+            }
         }
 
         // 복사를 낸 적이 없거나, 냈지만 응답을 못 받아 work request id 가 없다. 조건부 복사라 다시 내도 안전하다.

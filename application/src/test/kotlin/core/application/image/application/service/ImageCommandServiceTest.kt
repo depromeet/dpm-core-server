@@ -17,6 +17,7 @@ import core.application.support.MutableClock
 import core.domain.image.aggregate.ImageUpload
 import core.domain.image.enums.ImageContentType
 import core.domain.image.enums.ImageUploadStatus
+import core.domain.image.port.outbound.CopyStatus
 import core.domain.member.vo.MemberId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -305,6 +306,34 @@ class ImageCommandServiceTest {
         storage.copyStatusFailure = null
         storage.finishCopies()
         assertThat(service.completeUpload(owner, upload.id)).isInstanceOf(ImageUploadCompletion.Completed::class.java)
+    }
+
+    @Test
+    fun `확정 객체 확인과 상태 조회 사이에 복사가 끝나도 실패로 보지 않고 확정한다`() {
+        storage.copyCompletesImmediately = false
+        val upload = uploaded(ImageFixtures.png())
+        assertThat(service.completeUpload(owner, upload.id)).isEqualTo(ImageUploadCompletion.InProgress)
+        storage.beforeCopyStatus = { storage.finishCopies() }
+
+        assertThat(service.completeUpload(owner, upload.id)).isInstanceOf(ImageUploadCompletion.Completed::class.java)
+        assertThat(images.images).hasSize(1)
+    }
+
+    @Test
+    fun `복사가 완료라는데 확정 객체가 보이지 않으면 503 이며 COPYING 과 업로드 객체를 남긴다`() {
+        storage.copyCompletesImmediately = false
+        val upload = uploaded(ImageFixtures.png())
+        assertThat(service.completeUpload(owner, upload.id)).isEqualTo(ImageUploadCompletion.InProgress)
+        val workRequestId = uploads.uploads.getValue(upload.id).workRequestId!!
+        storage.workRequests[workRequestId] = CopyStatus.COMPLETED
+
+        assertThatThrownBy { service.completeUpload(owner, upload.id) }.isInstanceOf(ImageStorageUnavailableException::class.java)
+
+        val copying = uploads.uploads.getValue(upload.id)
+        assertThat(copying.status).isEqualTo(ImageUploadStatus.COPYING)
+        assertThat(copying.leaseToken).isNull()
+        assertThat(storage.objects).containsKey(upload.stagingKey)
+        assertThat(images.images).isEmpty()
     }
 
     @Test
