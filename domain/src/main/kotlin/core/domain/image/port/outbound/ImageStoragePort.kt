@@ -24,8 +24,8 @@ interface ImageStoragePort {
     fun revokeUrl(parId: String)
 
     /**
-     * 객체를 [target] 에 최대 [maxBytes] + 1 바이트까지 쓴다. 객체가 없으면 null.
-     * 길이 헤더가 상한을 넘으면 본문을 읽지 않고 그 길이를 돌려준다.
+     * 객체를 [target] 에 최대 [maxBytes] + 1 바이트까지 쓴다(그 이상은 전송받지 않는다). 객체가 없으면 null.
+     * 돌려준 크기가 [maxBytes] 를 넘으면 상한 초과다.
      */
     fun download(
         objectKey: String,

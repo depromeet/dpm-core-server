@@ -265,11 +265,46 @@ class ImageCommandServiceTest {
         storage.copyStartFailure = ImageStorageUnavailableException()
         val upload = uploaded(ImageFixtures.png())
         assertThatThrownBy { service.completeUpload(owner, upload.id) }.isInstanceOf(ImageStorageUnavailableException::class.java)
+        // 503 은 재시도 대상이라 업로드 객체와 COPYING 을 그대로 둔다.
+        assertThat(uploads.uploads.getValue(upload.id).status).isEqualTo(ImageUploadStatus.COPYING)
+        assertThat(storage.objects).containsKey(upload.stagingKey)
 
         storage.copyStartFailure = null
         assertThat(service.completeUpload(owner, upload.id)).isInstanceOf(ImageUploadCompletion.Completed::class.java)
         assertThat(storage.copyRequests).hasSize(2)
         assertThat(images.images).hasSize(1)
+    }
+
+    @Test
+    fun `확정 객체가 있으면 복사 상태를 읽지 못해도 확정한다`() {
+        storage.copyCompletesImmediately = false
+        val upload = uploaded(ImageFixtures.png())
+        assertThat(service.completeUpload(owner, upload.id)).isEqualTo(ImageUploadCompletion.InProgress)
+        storage.finishCopies()
+        storage.copyStatusFailure = ImageStorageUnavailableException()
+
+        assertThat(service.completeUpload(owner, upload.id)).isInstanceOf(ImageUploadCompletion.Completed::class.java)
+        assertThat(images.images).hasSize(1)
+    }
+
+    @Test
+    fun `복사 상태를 읽지 못하고 확정 객체도 없으면 503 이며 COPYING 과 업로드 객체를 남긴다`() {
+        storage.copyCompletesImmediately = false
+        val upload = uploaded(ImageFixtures.png())
+        assertThat(service.completeUpload(owner, upload.id)).isEqualTo(ImageUploadCompletion.InProgress)
+        storage.copyStatusFailure = ImageStorageUnavailableException()
+
+        assertThatThrownBy { service.completeUpload(owner, upload.id) }.isInstanceOf(ImageStorageUnavailableException::class.java)
+
+        val copying = uploads.uploads.getValue(upload.id)
+        assertThat(copying.status).isEqualTo(ImageUploadStatus.COPYING)
+        assertThat(copying.leaseToken).isNull()
+        assertThat(storage.objects).containsKey(upload.stagingKey)
+        assertThat(images.images).isEmpty()
+
+        storage.copyStatusFailure = null
+        storage.finishCopies()
+        assertThat(service.completeUpload(owner, upload.id)).isInstanceOf(ImageUploadCompletion.Completed::class.java)
     }
 
     @Test
@@ -377,6 +412,24 @@ class ImageCommandServiceTest {
         assertThat(uploads.uploads).doesNotContainKey(abandoned.id).containsKey(recent.uploadId)
         assertThat(storage.revokedPars).containsExactly(abandoned.parId)
         assertThat(storage.objects).doesNotContainKey(abandoned.stagingKey)
+    }
+
+    @Test
+    fun `정리 작업은 저장소를 쓸 수 없으면 남은 건을 건드리지 않고 멈춘다`() {
+        val stale =
+            List(3) { uploaded(ImageFixtures.png()) }.onEach {
+                uploads.save(uploads.uploads.getValue(it.id).copyWith(createdAt = clock.now.minus(Duration.ofHours(25))))
+            }
+        storage.calls.clear()
+        storage.revokeFailure = ImageStorageUnavailableException()
+
+        assertThat(service.cleanUpStaleUploads()).isZero()
+        assertThat(storage.calls.count { it == "revoke" }).isEqualTo(1)
+        assertThat(uploads.uploads.keys).containsAll(stale.map { it.id })
+
+        storage.revokeFailure = null
+        assertThat(service.cleanUpStaleUploads()).isEqualTo(3)
+        assertThat(uploads.uploads.keys).doesNotContainAnyElementsOf(stale.map { it.id })
     }
 
     @Test

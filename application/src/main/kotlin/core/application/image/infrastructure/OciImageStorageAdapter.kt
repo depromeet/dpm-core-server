@@ -1,6 +1,7 @@
 package core.application.image.infrastructure
 
 import com.oracle.bmc.model.BmcException
+import com.oracle.bmc.model.Range
 import com.oracle.bmc.objectstorage.model.CopyObjectDetails
 import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails
 import com.oracle.bmc.objectstorage.model.PreauthenticatedRequest
@@ -71,28 +72,62 @@ class OciImageStorageAdapter(
         target: Path,
     ): DownloadedObject? =
         call("download", objectKey, notFound = { null }) {
-            val response =
-                clientProvider.get().getObject(
-                    GetObjectRequest
-                        .builder()
-                        .namespaceName(properties.namespace)
-                        .bucketName(properties.bucket)
-                        .objectName(objectKey)
-                        .build(),
-                )
-            val etag = checkNotNull(response.eTag) { "ETag 가 없습니다" }
-            val input = response.inputStream ?: throw IllegalStateException("응답 본문이 없습니다")
-            input.use {
-                val declaredLength = response.contentLength
-                val size =
-                    if (declaredLength != null && declaredLength > maxBytes) {
-                        declaredLength
-                    } else {
-                        Files.newOutputStream(target).use { output -> it.copyAtMost(output, maxBytes + 1) }
-                    }
-                DownloadedObject(etag, size, response.contentType, response.contentEncoding)
+            try {
+                downloadRange(objectKey, maxBytes, target)
+            } catch (e: BmcException) {
+                if (e.statusCode != RANGE_NOT_SATISFIABLE) throw e
+                downloadEmpty(objectKey, target)
             }
         }
+
+    /**
+     * 0..maxBytes(포함) 범위만 요청해 상한 + 1 바이트까지만 전송받는다. 범위 없이 받으면 큰 객체를 닫을 때
+     * HTTP 클라이언트가 남은 본문을 끝까지 읽어 버리므로(graceful close) 전송량을 요청에서 제한한다.
+     */
+    private fun downloadRange(
+        objectKey: String,
+        maxBytes: Long,
+        target: Path,
+    ): DownloadedObject {
+        val response =
+            clientProvider.get().getObject(
+                GetObjectRequest
+                    .builder()
+                    .namespaceName(properties.namespace)
+                    .bucketName(properties.bucket)
+                    .objectName(objectKey)
+                    .range(Range(0L, maxBytes))
+                    .build(),
+            )
+        val etag = checkNotNull(response.eTag) { "ETag 가 없습니다" }
+        val input = response.inputStream ?: throw IllegalStateException("응답 본문이 없습니다")
+        val size = input.use { Files.newOutputStream(target).use { output -> it.copyAtMost(output, maxBytes + 1) } }
+        return DownloadedObject(etag, size, response.contentType, response.contentEncoding)
+    }
+
+    /** 범위 요청이 416 이면 빈 객체일 때뿐이다. HEAD 로 길이 0 을 확인한 경우에만 빈 파일로 보고, 아니면 실패로 던진다. */
+    private fun downloadEmpty(
+        objectKey: String,
+        target: Path,
+    ): DownloadedObject {
+        val response =
+            clientProvider.get().headObject(
+                HeadObjectRequest
+                    .builder()
+                    .namespaceName(properties.namespace)
+                    .bucketName(properties.bucket)
+                    .objectName(objectKey)
+                    .build(),
+            )
+        check(response.contentLength == 0L) { "범위 요청이 416 인데 객체 길이가 0 이 아닙니다: ${response.contentLength}" }
+        Files.newOutputStream(target).close()
+        return DownloadedObject(
+            checkNotNull(response.eTag) { "ETag 가 없습니다" },
+            0L,
+            response.contentType,
+            response.contentEncoding,
+        )
+    }
 
     override fun head(objectKey: String): StoredObject? =
         call("head", objectKey, notFound = { null }) {
@@ -141,8 +176,9 @@ class OciImageStorageAdapter(
             CopyStart.PreconditionFailed
         }
 
+    // 권한이 없을 때도 OCI 는 404 를 준다. 실패로 단정하지 않고 오류 로그와 503(재시도)으로 낸다.
     override fun copyStatus(workRequestId: String): CopyStatus =
-        call("copy-status", "workRequestId=$workRequestId", notFound = { CopyStatus.FAILED }) {
+        call("copy-status", "workRequestId=$workRequestId") {
             val status =
                 clientProvider
                     .get()
@@ -256,9 +292,10 @@ class OciImageStorageAdapter(
 
     companion object {
         private const val NOT_FOUND = 404
+        private const val RANGE_NOT_SATISFIABLE = 416
         private const val BUFFER_SIZE = 64 * 1024
 
-        // 원본 ETag 불일치(412), 대상 존재(409/412), 원본 없음(404) 은 복사 거절로 본다.
-        private val PRECONDITION_STATUSES = setOf(404, 409, 412)
+        // 원본 ETag 불일치(412), 대상 존재(409/412)만 복사 거절로 본다. 404 는 권한 없음일 수 있어 503 으로 낸다.
+        private val PRECONDITION_STATUSES = setOf(409, 412)
     }
 }

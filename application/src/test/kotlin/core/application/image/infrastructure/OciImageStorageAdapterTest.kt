@@ -9,6 +9,7 @@ import com.oracle.bmc.objectstorage.requests.CopyObjectRequest
 import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestRequest
 import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest
 import com.oracle.bmc.objectstorage.requests.DeletePreauthenticatedRequestRequest
+import com.oracle.bmc.objectstorage.requests.GetObjectRequest
 import com.oracle.bmc.objectstorage.responses.CopyObjectResponse
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse
@@ -113,19 +114,50 @@ class OciImageStorageAdapterTest {
     }
 
     @Test
-    fun `길이 헤더가 상한을 넘으면 본문을 읽지 않고 그 길이를 돌려준다`() {
-        val body = TrackingInputStream(ByteArray(10))
-        doReturn(getResponse(body, 10L)).`when`(client).getObject(any())
+    fun `내려받기는 0 부터 상한까지(포함) 범위만 요청해 상한을 넘는 객체도 상한 + 1 바이트만 전송받는다`() {
+        // 범위를 지킨 응답: 10 바이트 객체에서 0..5 만 온다.
+        val body = TrackingInputStream(ByteArray(6))
+        doReturn(getResponse(body, 6L)).`when`(client).getObject(any())
         val target = tempDir.resolve("download")
 
-        assertThat(adapter.download("uploads/u1", 5L, target)!!.size).isEqualTo(10L)
-        assertThat(body.readCount).isZero()
+        val downloaded = adapter.download("uploads/u1", 5L, target)!!
+
+        val captor = ArgumentCaptor.forClass(GetObjectRequest::class.java)
+        verify(client).getObject(captor.capture())
+        assertThat(captor.value.range.startByte).isEqualTo(0L)
+        assertThat(captor.value.range.endByte).isEqualTo(5L)
+        assertThat(downloaded.size).isEqualTo(6L)
+        assertThat(Files.size(target)).isEqualTo(6L)
         assertThat(body.closed).isTrue()
-        assertThat(Files.exists(target)).isFalse()
     }
 
     @Test
-    fun `길이 헤더가 없어도 상한 + 1 바이트까지만 쓴다`() {
+    fun `범위 요청이 416 이면 HEAD 로 길이 0 을 확인한 경우에만 빈 객체로 본다`() {
+        doThrow(BmcException(416, "InvalidRange", "range", "req-10")).`when`(client).getObject(any())
+        doReturn(HeadObjectResponse.builder().eTag("etag-empty").contentLength(0L).contentType("image/png").build())
+            .`when`(client)
+            .headObject(any())
+        val target = tempDir.resolve("empty")
+
+        val downloaded = adapter.download("uploads/u1", 5L, target)!!
+
+        assertThat(downloaded.etag).isEqualTo("etag-empty")
+        assertThat(downloaded.size).isZero()
+        assertThat(downloaded.contentType).isEqualTo("image/png")
+        assertThat(Files.size(target)).isZero()
+
+        // 길이가 0 이 아닌데 416 이면 빈 파일로 넘기지 않는다.
+        doReturn(HeadObjectResponse.builder().eTag("etag-x").contentLength(7L).build()).`when`(client).headObject(any())
+        assertThatThrownBy { adapter.download("uploads/u1", 5L, tempDir.resolve("x")) }
+            .isInstanceOf(ImageStorageUnavailableException::class.java)
+
+        // 그 사이 지워졌으면 없는 객체다.
+        doThrow(BmcException(404, "ObjectNotFound", "missing", "req-11")).`when`(client).headObject(any())
+        assertThat(adapter.download("uploads/u1", 5L, tempDir.resolve("y"))).isNull()
+    }
+
+    @Test
+    fun `서버가 범위를 무시해도 상한 + 1 바이트까지만 쓴다`() {
         val body = TrackingInputStream(ByteArray(10))
         doReturn(getResponse(body, null)).`when`(client).getObject(any())
         val target = tempDir.resolve("download")
@@ -183,8 +215,13 @@ class OciImageStorageAdapterTest {
         doThrow(BmcException(412, "IfMatchFailed", "etag", "req-6")).`when`(client).copyObject(any())
         assertThat(adapter.startCopy("uploads/u1", "etag-1", "images/u1")).isEqualTo(CopyStart.PreconditionFailed)
 
-        doThrow(BmcException(404, "ObjectNotFound", "missing", "req-7")).`when`(client).copyObject(any())
+        doThrow(BmcException(409, "IfNoneMatchFailed", "exists", "req-12")).`when`(client).copyObject(any())
         assertThat(adapter.startCopy("uploads/u1", "etag-1", "images/u1")).isEqualTo(CopyStart.PreconditionFailed)
+
+        // 권한 없음도 404 라 거절로 보지 않고 503 으로 낸다.
+        doThrow(BmcException(404, "NotAuthorizedOrNotFound", "missing", "req-7")).`when`(client).copyObject(any())
+        assertThatThrownBy { adapter.startCopy("uploads/u1", "etag-1", "images/u1") }
+            .isInstanceOf(ImageStorageUnavailableException::class.java)
 
         doThrow(BmcException(true, "timeout", RuntimeException(), "req-8")).`when`(client).copyObject(any())
         assertThatThrownBy { adapter.startCopy("uploads/u1", "etag-1", "images/u1") }
@@ -206,6 +243,13 @@ class OciImageStorageAdapterTest {
         assertThat(statusOf(WorkRequest.Status.Failed)).isEqualTo(CopyStatus.FAILED)
         assertThat(statusOf(WorkRequest.Status.Canceled)).isEqualTo(CopyStatus.FAILED)
         assertThat(statusOf(WorkRequest.Status.UnknownEnumValue)).isEqualTo(CopyStatus.IN_PROGRESS)
+    }
+
+    @Test
+    fun `work request 404 는 실패로 단정하지 않고 503 이다`() {
+        doThrow(BmcException(404, "NotAuthorizedOrNotFound", "missing", "req-13")).`when`(client).getWorkRequest(any())
+
+        assertThatThrownBy { adapter.copyStatus("wr-1") }.isInstanceOf(ImageStorageUnavailableException::class.java)
     }
 
     @Test

@@ -2,6 +2,7 @@ package core.application.image.application.service
 
 import core.application.image.application.dto.ImageUploadCompletion
 import core.application.image.application.exception.ImageExceptionCode
+import core.application.image.application.exception.ImageStorageUnavailableException
 import core.application.image.application.exception.ImageUploadException
 import core.application.image.application.exception.ImageVerificationBusyException
 import core.application.image.application.exception.InvalidImageException
@@ -98,15 +99,19 @@ class ImageCommandService(
     /**
      * 오래된 세션 정리. 미완료 세션을 끝내고 PAR·업로드 객체를 지운다. 한 건이 실패해도 나머지는 진행하며,
      * 실패한 행은 그대로 남아(parId 유지) 다음 실행에서 다시 시도된다.
+     * 저장소를 쓸 수 없으면 남은 건도 같은 타임아웃을 반복하며 공유 스케줄러 스레드를 붙잡으므로 이번 실행을 멈춘다.
      */
     fun cleanUpStaleUploads(): Int {
         val now = Instant.now(clock)
         var cleaned = 0
         val stale =
             imageUploadPersistencePort.findStale(now.minus(properties.abandonedAfter), properties.cleanupBatchSize)
-        stale.forEach { upload ->
+        for (upload in stale) {
             try {
                 if (cleanUpStale(upload, now)) cleaned++
+            } catch (e: ImageStorageUnavailableException) {
+                logger.warn(e) { "이미지 저장소를 쓸 수 없어 정리를 멈춥니다(다음 실행에서 재시도): uploadId=${upload.id}" }
+                break
             } catch (e: Exception) {
                 logger.warn(e) { "오래된 이미지 업로드를 정리하지 못했습니다(다음 실행에서 재시도): uploadId=${upload.id}" }
             }
@@ -233,12 +238,13 @@ class ImageCommandService(
     ): ImageUploadCompletion {
         val etag = checkNotNull(upload.etag) { "COPYING 세션에 검증 ETag 가 없습니다: ${upload.id}" }
         val workRequestId = upload.workRequestId
-        if (workRequestId != null && imageStoragePort.copyStatus(workRequestId) == CopyStatus.IN_PROGRESS) {
-            return releaseCopy(upload, token)
-        }
+        // 확정 객체가 있으면 복사 상태와 무관하게 확정한다(상태 조회 권한·지연에 막히지 않게).
         imageStoragePort.head(upload.finalKey)?.let { return finalize(upload, token, it) }
-        // 알고 있는 복사가 끝났는데(실패 포함) 확정 객체가 없다.
-        if (workRequestId != null) return fail(upload, token, ImageExceptionCode.UPLOAD_FAILED)
+        if (workRequestId != null) {
+            if (imageStoragePort.copyStatus(workRequestId) == CopyStatus.IN_PROGRESS) return releaseCopy(upload, token)
+            // 알고 있는 복사가 끝났는데(실패 포함) 확정 객체가 없다.
+            return fail(upload, token, ImageExceptionCode.UPLOAD_FAILED)
+        }
 
         // 복사를 낸 적이 없거나, 냈지만 응답을 못 받아 work request id 가 없다. 조건부 복사라 다시 내도 안전하다.
         return when (val start = imageStoragePort.startCopy(upload.stagingKey, etag, upload.finalKey)) {

@@ -286,6 +286,9 @@ class FakeImageStoragePort : ImageStoragePort {
     var deleteFailure: Exception? = null
     var revokeFailure: Exception? = null
 
+    /** 복사 상태 조회 실패(권한 없음 404 등은 어댑터가 503 으로 바꾼다). */
+    var copyStatusFailure: Exception? = null
+
     /** 복사를 실제로 시작한 뒤 응답을 잃은 것처럼 던진다(work request id 를 모름). */
     var copyResponseLost = false
 
@@ -396,6 +399,7 @@ class FakeImageStoragePort : ImageStoragePort {
 
     override fun copyStatus(workRequestId: String): CopyStatus {
         calls += "copy-status"
+        copyStatusFailure?.let { throw it }
         return workRequests[workRequestId] ?: CopyStatus.FAILED
     }
 
