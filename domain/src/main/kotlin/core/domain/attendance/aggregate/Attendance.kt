@@ -44,7 +44,10 @@ class Attendance(
     /** updatedAt 은 운영진 변경에서만 기록한다. 과거 데이터의 updatedAt 도 운영진 변경으로 보고 보호한다. */
     fun isAlreadyUpdated(): Boolean = updatedAt != null
 
-    /** 자동 결석 출처는 [autoAbsentAt] 표지로만 판단한다. 표지 없는 기존 결석은 자동 결석으로 추정하지 않는다. */
+    /**
+     * 자동 결석 출처는 [autoAbsentAt] 표지로만 판단한다. 표지 없는 기존 결석은 자동 결석으로 추정하지 않는다.
+     * 운영진이 PENDING 으로 되돌린 뒤 자동 결석된 기록(updatedAt 있음)은 운영진 기록으로 보고 인증 덮어쓰기·재개 대상에서 뺀다.
+     */
     fun isAutomaticallyAbsent(): Boolean =
         status == AttendanceStatus.ABSENT && autoAbsentAt != null && attendedAt == null && updatedAt == null
 
@@ -57,8 +60,8 @@ class Attendance(
             attendedAt == null &&
             (status == AttendanceStatus.PENDING || isAutomaticallyAbsent())
 
-    /** 자동 결석 대상(운영진 변경과 인증 기록이 없는 미인증) 여부 */
-    fun isAutoAbsenceTarget(): Boolean = status == AttendanceStatus.PENDING && attendedAt == null && updatedAt == null
+    /** 자동 결석 대상 여부. 현재 PENDING 상태만 본다(운영진이 PENDING 으로 되돌린 기록도 대상). */
+    fun isAutoAbsenceTarget(): Boolean = status == AttendanceStatus.PENDING
 
     /**
      * 출석 기록을 생성합니다.

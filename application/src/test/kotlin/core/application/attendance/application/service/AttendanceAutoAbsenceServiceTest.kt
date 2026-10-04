@@ -7,6 +7,8 @@ import ch.qos.logback.core.read.ListAppender
 import core.application.support.AttendanceTestFixture
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.vo.AttendanceTimeOffsets
+import core.domain.cohort.aggregate.Cohort
+import core.domain.cohort.vo.CohortId
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
@@ -18,7 +20,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
 
-/** 대상 선정과 갱신 조건은 MySQL 통합 테스트에서 검증하고, 여기서는 세션별 실패 격리와 재시도, 실패 로그만 본다. */
+/** 실제 쿼리와 잠금은 MySQL 통합 테스트에서 검증하고, 여기서는 활성 기수 선택, PENDING 기준 대상, 세션별 실패 격리와 재시도, 실패 로그를 본다. */
 class AttendanceAutoAbsenceServiceTest {
     private val now = Instant.parse("2026-10-01T03:00:00Z")
     private val fixture = AttendanceTestFixture(now = now)
@@ -39,6 +41,77 @@ class AttendanceAutoAbsenceServiceTest {
     @AfterEach
     fun detachLogs() {
         serviceLogger.detachAppender(logs)
+    }
+
+    @Test
+    fun `활성 기수 세션만 처리하고 비활성 기수 세션은 그대로 둔다`() {
+        val inactiveCohortId = fixture.cohorts.save(Cohort(value = "17")).id!!
+        val active = createSession(offsetSeconds = 3600)
+        val inactive = createSession(offsetSeconds = 3600, cohort = inactiveCohortId)
+        val activeId = fixture.addAttendance(active, memberId = 1L)
+        val inactiveId = fixture.addAttendance(inactive, memberId = 1L)
+        fixture.clock.now = active.attendancePolicy.absentStart
+
+        val closed = serviceFailing { _, _ -> false }.closeExpiredAttendances()
+
+        assertThat(closed).isEqualTo(1)
+        assertThat(fixture.attendances.row(activeId).status).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(fixture.attendances.row(inactiveId).status).isEqualTo(AttendanceStatus.PENDING)
+        assertThat(calls.keys).containsExactly(active.id)
+    }
+
+    @Test
+    fun `활성 기수가 없으면 최근 기수로 대신하지 않고 아무것도 처리하지 않는다`() {
+        val session = createSession(offsetSeconds = 3600)
+        val id = fixture.addAttendance(session, memberId = 1L)
+        fixture.clock.now = session.attendancePolicy.absentStart
+        fixture.cohorts.deactivateAll()
+
+        val closed = serviceFailing { _, _ -> false }.closeExpiredAttendances()
+
+        assertThat(closed).isZero()
+        assertThat(calls).isEmpty()
+        assertThat(fixture.attendances.row(id).status).isEqualTo(AttendanceStatus.PENDING)
+        assertThat(logs.list.filter { it.level.isGreaterOrEqual(Level.WARN) }).isEmpty()
+    }
+
+    @Test
+    fun `현재 PENDING 이면 인증·운영진 시각이 남아 있어도 결석이 되고 그 밖의 기록은 바뀌지 않으며 반복해도 같다`() {
+        val session = createSession(offsetSeconds = 3600)
+        val decidedAt = now.minusSeconds(60)
+        val attendedAt = session.attendancePolicy.lateStart
+        val plain = fixture.addAttendance(session, memberId = 1L)
+        val adminReset = fixture.addAttendance(session, memberId = 2L, updatedAt = decidedAt)
+        val adminResetAfterAttend =
+            fixture.addAttendance(session, memberId = 3L, attendedAt = attendedAt, updatedAt = decidedAt)
+        val adminPresent =
+            fixture.addAttendance(session, memberId = 4L, status = AttendanceStatus.PRESENT, updatedAt = decidedAt)
+        val adminExcused =
+            fixture.addAttendance(session, memberId = 5L, status = AttendanceStatus.EXCUSED_ABSENT, updatedAt = decidedAt)
+        val late = fixture.addAttendance(session, memberId = 6L, status = AttendanceStatus.LATE, attendedAt = attendedAt)
+        val legacyAbsent = fixture.addAttendance(session, memberId = 7L, status = AttendanceStatus.ABSENT)
+        val deleted = fixture.attendances.insert(session.id!!.value, memberId = 8L, deletedAt = decidedAt)
+        fixture.clock.now = session.attendancePolicy.absentStart
+
+        val first = serviceFailing { _, _ -> false }.closeExpiredAttendances()
+        val second = serviceFailing { _, _ -> false }.closeExpiredAttendances()
+
+        assertThat(first).isEqualTo(3)
+        assertThat(second).isZero()
+        listOf(plain, adminReset, adminResetAfterAttend).forEach {
+            val row = fixture.attendances.row(it)
+            assertThat(row.status).isEqualTo(AttendanceStatus.ABSENT)
+            assertThat(row.autoAbsentAt).isEqualTo(session.attendancePolicy.absentStart)
+        }
+        assertThat(fixture.attendances.row(adminReset).updatedAt).isEqualTo(decidedAt)
+        assertThat(fixture.attendances.row(adminResetAfterAttend).attendedAt).isEqualTo(attendedAt)
+        assertThat(fixture.attendances.row(adminResetAfterAttend).updatedAt).isEqualTo(decidedAt)
+        assertThat(fixture.attendances.row(adminPresent).status).isEqualTo(AttendanceStatus.PRESENT)
+        assertThat(fixture.attendances.row(adminExcused).status).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(fixture.attendances.row(late).status).isEqualTo(AttendanceStatus.LATE)
+        assertThat(fixture.attendances.row(legacyAbsent).autoAbsentAt).isNull()
+        assertThat(fixture.attendances.row(deleted).status).isEqualTo(AttendanceStatus.PENDING)
+        assertThat(fixture.attendances.row(deleted).autoAbsentAt).isNull()
     }
 
     @Test
@@ -123,7 +196,10 @@ class AttendanceAutoAbsenceServiceTest {
     fun `대상 조회가 실패하면 세션별 실패와 구분되는 ERROR 를 한 번 남기고 예외를 밖으로 던지지 않는다`() {
         val failingLookup =
             object : SessionPersistencePort by fixture.sessions {
-                override fun findSessionIdsToAutoClose(absentStartTo: Instant): List<SessionId> = throw IllegalStateException("db down")
+                override fun findSessionIdsToAutoClose(
+                    cohortId: CohortId,
+                    absentStartTo: Instant,
+                ): List<SessionId> = throw IllegalStateException("db down")
             }
 
         val closed = serviceFailing(sessions = failingLookup) { _, _ -> false }.closeExpiredAttendances()
@@ -170,7 +246,10 @@ class AttendanceAutoAbsenceServiceTest {
         assertThat(waits).isEmpty()
     }
 
-    private fun createSession(offsetSeconds: Long): Session = fixture.createSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.plusSeconds(offsetSeconds)))
+    private fun createSession(
+        offsetSeconds: Long,
+        cohort: CohortId = cohortId,
+    ): Session = fixture.createSession(cohort, AttendanceTimeOffsets.DEFAULT.resolveFor(now.plusSeconds(offsetSeconds)))
 
     /**
      * [shouldFail]에 세션과 그 세션의 시도 차수(1부터)를 넘겨 실패를 주입한다.
@@ -182,6 +261,7 @@ class AttendanceAutoAbsenceServiceTest {
         shouldFail: (SessionId, Int) -> Boolean,
     ): AttendanceAutoAbsenceService =
         object : AttendanceAutoAbsenceService(
+            cohortPersistencePort = fixture.cohorts,
             sessionPersistencePort = sessions,
             attendanceCommandService =
                 object : AttendanceCommandServiceDelegate(fixture) {
