@@ -1,16 +1,24 @@
 package core.application.attendance.application.service
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import core.application.support.AttendanceTestFixture
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.vo.AttendanceTimeOffsets
 import core.domain.session.aggregate.Session
+import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
 
-/** 대상 선정과 갱신 조건은 MySQL 통합 테스트에서 검증하고, 여기서는 세션별 실패 격리와 재시도만 본다. */
+/** 대상 선정과 갱신 조건은 MySQL 통합 테스트에서 검증하고, 여기서는 세션별 실패 격리와 재시도, 실패 로그만 본다. */
 class AttendanceAutoAbsenceServiceTest {
     private val now = Instant.parse("2026-10-01T03:00:00Z")
     private val fixture = AttendanceTestFixture(now = now)
@@ -18,6 +26,20 @@ class AttendanceAutoAbsenceServiceTest {
 
     private val calls = mutableMapOf<SessionId, Int>()
     private val waits = mutableListOf<Duration>()
+
+    private val serviceLogger = LoggerFactory.getLogger(AttendanceAutoAbsenceService::class.java) as Logger
+    private val logs = ListAppender<ILoggingEvent>()
+
+    @BeforeEach
+    fun attachLogs() {
+        logs.start()
+        serviceLogger.addAppender(logs)
+    }
+
+    @AfterEach
+    fun detachLogs() {
+        serviceLogger.detachAppender(logs)
+    }
 
     @Test
     fun `한 세션 처리 실패가 다른 세션 처리를 막지 않는다`() {
@@ -67,6 +89,73 @@ class AttendanceAutoAbsenceServiceTest {
             .containsEntry(broken.id, AttendanceAutoAbsenceService.MAX_ATTEMPTS)
             .containsEntry(healthy.id, 1)
         assertThat(waits).hasSize(AttendanceAutoAbsenceService.MAX_ATTEMPTS - 1)
+
+        // 시도별 실패는 스택과 함께 WARN, 끝내 실패한 세션은 실행당 ERROR 요약 한 번(스택 없이)
+        val warns = logs.list.filter { it.level == Level.WARN }
+        assertThat(warns.map { it.formattedMessage }).containsExactly(
+            "Auto absence failed: sessionId=${broken.id!!.value}, attempt=1/3, will retry",
+            "Auto absence failed: sessionId=${broken.id!!.value}, attempt=2/3, will retry",
+            "Auto absence failed: sessionId=${broken.id!!.value}, attempt=3/3, no attempts left",
+        )
+        assertThat(warns).allSatisfy { assertThat(it.throwableProxy.message).isEqualTo("boom") }
+        val errors = logs.list.filter { it.level == Level.ERROR }
+        assertThat(errors).singleElement().satisfies({
+            assertThat(it.formattedMessage).isEqualTo(
+                "Auto absence gave up after 3 attempts: failedSessionIds=[${broken.id!!.value}], succeeded=1, failed=1, total=2",
+            )
+            assertThat(it.throwableProxy).isNull()
+        })
+    }
+
+    @Test
+    fun `일시적 실패가 재시도로 회복되면 ERROR 를 남기지 않는다`() {
+        val flaky = createSession(offsetSeconds = 3600)
+        fixture.addAttendance(flaky, memberId = 1L)
+        fixture.clock.now = flaky.attendancePolicy.absentStart
+
+        serviceFailing { _, attempt -> attempt == 1 }.closeExpiredAttendances()
+
+        assertThat(logs.list.filter { it.level == Level.WARN }).hasSize(1)
+        assertThat(logs.list.filter { it.level == Level.ERROR }).isEmpty()
+    }
+
+    @Test
+    fun `대상 조회가 실패하면 세션별 실패와 구분되는 ERROR 를 한 번 남기고 예외를 밖으로 던지지 않는다`() {
+        val failingLookup =
+            object : SessionPersistencePort by fixture.sessions {
+                override fun findSessionIdsToAutoClose(absentStartTo: Instant): List<SessionId> = throw IllegalStateException("db down")
+            }
+
+        val closed = serviceFailing(sessions = failingLookup) { _, _ -> false }.closeExpiredAttendances()
+
+        assertThat(closed).isZero()
+        assertThat(calls).isEmpty()
+        assertThat(logs.list).singleElement().satisfies({
+            assertThat(it.level).isEqualTo(Level.ERROR)
+            assertThat(it.formattedMessage).startsWith("Auto absence candidate lookup failed")
+            assertThat(it.throwableProxy.message).isEqualTo("db down")
+        })
+    }
+
+    @Test
+    fun `재시도 대기 중 인터럽트되면 인터럽트 상태를 유지하고 남은 재시도를 멈춘다`() {
+        val broken = createSession(offsetSeconds = 3600)
+        fixture.addAttendance(broken, memberId = 1L)
+        fixture.clock.now = broken.attendancePolicy.absentStart
+        val service = serviceFailing(recordWaits = false) { _, _ -> true }
+
+        Thread.currentThread().interrupt()
+        try {
+            service.closeExpiredAttendances()
+
+            assertThat(Thread.currentThread().isInterrupted).isTrue()
+        } finally {
+            Thread.interrupted()
+        }
+        assertThat(calls).containsEntry(broken.id, 1)
+        assertThat(logs.list.filter { it.level == Level.ERROR }.map { it.formattedMessage }).containsExactly(
+            "Auto absence interrupted while waiting to retry: failedSessionIds=[${broken.id!!.value}], succeeded=0, failed=1, total=1",
+        )
     }
 
     @Test
@@ -83,10 +172,17 @@ class AttendanceAutoAbsenceServiceTest {
 
     private fun createSession(offsetSeconds: Long): Session = fixture.createSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(now.plusSeconds(offsetSeconds)))
 
-    /** [shouldFail]에 세션과 그 세션의 시도 차수(1부터)를 넘겨 실패를 주입하고, 재시도 대기는 기록만 한다. */
-    private fun serviceFailing(shouldFail: (SessionId, Int) -> Boolean): AttendanceAutoAbsenceService =
+    /**
+     * [shouldFail]에 세션과 그 세션의 시도 차수(1부터)를 넘겨 실패를 주입한다.
+     * [recordWaits]면 재시도 대기는 기록만 하고, 아니면 실제 대기 로직을 쓴다.
+     */
+    private fun serviceFailing(
+        sessions: SessionPersistencePort = fixture.sessions,
+        recordWaits: Boolean = true,
+        shouldFail: (SessionId, Int) -> Boolean,
+    ): AttendanceAutoAbsenceService =
         object : AttendanceAutoAbsenceService(
-            sessionPersistencePort = fixture.sessions,
+            sessionPersistencePort = sessions,
             attendanceCommandService =
                 object : AttendanceCommandServiceDelegate(fixture) {
                     override fun closeExpiredAttendances(
@@ -100,8 +196,10 @@ class AttendanceAutoAbsenceServiceTest {
                 },
             clock = fixture.clock,
         ) {
-            override fun waitBeforeRetry(delay: Duration) {
+            override fun waitBeforeRetry(delay: Duration): Boolean {
+                if (!recordWaits) return super.waitBeforeRetry(delay)
                 waits += delay
+                return true
             }
         }
 

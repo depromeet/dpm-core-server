@@ -6,8 +6,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 /**
- * 세션 출석은 대부분 19시 전에 마감되므로 매일 19시(KST)에 한 번 처리한다.
- * 그 뒤에 마감되는 세션과 끝내 실패한 세션은 다음 날 실행에서 함께 처리된다(대상 조회에 시각 하한이 없다).
+ * 모든 세션의 출석 인증은 19시(KST) 전에 마감되도록 운영하므로, 매일 19시에 한 번 그날 마감된 세션을 처리한다.
+ * 끝내 실패한 세션과 대상 조회가 실패한 실행의 세션은 다음 날 실행에서 함께 처리된다(대상 조회에 시각 하한이 없다).
+ * 대상 조회·세션별 실패는 서비스가 직접 로그를 남기므로 여기서는 그 밖의 예기치 못한 예외만 남긴다.
  */
 @Component
 class AttendanceAutoAbsenceScheduler(
@@ -20,7 +21,7 @@ class AttendanceAutoAbsenceScheduler(
         try {
             attendanceAutoAbsenceService.closeExpiredAttendances()
         } catch (e: Exception) {
-            logger.error(e) { "Auto absence scheduler failed" }
+            logger.error(e) { "Auto absence scheduler failed unexpectedly" }
         }
     }
 
