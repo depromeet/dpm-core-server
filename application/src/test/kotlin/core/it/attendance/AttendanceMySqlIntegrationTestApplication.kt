@@ -2,6 +2,7 @@ package core.it.attendance
 
 import core.application.attendance.application.event.listener.SessionCreateEventListener
 import core.application.attendance.application.properties.AttendancePolicyProperties
+import core.application.attendance.application.service.AttendanceAutoAbsenceService
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.cohort.application.service.CohortQueryService
 import core.application.common.configuration.JooqDslConfig
@@ -36,6 +37,7 @@ import java.time.Instant
     CohortQueryService::class,
     AttendanceCommandService::class,
     SessionCommandService::class,
+    AttendanceAutoAbsenceService::class,
 )
 class AttendanceMySqlIntegrationTestApplication {
     @Bean
