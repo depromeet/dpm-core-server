@@ -8,10 +8,10 @@ import core.application.attendance.application.service.AbsenceReasonCommandServi
 import core.application.attendance.application.service.AbsenceReasonImageQueryService
 import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.common.exception.BusinessException
-import core.application.support.MutableClock
 import core.application.image.FakeImageStoragePort
 import core.application.image.application.exception.ImageNotFoundException
 import core.application.image.application.service.ImageQueryService
+import core.application.support.MutableClock
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
@@ -31,8 +31,6 @@ import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.AttendancePolicy
-import core.entity.image.ImageEntity
-import core.persistence.image.repository.ImageJpaRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeAll
@@ -43,9 +41,11 @@ import org.mockito.BDDMockito.given
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.support.GeneratedKeyHolder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -80,8 +80,6 @@ class AbsenceReasonImageMySqlIntegrationTest {
     @Autowired lateinit var attendancePort: AttendancePersistencePort
 
     @Autowired lateinit var imagePort: ImagePersistencePort
-
-    @Autowired lateinit var imageJpaRepository: ImageJpaRepository
 
     @Autowired lateinit var clock: MutableClock
 
@@ -307,12 +305,24 @@ class AbsenceReasonImageMySqlIntegrationTest {
 
     private fun newImage(owner: MemberId): ImageId {
         val bytes = UUID.randomUUID().toString().toByteArray()
-        // 이미지 행은 업로드 완료로만 만들어지므로 테스트에서는 엔티티를 바로 저장한다.
+        // 이미지 행은 업로드 완료로만 만들어지고 entity 모듈은 이 모듈 컴파일 경로에 없으므로 행을 직접 넣는다.
         val objectKey = Image.OBJECT_KEY_PREFIX + UUID.randomUUID()
-        val image = Image.create(owner, objectKey, ImageContentType.PNG, bytes.size.toLong(), Instant.now())
-        val saved = imageJpaRepository.save(ImageEntity.from(image))
+        val keyHolder = GeneratedKeyHolder()
+        jdbcTemplate.update({ connection ->
+            connection
+                .prepareStatement(
+                    "insert into images (owner_member_id, object_key, content_type, size_bytes, created_at) values (?, ?, ?, ?, ?)",
+                    arrayOf("image_id"),
+                ).apply {
+                    setLong(1, owner.value)
+                    setString(2, objectKey)
+                    setString(3, ImageContentType.PNG.mimeType)
+                    setLong(4, bytes.size.toLong())
+                    setTimestamp(5, Timestamp.from(Instant.now()))
+                }
+        }, keyHolder)
         storage.put(objectKey, bytes)
-        return ImageId(saved.id)
+        return ImageId(keyHolder.key!!.toLong())
     }
 
     private fun newSession(): Session {

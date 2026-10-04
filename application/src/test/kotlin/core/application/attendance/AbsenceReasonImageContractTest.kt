@@ -64,7 +64,8 @@ class AbsenceReasonImageContractTest {
         val imageQueryService = mock(AbsenceReasonImageQueryService::class.java)
         val url = ImageUrlResponse("https://storage.test/read/1", Instant.parse("2026-10-04T00:05:00Z"))
         given(imageQueryService.getAbsenceReasonImage(SessionId(1), MemberId(2), ImageId(3))).willReturn(url)
-        val controller = AttendanceQueryController(
+        val controller =
+            AttendanceQueryController(
                 mock(AttendanceQueryService::class.java),
                 mock(AbsenceReasonQueryService::class.java),
                 imageQueryService,
