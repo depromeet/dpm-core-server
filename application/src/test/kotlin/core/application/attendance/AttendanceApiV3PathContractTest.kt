@@ -11,7 +11,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestMapping
 
-/** 스택 PR 에서 추가·변경된 API 만 /v3 로 옮기고, 나머지 경로와 메서드 권한은 그대로인지 확인한다(docs/attendance/api-v3.md). */
+/** 스택 PR 에서 추가·변경된 API 만 /v3 로 옮기고, 나머지 경로와 메서드 권한은 그대로인지 확인한다. */
 class AttendanceApiV3PathContractTest {
     private fun endpoints(vararg controllers: Class<*>): Set<String> =
         controllers

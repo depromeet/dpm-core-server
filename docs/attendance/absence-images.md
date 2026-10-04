@@ -5,7 +5,6 @@
 ## 경로
 
 사유서 API 는 모두 `/v3` 로 옮겼다(제출·수정·삭제·검토·조회, 이미지 조회 URL). 예전 `/v2/sessions/{sessionId}/absence-reasons...` 경로는 없다.
-전체 목록은 `docs/attendance/api-v3.md`.
 
 ## 흐름
 

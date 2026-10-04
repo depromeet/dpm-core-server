@@ -24,7 +24,7 @@
 
 기본값을 바꿔도 이미 만든 세션은 바뀌지 않는다. 기존 세션의 시각은 세션 수정 API(`PATCH /v3/sessions`, 출석 시작만은 `PATCH /v3/sessions/{sessionId}/attendance-time`)로 바꾼다.
 
-세션·출석 판정 규칙이 바뀐 API 는 `/v3` 로 옮겼다. 전체 목록은 `docs/attendance/api-v3.md`.
+세션·출석 판정 규칙이 바뀐 API 는 `/v3` 로 옮겼다.
 
 ## 인증 마감과 자동 결석
 
