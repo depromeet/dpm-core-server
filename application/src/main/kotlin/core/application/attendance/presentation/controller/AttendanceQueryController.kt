@@ -11,7 +11,7 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
-import core.application.image.presentation.response.ImageResponseFactory
+import core.application.image.presentation.response.ImageUrlResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
@@ -22,6 +22,7 @@ import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.image.vo.ImageId
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
+import org.springframework.http.CacheControl
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -65,7 +66,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @GetMapping("/v1/members/attendances")
+    @GetMapping("/v3/members/attendances")
     override fun getMemberAttendances(
         @CurrentMemberId memberId: MemberId,
         @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
@@ -92,7 +93,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @GetMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
+    @GetMapping("/v3/sessions/{sessionId}/attendances/{memberId}")
     override fun getAttendanceBySessionIdAndMemberId(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
@@ -126,7 +127,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('update:member')")
-    @GetMapping("/v1/members/{memberId}/attendances")
+    @GetMapping("/v3/members/{memberId}/attendances")
     override fun getDetailMemberAttendances(
         @PathVariable memberId: MemberId,
     ): CustomResponse<DetailMemberAttendancesResponse> {
@@ -141,7 +142,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:attendance')")
-    @GetMapping("/v1/members/me/attendances")
+    @GetMapping("/v3/members/me/attendances")
     override fun getMyDetailAttendances(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<DetailMemberAttendancesResponse> {
@@ -156,7 +157,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @GetMapping("/v2/sessions/{sessionId}/absence-reasons/me")
+    @GetMapping("/v3/sessions/{sessionId}/absence-reasons/me")
     override fun getMyAbsenceReason(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -164,20 +165,21 @@ class AttendanceQueryController(
         CustomResponse.ok(absenceReasonQueryService.getMyAbsenceReason(sessionId, memberId))
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @GetMapping("/v2/sessions/{sessionId}/absence-reasons")
+    @GetMapping("/v3/sessions/{sessionId}/absence-reasons")
     override fun getSessionAbsenceReasons(
         @PathVariable sessionId: SessionId,
     ): CustomResponse<SessionAbsenceReasonsResponse> =
         CustomResponse.ok(absenceReasonQueryService.getSessionAbsenceReasons(sessionId))
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @GetMapping("/v2/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId}")
+    @GetMapping("/v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId}")
     override fun getAbsenceReasonImage(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
         @PathVariable imageId: ImageId,
-    ): ResponseEntity<ByteArray> =
-        ImageResponseFactory.toInlineResponse(
-            absenceReasonImageQueryService.getAbsenceReasonImage(sessionId, memberId, imageId),
-        )
+    ): ResponseEntity<CustomResponse<ImageUrlResponse>> =
+        ResponseEntity
+            .ok()
+            .cacheControl(CacheControl.noStore().cachePrivate())
+            .body(CustomResponse.ok(absenceReasonImageQueryService.getAbsenceReasonImage(sessionId, memberId, imageId)))
 }

@@ -11,7 +11,7 @@ data class SessionAbsenceReasonItem(
     val memberName: String,
     val contents: String,
     val status: String,
-    /** 첨부 이미지 id, 표시 순서대로. 없으면 빈 목록. 원본은 GET /v2/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} */
+    /** 첨부 이미지 id, 표시 순서대로. 없으면 []. 조회 URL: GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} */
     val imageIds: List<Long>,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?,

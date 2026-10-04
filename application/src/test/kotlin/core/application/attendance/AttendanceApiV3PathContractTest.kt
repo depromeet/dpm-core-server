@@ -1,0 +1,76 @@
+package core.application.attendance
+
+import core.application.attendance.presentation.controller.AttendanceCommandController
+import core.application.attendance.presentation.controller.AttendanceQueryController
+import core.application.session.presentation.controller.SessionCommandController
+import core.application.session.presentation.controller.SessionQueryController
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.springframework.core.annotation.AnnotatedElementUtils
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.RequestMapping
+
+/** 스택 PR 에서 바뀐 API 만 /v3 로 옮기고, 나머지 경로와 메서드 권한은 그대로인지 확인한다(docs/attendance/api-v3.md). */
+class AttendanceApiV3PathContractTest {
+    private fun endpoints(vararg controllers: Class<*>): Set<String> =
+        controllers
+            .flatMap { controller ->
+                val prefix =
+                    AnnotatedElementUtils.findMergedAnnotation(controller, RequestMapping::class.java)
+                        ?.path
+                        ?.firstOrNull()
+                        .orEmpty()
+                controller.declaredMethods
+                    .filterNot { it.isSynthetic || it.isBridge }
+                    .mapNotNull { method ->
+                        val mapping =
+                            AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping::class.java)
+                                ?: return@mapNotNull null
+                        val authority =
+                            AnnotatedElementUtils.findMergedAnnotation(method, PreAuthorize::class.java)!!.value
+                        "${mapping.method.single()} $prefix${mapping.path.firstOrNull().orEmpty()} $authority"
+                    }
+            }.toSet()
+
+    @Test
+    fun `출석 API 는 바뀐 것만 v3 이고 권한은 그대로다`() {
+        assertThat(endpoints(AttendanceCommandController::class.java, AttendanceQueryController::class.java))
+            .containsExactlyInAnyOrder(
+                "POST /v3/sessions/{sessionId}/attendances hasAuthority('create:attendance')",
+                "PATCH /v3/sessions/{sessionId}/attendances/{memberId} hasAuthority('update:attendance')",
+                "PATCH /v3/sessions/{sessionId}/attendances/bulk hasAuthority('update:attendance')",
+                "POST /v3/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
+                "PATCH /v3/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
+                "DELETE /v3/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
+                "PATCH /v3/sessions/{sessionId}/absence-reasons/{memberId}/review hasAuthority('update:attendance')",
+                "GET /v1/sessions/{sessionId}/attendances hasAuthority('create:attendance')",
+                "GET /v3/members/attendances hasAuthority('create:attendance')",
+                "GET /v3/sessions/{sessionId}/attendances/{memberId} hasAuthority('create:attendance')",
+                "GET /v1/sessions/{sessionId}/attendances/me hasAuthority('read:attendance')",
+                "GET /v3/members/{memberId}/attendances hasAuthority('update:member')",
+                "GET /v3/members/me/attendances hasAuthority('read:attendance')",
+                "GET /v3/sessions/{sessionId}/absence-reasons/me hasAuthority('create:attendance')",
+                "GET /v3/sessions/{sessionId}/absence-reasons hasAuthority('update:attendance')",
+                "GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} " +
+                    "hasAuthority('update:attendance')",
+            )
+    }
+
+    @Test
+    fun `세션 API 는 바뀐 것만 v3 이고 권한은 그대로다`() {
+        assertThat(endpoints(SessionCommandController::class.java, SessionQueryController::class.java))
+            .containsExactlyInAnyOrder(
+                "POST /v3/sessions hasAuthority('create:session')",
+                "PATCH /v3/sessions hasAuthority('update:session')",
+                "PATCH /v3/sessions/{sessionId}/attendance-time hasAuthority('update:session')",
+                "PATCH /v3/sessions/{sessionId}/delete hasAuthority('delete:session')",
+                "GET /v1/sessions/next permitAll()",
+                "GET /v1/sessions permitAll()",
+                "GET /v1/sessions/{sessionId} hasAuthority('create:session')",
+                "GET /v1/sessions/{sessionId}/me hasAuthority('read:session')",
+                "GET /v1/sessions/{sessionId}/attendance-time hasAuthority('update:session')",
+                "GET /v1/sessions/weeks hasAuthority('read:session')",
+                "GET /v3/sessions/{sessionId}/update-policy hasAuthority('update:session')",
+            )
+    }
+}
