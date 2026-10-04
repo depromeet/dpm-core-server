@@ -8,7 +8,7 @@ data class SessionCreateRequest(
     val isOnline: Boolean? = false,
     val place: String?,
     val week: Int,
-    val attendanceStart: LocalDateTime,
-    val lateStart: LocalDateTime,
-    val absentStart: LocalDateTime,
+    val attendanceStart: LocalDateTime? = null,
+    val lateStart: LocalDateTime? = null,
+    val absentStart: LocalDateTime? = null,
 )
