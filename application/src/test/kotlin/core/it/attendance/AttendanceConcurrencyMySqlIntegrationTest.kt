@@ -1,6 +1,8 @@
 package core.it.attendance
 
+import core.application.attendance.application.service.AttendanceAutoAbsenceService
 import core.application.attendance.application.service.AttendanceCommandService
+import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.service.SessionCommandService
 import core.application.support.MutableClock
@@ -37,6 +39,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
+import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -63,6 +66,8 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     @Autowired lateinit var attendanceCommandService: AttendanceCommandService
 
     @Autowired lateinit var sessionCommandService: SessionCommandService
+
+    @Autowired lateinit var autoAbsenceService: AttendanceAutoAbsenceService
 
     @Autowired lateinit var cohortPort: CohortPersistencePort
 
@@ -104,6 +109,40 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         assertThat(saved.status).isEqualTo(AttendanceStatus.PRESENT)
         assertThat(saved.attendedAt).isNotNull()
         assertThat(saved.updatedAt).isNull()
+    }
+
+    @Test
+    fun `마감 전에 접수된 인증은 자동 결석이 먼저 저장되거나 경쟁해도 지각으로 저장된다`() {
+        // 순서를 고정한 경우: 자동 결석이 먼저 커밋된 뒤 마감 전에 접수된 요청을 처리
+        val sequential = newSession()
+        val sequentialId = addAttendance(sequential, memberId = 1L)
+        attendanceCommandService.closeExpiredAttendances(sequential.id!!, times.absentStart.plusSeconds(1))
+        assertThat(autoAbsentAtOf(sequentialId)).isNotNull()
+
+        assertThat(attend(sequential, 1L, times.absentStart.minusSeconds(1))).isEqualTo(AttendanceStatus.LATE)
+        assertThat(statusOf(sequentialId)).isEqualTo("LATE")
+        assertThat(autoAbsentAtOf(sequentialId)).isNull()
+        assertThat(updatedAtOf(sequentialId)).isNull()
+
+        repeat(10) {
+            val session = newSession()
+            addAttendance(session, memberId = 1L)
+            val receivedAt = times.absentStart.minusSeconds(1)
+            val closeAt = times.absentStart.plusSeconds(1)
+
+            runConcurrently(2) { index ->
+                if (index == 0) {
+                    attend(session, 1L, receivedAt)
+                } else {
+                    attendanceCommandService.closeExpiredAttendances(session.id!!, closeAt)
+                }
+            }
+
+            val row = attendancePort.findAttendanceBy(session.id!!.value, 1L)!!
+            assertThat(row.status).isEqualTo(AttendanceStatus.LATE)
+            assertThat(row.attendedAt).isNotNull()
+            assertThat(row.updatedAt).isNull()
+        }
     }
 
     @Test
@@ -172,6 +211,229 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     }
 
     @Test
+    fun `일괄 운영진 변경은 attendedAt 을 보존하고 자동 결석과 경쟁해도 운영진 값이 남는다`() {
+        repeat(5) {
+            val session = newSession()
+            val memberIds = (1L..20L).toList()
+            memberIds.forEach { addAttendance(session, memberId = it) }
+            attend(session, 1L, times.attendanceStart)
+            val attendedAt = attendancePort.findAttendanceBy(session.id!!.value, 1L)!!.attendedAt
+
+            runConcurrently(2) { index ->
+                if (index == 0) {
+                    attendanceCommandService.updateAttendanceStatusBulk(
+                        session.id!!,
+                        AttendanceStatus.EXCUSED_ABSENT,
+                        memberIds.reversed().map { MemberId(it) },
+                    )
+                } else {
+                    attendanceCommandService.closeExpiredAttendances(session.id!!, times.absentStart)
+                }
+            }
+
+            memberIds.forEach { memberId ->
+                val row = attendancePort.findAttendanceBy(session.id!!.value, memberId)!!
+                assertThat(row.status).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+                assertThat(row.updatedAt).isNotNull()
+                assertThat(row.autoAbsentAt).isNull()
+            }
+            assertThat(attendancePort.findAttendanceBy(session.id!!.value, 1L)!!.attendedAt).isEqualTo(attendedAt)
+        }
+    }
+
+    @Test
+    fun `자동 결석은 활성 기수의 오래 전 마감 세션까지 현재 PENDING 만 처리하고 지난 기수와 PENDING 이 아닌 기록은 두며 반복 실행해도 같다`() {
+        val oldCohortId = newCohort()
+        val cohortId = newCohort()
+        cohortPort.activate(cohortId)
+        val oldCohortSession = newSession(oldCohortId, times)
+        val historic = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(sessionStart.minus(Duration.ofDays(400))))
+        val eligible = newSession(cohortId, times)
+        val future = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(sessionStart.plus(Duration.ofDays(7))))
+        val deleted = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(sessionStart.plus(Duration.ofDays(1))))
+
+        val oldCohortPending = addAttendance(oldCohortSession, memberId = 1L)
+        val historicPending = addAttendance(historic, memberId = 1L)
+        val pending = addAttendance(eligible, memberId = 1L)
+        val adminReset = addAttendance(eligible, memberId = 2L, updatedAt = decidedAt)
+        val attendedAt = times.lateStart
+        val adminResetAfterAttend = addAttendance(eligible, memberId = 3L, updatedAt = decidedAt, attendedAt = attendedAt)
+        val attendedPending = addAttendance(eligible, memberId = 4L, attendedAt = attendedAt)
+        val adminPresent = addAttendance(eligible, memberId = 5L, status = AttendanceStatus.PRESENT, updatedAt = decidedAt)
+        val adminExcused = addAttendance(eligible, memberId = 6L, status = AttendanceStatus.EXCUSED_ABSENT, updatedAt = decidedAt)
+        val legacyAbsent = addAttendance(eligible, memberId = 7L, status = AttendanceStatus.ABSENT)
+        addAttendance(eligible, memberId = 8L)
+        attend(eligible, 8L, times.lateStart)
+        val deletedRow = addAttendance(eligible, memberId = 9L)
+        jdbcTemplate.update("update attendances set deleted_at = ? where attendance_id = ?", Timestamp.from(decidedAt), deletedRow)
+        val futurePending = addAttendance(future, memberId = 1L)
+        val deletedSessionPending = addAttendance(deleted, memberId = 1L)
+        sessionCommandService.softDeleteSession(deleted.id!!)
+
+        clock.now = sessionStart.plus(Duration.ofDays(3)) // 서버가 멈췄다가 며칠 뒤 재시작
+        val first = autoAbsenceService.closeExpiredAttendances()
+        val second = autoAbsenceService.closeExpiredAttendances()
+
+        assertThat(first).isEqualTo(5)
+        assertThat(second).isZero()
+        assertThat(statusOf(oldCohortPending)).isEqualTo("PENDING")
+        assertThat(autoAbsentAtOf(oldCohortPending)).isNull()
+        listOf(historicPending, pending, adminReset, adminResetAfterAttend, attendedPending).forEach {
+            assertThat(statusOf(it)).isEqualTo("ABSENT")
+            assertThat(autoAbsentAtOf(it)).isNotNull()
+        }
+        assertThat(updatedAtOf(pending)).isNull()
+        assertThat(updatedAtOf(adminReset)).isNotNull()
+        assertThat(updatedAtOf(adminResetAfterAttend)).isNotNull()
+        assertThat(attendancePort.findAttendanceBy(eligible.id!!.value, 3L)!!.attendedAt).isEqualTo(attendedAt)
+        assertThat(statusOf(adminPresent)).isEqualTo("PRESENT")
+        assertThat(statusOf(adminExcused)).isEqualTo("EXCUSED_ABSENT")
+        assertThat(statusOf(legacyAbsent)).isEqualTo("ABSENT")
+        assertThat(autoAbsentAtOf(legacyAbsent)).isNull()
+        assertThat(attendancePort.findAttendanceBy(eligible.id!!.value, 8L)!!.status).isEqualTo(AttendanceStatus.LATE)
+        assertThat(statusOf(deletedRow)).isEqualTo("PENDING")
+        assertThat(autoAbsentAtOf(deletedRow)).isNull()
+        assertThat(statusOf(futurePending)).isEqualTo("PENDING")
+        assertThat(statusOf(deletedSessionPending)).isEqualTo("PENDING")
+        assertThat(deletedAtOf(deletedSessionPending)).isNotNull()
+    }
+
+    @Test
+    fun `활성 기수가 없으면 자동 결석을 건너뛴다`() {
+        val cohortId = newCohort()
+        val session = newSession(cohortId, times)
+        val id = addAttendance(session, memberId = 1L)
+        clock.now = times.absentStart.plusSeconds(1)
+        cohortPort.deactivateAll()
+
+        assertThat(autoAbsenceService.closeExpiredAttendances()).isZero()
+        assertThat(statusOf(id)).isEqualTo("PENDING")
+    }
+
+    @Test
+    fun `자동 결석 후보 조회는 기수와 PENDING 기준이고 하한 없이 마감 경계를 포함한다`() {
+        val cohortId = newCohort()
+        val otherCohortId = newCohort()
+        val session = newSession(cohortId, times)
+        val historic = newSession(cohortId, AttendanceTimeOffsets.DEFAULT.resolveFor(sessionStart.minus(Duration.ofDays(700))))
+        val adminResetOnly = newSession(cohortId, times)
+        val decidedOnly = newSession(cohortId, times)
+        val deletedRowOnly = newSession(cohortId, times)
+        val otherCohort = newSession(otherCohortId, times)
+        addAttendance(session, memberId = 1L)
+        addAttendance(historic, memberId = 1L)
+        addAttendance(adminResetOnly, memberId = 1L, updatedAt = decidedAt, attendedAt = times.lateStart)
+        addAttendance(decidedOnly, memberId = 1L, status = AttendanceStatus.EXCUSED_ABSENT, updatedAt = decidedAt)
+        val deletedRow = addAttendance(deletedRowOnly, memberId = 1L)
+        jdbcTemplate.update("update attendances set deleted_at = ? where attendance_id = ?", Timestamp.from(decidedAt), deletedRow)
+        addAttendance(otherCohort, memberId = 1L)
+
+        val before = sessionPort.findSessionIdsToAutoClose(cohortId, times.absentStart.minusMillis(1))
+        val atClose = sessionPort.findSessionIdsToAutoClose(cohortId, times.absentStart)
+
+        assertThat(before).containsExactly(historic.id)
+        assertThat(atClose).containsExactly(historic.id, session.id, adminResetOnly.id)
+    }
+
+    @Test
+    fun `운영진이 PENDING 으로 되돌리는 것과 자동 결석이 경쟁해도 다음 실행 뒤에는 결석이고 운영진 표지는 남는다`() {
+        repeat(10) {
+            val session = newSession()
+            val id = addAttendance(session, memberId = 1L, status = AttendanceStatus.PRESENT, updatedAt = decidedAt)
+            val closeAt = times.absentStart.plusSeconds(1)
+            clock.now = closeAt
+
+            val results =
+                runConcurrently(2) { index ->
+                    if (index == 0) {
+                        attendanceCommandService.updateAttendanceStatus(
+                            AttendanceStatusUpdateCommand(session.id!!, MemberId(1L), AttendanceStatus.PENDING),
+                        )
+                    } else {
+                        attendanceCommandService.closeExpiredAttendances(session.id!!, closeAt)
+                    }
+                }
+            assertThat(results).allMatch { it.isSuccess }
+            // 자동 결석이 먼저면 PRESENT 라 건너뛰고 PENDING 으로 남는다. 다음 실행에서 결석이 된다.
+            attendanceCommandService.closeExpiredAttendances(session.id!!, closeAt)
+
+            assertThat(statusOf(id)).isEqualTo("ABSENT")
+            assertThat(autoAbsentAtOf(id)).isNotNull()
+            assertThat(updatedAtOf(id)).isNotNull()
+        }
+    }
+
+    @Test
+    fun `운영진이 PENDING 으로 되돌린 기록을 출석으로 바꾸는 것과 자동 결석이 경쟁해도 운영진 출석이 남는다`() {
+        repeat(10) {
+            val session = newSession()
+            val id = addAttendance(session, memberId = 1L, updatedAt = decidedAt)
+            val closeAt = times.absentStart.plusSeconds(1)
+            clock.now = closeAt
+
+            val results =
+                runConcurrently(2) { index ->
+                    if (index == 0) {
+                        attendanceCommandService.updateAttendanceStatus(
+                            AttendanceStatusUpdateCommand(session.id!!, MemberId(1L), AttendanceStatus.PRESENT),
+                        )
+                    } else {
+                        attendanceCommandService.closeExpiredAttendances(session.id!!, closeAt)
+                    }
+                }
+            assertThat(results).allMatch { it.isSuccess }
+
+            assertThat(statusOf(id)).isEqualTo("PRESENT")
+            assertThat(autoAbsentAtOf(id)).isNull()
+        }
+    }
+
+    @Test
+    fun `운영진이 PENDING 으로 되돌린 기록의 자동 결석은 마감 연장으로 재개되지 않고 인증으로 덮어쓰지 않는다`() {
+        val session = newSession()
+        val id = addAttendance(session, memberId = 1L, updatedAt = decidedAt)
+
+        attendanceCommandService.closeExpiredAttendances(session.id!!, times.absentStart)
+        assertThat(statusOf(id)).isEqualTo("ABSENT")
+
+        // 마감 전에 접수된 요청이 늦게 도착해도 운영진 기록이라 저장하지 않는다(PENDING 이던 때도 같다).
+        assertThat(runCatching { attend(session, 1L, times.absentStart.minusSeconds(1)) }.exceptionOrNull())
+            .isInstanceOf(AttendanceAlreadyDecidedException::class.java)
+
+        clock.now = times.absentStart.plusSeconds(30)
+        sessionCommandService.updateSession(updateCommand(session, times.lateStart, times.absentStart.plus(Duration.ofMinutes(30))))
+
+        assertThat(statusOf(id)).isEqualTo("ABSENT")
+        assertThat(autoAbsentAtOf(id)).isNotNull()
+    }
+
+    @Test
+    fun `마감 연장 시 표지가 있는 자동 결석만 다시 인증할 수 있고 수동 결석과 기존 결석은 유지된다`() {
+        val session = newSession()
+        val auto = addAttendance(session, memberId = 1L)
+        val legacy = addAttendance(session, memberId = 2L, status = AttendanceStatus.ABSENT)
+        val manual = addAttendance(session, memberId = 3L, status = AttendanceStatus.ABSENT, updatedAt = decidedAt)
+
+        attendanceCommandService.closeExpiredAttendances(session.id!!, times.absentStart)
+        assertThat(autoAbsentAtOf(auto)).isNotNull()
+        assertThat(autoAbsentAtOf(legacy)).isNull()
+
+        clock.now = times.absentStart.plusSeconds(30)
+        sessionCommandService.updateSession(updateCommand(session, times.lateStart, times.absentStart.plus(Duration.ofMinutes(30))))
+
+        assertThat(statusOf(auto)).isEqualTo("PENDING")
+        assertThat(autoAbsentAtOf(auto)).isNull()
+        assertThat(updatedAtOf(auto)).isNull()
+        assertThat(statusOf(manual)).isEqualTo("ABSENT")
+        assertThat(statusOf(legacy)).isEqualTo("ABSENT")
+
+        assertThat(attend(session, 1L, times.absentStart.plusSeconds(40))).isEqualTo(AttendanceStatus.LATE)
+        assertThat(runCatching { attend(session, 2L, times.absentStart.plusSeconds(40)) }.exceptionOrNull())
+            .isInstanceOf(CheckedAttendanceException::class.java)
+        assertThat(statusOf(legacy)).isEqualTo("ABSENT")
+    }
+
+    @Test
     fun `새 세션과 초기 출석 기록은 같은 트랜잭션으로 커밋된다`() {
         val cohortId = newCohort()
         cohortPort.activate(cohortId)
@@ -237,6 +499,10 @@ class AttendanceConcurrencyMySqlIntegrationTest {
             isOnline = null,
         )
 
+    private fun autoAbsentAtOf(attendanceId: Long): Any? =
+        jdbcTemplate.queryForList("select auto_absent_at from attendances where attendance_id = ?", attendanceId)
+            .single()["auto_absent_at"]
+
     private fun newCohort(): CohortId = cohortPort.save(Cohort(value = uniqueValue())).id!!
 
     private fun newSession(
@@ -265,12 +531,14 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         memberId: Long,
         status: AttendanceStatus = AttendanceStatus.PENDING,
         updatedAt: Instant? = null,
+        attendedAt: Instant? = null,
     ): Long {
         attendancePort.save(
             Attendance(
                 sessionId = session.id!!,
                 memberId = MemberId(memberId),
                 status = status,
+                attendedAt = attendedAt,
                 updatedAt = updatedAt,
             ),
         )
@@ -303,6 +571,10 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         lateStart = lateStart,
         absentStart = absentStart,
     )
+
+    private fun statusOf(attendanceId: Long): String = jdbcTemplate.queryForObject("select status from attendances where attendance_id = ?", String::class.java, attendanceId)!!
+
+    private fun updatedAtOf(attendanceId: Long): Any? = jdbcTemplate.queryForList("select updated_at from attendances where attendance_id = ?", attendanceId).single()["updated_at"]
 
     private fun deletedAtOf(attendanceId: Long): Any? = jdbcTemplate.queryForList("select deleted_at from attendances where attendance_id = ?", attendanceId).single()["deleted_at"]
 

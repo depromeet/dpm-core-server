@@ -25,7 +25,8 @@ interface AttendanceCommandApi {
         summary = "세션 출석",
         description =
             "서버가 요청을 받은 시각으로 출석을 판정합니다. 인증 시작부터 PRESENT, 지각 시작부터 LATE 이며 " +
-                "인증 마감 시각부터는 저장하지 않고 거절합니다(SESSION-400-06).",
+                "인증 마감 시각부터는 저장하지 않고 거절합니다(SESSION-400-06). " +
+                "마감 전에 접수된 요청은 자동 결석보다 늦게 저장돼도 정상 판정으로 저장됩니다.",
         requestBody =
             RequestBody(
                 description = "출석 생성 요청",

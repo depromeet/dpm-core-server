@@ -167,13 +167,16 @@ class SessionCommandServiceTest {
         fixture.sessionCommandService.createSession(createCommand(sessionStart))
         val session = onlySession()
         val sessionId = session.id!!
-        fixture.addAttendance(session, memberId = 1L) // 미인증
+        fixture.addAttendance(session, memberId = 1L) // 자동 결석될 미인증
         fixture.addAttendance(session, memberId = 2L)
         attend(session, 2L, sessionStart.plus(Duration.ofMinutes(20))) // LATE
         fixture.addAttendance(session, memberId = 3L, status = AttendanceStatus.ABSENT, updatedAt = now) // 수동
         fixture.addAttendance(session, memberId = 4L)
         attend(session, 4L, sessionStart) // PRESENT
-        fixture.addAttendance(session, memberId = 5L, status = AttendanceStatus.ABSENT) // 인증 기록 없는 결석
+        fixture.addAttendance(session, memberId = 5L, status = AttendanceStatus.ABSENT) // 표지 없는 기존 결석
+
+        fixture.clock.now = session.attendancePolicy.absentStart
+        fixture.attendanceCommandService.closeExpiredAttendances(sessionId, fixture.clock.now)
 
         val newLate = sessionStart.plus(Duration.ofMinutes(25))
         val newAbsent = session.attendancePolicy.absentStart.plus(Duration.ofMinutes(20))
@@ -196,7 +199,7 @@ class SessionCommandServiceTest {
         val previewChanges = preview.targeted.map { "${it.name}:${it.currentStatus}->${it.targetStatus}" }
 
         assertThat(previewChanges).containsExactlyInAnyOrderElementsOf(actualChanges)
-        assertThat(actualChanges).containsExactlyInAnyOrder("m2:LATE->PRESENT")
+        assertThat(actualChanges).containsExactlyInAnyOrder("m1:ABSENT->PENDING", "m2:LATE->PRESENT")
         assertThat(preview.untargeted.map { it.name }).containsExactly("m3")
     }
 
