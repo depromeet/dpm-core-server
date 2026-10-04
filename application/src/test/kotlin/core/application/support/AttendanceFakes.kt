@@ -1,15 +1,231 @@
 package core.application.support
 
+import core.domain.attendance.aggregate.Attendance
+import core.domain.attendance.enums.AttendanceStatus
+import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
+import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
+import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
+import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
+import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
+import core.domain.attendance.port.outbound.AttendancePersistencePort
+import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.attendance.vo.AttendanceId
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
+import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.SentSessionNotification
 import core.domain.notification.port.inbound.SentSessionNotificationCommandUseCase
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
+import core.domain.team.vo.TeamNumber
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
+
+/** JPQL 조건부 UPDATE 와 같은 조건을 흉내 낸다. SQL 과 잠금 동작은 MySQL 통합 테스트에서 검증한다. */
+class FakeAttendancePersistencePort : AttendancePersistencePort {
+    data class Row(
+        val id: Long,
+        val sessionId: Long,
+        val memberId: Long,
+        var status: AttendanceStatus,
+        var attendedAt: Instant? = null,
+        var updatedAt: Instant? = null,
+        var deletedAt: Instant? = null,
+    ) {
+        fun toDomain(): Attendance =
+            Attendance(
+                id = AttendanceId(id),
+                sessionId = SessionId(sessionId),
+                memberId = MemberId(memberId),
+                status = status,
+                attendedAt = attendedAt,
+                updatedAt = updatedAt,
+                deletedAt = deletedAt,
+            )
+    }
+
+    private val sequence = AtomicLong(0)
+    private val rows = linkedMapOf<Long, Row>()
+
+    @Synchronized
+    fun insert(
+        sessionId: Long,
+        memberId: Long,
+        status: AttendanceStatus = AttendanceStatus.PENDING,
+        attendedAt: Instant? = null,
+        updatedAt: Instant? = null,
+        deletedAt: Instant? = null,
+    ): Long {
+        val id = sequence.incrementAndGet()
+        rows[id] = Row(id, sessionId, memberId, status, attendedAt, updatedAt, deletedAt)
+        return id
+    }
+
+    @Synchronized
+    fun row(id: Long): Row = rows.getValue(id).copy()
+
+    @Synchronized
+    fun rowOf(
+        sessionId: Long,
+        memberId: Long,
+    ): Row = rows.values.first { it.sessionId == sessionId && it.memberId == memberId }.copy()
+
+    @Synchronized
+    override fun findAttendanceBy(
+        sessionId: Long,
+        memberId: Long,
+    ): Attendance? =
+        rows.values
+            .firstOrNull { it.sessionId == sessionId && it.memberId == memberId && it.deletedAt == null }
+            ?.toDomain()
+
+    @Synchronized
+    override fun save(attendance: Attendance) {
+        val id = attendance.id?.value ?: sequence.incrementAndGet()
+        rows[id] =
+            Row(
+                id = id,
+                sessionId = attendance.sessionId.value,
+                memberId = attendance.memberId.value,
+                status = attendance.status,
+                attendedAt = attendance.attendedAt,
+                updatedAt = attendance.updatedAt,
+                deletedAt = attendance.deletedAt,
+            )
+    }
+
+    @Synchronized
+    override fun saveInBatch(attendances: List<Attendance>) {
+        attendances.forEach {
+            insert(
+                it.sessionId.value,
+                it.memberId.value,
+                it.status,
+                it.attendedAt,
+                it.updatedAt,
+                it.deletedAt,
+            )
+        }
+    }
+
+    @Synchronized
+    fun all(): List<Row> = rows.values.map { it.copy() }
+
+    @Synchronized
+    override fun findAllBySessionId(sessionId: Long): List<Attendance> =
+        rows.values.filter { it.sessionId == sessionId && it.deletedAt == null }.map { it.toDomain() }
+
+    @Synchronized
+    override fun recordAttendanceIfAllowed(
+        attendanceId: Long,
+        status: AttendanceStatus,
+        attendedAt: Instant,
+    ): Boolean {
+        val row = rows[attendanceId] ?: return false
+        val allowed =
+            row.deletedAt == null &&
+                row.attendedAt == null &&
+                row.updatedAt == null &&
+                row.status == AttendanceStatus.PENDING
+        if (!allowed) return false
+        row.status = status
+        row.attendedAt = attendedAt
+        return true
+    }
+
+    @Synchronized
+    override fun updateStatusByAdmin(
+        sessionId: Long,
+        memberIds: List<Long>,
+        status: AttendanceStatus,
+        updatedAt: Instant,
+    ): Int {
+        val targets =
+            rows.values.filter { it.sessionId == sessionId && it.memberId in memberIds && it.deletedAt == null }
+        targets.forEach {
+            it.status = status
+            it.updatedAt = updatedAt
+        }
+        return targets.size
+    }
+
+    @Synchronized
+    override fun countActiveAttendances(
+        sessionId: Long,
+        memberIds: List<Long>,
+    ): Int =
+        rows.values
+            .filter { it.sessionId == sessionId && it.memberId in memberIds && it.deletedAt == null }
+            .map { it.memberId }
+            .distinct()
+            .size
+
+    @Synchronized
+    override fun updateStatusByPolicy(
+        attendanceId: Long,
+        expectedStatus: AttendanceStatus,
+        newStatus: AttendanceStatus,
+    ): Boolean {
+        val row = rows[attendanceId] ?: return false
+        val allowed =
+            row.status == expectedStatus && row.attendedAt != null && row.updatedAt == null && row.deletedAt == null
+        if (!allowed) return false
+        row.status = newStatus
+        return true
+    }
+
+    @Synchronized
+    override fun softDeleteAllBySessionId(
+        sessionId: Long,
+        deletedAt: Instant,
+    ): Int {
+        val targets = rows.values.filter { it.sessionId == sessionId && it.deletedAt == null }
+        targets.forEach { it.deletedAt = deletedAt }
+        return targets.size
+    }
+
+    override fun findSessionAttendancesByQuery(
+        query: GetAttendancesBySessionWeekQuery,
+        myTeamNumber: TeamNumber,
+    ): List<SessionAttendanceQueryModel> = throw UnsupportedOperationException()
+
+    override fun findMemberAttendancesByQuery(
+        query: GetMemberAttendancesQuery,
+        myTeamNumber: TeamNumber,
+    ): List<MemberAttendanceQueryModel> = throw UnsupportedOperationException()
+
+    override fun findDetailAttendanceBySession(
+        query: GetDetailAttendanceBySessionQuery,
+    ): SessionDetailAttendanceQueryModel? = throw UnsupportedOperationException()
+
+    override fun findDetailMemberAttendance(
+        query: GetDetailMemberAttendancesQuery,
+    ): List<MemberDetailAttendanceQueryModel> = throw UnsupportedOperationException()
+
+    override fun findMemberSessionAttendances(
+        query: GetDetailMemberAttendancesQuery,
+    ): List<MemberSessionAttendanceQueryModel> = throw UnsupportedOperationException()
+
+    override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
+        throw UnsupportedOperationException()
+
+    override fun countSessionAttendancesByQuery(
+        query: GetAttendancesBySessionWeekQuery,
+        myTeamNumber: TeamNumber,
+    ): Int = throw UnsupportedOperationException()
+
+    override fun countMemberAttendancesByQuery(
+        query: GetMemberAttendancesQuery,
+        myTeamNumber: TeamNumber,
+    ): Int = throw UnsupportedOperationException()
+}
 
 /** 세션 저장소 가짜 구현. 조회마다 사본을 돌려줘 저장하지 않은 변경이 새지 않도록 한다. */
 class FakeSessionPersistencePort : SessionPersistencePort {
@@ -44,6 +260,12 @@ class FakeSessionPersistencePort : SessionPersistencePort {
     @Synchronized
     override fun findSessionById(sessionId: Long): Session? =
         sessions[sessionId]?.takeIf { it.deletedAt == null }?.let { copyOf(it) }
+
+    @Synchronized
+    override fun findSessionByIdForUpdate(sessionId: Long): Session? = findSessionById(sessionId)
+
+    @Synchronized
+    override fun findSessionByIdForShare(sessionId: Long): Session? = findSessionById(sessionId)
 
     override fun findSessionsWithAttendanceStartTimeBetween(
         cohortId: CohortId,

@@ -28,6 +28,12 @@ class SessionRepository(
     override fun findSessionById(sessionId: Long): Session? =
         sessionJpaRepository.findByIdAndDeletedAtIsNull(sessionId)?.toDomain()
 
+    override fun findSessionByIdForUpdate(sessionId: Long): Session? =
+        sessionJpaRepository.findByIdForUpdate(sessionId)?.toDomain()
+
+    override fun findSessionByIdForShare(sessionId: Long): Session? =
+        sessionJpaRepository.findByIdForShare(sessionId)?.toDomain()
+
     override fun findSessionsWithAttendanceStartTimeBetween(
         cohortId: CohortId,
         startTime: Instant,

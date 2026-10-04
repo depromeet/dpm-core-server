@@ -11,6 +11,12 @@ interface SessionPersistencePort {
 
     fun findSessionById(sessionId: Long): Session?
 
+    /** FOR UPDATE. 세션 시각 변경/삭제/운영진 출석 변경을 직렬화한다. */
+    fun findSessionByIdForUpdate(sessionId: Long): Session?
+
+    /** FOR SHARE. 인증끼리는 동시에 진행하고 쓰기 잠금 작업과는 직렬화된다. */
+    fun findSessionByIdForShare(sessionId: Long): Session?
+
     fun save(session: Session): Session
 
     fun findSessionsWithAttendanceStartTimeBetween(
@@ -18,4 +24,5 @@ interface SessionPersistencePort {
         startTime: Instant,
         endTime: Instant,
     ): List<Session>
+
 }

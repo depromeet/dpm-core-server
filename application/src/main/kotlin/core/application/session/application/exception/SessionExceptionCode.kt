@@ -13,6 +13,8 @@ enum class SessionExceptionCode(
     TOO_EARLY_ATTENDANCE(HttpStatus.BAD_REQUEST, "SESSION-400-03", "출석하기에는 너무 이른 시간입니다"),
     ALREADY_CHECKED_ATTENDANCE(HttpStatus.BAD_REQUEST, "SESSION-400-04", "이미 출석을 체크했습니다"),
     ATTENDANCE_START_TIME_DATE_MISMATCH(HttpStatus.BAD_REQUEST, "SESSION-400-05", "출석 시작 시간의 날짜가 세션의 날짜와 일치하지 않습니다"),
+    ATTENDANCE_CLOSED(HttpStatus.BAD_REQUEST, "SESSION-400-06", "출석 인증 시간이 마감되었습니다"),
+    ATTENDANCE_ALREADY_DECIDED(HttpStatus.BAD_REQUEST, "SESSION-400-07", "운영진이 이미 출석 상태를 확정했습니다"),
     INVALID_ATTENDANCE_TIME_ORDER(
         HttpStatus.BAD_REQUEST,
         "SESSION-400-08",

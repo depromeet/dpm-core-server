@@ -36,6 +36,15 @@ class Attendance(
     /** 출석 상태가 PENDING가 아니고, 출석 시각이 존재하는지 여부를 확인합니다.*/
     fun isAttended(): Boolean = status != AttendanceStatus.PENDING && attendedAt != null
 
+    /** updatedAt 은 운영진 변경에서만 기록한다. 과거 데이터의 updatedAt 도 운영진 변경으로 보고 보호한다. */
+    fun isAlreadyUpdated(): Boolean = updatedAt != null
+
+    /** 미인증(PENDING)만 인증으로 기록할 수 있다. 운영진이 정한 기록은 덮어쓰지 않는다. */
+    fun canRecordAttendance(): Boolean =
+        updatedAt == null &&
+            attendedAt == null &&
+            status == AttendanceStatus.PENDING
+
     /**
      * 출석 기록을 생성합니다.
      *
@@ -51,26 +60,13 @@ class Attendance(
         this.attendedAt = attendedAt
     }
 
-    /**
-     * 출석 정책에 따라 상태를 업데이트합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
-     */
-    fun updateStatusByAttendancePolicy(
-        lateStart: Instant,
-        absentStart: Instant,
+    /** 운영진 변경 표지(updatedAt)를 기록한다. */
+    fun updateStatus(
+        newStatus: AttendanceStatus,
+        updatedAt: Instant = Instant.now(),
     ) {
-        if (isAlreadyUpdated()) return
-
-        val newStatus = calculateStatusByPolicy(lateStart, absentStart) ?: return
-        if (status != newStatus) updateStatus(newStatus)
-    }
-
-    fun updateStatus(newStatus: AttendanceStatus) {
         this.status = newStatus
-        this.updatedAt = Instant.now()
+        this.updatedAt = updatedAt
     }
 
     fun delete(deletedAt: Instant?) {
@@ -78,57 +74,34 @@ class Attendance(
     }
 
     /**
-     * 새로운 정책 적용 시 상태 변경 여부 확인 합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
+     * 출석 시각 변경 후의 새 상태(바뀌지 않으면 null). 미리보기와 실제 반영이 이 규칙 하나를 쓴다.
+     * 인증 기록만 인증 시각으로 다시 판정하고, 운영진 변경 기록과 미인증은 그대로 둔다.
      */
-    fun isStatusChangedByPolicy(
+    fun recalculateStatusByPolicy(
         lateStart: Instant,
         absentStart: Instant,
-    ): Boolean {
-        val newStatus = calculateStatusByPolicy(lateStart, absentStart) ?: return false
-        return this.status != newStatus
-    }
-
-    /**
-     * 정책 적용 시 예상 상태 계산 합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
-     */
-    fun simulateStatusChange(
-        lateStart: Instant,
-        absentStart: Instant,
-    ): AttendanceStatus {
-        return calculateStatusByPolicy(lateStart, absentStart) ?: this.status
-    }
-
-    /** 운영진에 의해 이미 상태가 변경되었는지 여부를 확인합니다. */
-    fun isAlreadyUpdated(): Boolean = updatedAt != null
-
-    /**
-     * 새로운 출석 정책에 따라 출석 상태를 계산합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
-     * @return AttendanceStatus 새로운 출석 상태 (nullable)
-     *
-     */
-    private fun calculateStatusByPolicy(
-        lateStart: Instant,
-        absentStart: Instant,
+        now: Instant,
     ): AttendanceStatus? {
-        val attendedAt = this.attendedAt ?: return null
+        if (isAlreadyUpdated()) return null
 
-        return when {
-            attendedAt.isBefore(lateStart) -> AttendanceStatus.PRESENT
-            attendedAt.isBefore(absentStart) -> AttendanceStatus.LATE
-            else -> AttendanceStatus.ABSENT
-        }
+        val attendedAt = this.attendedAt
+        val newStatus =
+            when {
+                attendedAt != null && status in RECALCULABLE_ATTENDED_STATUSES ->
+                    when {
+                        attendedAt.isBefore(lateStart) -> AttendanceStatus.PRESENT
+                        attendedAt.isBefore(absentStart) -> AttendanceStatus.LATE
+                        else -> AttendanceStatus.ABSENT
+                    }
+                else -> null
+            }
+
+        return newStatus?.takeIf { it != status }
+    }
+
+    /** 정책 재계산은 운영진 변경 표지(updatedAt)를 남기지 않는다. */
+    fun applyPolicyStatus(newStatus: AttendanceStatus) {
+        this.status = newStatus
     }
 
     override fun equals(other: Any?): Boolean {
@@ -147,6 +120,9 @@ class Attendance(
     override fun toString(): String = "Attendance(id=$id, sessionId=$sessionId, memberId=$memberId, status=$status)"
 
     companion object {
+        private val RECALCULABLE_ATTENDED_STATUSES =
+            setOf(AttendanceStatus.PRESENT, AttendanceStatus.LATE, AttendanceStatus.ABSENT)
+
         fun create(command: AttendanceCreateCommand): Attendance =
             Attendance(
                 sessionId = command.sessionId,

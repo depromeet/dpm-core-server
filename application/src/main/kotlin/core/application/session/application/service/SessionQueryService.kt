@@ -6,6 +6,7 @@ import core.application.member.application.exception.MemberNotFoundException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.domain.attendance.aggregate.Attendance
+import core.domain.attendance.enums.AttendanceStatus
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
@@ -19,7 +20,7 @@ import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
+import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -30,10 +31,11 @@ class SessionQueryService(
     private val sessionPersistencePort: SessionPersistencePort,
     private val attendanceQueryService: AttendanceQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val clock: Clock,
 ) {
     fun getNextSession(): Session? {
         val koreaZone = ZoneId.of("Asia/Seoul")
-        val today = LocalDate.ofInstant(Instant.now(), koreaZone)
+        val today = LocalDate.ofInstant(clock.instant(), koreaZone)
         val startOfToday = today.atStartOfDay(koreaZone).toInstant()
 
         return sessionPersistencePort.findNextSessionBy(startOfToday)
@@ -117,9 +119,12 @@ class SessionQueryService(
         val targeted = mutableListOf<SessionPolicyUpdateTargetResponse.TargetedResponse>()
         val untargeted = mutableListOf<SessionPolicyUpdateTargetResponse.UntargetedResponse>()
 
+        // 실제 반영과 같은 규칙(recalculateStatusByPolicy)으로 미리 계산한다.
+        val now = clock.instant()
         validAttendances.forEach { attendance ->
-            if (attendance.isStatusChangedByPolicy(command.lateStart, command.absentStart)) {
-                targeted += createTargetedResponse(attendance, command, membersById)
+            val targetStatus = attendance.recalculateStatusByPolicy(command.lateStart, command.absentStart, now)
+            if (targetStatus != null) {
+                targeted += createTargetedResponse(attendance, targetStatus, membersById)
             } else if (attendance.isAlreadyUpdated()) {
                 untargeted += createUntargetedResponse(attendance, membersById)
             }
@@ -130,13 +135,13 @@ class SessionQueryService(
 
     private fun createTargetedResponse(
         attendance: Attendance,
-        command: SessionAttendancePolicyCommand,
+        targetStatus: AttendanceStatus,
         membersById: Map<MemberId?, Member>,
     ): SessionPolicyUpdateTargetResponse.TargetedResponse =
         SessionPolicyUpdateTargetResponse.TargetedResponse(
             name = membersById[attendance.memberId]?.name ?: throw MemberNotFoundException(),
             currentStatus = attendance.status.name,
-            targetStatus = attendance.simulateStatusChange(command.lateStart, command.absentStart).name,
+            targetStatus = targetStatus.name,
             attendedAt = instantToLocalDateTime(attendance.attendedAt),
         )
 
