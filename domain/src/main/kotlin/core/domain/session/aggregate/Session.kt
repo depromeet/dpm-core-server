@@ -6,9 +6,9 @@ import core.domain.cohort.vo.CohortId
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.vo.AttendancePolicy
+import core.domain.session.vo.SessionAttendanceTimes
 import core.domain.session.vo.SessionId
 import java.time.Instant
-import java.time.ZoneId
 import kotlin.random.Random
 
 /**
@@ -83,18 +83,19 @@ class Session(
     }
 
     fun updateAttendanceStartTime(newStartTime: Instant) {
+        val ordered =
+            SessionAttendanceTimes.isOrdered(newStartTime, attendancePolicy.lateStart, attendancePolicy.absentStart)
+        require(ordered) { "출석 시각은 attendanceStart < lateStart < absentStart 순서여야 합니다." }
         this.attendancePolicy =
             attendancePolicy.copy(
                 attendanceStart = newStartTime,
             )
     }
 
-    fun isSameDateAsSession(target: Instant): Boolean {
-        val zone = ZoneId.of("Asia/Seoul")
-        return this.date.atZone(zone).toLocalDate() == target.atZone(zone).toLocalDate()
-    }
-
     fun updateSession(command: SessionUpdateCommand) {
+        require(SessionAttendanceTimes.isOrdered(command.attendanceStart, command.lateStart, command.absentStart)) {
+            "출석 시각은 attendanceStart < lateStart < absentStart 순서여야 합니다."
+        }
         this.date = command.date
         this.week = command.week
         this.place = command.place ?: this.place
@@ -114,9 +115,11 @@ class Session(
     }
 
     companion object {
+        /** [attendanceTimes] 는 기본값/입력값으로 확정된 시각이다. 커맨드의 nullable 시각은 쓰지 않는다. */
         fun create(
             command: SessionCreateCommand,
             cohortId: CohortId,
+            attendanceTimes: SessionAttendanceTimes,
         ): Session {
             fun generateAttendanceCode(): String = Random.nextInt(1000, 10000).toString()
 
@@ -129,9 +132,9 @@ class Session(
                 isOnline = command.isOnline ?: true,
                 attendancePolicy =
                     AttendancePolicy(
-                        attendanceStart = command.attendanceStart,
-                        lateStart = command.lateStart,
-                        absentStart = command.absentStart,
+                        attendanceStart = attendanceTimes.attendanceStart,
+                        lateStart = attendanceTimes.lateStart,
+                        absentStart = attendanceTimes.absentStart,
                         attendanceCode = generateAttendanceCode(),
                     ),
             )

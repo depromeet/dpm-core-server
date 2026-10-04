@@ -1,7 +1,9 @@
 package core.application.session.application.service
 
+import core.application.attendance.application.properties.AttendancePolicyProperties
 import core.application.cohort.application.service.CohortQueryService
 import core.application.session.application.exception.InvalidSessionIdException
+import core.application.session.application.exception.PartialAttendanceTimesException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.validator.SessionValidator
 import core.domain.notification.aggregate.SentSessionNotification
@@ -16,6 +18,7 @@ import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.AttendancePolicy
+import core.domain.session.vo.SessionAttendanceTimes
 import core.domain.session.vo.SessionId
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -30,7 +33,9 @@ class SessionCommandService(
     private val sessionValidator: SessionValidator,
     private val cohortQueryService: CohortQueryService,
     private val sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase,
+    private val attendancePolicyProperties: AttendancePolicyProperties,
 ) {
+    // 판정 경계(지각 시작, 마감)는 그대로라 출석 기록은 재판정하지 않는다.
     fun updateSessionStartTime(
         sessionId: SessionId,
         attendanceStartTime: Instant,
@@ -39,7 +44,11 @@ class SessionCommandService(
             sessionPersistencePort.findSessionById(sessionId.value)
                 ?: throw SessionNotFoundException()
 
-        sessionValidator.validateIsSameDateAsSession(session, attendanceStartTime)
+        sessionValidator.validateAttendanceTimes(
+            attendanceStartTime,
+            session.attendancePolicy.lateStart,
+            session.attendancePolicy.absentStart,
+        )
         session.updateAttendanceStartTime(attendanceStartTime)
 
         sessionPersistencePort.save(session)
@@ -47,7 +56,8 @@ class SessionCommandService(
 
     fun createSession(command: SessionCreateCommand) {
         val latestCohortId = cohortQueryService.getLatestCohortId()
-        val newSession = Session.create(command, latestCohortId)
+        val attendanceTimes = resolveAttendanceTimes(command)
+        val newSession = Session.create(command, latestCohortId, attendanceTimes)
 
         val savedSession = sessionPersistencePort.save(newSession)
 
@@ -78,6 +88,8 @@ class SessionCommandService(
         val session =
             sessionPersistencePort.findSessionById(command.sessionId.value)
                 ?: throw SessionNotFoundException()
+
+        sessionValidator.validateAttendanceTimes(command.attendanceStart, command.lateStart, command.absentStart)
 
         val previousAttendancePolicy = session.attendancePolicy
 
@@ -131,5 +143,21 @@ class SessionCommandService(
             )
 
         eventPublisher.publishEvent(event)
+    }
+
+    private fun resolveAttendanceTimes(command: SessionCreateCommand): SessionAttendanceTimes {
+        val attendanceStart = command.attendanceStart
+        val lateStart = command.lateStart
+        val absentStart = command.absentStart
+
+        if (attendanceStart == null && lateStart == null && absentStart == null) {
+            return attendancePolicyProperties.defaultOffsets.resolveFor(command.date)
+        }
+        if (attendanceStart == null || lateStart == null || absentStart == null) {
+            throw PartialAttendanceTimesException()
+        }
+
+        sessionValidator.validateAttendanceTimes(attendanceStart, lateStart, absentStart)
+        return SessionAttendanceTimes(attendanceStart, lateStart, absentStart)
     }
 }
