@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder
 import java.time.Clock
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
@@ -162,8 +163,8 @@ class ImageControllerTest {
         val legacyMockMvc =
             MockMvcBuilders
                 .standaloneSetup(ImageController(commandService, ImageQueryService(images, storage, properties, Clock.systemUTC())))
-                .addDispatcherServletCustomizer { it.setThrowExceptionIfNoHandlerFound(false) }
                 .setCustomArgumentResolvers(CurrentMemberIdArgumentResolver())
+                .addDispatcherServletCustomizer<StandaloneMockMvcBuilder> { it.setThrowExceptionIfNoHandlerFound(false) }
                 .build()
 
         listOf(
