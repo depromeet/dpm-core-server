@@ -8,6 +8,7 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
+import core.application.image.presentation.response.ImageUrlResponse
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.image.vo.ImageId
 import core.domain.member.vo.MemberId
@@ -429,7 +430,7 @@ interface AttendanceQueryApi {
         summary = "내 결석 사유서 조회",
         description =
             "로그인한 디퍼가 해당 세션에 제출한 결석 사유서를 조회합니다. 제출 이력이 없으면 data 가 비어있습니다. " +
-                "imageIds 는 첨부 이미지 id(표시 순서, 없으면 [])이며 원본은 GET /v1/images/{imageId} 로 받습니다.",
+                "imageIds 는 첨부 이미지 id(표시 순서, 없으면 [])이며 조회 URL 은 GET /v3/images/{imageId} 로 받습니다.",
     )
     @ApiResponses(
         value = [
@@ -473,7 +474,7 @@ interface AttendanceQueryApi {
         description =
             "운영진이 해당 세션에 제출된 모든 결석 사유서를 제출자 이름과 함께 조회합니다. " +
                 "reasons[].imageIds 는 첨부 이미지 id(표시 순서, 없으면 [])이며 " +
-                "원본은 GET /v2/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} 로 받습니다.",
+                "조회 URL 은 GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} 로 받습니다.",
     )
     @ApiResponses(
         value = [
@@ -486,19 +487,37 @@ interface AttendanceQueryApi {
     fun getSessionAbsenceReasons(sessionId: SessionId): CustomResponse<SessionAbsenceReasonsResponse>
 
     @Operation(
-        summary = "결석 사유서 첨부 이미지 원본 조회 (운영진)",
+        summary = "결석 사유서 첨부 이미지 조회 URL 발급 (운영진)",
         description =
-            "해당 세션·멤버의 결석 사유서에 지금 첨부된 이미지만 받습니다. 첨부가 해제됐거나 사유서가 삭제됐으면 404 입니다. " +
-                "인증 헤더가 필요하므로 fetch 로 받아 Blob URL 로 표시합니다. 응답은 캐시하지 않습니다(private, no-store).",
+            "해당 세션·멤버의 결석 사유서에 지금 첨부된 이미지의 만료 시간이 있는 조회 URL 을 받습니다. " +
+                "첨부가 해제됐거나 사유서가 삭제됐으면 404 입니다. url 은 인증 헤더 없이 img 태그로 바로 표시할 수 있으며 " +
+                "expiresAt 이 지나면 다시 발급받아야 합니다. 응답은 캐시하지 않습니다(private, no-store).",
     )
     @ApiResponses(
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "이미지 바이트",
+                description = "이미지 조회 URL 발급 성공",
                 content = [
-                    Content(mediaType = "image/jpeg", schema = Schema(type = "string", format = "binary")),
-                    Content(mediaType = "image/png", schema = Schema(type = "string", format = "binary")),
+                    Content(
+                        mediaType = "application/json",
+                        examples = [
+                            ExampleObject(
+                                name = "이미지 조회 URL",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "G000",
+                                        "data": {
+                                            "url": "https://objectstorage.ap-chuncheon-1.oraclecloud.com/p/.../o/...",
+                                            "expiresAt": "2025-08-16T06:05:00Z"
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
                 ],
             ),
             ApiResponse(responseCode = "403", description = "운영진 권한(update:attendance) 없음"),
@@ -510,7 +529,7 @@ interface AttendanceQueryApi {
         sessionId: SessionId,
         memberId: MemberId,
         imageId: ImageId,
-    ): ResponseEntity<ByteArray>
+    ): ResponseEntity<CustomResponse<ImageUrlResponse>>
 }
 
 private const val MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION =

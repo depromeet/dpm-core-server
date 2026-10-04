@@ -345,7 +345,8 @@ interface AttendanceCommandApi {
 }
 
 private const val ABSENCE_REASON_IMAGE_FLOW =
-    "POST /v1/images 로 올린 imageId 들을 imageIds 에 표시 순서로 담습니다(규칙은 imageIds 스키마). 내용과 첨부는 함께 저장됩니다."
+    "POST /v3/images/uploads → 업로드 → POST /v3/images/uploads/{uploadId}/complete 200 으로 받은 imageId 들을 " +
+        "imageIds 에 표시 순서로 담습니다(규칙은 imageIds 스키마). 내용과 첨부는 함께 저장됩니다."
 
 private const val ABSENCE_REASON_400_DESCRIPTION =
     "ATTENDANCE-400-02 사유 없음, ATTENDANCE-400-03 50자 초과, " +

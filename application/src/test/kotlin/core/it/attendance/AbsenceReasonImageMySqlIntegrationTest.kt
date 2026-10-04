@@ -226,7 +226,7 @@ class AbsenceReasonImageMySqlIntegrationTest {
     }
 
     @Test
-    fun `운영진 원본 조회는 그 사유서에 붙은 그 멤버 이미지만 허용하고 거부할 때는 저장소를 부르지 않는다`() {
+    fun `운영진 이미지 URL 조회는 그 사유서에 붙은 그 멤버 이미지만 허용하고 거부할 때는 저장소를 부르지 않는다`() {
         val member = newMember()
         val admin = newMember()
         val (session, otherSession) = List(2) { newSession() }
@@ -242,9 +242,10 @@ class AbsenceReasonImageMySqlIntegrationTest {
         )
 
         storage.calls.clear()
-        val content = imageQueryService.getAbsenceReasonImage(session.id!!, member, attached)
-        assertThat(content.bytes).isEqualTo(storage.objects.getValue(imagePort.findById(attached)!!.objectKey))
-        assertThat(storage.calls).containsExactly("get")
+        val response = imageQueryService.getAbsenceReasonImage(session.id!!, member, attached)
+        assertThat(response.url).isNotBlank()
+        assertThat(response.expiresAt).isAfter(Instant.now())
+        assertThat(storage.calls).containsExactly("createReadUrl")
 
         storage.calls.clear()
         listOf(
