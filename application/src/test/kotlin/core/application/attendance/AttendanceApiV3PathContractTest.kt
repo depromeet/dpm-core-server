@@ -54,6 +54,8 @@ class AttendanceApiV3PathContractTest {
                 "GET /v3/sessions/{sessionId}/absence-reasons hasAuthority('update:attendance')",
                 "GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} " +
                     "hasAuthority('update:attendance')",
+                "GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId}/download " +
+                    "hasAuthority('update:attendance')",
             )
     }
 
@@ -82,6 +84,7 @@ class AttendanceApiV3PathContractTest {
                 "POST /v3/images/uploads isAuthenticated()",
                 "POST /v3/images/uploads/{uploadId}/complete isAuthenticated()",
                 "GET /v3/images/{imageId} isAuthenticated()",
+                "GET /v3/images/{imageId}/download isAuthenticated()",
             )
     }
 }

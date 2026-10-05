@@ -12,6 +12,7 @@ import core.application.image.application.validator.ImageValidator
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.domain.member.vo.MemberId
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.startsWith
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -57,7 +59,7 @@ class ImageControllerTest {
         loginAs(7L)
         val created =
             mockMvc
-                .perform(createRequest("image/png", bytes.size.toLong()))
+                .perform(createRequest("image/png", bytes.size.toLong(), "증빙.png"))
                 .andExpect(status().isCreated)
                 .andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(jsonPath("$.status").value("CREATED"))
@@ -75,6 +77,7 @@ class ImageControllerTest {
             .andExpect(jsonPath("$.data.imageId").value(1))
             .andExpect(jsonPath("$.data.contentType").value("image/png"))
             .andExpect(jsonPath("$.data.size").value(bytes.size))
+            .andExpect(jsonPath("$.data.fileName").value("증빙.png"))
             .andExpect(jsonPath("$.data.objectKey").doesNotExist())
 
         mockMvc
@@ -84,7 +87,18 @@ class ImageControllerTest {
             .andExpect(jsonPath("$.data.url").isString)
             .andExpect(jsonPath("$.data.expiresAt").exists())
 
+        mockMvc
+            .perform(get("/v3/images/1/download"))
+            .andExpect(status().isFound)
+            .andExpect(header().string("Cache-Control", "no-store, private"))
+            .andExpect(header().string("Location", startsWith("https://objectstorage.test/")))
+            .andExpect(content().string(""))
+
         loginAs(8L)
+        mockMvc
+            .perform(get("/v3/images/1/download"))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.code").value("IMAGE-404-01"))
         mockMvc
             .perform(get("/v3/images/1"))
             .andExpect(status().isNotFound)
@@ -152,6 +166,7 @@ class ImageControllerTest {
             AnonymousAuthenticationToken("key", "anonymousUser", listOf(SimpleGrantedAuthority("ROLE_ANONYMOUS")))
 
         mockMvc.perform(get("/v3/images/1")).andExpect(status().isUnauthorized)
+        mockMvc.perform(get("/v3/images/1/download")).andExpect(status().isUnauthorized)
         mockMvc.perform(createRequest("image/png", 10L)).andExpect(status().isUnauthorized)
         assertThat(storage.calls).isEmpty()
     }
@@ -185,9 +200,16 @@ class ImageControllerTest {
     private fun createRequest(
         contentType: String,
         size: Long,
+        fileName: String? = null,
     ) = post("/v3/images/uploads")
         .contentType(MediaType.APPLICATION_JSON)
-        .content("""{"contentType":"$contentType","size":$size}""")
+        .content(
+            if (fileName == null) {
+                """{"contentType":"$contentType","size":$size}"""
+            } else {
+                """{"contentType":"$contentType","size":$size,"fileName":"$fileName"}"""
+            },
+        )
 
     private fun loginAs(memberId: Long) {
         SecurityContextHolder.getContext().authentication =

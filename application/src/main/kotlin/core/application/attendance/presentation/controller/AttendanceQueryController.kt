@@ -11,6 +11,7 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
+import core.application.image.presentation.controller.redirectToDownload
 import core.application.image.presentation.response.ImageUrlResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.attendance.enums.AttendanceStatus
@@ -182,4 +183,13 @@ class AttendanceQueryController(
             .ok()
             .cacheControl(CacheControl.noStore().cachePrivate())
             .body(CustomResponse.ok(absenceReasonImageQueryService.getAbsenceReasonImage(sessionId, memberId, imageId)))
+
+    @PreAuthorize("hasAuthority('update:attendance')")
+    @GetMapping("/v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId}/download")
+    override fun downloadAbsenceReasonImage(
+        @PathVariable sessionId: SessionId,
+        @PathVariable memberId: MemberId,
+        @PathVariable imageId: ImageId,
+    ): ResponseEntity<Void> =
+        redirectToDownload(absenceReasonImageQueryService.getAbsenceReasonImageDownload(sessionId, memberId, imageId))
 }

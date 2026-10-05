@@ -33,6 +33,8 @@ class ImageEntity(
     val contentType: String,
     @Column(name = "size_bytes", nullable = false, updatable = false)
     val size: Long,
+    @Column(name = "original_file_name", updatable = false, length = 255)
+    val originalFileName: String? = null,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
 ) {
@@ -43,6 +45,7 @@ class ImageEntity(
             objectKey = objectKey,
             contentType = ImageContentType.fromMimeType(contentType),
             size = size,
+            originalFileName = originalFileName,
             createdAt = createdAt,
         )
 
@@ -54,6 +57,7 @@ class ImageEntity(
                 objectKey = image.objectKey,
                 contentType = image.contentType.mimeType,
                 size = image.size,
+                originalFileName = image.originalFileName,
                 createdAt = image.createdAt,
             )
     }

@@ -78,7 +78,8 @@ class AttendanceOverviewMySqlIntegrationTest {
         // 합류 전에 마감돼 출석 기록이 없는 세션: 분모에는 들어가지만 결석이 아니다
         newSession(currentCohort, week = 5, isOnline = false)
         val deleted = newSession(currentCohort, week = 6, isOnline = false, deletedAt = firstSessionStart)
-        addAttendance(present, memberId, AttendanceStatus.PRESENT)
+        val attendedAt = firstSessionStart.minus(Duration.ofMinutes(3))
+        addAttendance(present, memberId, AttendanceStatus.PRESENT, attendedAt)
         addAttendance(late, memberId, AttendanceStatus.LATE)
         addAttendance(absent, memberId, AttendanceStatus.ABSENT)
         addAttendance(upcoming, memberId, AttendanceStatus.PENDING)
@@ -86,7 +87,9 @@ class AttendanceOverviewMySqlIntegrationTest {
         val oldReasonId = addAbsenceReason(absent, memberId, "예전 사유", "REJECTED")
         val reasonId = addAbsenceReason(absent, memberId, "병원 진료", "PENDING")
         val imageBase = uniqueId()
-        // 최신 사유서의 첨부만, 표시 순서대로 붙는다
+        // 최신 사유서의 첨부만, 표시 순서대로 붙는다. 파일명은 저장된 이미지에서, 없으면 null
+        newImage(imageBase + 2, memberId, originalFileName = "진단서.jpg")
+        newImage(imageBase + 1, memberId, originalFileName = null)
         linkImage(reasonId, imageBase + 2, displayOrder = 0)
         linkImage(reasonId, imageBase + 1, displayOrder = 1)
         linkImage(oldReasonId, imageBase + 3, displayOrder = 0)
@@ -109,6 +112,8 @@ class AttendanceOverviewMySqlIntegrationTest {
         val sessions = attendancePort.findMemberSessionAttendances(GetDetailMemberAttendancesQuery(MemberId(memberId)))
         assertThat(sessions.map { it.sessionId }).containsExactly(present.id!!.value, late.id!!.value, absent.id!!.value, upcoming.id!!.value)
         assertThat(sessions.map { it.sessionIsOnline }).containsExactly(false, true, false, false)
+        assertThat(sessions.map { it.sessionPlace }).containsExactly("1주차 장소", "", "3주차 장소", "4주차 장소")
+        assertThat(sessions.map { it.attendedAt }).containsExactly(attendedAt, null, null, null)
         assertThat(sessions.map { it.absenceReason?.contents }).containsExactly(null, null, "병원 진료", null)
         assertThat(sessions.single { it.sessionId == absent.id!!.value }.absenceReason)
             .usingRecursiveComparison()
@@ -118,7 +123,11 @@ class AttendanceOverviewMySqlIntegrationTest {
                     id = 0,
                     contents = "병원 진료",
                     status = "PENDING",
-                    imageIds = listOf(imageBase + 2, imageBase + 1),
+                    images =
+                        listOf(
+                            MemberSessionAttendanceQueryModel.Image(imageBase + 2, "진단서.jpg"),
+                            MemberSessionAttendanceQueryModel.Image(imageBase + 1, null),
+                        ),
                 ),
             )
 
@@ -275,7 +284,7 @@ class AttendanceOverviewMySqlIntegrationTest {
                 cohortId = cohortId,
                 date = start,
                 week = week,
-                place = "온라인",
+                place = if (isOnline) "" else "${week}주차 장소",
                 eventName = "${week}주차 세션",
                 isOnline = isOnline,
                 attendancePolicy =
@@ -294,8 +303,11 @@ class AttendanceOverviewMySqlIntegrationTest {
         session: Session,
         memberId: Long,
         status: AttendanceStatus,
+        attendedAt: Instant? = null,
     ) {
-        attendancePort.save(Attendance(sessionId = session.id!!, memberId = MemberId(memberId), status = status))
+        attendancePort.save(
+            Attendance(sessionId = session.id!!, memberId = MemberId(memberId), status = status, attendedAt = attendedAt),
+        )
     }
 
     private fun addAbsenceReason(
@@ -312,6 +324,21 @@ class AttendanceOverviewMySqlIntegrationTest {
             status,
         )
         return jdbcTemplate.queryForObject("select max(absence_reason_id) from absence_reasons where member_id = ?", Long::class.javaObjectType, memberId)!!
+    }
+
+    private fun newImage(
+        imageId: Long,
+        ownerMemberId: Long,
+        originalFileName: String?,
+    ) {
+        jdbcTemplate.update(
+            "insert into images (image_id, owner_member_id, object_key, content_type, size_bytes, original_file_name, created_at) " +
+                "values (?, ?, ?, 'image/jpeg', 1, ?, now(6))",
+            imageId,
+            ownerMemberId,
+            "images/" + UUID.randomUUID(),
+            originalFileName,
+        )
     }
 
     private fun linkImage(

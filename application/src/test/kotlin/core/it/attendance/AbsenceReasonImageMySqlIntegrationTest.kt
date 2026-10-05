@@ -251,6 +251,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
         assertThat(response.url).isNotBlank()
         assertThat(response.expiresAt).isAfter(clock.instant())
         assertThat(storage.calls).containsExactly("par-read")
+        // 다운로드도 같은 첨부 확인을 거친 뒤에만 URL 을 만든다
+        assertThat(imageQueryService.getAbsenceReasonImageDownload(session.id!!, member, attached).url).isNotBlank()
 
         storage.calls.clear()
         listOf(
@@ -261,6 +263,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
             Triple(otherSession, member, attached),
         ).forEach { (s, m, image) ->
             assertThatThrownBy { imageQueryService.getAbsenceReasonImage(s.id!!, m, image) }
+                .isInstanceOf(ImageNotFoundException::class.java)
+            assertThatThrownBy { imageQueryService.getAbsenceReasonImageDownload(s.id!!, m, image) }
                 .isInstanceOf(ImageNotFoundException::class.java)
         }
         // 일반 조회는 운영진에게도 소유자 전용이다
