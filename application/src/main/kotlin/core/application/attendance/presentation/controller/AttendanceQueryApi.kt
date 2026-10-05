@@ -303,18 +303,22 @@ interface AttendanceQueryApi {
                                                     "id": 1,
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
-                                                    "date": "2025-08-02T14:03:42.000000",
+                                                    "date": "2025-08-02T14:00:00.000000",
                                                     "attendanceStatus": "PRESENT",
+                                                    "attendedAt": "2025-08-02T13:58:21.000000",
                                                     "isOnline": false,
+                                                    "place": "공덕 창업허브",
                                                     "absenceReason": null
                                                 },
                                                 {
                                                     "id": 6,
                                                     "week": 2,
                                                     "eventName": "2주차 세션",
-                                                    "date": "2025-08-09T14:09:12.000000",
+                                                    "date": "2025-08-09T14:00:00.000000",
                                                     "attendanceStatus": "LATE",
+                                                    "attendedAt": "2025-08-09T14:09:12.000000",
                                                     "isOnline": true,
+                                                    "place": "온라인",
                                                     "absenceReason": null
                                                 },
                                                 {
@@ -323,12 +327,18 @@ interface AttendanceQueryApi {
                                                     "eventName": "3주차 세션",
                                                     "date": "2025-08-16T14:00:00.000000",
                                                     "attendanceStatus": "ABSENT",
+                                                    "attendedAt": null,
                                                     "isOnline": false,
+                                                    "place": "공덕 창업허브",
                                                     "absenceReason": {
                                                         "id": 3,
                                                         "contents": "병원 진료",
                                                         "status": "PENDING",
-                                                        "imageIds": [12, 15]
+                                                        "imageIds": [12, 15],
+                                                        "images": [
+                                                            { "imageId": 12, "fileName": "진단서.jpg" },
+                                                            { "imageId": 15, "fileName": null }
+                                                        ]
                                                     }
                                                 }
                                             ]
@@ -385,18 +395,22 @@ interface AttendanceQueryApi {
                                                     "id": 1,
                                                     "week": 1,
                                                     "eventName": "디프만 17기 OT",
-                                                    "date": "2025-08-02T14:03:42.000000",
+                                                    "date": "2025-08-02T14:00:00.000000",
                                                     "attendanceStatus": "PRESENT",
+                                                    "attendedAt": "2025-08-02T13:58:21.000000",
                                                     "isOnline": false,
+                                                    "place": "공덕 창업허브",
                                                     "absenceReason": null
                                                 },
                                                 {
                                                     "id": 6,
                                                     "week": 2,
                                                     "eventName": "2주차 세션",
-                                                    "date": "2025-08-09T14:09:12.000000",
+                                                    "date": "2025-08-09T14:00:00.000000",
                                                     "attendanceStatus": "LATE",
+                                                    "attendedAt": "2025-08-09T14:09:12.000000",
                                                     "isOnline": true,
+                                                    "place": "온라인",
                                                     "absenceReason": null
                                                 },
                                                 {
@@ -405,12 +419,18 @@ interface AttendanceQueryApi {
                                                     "eventName": "3주차 세션",
                                                     "date": "2025-08-16T14:00:00.000000",
                                                     "attendanceStatus": "ABSENT",
+                                                    "attendedAt": null,
                                                     "isOnline": false,
+                                                    "place": "공덕 창업허브",
                                                     "absenceReason": {
                                                         "id": 3,
                                                         "contents": "병원 진료",
                                                         "status": "PENDING",
-                                                        "imageIds": [12, 15]
+                                                        "imageIds": [12, 15],
+                                                        "images": [
+                                                            { "imageId": 12, "fileName": "진단서.jpg" },
+                                                            { "imageId": 15, "fileName": null }
+                                                        ]
                                                     }
                                                 }
                                             ]
@@ -530,6 +550,29 @@ interface AttendanceQueryApi {
         memberId: MemberId,
         imageId: ImageId,
     ): ResponseEntity<CustomResponse<ImageUrlResponse>>
+
+    @Operation(
+        summary = "결석 사유서 첨부 이미지 다운로드 (운영진)",
+        description =
+            "해당 세션·멤버의 결석 사유서에 지금 첨부된 이미지를 원본 파일명으로 내려받도록 1분짜리 다운로드 URL 로 302 리다이렉트합니다. " +
+                "<a href> 로 바로 연결할 수 있습니다(로그인 쿠키로 인증). 첨부가 해제됐거나 사유서가 삭제됐으면 404 입니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "302",
+                description = "Location: 다운로드 URL (Content-Disposition: attachment). Cache-Control: no-store, private",
+            ),
+            ApiResponse(responseCode = "403", description = "운영진 권한(update:attendance) 없음"),
+            ApiResponse(responseCode = "404", description = "IMAGE-404-01 사유서가 없거나 그 사유서에 첨부된 이미지가 아님"),
+            ApiResponse(responseCode = "503", description = "이미지 저장소 사용 불가"),
+        ],
+    )
+    fun downloadAbsenceReasonImage(
+        sessionId: SessionId,
+        memberId: MemberId,
+        imageId: ImageId,
+    ): ResponseEntity<Void>
 }
 
 private const val MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION =
@@ -538,5 +581,9 @@ private const val MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION =
         "IMPOSSIBLE: 남은 세션을 모두 출석해도 출석률 80% 미만(분모는 해당 기수의 삭제되지 않은 전체 세션 수), " +
         "환산 결석 4회 초과(4.5회부터), 오프라인 결석 3회 이상 중 하나. " +
         "AT_RISK: 환산 결석 3회 이상 또는 오프라인 결석 2회. " +
+        "sessions[].attendedAt 은 실제 출석 인증 시각이며 인증하지 않았으면 null 이다. " +
+        "sessions[].place 는 온라인 세션이면 \"온라인\", 오프라인이면 저장된 장소명이다. " +
         "sessions[].absenceReason 은 해당 세션에 제출한 결석 사유서이며 없으면 null 이다. " +
-        "absenceReason.imageIds 는 첨부 이미지 id(표시 순서, 없으면 [])다."
+        "absenceReason.images 는 첨부 이미지 id 와 원본 파일명(표시 순서, 없으면 [])이며, " +
+        "파일명 없이 올렸거나 파일명 저장 전에 올린 이미지는 fileName 이 null 이다. " +
+        "absenceReason.imageIds 는 같은 순서의 id 목록으로 호환을 위해 유지한다."

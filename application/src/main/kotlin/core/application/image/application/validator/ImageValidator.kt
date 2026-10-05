@@ -42,6 +42,20 @@ class ImageValidator {
     fun parseContentType(contentType: String?): ImageContentType? =
         contentType?.let { ImageContentType.fromMimeTypeOrNull(normalize(it)) }
 
+    /** 표시용 원본 파일명. 경로는 마지막 부분만 남기고 제어 문자를 지운다. 비어 있으면 null */
+    fun normalizeFileName(fileName: String?): String? {
+        val name =
+            fileName
+                ?.substringAfterLast('/')
+                ?.substringAfterLast('\\')
+                ?.filterNot { it.isISOControl() }
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: return null
+        if (name.length > MAX_FILE_NAME_LENGTH) throw InvalidImageException(ImageExceptionCode.FILE_NAME_TOO_LONG)
+        return name
+    }
+
     private fun detect(header: ByteArray): ImageContentType? =
         when {
             header.startsWith(JPEG_SIGNATURE) -> ImageContentType.JPEG
@@ -98,6 +112,7 @@ class ImageValidator {
     companion object {
         const val MAX_BYTES = 10 * 1024 * 1024
         const val MAX_PIXELS = 25_000_000L
+        const val MAX_FILE_NAME_LENGTH = 255
 
         // 디코드 결과를 이 픽셀 수 안팎으로 줄여 요청당 힙 사용을 묶는다(4M px ≈ 16MB).
         private const val DECODE_PIXEL_BUDGET = 4_000_000.0

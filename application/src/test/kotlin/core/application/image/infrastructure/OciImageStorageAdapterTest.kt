@@ -30,8 +30,10 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import java.io.ByteArrayInputStream
+import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -83,6 +85,31 @@ class OciImageStorageAdapterTest {
         assertThat(captor.value.createPreauthenticatedRequestDetails.accessType)
             .isEqualTo(CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
         assertThat(url.url).isEqualTo("https://objectstorage.ap-seoul-1.oraclecloud.com/p/token/n/test-ns/b/test-bucket/o/images/a")
+    }
+
+    @Test
+    fun `다운로드 URL 은 읽기 PAR 에 원본 파일명을 담은 attachment 응답 헤더 쿼리를 붙인다`() {
+        doReturn(parResponse("https://objectstorage.ap-seoul-1.oraclecloud.com/p/token/n/test-ns/b/test-bucket/o/images/a"))
+            .`when`(client)
+            .createPreauthenticatedRequest(any())
+
+        val named = adapter.createDownloadUrl("images/a", expiresAt, "진단서 \"1\".png")
+        val unnamed = adapter.createDownloadUrl("images/a", expiresAt, null)
+
+        val captor = ArgumentCaptor.forClass(CreatePreauthenticatedRequestRequest::class.java)
+        verify(client, times(2)).createPreauthenticatedRequest(captor.capture())
+        assertThat(captor.allValues).allSatisfy {
+            assertThat(it.createPreauthenticatedRequestDetails.accessType)
+                .isEqualTo(CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
+        }
+        val base = "https://objectstorage.ap-seoul-1.oraclecloud.com/p/token/n/test-ns/b/test-bucket/o/images/a"
+        val query = named.url.removePrefix("$base?httpResponseContentDisposition=")
+        assertThat(query).doesNotContain("+", " ")
+        assertThat(URLDecoder.decode(query, Charsets.UTF_8))
+            .isEqualTo("attachment; filename=\"___ _1_.png\"; filename*=UTF-8''%EC%A7%84%EB%8B%A8%EC%84%9C%20%221%22.png")
+        assertThat(unnamed.url).isEqualTo("$base?httpResponseContentDisposition=attachment")
+        assertThat(named.parId).isEqualTo("par-id")
+        assertThat(named.expiresAt).isEqualTo(expiresAt)
     }
 
     @Test

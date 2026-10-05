@@ -25,11 +25,27 @@ class AbsenceReasonImageQueryService(
         memberId: MemberId,
         imageId: ImageId,
     ): ImageUrlResponse {
+        requireAttached(sessionId, memberId, imageId)
+        return imageQueryService.getImage(memberId, imageId)
+    }
+
+    fun getAbsenceReasonImageDownload(
+        sessionId: SessionId,
+        memberId: MemberId,
+        imageId: ImageId,
+    ): ImageUrlResponse {
+        requireAttached(sessionId, memberId, imageId)
+        return imageQueryService.getDownloadUrl(memberId, imageId)
+    }
+
+    private fun requireAttached(
+        sessionId: SessionId,
+        memberId: MemberId,
+        imageId: ImageId,
+    ) {
         val absenceReasonId =
             absenceReasonPersistencePort.findBySessionIdAndMemberId(sessionId.value, memberId.value)?.id
                 ?: throw ImageNotFoundException()
         if (!absenceReasonImagePersistencePort.exists(absenceReasonId.value, imageId)) throw ImageNotFoundException()
-
-        return imageQueryService.getImage(memberId, imageId)
     }
 }

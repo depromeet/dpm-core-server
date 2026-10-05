@@ -33,6 +33,8 @@ class ImageUploadEntity(
     val contentType: String,
     @Column(name = "size_bytes", nullable = false, updatable = false)
     val size: Long,
+    @Column(name = "original_file_name", updatable = false, length = 255)
+    val originalFileName: String?,
     @Column(name = "par_id", length = 255)
     val parId: String?,
     @Column(name = "status", nullable = false, length = 20)
@@ -60,6 +62,7 @@ class ImageUploadEntity(
             ownerMemberId = MemberId(ownerMemberId),
             contentType = ImageContentType.fromMimeType(contentType),
             size = size,
+            originalFileName = originalFileName,
             parId = parId,
             status = ImageUploadStatus.valueOf(status),
             expiresAt = expiresAt,
@@ -79,6 +82,7 @@ class ImageUploadEntity(
                 ownerMemberId = upload.ownerMemberId.value,
                 contentType = upload.contentType.mimeType,
                 size = upload.size,
+                originalFileName = upload.originalFileName,
                 parId = upload.parId,
                 status = upload.status.name,
                 expiresAt = upload.expiresAt,

@@ -21,7 +21,8 @@ interface ImageApi {
         description =
             "JPEG 또는 PNG(10MiB, 2,500만 픽셀 이하)의 형식과 바이트 수를 보내면 10분짜리 업로드 URL 을 줍니다. " +
                 "프론트는 uploadUrl 로 파일 원본을 그대로 PUT 하고(Content-Type 헤더는 요청한 contentType 과 같게, " +
-                "Content-Encoding 없이) complete 를 부릅니다. URL 을 가진 사람은 만료 전까지 이 업로드 객체에 쓸 수 있습니다.",
+                "Content-Encoding 없이) complete 를 부릅니다. URL 을 가진 사람은 만료 전까지 이 업로드 객체에 쓸 수 있습니다. " +
+                "fileName(선택, 255자 이하)을 보내면 원본 파일명으로 저장해 완료 응답과 첨부 조회에 돌려줍니다.",
     )
     @ApiResponses(
         value = [
@@ -29,7 +30,7 @@ interface ImageApi {
                 responseCode = "201",
                 description = "발급 성공. data: uploadId, uploadUrl, expiresAt (Cache-Control: no-store)",
             ),
-            ApiResponse(responseCode = "400", description = "본문 형식 오류, size 가 0 이하"),
+            ApiResponse(responseCode = "400", description = "본문 형식 오류, size 가 0 이하, fileName 255자 초과"),
             ApiResponse(responseCode = "401", description = "로그인 필요"),
             ApiResponse(responseCode = "413", description = "10MiB 초과"),
             ApiResponse(responseCode = "415", description = "JPEG/PNG 가 아닌 contentType"),
@@ -50,7 +51,7 @@ interface ImageApi {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "완료. data: imageId, contentType, size"),
+            ApiResponse(responseCode = "200", description = "완료. data: imageId, contentType, size, fileName"),
             ApiResponse(
                 responseCode = "202",
                 description = "검증 또는 확정 저장 중. 같은 요청을 다시 보냅니다",
@@ -97,4 +98,27 @@ interface ImageApi {
         memberId: MemberId,
         imageId: ImageId,
     ): ResponseEntity<CustomResponse<ImageUrlResponse>>
+
+    @Operation(
+        summary = "이미지 다운로드",
+        description =
+            "업로드한 본인의 이미지를 원본 파일명으로 내려받도록 1분짜리 다운로드 URL 로 302 리다이렉트합니다. " +
+                "<a href> 로 바로 연결할 수 있습니다(로그인 쿠키로 인증). Bearer 헤더만 쓰는 클라이언트는 fetch 로 호출하면 " +
+                "리다이렉트를 따라가 파일을 받습니다. 파일명 없이 올린 이미지는 저장 이름을 브라우저가 정합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "302",
+                description = "Location: 다운로드 URL (Content-Disposition: attachment). Cache-Control: no-store",
+            ),
+            ApiResponse(responseCode = "401", description = "로그인 필요"),
+            ApiResponse(responseCode = "404", description = "없거나 본인 이미지가 아님"),
+            ApiResponse(responseCode = "503", description = "이미지 저장소 사용 불가"),
+        ],
+    )
+    fun downloadImage(
+        memberId: MemberId,
+        imageId: ImageId,
+    ): ResponseEntity<Void>
 }

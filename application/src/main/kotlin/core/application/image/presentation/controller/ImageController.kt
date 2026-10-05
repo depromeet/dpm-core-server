@@ -39,7 +39,11 @@ class ImageController(
         ResponseEntity
             .status(HttpStatus.CREATED)
             .cacheControl(CacheControl.noStore())
-            .body(CustomResponse.created(imageCommandService.createUpload(memberId, request.contentType, request.size)))
+            .body(
+                CustomResponse.created(
+                    imageCommandService.createUpload(memberId, request.contentType, request.size, request.fileName),
+                ),
+            )
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/v3/images/uploads/{uploadId}/complete")
@@ -66,6 +70,13 @@ class ImageController(
             .ok()
             .cacheControl(CacheControl.noStore())
             .body(CustomResponse.ok(imageQueryService.getImage(memberId, imageId)))
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/v3/images/{imageId}/download")
+    override fun downloadImage(
+        @CurrentMemberId memberId: MemberId,
+        @PathVariable imageId: ImageId,
+    ): ResponseEntity<Void> = redirectToDownload(imageQueryService.getDownloadUrl(memberId, imageId))
 
     companion object {
         private const val RETRY_AFTER_SECONDS = "1"

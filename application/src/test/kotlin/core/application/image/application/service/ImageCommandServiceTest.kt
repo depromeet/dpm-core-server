@@ -110,6 +110,34 @@ class ImageCommandServiceTest {
     }
 
     @Test
+    fun `업로드 요청의 원본 파일명을 이미지로 옮기고 완료 응답에 돌려준다`() {
+        val bytes = ImageFixtures.png()
+        val created = service.createUpload(owner, "image/png", bytes.size.toLong(), "C:\\fakepath\\진단서.png")
+        val upload = uploads.uploads.getValue(created.uploadId)
+        storage.put(upload.stagingKey, bytes, "image/png", null)
+
+        val first = service.completeUpload(owner, upload.id) as ImageUploadCompletion.Completed
+        val again = service.completeUpload(owner, upload.id) as ImageUploadCompletion.Completed
+
+        assertThat(upload.originalFileName).isEqualTo("진단서.png")
+        assertThat(images.images.values.single().originalFileName).isEqualTo("진단서.png")
+        assertThat(first.image.fileName).isEqualTo("진단서.png")
+        assertThat(again.image).isEqualTo(first.image)
+    }
+
+    @Test
+    fun `파일명 없이 올리면 파일명은 null 이고, 너무 긴 파일명은 PAR 을 만들기 전에 거절한다`() {
+        val result = service.completeUpload(owner, uploaded(ImageFixtures.png()).id) as ImageUploadCompletion.Completed
+        assertThat(result.image.fileName).isNull()
+        storage.calls.clear()
+
+        assertCode(ImageExceptionCode.FILE_NAME_TOO_LONG) {
+            service.createUpload(owner, "image/png", 10L, "a".repeat(ImageValidator.MAX_FILE_NAME_LENGTH + 1))
+        }
+        assertThat(storage.calls).isEmpty()
+    }
+
+    @Test
     fun `완료를 다시 불러도 같은 imageId 를 주고 저장소를 다시 부르지 않는다`() {
         val upload = uploaded(ImageFixtures.png())
         val first = service.completeUpload(owner, upload.id) as ImageUploadCompletion.Completed

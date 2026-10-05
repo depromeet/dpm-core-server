@@ -57,6 +57,27 @@ class AbsenceReasonImageContractTest {
 
         assertThat(authorityOf("getAbsenceReasonImage")).isEqualTo("hasAuthority('update:attendance')")
         assertThat(authorityOf("getAbsenceReasonImage")).isEqualTo(authorityOf("getSessionAbsenceReasons"))
+        assertThat(authorityOf("downloadAbsenceReasonImage")).isEqualTo(authorityOf("getSessionAbsenceReasons"))
+    }
+
+    @Test
+    fun `운영진 이미지 다운로드는 다운로드 URL 로 캐시 금지 302 리다이렉트한다`() {
+        val imageQueryService = mock(AbsenceReasonImageQueryService::class.java)
+        val url = ImageUrlResponse("https://storage.test/read/1?download", Instant.parse("2026-10-04T00:05:00Z"))
+        given(imageQueryService.getAbsenceReasonImageDownload(SessionId(1), MemberId(2), ImageId(3))).willReturn(url)
+        val controller =
+            AttendanceQueryController(
+                mock(AttendanceQueryService::class.java),
+                mock(AbsenceReasonQueryService::class.java),
+                imageQueryService,
+            )
+
+        val response = controller.downloadAbsenceReasonImage(SessionId(1), MemberId(2), ImageId(3))
+
+        assertThat(response.statusCode).isEqualTo(HttpStatus.FOUND)
+        assertThat(response.headers.location.toString()).isEqualTo(url.url)
+        assertThat(response.headers.getFirst(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-store, private")
+        assertThat(response.body).isNull()
     }
 
     @Test

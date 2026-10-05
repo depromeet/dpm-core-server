@@ -20,6 +20,8 @@ class ImageUpload(
     val ownerMemberId: MemberId,
     val contentType: ImageContentType,
     val size: Long,
+    /** 업로드 요청에 받은 원본 파일명. 완료 시 이미지로 옮긴다 */
+    val originalFileName: String? = null,
     val parId: String?,
     val status: ImageUploadStatus,
     val expiresAt: Instant,
@@ -63,12 +65,14 @@ class ImageUpload(
             parId: String,
             expiresAt: Instant,
             createdAt: Instant,
+            originalFileName: String? = null,
         ): ImageUpload =
             ImageUpload(
                 id = id,
                 ownerMemberId = ownerMemberId,
                 contentType = contentType,
                 size = size,
+                originalFileName = originalFileName,
                 parId = parId,
                 status = ImageUploadStatus.PENDING,
                 expiresAt = expiresAt,
