@@ -2,7 +2,6 @@ package core.persistence.attendance.repository
 
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
-import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
@@ -13,7 +12,6 @@ import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
-import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.team.vo.TeamNumber
@@ -72,48 +70,6 @@ class AttendanceRepository(
 
     override fun findAllBySessionId(sessionId: Long): List<Attendance> =
         attendanceJpaRepository.findAllBySessionIdAndDeletedAtIsNull(sessionId).map { it.toDomain() }
-
-    override fun findSessionAttendancesByQuery(
-        query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: TeamNumber,
-    ): List<SessionAttendanceQueryModel> {
-        val isAdminField = isAdminField()
-
-        return dsl
-            .select(
-                ATTENDANCES.MEMBER_ID,
-                MEMBERS.NAME,
-                TEAMS.NUMBER,
-                isAdminField,
-                MEMBERS.PART,
-                ATTENDANCES.STATUS,
-            ).from(ATTENDANCES)
-            .join(MEMBERS)
-            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .join(SESSIONS)
-            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
-            .join(COHORTS)
-            .on(SESSIONS.COHORT_ID.eq(COHORTS.COHORT_ID))
-            .join(MEMBER_TEAMS)
-            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .join(TEAMS)
-            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
-            .where(
-                sessionAttendanceConditions(query, myTeamNumber),
-            ).orderBy(TEAMS.NUMBER.asc(), MEMBERS.NAME.asc(), ATTENDANCES.MEMBER_ID.asc())
-            .limit(query.size)
-            .offset((query.page - 1) * query.size)
-            .fetch { record ->
-                SessionAttendanceQueryModel(
-                    id = record[ATTENDANCES.MEMBER_ID]!!,
-                    name = record[MEMBERS.NAME]!!,
-                    teamNumber = TeamNumber(record[TEAMS.NUMBER]!!),
-                    isAdmin = record[isAdminField] ?: false,
-                    part = record[MEMBERS.PART],
-                    attendanceStatus = record[ATTENDANCES.STATUS]!!,
-                )
-            }
-    }
 
     /** 대상은 [sessionRosterConditions] 로 고르고 팀과 결석 사유서는 스칼라 서브쿼리로 붙여 행이 늘지 않는다. */
     override fun findSessionRoster(
@@ -495,24 +451,6 @@ class AttendanceRepository(
         deletedAt: Instant,
     ): Int = attendanceJpaRepository.softDeleteAllBySessionId(sessionId, deletedAt)
 
-    override fun countSessionAttendancesByQuery(
-        query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: TeamNumber,
-    ): Int =
-        dsl
-            .selectCount()
-            .from(ATTENDANCES)
-            .join(MEMBERS)
-            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .join(SESSIONS)
-            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
-            .join(MEMBER_TEAMS)
-            .on(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-            .join(TEAMS)
-            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
-            .where(sessionAttendanceConditions(query, myTeamNumber))
-            .fetchOne(0, Int::class.java) ?: 0
-
     override fun countMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
         myTeamNumber: TeamNumber,
@@ -652,30 +590,6 @@ class AttendanceRepository(
         private const val SUMMARY = "attendance_summary"
         private const val SUMMARY_MEMBER_ID = "member_id"
         private const val SUMMARY_COHORT_ID = "cohort_id"
-    }
-
-    private fun sessionAttendanceConditions(
-        query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: TeamNumber,
-    ): List<Condition> {
-        val conditions = mutableListOf<Condition>()
-        conditions += SESSIONS.SESSION_ID.eq(query.sessionId.value)
-        conditions += ATTENDANCES.DELETED_AT.isNull
-
-        query.statuses?.takeIf { it.isNotEmpty() }?.let { statuses ->
-            conditions += ATTENDANCES.STATUS.`in`(statuses)
-        }
-
-        when {
-            query.onlyMyTeam == true -> conditions += TEAMS.NUMBER.eq(myTeamNumber.value)
-            query.teams?.isNotEmpty() == true -> conditions += TEAMS.NUMBER.`in`(query.teams)
-        }
-
-        query.name?.takeIf { it.isNotBlank() }?.let { name ->
-            conditions += MEMBERS.NAME.containsIgnoreCase(name)
-        }
-
-        return conditions
     }
 
     private fun memberAttendanceConditions(

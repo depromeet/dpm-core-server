@@ -47,7 +47,6 @@ class AttendanceApiV3PathContractTest {
                 "PATCH /v3/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
                 "DELETE /v2/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
                 "PATCH /v2/sessions/{sessionId}/absence-reasons/{memberId}/review hasAuthority('update:attendance')",
-                "GET /v1/sessions/{sessionId}/attendances hasAuthority('create:attendance')",
                 "GET /v3/sessions/{sessionId}/attendances hasAuthority('update:attendance')",
                 "GET /v3/members/attendances hasAuthority('create:attendance')",
                 "GET /v3/sessions/{sessionId}/attendances/{memberId} hasAuthority('create:attendance')",
