@@ -20,6 +20,9 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
     implementation(libs.kotlin.logging)
     implementation(libs.jsonwebtoken.jjwt)
+    implementation(platform(libs.oci.sdk.bom))
+    implementation(libs.oci.sdk.objectstorage)
+    implementation(libs.oci.sdk.common.httpclient.jersey3)
 
     runtimeOnly(libs.mysql.connector)
 

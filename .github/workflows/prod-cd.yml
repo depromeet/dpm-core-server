@@ -50,8 +50,18 @@ jobs:
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       IMAGE_TAG: prod-${{ github.sha }}
+      OCI_OBJECT_STORAGE_BUCKET: ${{ vars.PROD_OCI_OBJECT_STORAGE_BUCKET }}
+      OCI_REGION: ${{ vars.PROD_OCI_REGION }}
+      OCI_OBJECT_STORAGE_NAMESPACE: ${{ vars.PROD_OCI_OBJECT_STORAGE_NAMESPACE }}
+      OCI_AUTH_MODE: instance-principal
 
     steps:
+      - name: "OCI 설정값을 검증한다."
+        run: |
+          for v in "$OCI_OBJECT_STORAGE_BUCKET" "$OCI_REGION" "$OCI_OBJECT_STORAGE_NAMESPACE" "$OCI_AUTH_MODE"; do
+            case "$v" in ''|*[!A-Za-z0-9._-]*) echo "OCI 저장소 변수(PROD_OCI_*)가 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
+          done
+
       - name: "레포지토리를 체크아웃한다."
         uses: actions/checkout@v4
 
@@ -89,8 +99,13 @@ jobs:
           host: ${{ secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.PROD_SERVER_USERNAME }}
           key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          envs: OCI_OBJECT_STORAGE_BUCKET,OCI_REGION,OCI_OBJECT_STORAGE_NAMESPACE,OCI_AUTH_MODE
           script: |
             cd ~
+
+            for v in "$OCI_OBJECT_STORAGE_BUCKET" "$OCI_REGION" "$OCI_OBJECT_STORAGE_NAMESPACE" "$OCI_AUTH_MODE"; do
+              case "$v" in ''|*[!A-Za-z0-9._-]*) echo "OCI 설정값이 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
+            done
 
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
             rm -rf .env
@@ -122,11 +137,26 @@ jobs:
             PROD_APPLE_CLIENT_ID=${{ secrets.PROD_APPLE_CLIENT_ID }}
             SECURITY_LOGGING_LEVEL=${{ secrets.SECURITY_LOGGING_LEVEL }}
             PROD_DISCORD_WEBHOOK_URL=${{ secrets.PROD_DISCORD_WEBHOOK_URL }}
+            OCI_OBJECT_STORAGE_BUCKET=$OCI_OBJECT_STORAGE_BUCKET
+            OCI_REGION=$OCI_REGION
+            OCI_OBJECT_STORAGE_NAMESPACE=$OCI_OBJECT_STORAGE_NAMESPACE
+            OCI_AUTH_MODE=$OCI_AUTH_MODE
             EOF
+
+            # server-stack.yml 에 매핑이 없어도 OCI env 가 서비스에 들어가게 한다 (version 은 원본과 맞춤)
+            {
+              grep -E '^version:' server-stack.yml || true
+              printf 'services:\n  spring-app:\n    environment:\n'
+              printf '      %s: "%s"\n' \
+                OCI_OBJECT_STORAGE_BUCKET "$OCI_OBJECT_STORAGE_BUCKET" \
+                OCI_REGION "$OCI_REGION" \
+                OCI_OBJECT_STORAGE_NAMESPACE "$OCI_OBJECT_STORAGE_NAMESPACE" \
+                OCI_AUTH_MODE "$OCI_AUTH_MODE"
+            } > server-stack.oci.yml
 
             echo "${{ env.DOCKER_PASSWORD }}" | docker login --username "${{ env.DOCKER_USERNAME }}" --password-stdin
             docker pull ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
-            docker stack deploy --with-registry-auth -c server-stack.yml server
+            docker stack deploy --with-registry-auth -c server-stack.yml -c server-stack.oci.yml server || exit 1
 
             # 이미지 pull 등으로 레플리카 수렴에 시간이 걸릴 수 있어 최대 90초 대기한다
             for i in $(seq 1 18); do
@@ -138,7 +168,32 @@ jobs:
 
             docker service ps server_spring-app --no-trunc
             docker service logs server_spring-app --tail 50
-            test "$(docker service ls --filter name=server_spring-app --format '{{.Replicas}}')" = "1/1"
+            test "$(docker service ls --filter name=server_spring-app --format '{{.Replicas}}')" = "1/1" || exit 1
+
+            # 새 이미지 컨테이너에 OCI env 가 기대값 그대로 들어갔는지 확인한다
+            (
+              set -e
+              TAG="${{ env.IMAGE_TAG }}"
+              oci_env_ok() {
+                got=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$1" | grep -E '^OCI_(OBJECT_STORAGE_BUCKET|REGION|OBJECT_STORAGE_NAMESPACE|AUTH_MODE)=' | sort)
+                want=$(printf '%s\n' "OCI_AUTH_MODE=$OCI_AUTH_MODE" "OCI_OBJECT_STORAGE_BUCKET=$OCI_OBJECT_STORAGE_BUCKET" "OCI_OBJECT_STORAGE_NAMESPACE=$OCI_OBJECT_STORAGE_NAMESPACE" "OCI_REGION=$OCI_REGION" | sort)
+                [ "$got" = "$want" ]
+              }
+              for i in $(seq 1 18); do
+                ids=$(docker ps --filter status=running --filter label=com.docker.swarm.service.name=server_spring-app --format '{{.ID}} {{.Image}}' \
+                  | awk -v t=":$TAG" '{ i = $2; sub(/@sha256:.*/, "", i); if (length(i) > length(t) && substr(i, length(i) - length(t) + 1) == t) print $1 }')
+                ok=false
+                if [ -n "$ids" ]; then
+                  ok=true
+                  for id in $ids; do oci_env_ok "$id" || ok=false; done
+                fi
+                [ "$ok" = true ] && { echo "> OCI env 확인 완료"; exit 0; }
+                sleep 5
+              done
+              echo "server_spring-app 의 $TAG 컨테이너에 OCI env 가 기대값대로 들어가지 않았다"
+              exit 1
+            )
+            [ $? -eq 0 ] || exit 1
 
       - name: "Discord로 Production 배포 실패를 알린다."
         if: failure()
