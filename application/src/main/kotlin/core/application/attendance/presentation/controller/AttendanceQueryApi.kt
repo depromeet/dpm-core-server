@@ -7,6 +7,7 @@ import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
+import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.exception.CustomResponse
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.member.vo.MemberId
@@ -88,6 +89,77 @@ interface AttendanceQueryApi {
         page: Int,
         size: Int,
     ): CustomResponse<SessionAttendancesResponse>
+
+    @Operation(
+        summary = "세션 전체 출석 명단 조회 (운영진)",
+        description =
+            "현재 활성 기수 세션의 출석 명단을 필터와 페이지 없이 전부 조회합니다. " +
+                "이름, 상태, 팀, 파트, 내 팀 필터는 프론트에서 하며 내 팀은 myTeamNumber(현재 기수 팀, 없으면 null)로 고릅니다. " +
+                "totalElements 는 members 전체 인원(결석·미인증 포함)입니다. " +
+                "상태별 인원과 팀 선택지는 이 명단으로 프론트에서 계산합니다. " +
+                "members 는 팀 번호(팀 없음은 마지막), 이름, ID 순이고 teamNumber 는 팀이 없으면 null 입니다. " +
+                "운영진이 상태를 바꾼 기록은 isManuallyUpdated 가 true 이고 attendedAt 은 null 입니다. " +
+                "absenceReason 은 이 세션에 제출한 가장 최근 결석 사유서 내용(없으면 null)이며 첨부 이미지는 주지 않습니다. " +
+                "없거나 삭제됐거나 현재 기수가 아닌 세션이면 404 입니다. 기존 GET /v1/sessions/{sessionId}/attendances 는 호환을 위해 남겨 둡니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션 전체 출석 명단 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "세션 전체 출석 명단 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "members": [
+                                                {
+                                                    "id": 1,
+                                                    "name": "신민철",
+                                                    "teamNumber": 1,
+                                                    "isAdmin": false,
+                                                    "part": "SERVER",
+                                                    "attendanceStatus": "PRESENT",
+                                                    "attendedAt": "2025-08-02T13:55:12",
+                                                    "isManuallyUpdated": false,
+                                                    "absenceReason": null
+                                                },
+                                                {
+                                                    "id": 2,
+                                                    "name": "이정호",
+                                                    "teamNumber": null,
+                                                    "isAdmin": true,
+                                                    "part": "WEB",
+                                                    "attendanceStatus": "EXCUSED_ABSENT",
+                                                    "attendedAt": null,
+                                                    "isManuallyUpdated": true,
+                                                    "absenceReason": "병원 진료"
+                                                }
+                                            ],
+                                            "myTeamNumber": 1,
+                                            "totalElements": 2
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getSessionRoster(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): CustomResponse<SessionRosterResponse>
 
     @Operation(
         summary = "사람별 출석 조회",
@@ -514,7 +586,7 @@ interface AttendanceQueryApi {
 
 private const val MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION =
     "member.attendanceStatus 는 조회 시점에 계산한 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE)이다. " +
-        "결석 1회, 지각 0.5회로 환산하고 인정 결석은 출석으로, 미인증(PENDING)과 조퇴(EARLY_LEAVE)는 0으로 본다. " +
+        "결석 1회, 지각 0.5회로 환산하고 인정 결석은 출석으로, 미인증(PENDING)은 0으로 본다. " +
         "IMPOSSIBLE: 남은 세션을 모두 출석해도 출석률 80% 미만(분모는 해당 기수의 삭제되지 않은 전체 세션 수), " +
         "환산 결석 4회 초과(4.5회부터), 오프라인 결석 3회 이상 중 하나. " +
         "AT_RISK: 환산 결석 3회 이상 또는 오프라인 결석 2회. " +

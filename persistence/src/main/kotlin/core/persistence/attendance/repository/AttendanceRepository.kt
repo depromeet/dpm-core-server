@@ -15,6 +15,7 @@ import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.team.vo.TeamNumber
 import core.entity.attendance.AttendanceEntity
 import org.jooq.Condition
@@ -29,6 +30,7 @@ import org.jooq.dsl.tables.references.ATTENDANCES
 import org.jooq.dsl.tables.references.COHORTS
 import org.jooq.dsl.tables.references.IMAGES
 import org.jooq.dsl.tables.references.MEMBERS
+import org.jooq.dsl.tables.references.MEMBER_COHORTS
 import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
 import org.jooq.dsl.tables.references.ROLES
@@ -38,6 +40,7 @@ import org.jooq.impl.DSL
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.inline
+import org.jooq.impl.DSL.notExists
 import org.jooq.impl.DSL.select
 import org.jooq.impl.DSL.selectCount
 import org.jooq.impl.DSL.selectOne
@@ -111,6 +114,114 @@ class AttendanceRepository(
                 )
             }
     }
+
+    /** 대상은 [sessionRosterConditions] 로 고르고 팀과 결석 사유서는 스칼라 서브쿼리로 붙여 행이 늘지 않는다. */
+    override fun findSessionRoster(
+        sessionId: Long,
+        cohortId: Long,
+    ): List<SessionRosterQueryModel> {
+        val isAdminField = isAdminField()
+        val teamNumber = teamNumberInCohort(MEMBERS.MEMBER_ID, cohortId)
+        val teamNumberField = teamNumber.`as`(TEAM_NUMBER)
+        val absenceReasonField =
+            field(
+                select(ABSENCE_REASONS.CONTENTS)
+                    .from(ABSENCE_REASONS)
+                    .where(
+                        ABSENCE_REASONS.SESSION_ID.eq(ATTENDANCES.SESSION_ID),
+                        ABSENCE_REASONS.MEMBER_ID.eq(ATTENDANCES.MEMBER_ID),
+                    ).orderBy(ABSENCE_REASONS.ABSENCE_REASON_ID.desc())
+                    .limit(1),
+            ).`as`(ABSENCE_REASON)
+        // updated_at 은 생성 타입이 LocalDateTime 이라 존을 가정하면 어긋난다. JPA 가 쓴 것과 같은 JDBC 경로(attended_at 과 같음)로 읽는다.
+        val updatedAtField = ATTENDANCES.UPDATED_AT.coerce(SQLDataType.INSTANT)
+
+        return dsl
+            .select(
+                MEMBERS.MEMBER_ID,
+                MEMBERS.NAME,
+                teamNumberField,
+                isAdminField,
+                MEMBERS.PART,
+                ATTENDANCES.STATUS,
+                ATTENDANCES.ATTENDED_AT,
+                updatedAtField,
+                absenceReasonField,
+            ).from(ATTENDANCES)
+            .joinSessionAndMember()
+            .join(COHORTS)
+            .on(SESSIONS.COHORT_ID.eq(COHORTS.COHORT_ID))
+            .where(sessionRosterConditions(sessionId, cohortId))
+            .orderBy(teamNumber.asc().nullsLast(), MEMBERS.NAME.asc(), MEMBERS.MEMBER_ID.asc())
+            .fetch { record ->
+                SessionRosterQueryModel(
+                    memberId = record[MEMBERS.MEMBER_ID]!!,
+                    name = record[MEMBERS.NAME]!!,
+                    teamNumber = record[teamNumberField],
+                    isAdmin = record[isAdminField] ?: false,
+                    part = record[MEMBERS.PART],
+                    attendanceStatus = record[ATTENDANCES.STATUS]!!,
+                    attendedAt = record[ATTENDANCES.ATTENDED_AT],
+                    updatedAt = record[updatedAtField],
+                    absenceReason = record[absenceReasonField],
+                )
+            }
+    }
+
+    private fun <R : Record> SelectJoinStep<R>.joinSessionAndMember(): SelectJoinStep<R> =
+        join(SESSIONS)
+            .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
+            .join(MEMBERS)
+            .on(ATTENDANCES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+
+    /**
+     * 운영진 세션 명단의 대상 조건. [joinSessionAndMember] 를 전제로 한다.
+     * 현재 기수 소속(EXISTS 라 소속 중복으로 행이 늘지 않음)이고 삭제되지 않은 멤버의 살아 있는 출석 기록만 본다.
+     * 멤버 삭제는 hard delete 라 MEMBERS 내부 조인으로 고아 기록도 빠진다.
+     * 같은 (세션, 멤버)의 살아 있는 기록이 여러 개면 attendance_id 가 가장 큰 것만 본다.
+     */
+    private fun sessionRosterConditions(
+        sessionId: Long,
+        cohortId: Long,
+    ): List<Condition> {
+        val newer = ATTENDANCES.`as`(NEWER_ATTENDANCE)
+        return listOf(
+            ATTENDANCES.SESSION_ID.eq(sessionId),
+            ATTENDANCES.DELETED_AT.isNull,
+            notExists(
+                selectOne()
+                    .from(newer)
+                    .where(
+                        newer.SESSION_ID.eq(ATTENDANCES.SESSION_ID),
+                        newer.MEMBER_ID.eq(ATTENDANCES.MEMBER_ID),
+                        newer.DELETED_AT.isNull,
+                        newer.ATTENDANCE_ID.gt(ATTENDANCES.ATTENDANCE_ID),
+                    ),
+            ),
+            SESSIONS.COHORT_ID.eq(cohortId),
+            SESSIONS.DELETED_AT.isNull,
+            MEMBERS.DELETED_AT.isNull,
+            exists(
+                selectOne()
+                    .from(MEMBER_COHORTS)
+                    .where(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID), MEMBER_COHORTS.COHORT_ID.eq(cohortId)),
+            ),
+        )
+    }
+
+    override fun findTeamNumberInCohort(
+        memberId: Long,
+        cohortId: Long,
+    ): Int? =
+        dsl
+            .select(TEAMS.NUMBER)
+            .from(MEMBER_TEAMS)
+            .join(TEAMS)
+            .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId), TEAMS.COHORT_ID.eq(cohortId))
+            .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
+            .limit(1)
+            .fetchOne(TEAMS.NUMBER)
 
     override fun findMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
@@ -499,6 +610,21 @@ class AttendanceRepository(
 
     private val summaryTeamNumber = latestTeamNumber.`as`(TEAM_NUMBER)
 
+    /** 그 기수에서 멤버의 가장 최근 배정(member_team_id 최대) 팀 번호. 없으면 null */
+    private fun teamNumberInCohort(
+        memberId: Field<Long?>,
+        cohortId: Long,
+    ): Field<Int?> =
+        field(
+            select(TEAMS.NUMBER)
+                .from(MEMBER_TEAMS)
+                .join(TEAMS)
+                .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+                .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId), TEAMS.COHORT_ID.eq(cohortId))
+                .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
+                .limit(1),
+        )
+
     /** 표시하는 팀(그 기수의 최신 배정) 기준으로 멤버만 고른다. 같은 기수의 이전 팀 배정으로는 걸리지 않는다. */
     private fun belongsToTeamIn(teamNumbers: Collection<Int>): Condition = latestTeamNumber.`in`(teamNumbers)
 
@@ -521,6 +647,8 @@ class AttendanceRepository(
         private const val EXCUSED_ABSENT_COUNT = "excused_absent_count"
         private const val TOTAL_SESSION_COUNT = "total_session_count"
         private const val TEAM_NUMBER = "team_number"
+        private const val ABSENCE_REASON = "absence_reason"
+        private const val NEWER_ATTENDANCE = "newer_attendance"
         private const val SUMMARY = "attendance_summary"
         private const val SUMMARY_MEMBER_ID = "member_id"
         private const val SUMMARY_COHORT_ID = "cohort_id"

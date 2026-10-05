@@ -9,6 +9,7 @@ import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
+import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.attendance.enums.AttendanceStatus
@@ -58,6 +59,14 @@ class AttendanceQueryController(
 
         return CustomResponse.ok(response)
     }
+
+    @PreAuthorize("hasAuthority('update:attendance')")
+    @GetMapping("/v3/sessions/{sessionId}/attendances")
+    override fun getSessionRoster(
+        @PathVariable sessionId: SessionId,
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<SessionRosterResponse> =
+        CustomResponse.ok(attendanceQueryService.getSessionRoster(sessionId, memberId))
 
     @PreAuthorize("hasAuthority('create:attendance')")
     @GetMapping("/v3/members/attendances")

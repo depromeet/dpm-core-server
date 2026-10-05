@@ -13,6 +13,7 @@ import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.team.vo.TeamNumber
 import java.time.Instant
 
@@ -33,6 +34,22 @@ interface AttendancePersistencePort {
         query: GetMemberAttendancesQuery,
         myTeamNumber: TeamNumber,
     ): List<MemberAttendanceQueryModel>
+
+    /**
+     * 세션의 전체 출석 명단. [cohortId] 기수에 소속되고 삭제되지 않은 멤버의 살아 있는 출석 기록만, 멤버당 한 행으로 준다.
+     * 한 멤버에 살아 있는 기록이 여러 개면 attendance_id 가 가장 큰 것을 쓴다.
+     * 팀 번호 오름차순(팀 없음은 마지막), 이름, 멤버 ID 순이다.
+     */
+    fun findSessionRoster(
+        sessionId: Long,
+        cohortId: Long,
+    ): List<SessionRosterQueryModel>
+
+    /** [cohortId] 기수에서 멤버에게 가장 최근 배정된 팀 번호. 없으면 null */
+    fun findTeamNumberInCohort(
+        memberId: Long,
+        cohortId: Long,
+    ): Int?
 
     fun findDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): SessionDetailAttendanceQueryModel?
 

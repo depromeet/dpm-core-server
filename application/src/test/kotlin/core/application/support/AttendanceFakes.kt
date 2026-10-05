@@ -14,6 +14,7 @@ import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.attendance.vo.AttendanceId
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
@@ -252,6 +253,22 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         query: GetMemberAttendancesQuery,
         myTeamNumber: TeamNumber,
     ): List<MemberAttendanceQueryModel> = throw UnsupportedOperationException()
+
+    /** 명단 SQL 은 MySQL 통합 테스트에서 검증한다. 여기서는 (sessionId, cohortId) 로 미리 넣은 결과를 돌려준다. */
+    val rosters = mutableMapOf<Pair<Long, Long>, List<SessionRosterQueryModel>>()
+
+    /** (memberId, cohortId) 별 팀 번호 */
+    val cohortTeamNumbers = mutableMapOf<Pair<Long, Long>, Int>()
+
+    override fun findSessionRoster(
+        sessionId: Long,
+        cohortId: Long,
+    ): List<SessionRosterQueryModel> = rosters[sessionId to cohortId].orEmpty()
+
+    override fun findTeamNumberInCohort(
+        memberId: Long,
+        cohortId: Long,
+    ): Int? = cohortTeamNumbers[memberId to cohortId]
 
     override fun findDetailAttendanceBySession(
         query: GetDetailAttendanceBySessionQuery,

@@ -33,7 +33,6 @@ class AttendanceStatusRuleTest {
                 // 운영진 변경이 있으면 표지가 있어도 자동 결석이 아니다
                 attendance(AttendanceStatus.ABSENT, updatedAt = decidedAt, autoAbsentAt = absentStart),
                 attendance(AttendanceStatus.EXCUSED_ABSENT),
-                attendance(AttendanceStatus.EARLY_LEAVE),
                 attendance(AttendanceStatus.PENDING, updatedAt = decidedAt),
                 attendance(AttendanceStatus.ABSENT, updatedAt = decidedAt),
                 attendance(AttendanceStatus.EXCUSED_ABSENT, updatedAt = decidedAt),
@@ -95,14 +94,10 @@ class AttendanceStatusRuleTest {
     }
 
     @Test
-    fun `인정 결석과 조퇴는 재계산 대상이 아니다`() {
+    fun `인정 결석은 재계산 대상이 아니다`() {
         assertThat(
             attendance(AttendanceStatus.EXCUSED_ABSENT, attendedAt = sessionStart)
                 .recalculateStatusByPolicy(sessionStart.minusSeconds(1), absentStart, afterClose),
-        ).isNull()
-        assertThat(
-            attendance(AttendanceStatus.EARLY_LEAVE, attendedAt = sessionStart)
-                .recalculateStatusByPolicy(sessionStart.plusSeconds(1), absentStart, afterClose),
         ).isNull()
     }
 
