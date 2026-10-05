@@ -8,6 +8,7 @@ import core.application.attendance.application.service.AbsenceReasonCommandServi
 import core.application.attendance.application.service.AbsenceReasonImageQueryService
 import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.common.exception.BusinessException
+import core.application.support.MutableClock
 import core.application.image.FakeImageStoragePort
 import core.application.image.application.exception.ImageNotFoundException
 import core.application.image.application.service.ImageQueryService
@@ -30,6 +31,8 @@ import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.AttendancePolicy
+import core.entity.image.ImageEntity
+import core.persistence.image.repository.ImageJpaRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeAll
@@ -77,6 +80,10 @@ class AbsenceReasonImageMySqlIntegrationTest {
     @Autowired lateinit var attendancePort: AttendancePersistencePort
 
     @Autowired lateinit var imagePort: ImagePersistencePort
+
+    @Autowired lateinit var imageJpaRepository: ImageJpaRepository
+
+    @Autowired lateinit var clock: MutableClock
 
     @Autowired lateinit var jdbcTemplate: JdbcTemplate
 
@@ -244,8 +251,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
         storage.calls.clear()
         val response = imageQueryService.getAbsenceReasonImage(session.id!!, member, attached)
         assertThat(response.url).isNotBlank()
-        assertThat(response.expiresAt).isAfter(Instant.now())
-        assertThat(storage.calls).containsExactly("createReadUrl")
+        assertThat(response.expiresAt).isAfter(clock.instant())
+        assertThat(storage.calls).containsExactly("par-read")
 
         storage.calls.clear()
         listOf(
@@ -300,9 +307,12 @@ class AbsenceReasonImageMySqlIntegrationTest {
 
     private fun newImage(owner: MemberId): ImageId {
         val bytes = UUID.randomUUID().toString().toByteArray()
-        val image = imagePort.save(Image.create(owner, ImageContentType.PNG, bytes.size.toLong(), Instant.now()))
-        storage.objects[image.objectKey] = bytes
-        return image.id!!
+        // 이미지 행은 업로드 완료로만 만들어지므로 테스트에서는 엔티티를 바로 저장한다.
+        val objectKey = Image.OBJECT_KEY_PREFIX + UUID.randomUUID()
+        val image = Image.create(owner, objectKey, ImageContentType.PNG, bytes.size.toLong(), Instant.now())
+        val saved = imageJpaRepository.save(ImageEntity.from(image))
+        storage.put(objectKey, bytes)
+        return ImageId(saved.id)
     }
 
     private fun newSession(): Session {

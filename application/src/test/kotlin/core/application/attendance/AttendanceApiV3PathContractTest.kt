@@ -2,6 +2,7 @@ package core.application.attendance
 
 import core.application.attendance.presentation.controller.AttendanceCommandController
 import core.application.attendance.presentation.controller.AttendanceQueryController
+import core.application.image.presentation.controller.ImageController
 import core.application.session.presentation.controller.SessionCommandController
 import core.application.session.presentation.controller.SessionQueryController
 import org.assertj.core.api.Assertions.assertThat
@@ -10,7 +11,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestMapping
 
-/** 스택 PR 에서 바뀐 API 만 /v3 로 옮기고, 나머지 경로와 메서드 권한은 그대로인지 확인한다(docs/attendance/api-v3.md). */
+/** 스택 PR 에서 추가·변경된 API 만 /v3 로 옮기고, 나머지 경로와 메서드 권한은 그대로인지 확인한다(docs/attendance/api-v3.md). */
 class AttendanceApiV3PathContractTest {
     private fun endpoints(vararg controllers: Class<*>): Set<String> =
         controllers
@@ -71,6 +72,16 @@ class AttendanceApiV3PathContractTest {
                 "GET /v1/sessions/{sessionId}/attendance-time hasAuthority('update:session')",
                 "GET /v1/sessions/weeks hasAuthority('read:session')",
                 "GET /v3/sessions/{sessionId}/update-policy hasAuthority('update:session')",
+            )
+    }
+
+    @Test
+    fun `이미지 API 는 v3 에만 있고 예전 v1 경로는 없다`() {
+        assertThat(endpoints(ImageController::class.java))
+            .containsExactlyInAnyOrder(
+                "POST /v3/images/uploads isAuthenticated()",
+                "POST /v3/images/uploads/{uploadId}/complete isAuthenticated()",
+                "GET /v3/images/{imageId} isAuthenticated()",
             )
     }
 }

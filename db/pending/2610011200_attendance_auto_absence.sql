@@ -7,8 +7,8 @@
 -- 후행: 없음
 -- 주의:
 --   * ddl-auto: validate 라 배포 전에 적용해야 한다. 여러 번 실행해도 안전하다.
---   * 배포 후 첫 스케줄러 실행에서 과거 기수를 포함해 마감이 지난 모든 미인증 기록이 ABSENT 가 된다.
---     배포 전 아래 미리보기 쿼리로 대상 규모를 확인한다.
+--   * 배포 후 첫 스케줄러 실행에서 활성 기수의 마감이 지난 PENDING 기록(운영진이 PENDING 으로 되돌린 기록 포함)이
+--     ABSENT 가 된다. 지난 기수는 처리하지 않는다. 배포 전 아래 미리보기 쿼리로 대상 규모를 확인한다.
 
 SET @has_auto_absent_at := (SELECT COUNT(*) FROM information_schema.columns
                             WHERE table_schema = DATABASE()
@@ -39,11 +39,10 @@ SHOW COLUMNS FROM sessions LIKE 'absent_start';
 SELECT s.cohort_id, s.session_id, s.week, s.absent_start, COUNT(*) AS pending_to_close
 FROM sessions s
 JOIN attendances a ON a.session_id = s.session_id
+JOIN cohorts c ON c.cohort_id = s.cohort_id AND c.is_active = TRUE
 WHERE s.deleted_at IS NULL
   AND a.deleted_at IS NULL
   AND a.status = 'PENDING'
-  AND a.attended_at IS NULL
-  AND a.updated_at IS NULL
   AND UNIX_TIMESTAMP(s.absent_start) <= UNIX_TIMESTAMP()
 GROUP BY s.cohort_id, s.session_id, s.week, s.absent_start
 ORDER BY s.absent_start;
@@ -61,14 +60,13 @@ GROUP BY a.session_id;
 -- =============================================================================
 -- 1) 이 컬럼을 쓰지 않는 이전 버전 애플리케이션으로 먼저 되돌린다(컬럼부터 지우면 validate 로 기동 실패).
 -- 2) 필요하면(운영 판단) 컬럼 제거 전에 자동 결석 결과만 미인증으로 되돌린다. 표지 없는 기존 결석은 건드리지 않는다.
+--    표지는 자동 결석에서만 남고 이후 인증·운영진 변경·재개에서 지워지므로, 표지가 남은 ABSENT 는 모두 직전 상태가 PENDING 이다.
 --
 --  START TRANSACTION;
 --  UPDATE attendances
 --  SET status = 'PENDING', auto_absent_at = NULL
 --  WHERE status = 'ABSENT'
 --    AND auto_absent_at IS NOT NULL
---    AND attended_at IS NULL
---    AND updated_at IS NULL
 --    AND deleted_at IS NULL;
 --  COMMIT;
 --

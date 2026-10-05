@@ -197,6 +197,40 @@ class AttendanceOverviewMySqlIntegrationTest {
         assertThat(attendancePort.countMemberAttendancesByQuery(team2, TeamNumber.defaultValue())).isEqualTo(2)
     }
 
+    @Test
+    fun `사람별 목록의 팀 필터와 내 팀 필터는 표시하는 최신 팀 기준이고 같은 기수의 이전 팀으로는 걸리지 않는다`() {
+        val name = uniqueName()
+        val (_, currentCohort) = newCohortPair()
+        val movedMember = newMember(name)
+        joinTeam(movedMember, currentCohort, teamNumber = 5)
+        joinTeam(movedMember, currentCohort, teamNumber = 7)
+        addAttendance(newSession(currentCohort, week = 1, isOnline = false), movedMember, AttendanceStatus.PRESENT)
+
+        val query =
+            GetMemberAttendancesQuery(
+                memberId = MemberId(movedMember),
+                statuses = null,
+                teams = null,
+                name = name,
+                onlyMyTeam = null,
+                page = 1,
+                size = 20,
+            )
+        val previousTeam = query.copy(teams = listOf(5))
+        val latestTeam = query.copy(teams = listOf(7))
+        val onlyMyTeam = query.copy(onlyMyTeam = true)
+
+        assertThat(attendancePort.findMemberAttendancesByQuery(previousTeam, TeamNumber.defaultValue())).isEmpty()
+        assertThat(attendancePort.countMemberAttendancesByQuery(previousTeam, TeamNumber.defaultValue())).isEqualTo(0)
+        assertThat(attendancePort.findMemberAttendancesByQuery(latestTeam, TeamNumber.defaultValue()).map { it.teamNumber })
+            .containsExactly(TeamNumber(7))
+        assertThat(attendancePort.countMemberAttendancesByQuery(latestTeam, TeamNumber.defaultValue())).isEqualTo(1)
+        assertThat(attendancePort.findMemberAttendancesByQuery(onlyMyTeam, TeamNumber(5))).isEmpty()
+        assertThat(attendancePort.countMemberAttendancesByQuery(onlyMyTeam, TeamNumber(5))).isEqualTo(0)
+        assertThat(attendancePort.findMemberAttendancesByQuery(onlyMyTeam, TeamNumber(7)).map { it.id })
+            .containsExactly(movedMember)
+    }
+
     /** 최신 기수 선택(기수 값의 숫자 크기)을 확인할 수 있도록 숫자 값의 이전/현재 기수를 만든다. */
     private fun newCohortPair(): Pair<CohortId, CohortId> {
         val base = ThreadLocalRandom.current().nextLong(100_000_000L, 900_000_000L)

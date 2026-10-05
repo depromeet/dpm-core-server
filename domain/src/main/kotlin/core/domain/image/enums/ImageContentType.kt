@@ -13,7 +13,8 @@ enum class ImageContentType(
 
     companion object {
         fun fromMimeType(mimeType: String): ImageContentType =
-            entries.firstOrNull { it.mimeType == mimeType }
-                ?: throw IllegalArgumentException("지원하지 않는 이미지 형식입니다: $mimeType")
+            fromMimeTypeOrNull(mimeType) ?: throw IllegalArgumentException("지원하지 않는 이미지 형식입니다: $mimeType")
+
+        fun fromMimeTypeOrNull(mimeType: String?): ImageContentType? = entries.firstOrNull { it.mimeType == mimeType }
     }
 }

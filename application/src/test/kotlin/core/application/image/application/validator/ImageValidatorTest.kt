@@ -7,9 +7,15 @@ import core.domain.image.enums.ImageContentType
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
 
 class ImageValidatorTest {
     private val validator = ImageValidator()
+
+    @TempDir
+    lateinit var tempDir: Path
 
     @Test
     fun `실제 PNG 와 JPEG 는 내용으로 판별된다`() {
@@ -64,6 +70,21 @@ class ImageValidatorTest {
         assertCode(ImageExceptionCode.EMPTY_FILE) { validator.validate(ByteArray(0), null) }
         assertCode(ImageExceptionCode.FILE_TOO_LARGE) { validator.validate(ByteArray(ImageValidator.MAX_BYTES + 1), null) }
     }
+
+    @Test
+    fun `요청 Content-Type 은 파라미터와 대소문자를 무시하고 JPEG PNG 만 받는다`() {
+        assertThat(validator.parseContentType("IMAGE/PNG; charset=binary")).isEqualTo(ImageContentType.PNG)
+        assertThat(validator.parseContentType("image/jpeg")).isEqualTo(ImageContentType.JPEG)
+        assertThat(validator.parseContentType("image/gif")).isNull()
+        assertThat(validator.parseContentType("not a type")).isNull()
+        assertThat(validator.parseContentType(null)).isNull()
+    }
+
+    /** 검증은 파일만 받는다. 바이트를 임시 파일로 써서 넘긴다. */
+    private fun ImageValidator.validate(
+        bytes: ByteArray,
+        declaredContentType: String?,
+    ): ImageContentType = validate(Files.write(Files.createTempFile(tempDir, "image-", ".bin"), bytes), declaredContentType)
 
     private fun assertCode(
         code: ImageExceptionCode,

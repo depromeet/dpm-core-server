@@ -6,6 +6,7 @@ import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.common.configuration.JooqDslConfig
 import core.application.image.FakeImageStoragePort
+import core.application.image.application.properties.ImageStorageProperties
 import core.application.image.application.service.ImageQueryService
 import core.application.session.application.validator.SessionValidator
 import core.application.support.MutableClock
@@ -49,4 +50,7 @@ class AbsenceReasonImageMySqlIntegrationTestApplication {
 
     @Bean
     fun imageStoragePort(): FakeImageStoragePort = FakeImageStoragePort()
+
+    @Bean
+    fun imageStorageProperties(): ImageStorageProperties = ImageStorageProperties()
 }

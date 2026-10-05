@@ -4,11 +4,10 @@ import core.domain.image.enums.ImageContentType
 import core.domain.image.vo.ImageId
 import core.domain.member.vo.MemberId
 import java.time.Instant
-import java.util.UUID
 
 /**
  * 업로드된 이미지의 메타데이터. 원본 바이트는 비공개 오브젝트 스토리지의 [objectKey] 에 있다.
- * objectKey 는 서버가 만든 UUID 로만 정하며 외부로 노출하지 않는다.
+ * objectKey 는 서버가 만든 UUID 로만 정하며(images/{UUID}) 외부로 노출하지 않는다.
  */
 class Image(
     val id: ImageId? = null,
@@ -32,17 +31,19 @@ class Image(
         "Image(id=$id, ownerMemberId=$ownerMemberId, contentType=$contentType, size=$size)"
 
     companion object {
-        private const val OBJECT_KEY_PREFIX = "images/"
+        /** 확정 이미지 키의 접두사. 업로드 중인 객체(uploads/)와 섞이지 않는다. */
+        const val OBJECT_KEY_PREFIX = "images/"
 
         fun create(
             ownerMemberId: MemberId,
+            objectKey: String,
             contentType: ImageContentType,
             size: Long,
             createdAt: Instant,
         ): Image =
             Image(
                 ownerMemberId = ownerMemberId,
-                objectKey = OBJECT_KEY_PREFIX + UUID.randomUUID(),
+                objectKey = objectKey,
                 contentType = contentType,
                 size = size,
                 createdAt = createdAt,

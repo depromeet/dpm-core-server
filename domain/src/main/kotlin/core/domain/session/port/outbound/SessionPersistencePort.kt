@@ -26,6 +26,9 @@ interface SessionPersistencePort {
         endTime: Instant,
     ): List<Session>
 
-    /** 모든 기수에서 마감이 [absentStartTo] 이하(하한 없음)이고 미인증 행이 남은 삭제되지 않은 세션. */
-    fun findSessionIdsToAutoClose(absentStartTo: Instant): List<SessionId>
+    /** [cohortId] 기수에서 마감이 [absentStartTo] 이하(하한 없음)이고 삭제되지 않은 PENDING 행이 남은 삭제되지 않은 세션. */
+    fun findSessionIdsToAutoClose(
+        cohortId: CohortId,
+        absentStartTo: Instant,
+    ): List<SessionId>
 }

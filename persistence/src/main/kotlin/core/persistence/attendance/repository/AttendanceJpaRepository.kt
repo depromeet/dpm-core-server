@@ -97,8 +97,6 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         "update AttendanceEntity a set a.status = 'ABSENT', a.autoAbsentAt = :autoAbsentAt " +
             "where a.sessionId = :sessionId " +
             "and a.status = 'PENDING' " +
-            "and a.attendedAt is null " +
-            "and a.updatedAt is null " +
             "and a.deletedAt is null",
     )
     fun markAutoAbsence(
