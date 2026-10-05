@@ -161,6 +161,23 @@ class ImageControllerTest {
     }
 
     @Test
+    fun `남의 이미지는 운영진(update attendance)만 조회하고 내려받는다`() {
+        createdAndPut(ImageFixtures.png()).let { commandService.completeUpload(MemberId(7L), it) }
+
+        loginAs(8L, "read:attendance", "create:attendance")
+        mockMvc.perform(get("/v3/images/1")).andExpect(status().isNotFound)
+        mockMvc.perform(get("/v3/images/1/download")).andExpect(status().isNotFound)
+
+        loginAs(8L, "update:attendance")
+        mockMvc
+            .perform(get("/v3/images/1"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.url").isString)
+        mockMvc.perform(get("/v3/images/1/download")).andExpect(status().isFound)
+        mockMvc.perform(get("/v3/images/999")).andExpect(status().isNotFound)
+    }
+
+    @Test
     fun `비로그인 요청은 401`() {
         SecurityContextHolder.getContext().authentication =
             AnonymousAuthenticationToken("key", "anonymousUser", listOf(SimpleGrantedAuthority("ROLE_ANONYMOUS")))
@@ -211,8 +228,11 @@ class ImageControllerTest {
             },
         )
 
-    private fun loginAs(memberId: Long) {
+    private fun loginAs(
+        memberId: Long,
+        vararg authorities: String,
+    ) {
         SecurityContextHolder.getContext().authentication =
-            UsernamePasswordAuthenticationToken(memberId.toString(), null, emptyList())
+            UsernamePasswordAuthenticationToken(memberId.toString(), null, authorities.map(::SimpleGrantedAuthority))
     }
 }

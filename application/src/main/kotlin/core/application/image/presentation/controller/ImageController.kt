@@ -17,13 +17,14 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
-// SecurityConfig 가 /v3/** 를 permitAll 하므로 인증은 메서드에서 강제한다.
+// SecurityConfig 가 /v3/** 를 permitAll 하므로 인증은 메서드에서 강제한다. 남의 이미지는 운영진만 본다.
 // PAR URL 이 담긴 응답은 캐시되지 않게 no-store 를 붙인다.
 @RestController
 class ImageController(
@@ -69,16 +70,26 @@ class ImageController(
         ResponseEntity
             .ok()
             .cacheControl(CacheControl.noStore())
-            .body(CustomResponse.ok(imageQueryService.getImage(memberId, imageId)))
+            .body(CustomResponse.ok(imageQueryService.getImage(memberId, imageId, canReadOthers())))
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/v3/images/{imageId}/download")
     override fun downloadImage(
         @CurrentMemberId memberId: MemberId,
         @PathVariable imageId: ImageId,
-    ): ResponseEntity<Void> = redirectToDownload(imageQueryService.getDownloadUrl(memberId, imageId))
+    ): ResponseEntity<Void> = redirectToDownload(imageQueryService.getDownloadUrl(memberId, imageId, canReadOthers()))
+
+    // 운영진은 결석 사유서 증빙을 확인하므로 남의 이미지도 본다.
+    private fun canReadOthers(): Boolean =
+        SecurityContextHolder
+            .getContext()
+            .authentication
+            ?.authorities
+            .orEmpty()
+            .any { it.authority == READ_OTHERS_AUTHORITY }
 
     companion object {
+        private const val READ_OTHERS_AUTHORITY = "update:attendance"
         private const val RETRY_AFTER_SECONDS = "1"
     }
 }
