@@ -28,6 +28,8 @@
 | POST | 없음 | `/v3/images/uploads/{uploadId}/complete` | 로그인 | 새 API. 업로드 완료 확인 (#580) |
 | GET | 없음 | `/v3/images/{imageId}` | 로그인 | 새 API. 본인 이미지 조회 URL (#580) |
 
+이미지 API 는 처음부터 `/v3` 로 배포한다. 예전 `POST /v1/images`(multipart)와 `GET /v1/images/{imageId}`(바이트)는 없다(404).
+
 `/v3/**` 는 `/v1/**`·`/v2/**` 와 같이 URL 단계에서 통과시키고(SecurityConfig), 권한은 메서드의 `@PreAuthorize` 가 본다. CORS 도 같은 설정을 쓴다.
 
 자동 결석 스케줄러(#578)는 API 가 아니라 경로가 없다.

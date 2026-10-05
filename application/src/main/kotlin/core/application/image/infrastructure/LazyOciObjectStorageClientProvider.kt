@@ -4,6 +4,8 @@ import com.oracle.bmc.ClientConfiguration
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider
+import com.oracle.bmc.http.ClientConfigurator
+import com.oracle.bmc.http.client.StandardClientProperties
 import com.oracle.bmc.objectstorage.ObjectStorage
 import com.oracle.bmc.objectstorage.ObjectStorageClient
 import com.oracle.bmc.retrier.RetryConfiguration
@@ -13,6 +15,7 @@ import core.application.image.application.properties.ImageStorageProperties.Auth
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.stereotype.Component
+import java.time.Duration
 
 /**
  * 첫 이미지 요청에서 OCI 클라이언트를 만든다. 기동 시에는 metadata 서비스나 로컬 자격 증명에 접근하지 않는다.
@@ -76,8 +79,23 @@ class LazyOciObjectStorageClientProvider(
                     .builder()
                     .detectEndpointRetries(properties.metadataRetries)
                     .timeoutForEachRetry(properties.metadataTimeoutMillis)
-                    .build()
+                    // SDK 기본값으로는 metadata 의 region·인증서·키 조회와 auth 서비스 토큰 발급에 read timeout 이 없다
+                    // (인증서·키만 OCI_JAVASDK_CERTIFICATE_URL_CONNECTION_* 환경 변수로 지정 가능). 시도마다 적용되며 SDK 고정 재시도는 남는다.
+                    .federationClientMetadataConfigurator(
+                        timeouts(properties.metadataTimeoutMillis, properties.metadataTimeoutMillis),
+                    ).federationClientConfigurator(
+                        timeouts(properties.authConnectTimeoutMillis, properties.authReadTimeoutMillis),
+                    ).build()
             AuthMode.CONFIG_FILE ->
                 ConfigFileAuthenticationDetailsProvider(properties.configFilePath, properties.configProfile)
         }
+
+    private fun timeouts(
+        connectTimeoutMillis: Int,
+        readTimeoutMillis: Int,
+    ) = ClientConfigurator { builder ->
+        builder
+            .property(StandardClientProperties.CONNECT_TIMEOUT, Duration.ofMillis(connectTimeoutMillis.toLong()))
+            .property(StandardClientProperties.READ_TIMEOUT, Duration.ofMillis(readTimeoutMillis.toLong()))
+    }
 }
