@@ -8,28 +8,28 @@
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/v1/images/uploads` | JSON `{contentType, size}` → 201 `data: {uploadId, uploadUrl, expiresAt}`. 업로드 URL 수명 10분 |
-| POST | `/v1/images/uploads/{uploadId}/complete` | 검증 후 확정 → 200 `data: {imageId, contentType, size}`. 처리 중이면 202 + `Retry-After` |
-| GET | `/v1/images/{imageId}` | 본인 이미지의 읽기 URL → 200 `data: {url, expiresAt}`. 수명 1분. 남의 이미지·없는 이미지 모두 404 |
+| POST | `/v3/images/uploads` | JSON `{contentType, size}` → 201 `data: {uploadId, uploadUrl, expiresAt}`. 업로드 URL 수명 10분 |
+| POST | `/v3/images/uploads/{uploadId}/complete` | 검증 후 확정 → 200 `data: {imageId, contentType, size}`. 처리 중이면 202 + `Retry-After` |
+| GET | `/v3/images/{imageId}` | 본인 이미지의 읽기 URL → 200 `data: {url, expiresAt}`. 수명 1분. 남의 이미지·없는 이미지 모두 404 |
 
-- 모두 로그인 필요(`@PreAuthorize("isAuthenticated()")`, `/v1/**` 가 permitAll 이라 메서드에서 강제). URL 이 담긴 응답은 `Cache-Control: no-store`.
-- 기존 `POST /v1/images`(multipart) 와 바이트를 돌려주던 GET 은 없어졌다. 이미 저장된 이미지(`images/{UUID}`)는 GET 이 같은 방식(읽기 URL)으로 그대로 준다.
+- 모두 로그인 필요(`@PreAuthorize("isAuthenticated()")`, `/v3/**` 가 permitAll 이라 메서드에서 강제). URL 이 담긴 응답은 `Cache-Control: no-store`.
+- 기존 `POST /v1/images`(multipart) 와 바이트를 돌려주던 `GET /v1/images/{imageId}` 는 없어졌다(404). `/v1` 에는 이미지 경로가 없다. 이미 저장된 이미지(`images/{UUID}`)는 GET 이 같은 방식(읽기 URL)으로 그대로 준다.
 
 ### 프론트 흐름
 
 ```text
-1. POST /v1/images/uploads {"contentType":"image/png","size":12345}
+1. POST /v3/images/uploads {"contentType":"image/png","size":12345}
    → {uploadId, uploadUrl, expiresAt}
 2. PUT {uploadUrl}  본문 = 파일 원본, 헤더 Content-Type: image/png (1번과 같은 값), Content-Encoding 없음
    (인증 헤더·쿠키 불필요. 10분 안에)
-3. POST /v1/images/uploads/{uploadId}/complete
+3. POST /v3/images/uploads/{uploadId}/complete
    → 200 {imageId,...}                 끝
    → 202 + Retry-After: 1              Retry-After 초 뒤 3번 반복
    → 409 IMAGE-409-01                  PUT 이 아직 안 됨. 올린 뒤 3번 반복
    → 429 + Retry-After                 서버가 다른 이미지를 검증 중. 기다렸다 3번 반복
    → 503                               잠시 후 3번 반복
    → 400/413/415, 409(IMAGE-409-02/03), 410   1번부터 새로 시작
-4. 표시할 때 GET /v1/images/{imageId} → url 을 <img src> 에 넣는다. 1분 뒤에는 다시 받는다.
+4. 표시할 때 GET /v3/images/{imageId} → url 을 <img src> 에 넣는다. 1분 뒤에는 다시 받는다.
 ```
 
 - complete 는 몇 번을 불러도 안전하다. 완료 뒤에는 같은 `imageId`, 거절 뒤에는 같은 오류를 준다. 응답을 못 받았으면 같은 요청을 다시 보내면 된다.
@@ -123,7 +123,7 @@ API 키는 개인 사용자에 발급하고, 위 Instance Principal 정책과 �
 1. `db/pending/2610021200_images.sql`(아직이면), `db/pending/2610041200_image_uploads.sql` 적용. 둘 다 추가만 하며 `ddl-auto: validate` 라 테이블이 없으면 기동 실패
 2. 버킷(비공개), Dynamic Group, 위 Policy(PAR_MANAGE, OBJECT_OVERWRITE, 서비스 정책 포함) 준비
 3. GitHub 저장소 변수(`DEV_OCI_*`, `PROD_OCI_*`) 등록 후 배포. 워크플로가 컨테이너 env 까지 확인하므로 로그의 `> OCI env 확인 완료` 를 보고, 프론트 origin 에서 업로드(PUT 포함)·조회를 한 번씩 확인
-4. 기존 multipart 업로드(`POST /v1/images`)와 바이트 GET 은 이 배포에서 없어진다. 그 API 를 쓰는 프론트가 있다면 새 흐름과 함께 배포한다
+4. 기존 multipart 업로드(`POST /v1/images`)와 바이트 GET(`GET /v1/images/{imageId}`)은 이 배포에서 없어진다. 그 API 를 쓰는 프론트가 있다면 새 흐름과 함께 배포한다
 
 ### 브라우저 CORS
 

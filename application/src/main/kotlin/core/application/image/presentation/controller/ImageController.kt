@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
-// SecurityConfig 가 /v1/** 를 permitAll 하므로 인증은 메서드에서 강제한다.
+// SecurityConfig 가 /v3/** 를 permitAll 하므로 인증은 메서드에서 강제한다.
 // PAR URL 이 담긴 응답은 캐시되지 않게 no-store 를 붙인다.
 @RestController
 class ImageController(
@@ -31,7 +31,7 @@ class ImageController(
     private val imageQueryService: ImageQueryService,
 ) : ImageApi {
     @PreAuthorize("isAuthenticated()")
-    @PostMapping("/v1/images/uploads")
+    @PostMapping("/v3/images/uploads")
     override fun createUpload(
         @CurrentMemberId memberId: MemberId,
         @RequestBody request: ImageUploadCreateRequest,
@@ -42,7 +42,7 @@ class ImageController(
             .body(CustomResponse.created(imageCommandService.createUpload(memberId, request.contentType, request.size)))
 
     @PreAuthorize("isAuthenticated()")
-    @PostMapping("/v1/images/uploads/{uploadId}/complete")
+    @PostMapping("/v3/images/uploads/{uploadId}/complete")
     override fun completeUpload(
         @CurrentMemberId memberId: MemberId,
         @PathVariable uploadId: String,
@@ -57,7 +57,7 @@ class ImageController(
         }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/v1/images/{imageId}")
+    @GetMapping("/v3/images/{imageId}")
     override fun getImage(
         @CurrentMemberId memberId: MemberId,
         @PathVariable imageId: ImageId,

@@ -15,17 +15,20 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder
 import java.time.Clock
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
@@ -67,7 +70,7 @@ class ImageControllerTest {
         storage.put("uploads/$uploadId", bytes)
 
         mockMvc
-            .perform(post("/v1/images/uploads/$uploadId/complete"))
+            .perform(post("/v3/images/uploads/$uploadId/complete"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.data.imageId").value(1))
             .andExpect(jsonPath("$.data.contentType").value("image/png"))
@@ -75,7 +78,7 @@ class ImageControllerTest {
             .andExpect(jsonPath("$.data.objectKey").doesNotExist())
 
         mockMvc
-            .perform(get("/v1/images/1"))
+            .perform(get("/v3/images/1"))
             .andExpect(status().isOk)
             .andExpect(header().string("Cache-Control", "no-store"))
             .andExpect(jsonPath("$.data.url").isString)
@@ -83,11 +86,11 @@ class ImageControllerTest {
 
         loginAs(8L)
         mockMvc
-            .perform(get("/v1/images/1"))
+            .perform(get("/v3/images/1"))
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.code").value("IMAGE-404-01"))
         mockMvc
-            .perform(post("/v1/images/uploads/$uploadId/complete"))
+            .perform(post("/v3/images/uploads/$uploadId/complete"))
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.code").value("IMAGE-404-02"))
     }
@@ -99,7 +102,7 @@ class ImageControllerTest {
         val uploadId = createdAndPut(ImageFixtures.png())
 
         mockMvc
-            .perform(post("/v1/images/uploads/$uploadId/complete"))
+            .perform(post("/v3/images/uploads/$uploadId/complete"))
             .andExpect(status().isAccepted)
             .andExpect(header().string("Retry-After", "1"))
             .andExpect(jsonPath("$.code").value("GLOBAL-202-01"))
@@ -121,7 +124,7 @@ class ImageControllerTest {
         assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue()
 
         mockMvc
-            .perform(post("/v1/images/uploads/$second/complete"))
+            .perform(post("/v3/images/uploads/$second/complete"))
             .andExpect(status().isTooManyRequests)
             .andExpect(header().string("Retry-After", "3"))
             .andExpect(jsonPath("$.code").value("IMAGE-429-01"))
@@ -138,7 +141,7 @@ class ImageControllerTest {
             .andExpect(status().isUnsupportedMediaType)
             .andExpect(jsonPath("$.code").value("IMAGE-415-01"))
         mockMvc
-            .perform(post("/v1/images/uploads").contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .perform(post("/v3/images/uploads").contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isBadRequest)
         assertThat(storage.calls).isEmpty()
     }
@@ -148,8 +151,28 @@ class ImageControllerTest {
         SecurityContextHolder.getContext().authentication =
             AnonymousAuthenticationToken("key", "anonymousUser", listOf(SimpleGrantedAuthority("ROLE_ANONYMOUS")))
 
-        mockMvc.perform(get("/v1/images/1")).andExpect(status().isUnauthorized)
+        mockMvc.perform(get("/v3/images/1")).andExpect(status().isUnauthorized)
         mockMvc.perform(createRequest("image/png", 10L)).andExpect(status().isUnauthorized)
+        assertThat(storage.calls).isEmpty()
+    }
+
+    @Test
+    fun `예전 v1 이미지 경로는 남기지 않아 404`() {
+        loginAs(7L)
+        // 핸들러가 없을 때 예외 대신 404 를 바로 쓰게 해 전역 예외 처리(500)와 섞이지 않게 한다.
+        val legacyMockMvc =
+            MockMvcBuilders
+                .standaloneSetup(ImageController(commandService, ImageQueryService(images, storage, properties, Clock.systemUTC())))
+                .setCustomArgumentResolvers(CurrentMemberIdArgumentResolver())
+                .addDispatcherServletCustomizer<StandaloneMockMvcBuilder> { it.setThrowExceptionIfNoHandlerFound(false) }
+                .build()
+
+        listOf(
+            multipart("/v1/images").file(MockMultipartFile("file", "a.png", "image/png", ImageFixtures.png())),
+            post("/v1/images/uploads").contentType(MediaType.APPLICATION_JSON).content("""{"contentType":"image/png","size":10}"""),
+            post("/v1/images/uploads/any/complete"),
+            get("/v1/images/1"),
+        ).forEach { legacyMockMvc.perform(it).andExpect(status().isNotFound) }
         assertThat(storage.calls).isEmpty()
     }
 
@@ -162,7 +185,7 @@ class ImageControllerTest {
     private fun createRequest(
         contentType: String,
         size: Long,
-    ) = post("/v1/images/uploads")
+    ) = post("/v3/images/uploads")
         .contentType(MediaType.APPLICATION_JSON)
         .content("""{"contentType":"$contentType","size":$size}""")
 

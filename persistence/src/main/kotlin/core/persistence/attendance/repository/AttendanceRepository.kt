@@ -24,6 +24,7 @@ import org.jooq.Record
 import org.jooq.SelectJoinStep
 import org.jooq.Table
 import org.jooq.dsl.tables.references.ABSENCE_REASONS
+import org.jooq.dsl.tables.references.ABSENCE_REASON_IMAGES
 import org.jooq.dsl.tables.references.ATTENDANCES
 import org.jooq.dsl.tables.references.COHORTS
 import org.jooq.dsl.tables.references.MEMBERS
@@ -246,34 +247,48 @@ class AttendanceRepository(
         }
     }
 
-    /** 결석 사유서를 한 번에 조회한다. 같은 세션에 여러 건이면 가장 최근 것을 쓴다. */
+    /** 결석 사유서를 한 번에 조회한다. 같은 세션에 여러 건이면 가장 최근 것을 쓴다. 첨부 이미지는 사유서 id 로 묶어 한 번 더 읽는다. */
     private fun findAbsenceReasonsBySession(
         memberId: Long,
         sessionIds: List<Long>,
     ): Map<Long, MemberSessionAttendanceQueryModel.AbsenceReason> {
         if (sessionIds.isEmpty()) return emptyMap()
 
-        return dsl
-            .select(
-                ABSENCE_REASONS.ABSENCE_REASON_ID,
-                ABSENCE_REASONS.SESSION_ID,
-                ABSENCE_REASONS.CONTENTS,
-                ABSENCE_REASONS.STATUS,
-            ).from(ABSENCE_REASONS)
-            .where(
-                ABSENCE_REASONS.MEMBER_ID.eq(memberId),
-                ABSENCE_REASONS.SESSION_ID.`in`(sessionIds),
-            ).orderBy(ABSENCE_REASONS.ABSENCE_REASON_ID.asc())
-            .fetch()
-            .associate { record ->
-                record[ABSENCE_REASONS.SESSION_ID]!! to
-                    MemberSessionAttendanceQueryModel.AbsenceReason(
-                        id = record[ABSENCE_REASONS.ABSENCE_REASON_ID]!!,
-                        contents = record[ABSENCE_REASONS.CONTENTS]!!,
-                        status = record[ABSENCE_REASONS.STATUS]!!,
-                    )
-            }
+        val reasons =
+            dsl
+                .select(
+                    ABSENCE_REASONS.ABSENCE_REASON_ID,
+                    ABSENCE_REASONS.SESSION_ID,
+                    ABSENCE_REASONS.CONTENTS,
+                    ABSENCE_REASONS.STATUS,
+                ).from(ABSENCE_REASONS)
+                .where(
+                    ABSENCE_REASONS.MEMBER_ID.eq(memberId),
+                    ABSENCE_REASONS.SESSION_ID.`in`(sessionIds),
+                ).orderBy(ABSENCE_REASONS.ABSENCE_REASON_ID.asc())
+                .fetch()
+                .associate { record ->
+                    record[ABSENCE_REASONS.SESSION_ID]!! to
+                        MemberSessionAttendanceQueryModel.AbsenceReason(
+                            id = record[ABSENCE_REASONS.ABSENCE_REASON_ID]!!,
+                            contents = record[ABSENCE_REASONS.CONTENTS]!!,
+                            status = record[ABSENCE_REASONS.STATUS]!!,
+                        )
+                }
+        if (reasons.isEmpty()) return reasons
+
+        val imageIds = findImageIdsByAbsenceReason(reasons.values.map { it.id })
+        return reasons.mapValues { (_, reason) -> reason.copy(imageIds = imageIds[reason.id].orEmpty()) }
     }
+
+    private fun findImageIdsByAbsenceReason(absenceReasonIds: List<Long>): Map<Long, List<Long>> =
+        dsl
+            .select(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID, ABSENCE_REASON_IMAGES.IMAGE_ID)
+            .from(ABSENCE_REASON_IMAGES)
+            .where(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID.`in`(absenceReasonIds))
+            .orderBy(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID.asc(), ABSENCE_REASON_IMAGES.DISPLAY_ORDER.asc())
+            .fetch()
+            .groupBy({ it[ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID]!! }, { it[ABSENCE_REASON_IMAGES.IMAGE_ID]!! })
 
     override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
         dsl

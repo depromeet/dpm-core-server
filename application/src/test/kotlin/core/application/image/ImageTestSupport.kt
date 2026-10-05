@@ -73,6 +73,8 @@ class FakeImagePersistencePort : ImagePersistencePort {
     val images = mutableMapOf<ImageId, Image>()
 
     override fun findById(imageId: ImageId): Image? = images[imageId]
+
+    override fun findAllByIds(imageIds: List<ImageId>): List<Image> = imageIds.mapNotNull { images[it] }
 }
 
 /** 실제 저장소의 조건부 UPDATE 와 같은 조건으로 동작하는 메모리 구현. 이미지 행은 [images] 에 넣는다. */

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v1/sessions")
+@RequestMapping("/v3/sessions")
 class SessionCommandController(
     private val sessionCommandService: SessionCommandService,
 ) : SessionCommandApi {
