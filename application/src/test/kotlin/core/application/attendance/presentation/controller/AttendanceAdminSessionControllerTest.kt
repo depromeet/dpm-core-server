@@ -11,6 +11,7 @@ import core.application.cohort.application.service.CohortCommandService
 import core.application.cohort.application.service.CohortQueryService
 import core.application.cohort.presentation.controller.CohortController
 import core.application.common.exception.GlobalExceptionHandler
+import core.application.member.presentation.controller.MemberPartController
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.application.session.application.service.SessionQueryService
 import core.application.session.presentation.controller.SessionQueryController
@@ -67,6 +68,7 @@ class AttendanceAdminSessionControllerTest {
                 ),
                 withPreAuthorize(SessionQueryController(sessionQueryService)),
                 withPreAuthorize(CohortController(CohortQueryService(cohorts), mock(CohortCommandService::class.java))),
+                withPreAuthorize(MemberPartController()),
             ).setControllerAdvice(GlobalExceptionHandler())
             // Spring Boot 기본값처럼 날짜를 ISO 문자열로 쓴다(설정 파일에 jackson 재정의 없음).
             .setMessageConverters(
@@ -189,6 +191,22 @@ class AttendanceAdminSessionControllerTest {
             .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
             .andExpect(jsonPath("$.data.teams[*].id", contains(31, 37)))
             .andExpect(jsonPath("$.data.teams[*].number", contains(1, 7)))
+    }
+
+    @Test
+    fun `파트 선택지는 출석 수정 권한으로 파트 정의 순서 뒤에 미지정을 붙여 준다`() {
+        loginAs(1L, "read:attendance", "create:attendance")
+        mockMvc
+            .perform(get("/v3/members/parts"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+
+        loginAs(1L, "update:attendance")
+        mockMvc
+            .perform(get("/v3/members/parts"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
+            .andExpect(jsonPath("$.data.parts", contains("WEB", "SERVER", "DESIGN", "IOS", "ANDROID", "UNASSIGNED")))
     }
 
     /** 운영과 같은 @PreAuthorize 검사만 붙인다. */
