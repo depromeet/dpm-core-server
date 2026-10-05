@@ -386,6 +386,22 @@ class AttendanceOverviewMySqlIntegrationTest {
         assertThat(attendancePort.findTeamNumberInCohort(teamless, currentCohort.value)).isNull()
     }
 
+    @Test
+    fun `기수 팀 목록은 멤버 배정과 무관하게 그 기수 팀 전부를 번호, ID 순으로 준다`() {
+        val (oldCohort, currentCohort) = newCohortPair()
+        val base = uniqueId()
+        // 팀 7, 같은 번호 두 팀(ID 로 정렬), 멤버가 없는 팀 모두 포함. 다른 기수 팀은 섞이지 않는다
+        newTeam(base + 5, currentCohort, number = 7)
+        newTeam(base + 4, currentCohort, number = 2)
+        newTeam(base + 3, currentCohort, number = 1)
+        newTeam(base + 2, currentCohort, number = 2)
+        newTeam(base + 9, oldCohort, number = 1)
+        jdbcTemplate.update("insert into member_teams (member_id, team_id) values (?, ?)", newMember(uniqueName()), base + 4)
+
+        assertThat(cohortPort.findTeamsByCohortId(currentCohort).map { it.id to it.number })
+            .containsExactly(base + 3 to 1, base + 2 to 2, base + 4 to 2, base + 5 to 7)
+    }
+
     /** 최신 기수 선택(기수 값의 숫자 크기)을 확인할 수 있도록 숫자 값의 이전/현재 기수를 만든다. */
     private fun newCohortPair(): Pair<CohortId, CohortId> {
         val base = ThreadLocalRandom.current().nextLong(100_000_000L, 900_000_000L)
@@ -408,6 +424,19 @@ class AttendanceOverviewMySqlIntegrationTest {
         cohortId: CohortId,
     ) {
         jdbcTemplate.update("insert into member_cohorts (member_id, cohort_id) values (?, ?)", memberId, cohortId.value)
+    }
+
+    private fun newTeam(
+        teamId: Long,
+        cohortId: CohortId,
+        number: Int,
+    ) {
+        jdbcTemplate.update(
+            "insert into teams (team_id, number, cohort_id, created_at, updated_at) values (?, ?, ?, 0, 0)",
+            teamId,
+            number,
+            cohortId.value,
+        )
     }
 
     private fun joinTeam(

@@ -1,6 +1,7 @@
 package core.domain.cohort.port.outbound
 
 import core.domain.cohort.aggregate.Cohort
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 
 interface CohortPersistencePort {
@@ -23,4 +24,7 @@ interface CohortPersistencePort {
     fun deactivateAll()
 
     fun activate(cohortId: CohortId)
+
+    /** 기수에 만들어진 모든 팀. 팀 번호, ID 오름차순 */
+    fun findTeamsByCohortId(cohortId: CohortId): List<CohortTeamQueryModel>
 }

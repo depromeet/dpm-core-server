@@ -4,6 +4,7 @@ import core.application.cohort.application.exception.CohortNotFoundException
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,6 +25,10 @@ class CohortQueryService(
     override fun getLatestCohortId(): CohortId = getActiveCohortId()
 
     override fun getLatestCohortValue(): String = getActiveCohortValue()
+
+    /** 현재 활성 기수에 만들어진 모든 팀(멤버가 없는 팀 포함). 팀 번호, ID 오름차순 */
+    fun getActiveCohortTeams(): List<CohortTeamQueryModel> =
+        cohortPersistencePort.findTeamsByCohortId(getActiveCohortId())
 
     fun getAllCohorts(): List<Cohort> =
         cohortPersistencePort.findAll().sortedWith(

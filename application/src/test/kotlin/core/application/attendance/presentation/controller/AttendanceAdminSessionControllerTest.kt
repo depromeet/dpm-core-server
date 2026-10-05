@@ -7,17 +7,24 @@ import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.application.service.AttendanceQueryService
 import core.application.attendance.presentation.response.SessionRosterMemberResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
+import core.application.cohort.application.service.CohortCommandService
+import core.application.cohort.application.service.CohortQueryService
+import core.application.cohort.presentation.controller.CohortController
 import core.application.common.exception.GlobalExceptionHandler
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.application.session.application.service.SessionQueryService
 import core.application.session.presentation.controller.SessionQueryController
+import core.application.support.FakeCohortPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
+import core.domain.cohort.aggregate.Cohort
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.member.vo.MemberId
 import core.domain.session.enums.SessionAttendanceStatus
 import core.domain.session.port.inbound.query.SessionSelectorQueryModel
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.vo.SessionId
+import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasKey
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.AfterEach
@@ -49,6 +56,7 @@ class AttendanceAdminSessionControllerTest {
     private val queryService: AttendanceQueryService = mock(AttendanceQueryService::class.java)
     private val commandService: AttendanceCommandService = mock(AttendanceCommandService::class.java)
     private val sessionQueryService: SessionQueryService = mock(SessionQueryService::class.java)
+    private val cohorts = FakeCohortPersistencePort()
 
     private val mockMvc: MockMvc =
         MockMvcBuilders
@@ -58,6 +66,7 @@ class AttendanceAdminSessionControllerTest {
                     AttendanceCommandController(commandService, mock(AbsenceReasonCommandService::class.java), Clock.systemUTC()),
                 ),
                 withPreAuthorize(SessionQueryController(sessionQueryService)),
+                withPreAuthorize(CohortController(CohortQueryService(cohorts), mock(CohortCommandService::class.java))),
             ).setControllerAdvice(GlobalExceptionHandler())
             // Spring Boot 기본값처럼 날짜를 ISO 문자열로 쓴다(설정 파일에 jackson 재정의 없음).
             .setMessageConverters(
@@ -157,6 +166,29 @@ class AttendanceAdminSessionControllerTest {
             .andExpect(jsonPath("$.data.sessions[0].isOnline").value(false))
             .andExpect(jsonPath("$.data.sessions[0].attendanceStatus").value("IN_PROGRESS"))
             .andExpect(jsonPath("$.data.sessions[0].*", hasSize<Any>(7)))
+    }
+
+    @Test
+    fun `현재 기수 팀 목록은 출석 수정 권한으로 활성 기수(최댓값 아님)의 팀을 그대로 준다`() {
+        val active = cohorts.save(Cohort(value = "17"))
+        cohorts.activate(active.id!!)
+        val higherInactive = cohorts.save(Cohort(value = "18"))
+        cohorts.teams[active.id!!.value] = listOf(CohortTeamQueryModel(31, 1), CohortTeamQueryModel(37, 7))
+        cohorts.teams[higherInactive.id!!.value] = listOf(CohortTeamQueryModel(41, 1))
+
+        loginAs(1L, "read:attendance", "create:attendance")
+        mockMvc
+            .perform(get("/v3/cohorts/current/teams"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+
+        loginAs(1L, "update:attendance")
+        mockMvc
+            .perform(get("/v3/cohorts/current/teams"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
+            .andExpect(jsonPath("$.data.teams[*].id", contains(31, 37)))
+            .andExpect(jsonPath("$.data.teams[*].number", contains(1, 7)))
     }
 
     /** 운영과 같은 @PreAuthorize 검사만 붙인다. */

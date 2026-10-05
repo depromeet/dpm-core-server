@@ -18,6 +18,7 @@ import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.attendance.vo.AttendanceId
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.SentSessionNotification
@@ -415,6 +416,12 @@ class FakeCohortPersistencePort : CohortPersistencePort {
 
     @Synchronized
     override fun findActive(): Cohort? = cohorts.values.firstOrNull { it.isActive }
+
+    /** 기수 ID 별 팀. 정렬 SQL 은 MySQL 통합 테스트에서 검증한다 */
+    val teams = mutableMapOf<Long, List<CohortTeamQueryModel>>()
+
+    override fun findTeamsByCohortId(cohortId: CohortId): List<CohortTeamQueryModel> =
+        teams[cohortId.value].orEmpty()
 
     @Synchronized
     override fun deactivateAll() {

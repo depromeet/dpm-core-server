@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 /**
  * 운영진 세션 출석 명단. 필터 없이 전체 명단을 주고, 이름/상태/팀/파트/내 팀 필터와
- * 상태별 인원, 팀 선택지는 프론트에서 이 명단으로 계산한다.
+ * 상태별 인원은 프론트에서 이 명단으로 계산한다. 팀 선택지는 GET /v3/cohorts/current/teams 를 쓴다.
  */
 data class SessionRosterResponse(
     val members: List<SessionRosterMemberResponse>,
