@@ -84,7 +84,7 @@ class LazyOciObjectStorageClientProvider(
                     .federationClientMetadataConfigurator(
                         timeouts(properties.metadataTimeoutMillis, properties.metadataTimeoutMillis),
                     ).federationClientConfigurator(
-                        timeouts(properties.connectTimeoutMillis, properties.readTimeoutMillis),
+                        timeouts(properties.authConnectTimeoutMillis, properties.authReadTimeoutMillis),
                     ).build()
             AuthMode.CONFIG_FILE ->
                 ConfigFileAuthenticationDetailsProvider(properties.configFilePath, properties.configProfile)
