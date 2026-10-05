@@ -38,7 +38,7 @@ class AttendanceCommandController(
     private val clock: Clock,
 ) : AttendanceCommandApi {
     @PreAuthorize("hasAuthority('create:attendance')")
-    @PostMapping("/v1/sessions/{sessionId}/attendances")
+    @PostMapping("/v3/sessions/{sessionId}/attendances")
     override fun createAttendance(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -60,7 +60,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
+    @PatchMapping("/v3/sessions/{sessionId}/attendances/{memberId}")
     override fun updateAttendance(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
@@ -74,7 +74,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @PatchMapping("/v1/sessions/{sessionId}/attendances/bulk")
+    @PatchMapping("/v3/sessions/{sessionId}/attendances/bulk")
     override fun updateAttendanceBulk(
         @PathVariable sessionId: SessionId,
         @Valid @RequestBody request: AttendanceStatusBulkUpdateRequest,
@@ -89,7 +89,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @PostMapping("/v2/sessions/{sessionId}/absence-reasons")
+    @PostMapping("/v3/sessions/{sessionId}/absence-reasons")
     override fun createAbsenceReport(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -100,6 +100,7 @@ class AttendanceCommandController(
                 sessionId = sessionId,
                 memberId = memberId,
                 contents = request.contents,
+                imageIds = request.toImageIds(),
             ),
         )
 
@@ -107,7 +108,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @PatchMapping("/v2/sessions/{sessionId}/absence-reasons")
+    @PatchMapping("/v3/sessions/{sessionId}/absence-reasons")
     override fun updateAbsenceReport(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -118,6 +119,7 @@ class AttendanceCommandController(
                 sessionId = sessionId,
                 memberId = memberId,
                 contents = request.contents,
+                imageIds = request.toImageIds(),
             ),
         )
 
@@ -125,7 +127,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @DeleteMapping("/v2/sessions/{sessionId}/absence-reasons")
+    @DeleteMapping("/v3/sessions/{sessionId}/absence-reasons")
     override fun deleteAbsenceReport(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -136,7 +138,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @PatchMapping("/v2/sessions/{sessionId}/absence-reasons/{memberId}/review")
+    @PatchMapping("/v3/sessions/{sessionId}/absence-reasons/{memberId}/review")
     override fun reviewAbsenceReport(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,

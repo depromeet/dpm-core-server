@@ -4,28 +4,22 @@ import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.SessionAbsenceReasonItem
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
-import core.application.common.converter.TimeMapper.localDateTimeToInstant
 import core.domain.absencereason.aggregate.AbsenceReason
+import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
 
 @Service
 @Transactional(readOnly = true)
 class AbsenceReasonQueryService(
     private val absenceReasonPersistencePort: AbsenceReasonPersistencePort,
+    private val absenceReasonImagePersistencePort: AbsenceReasonImagePersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
 ) {
-    companion object {
-        private val KST: ZoneId = ZoneId.of("Asia/Seoul")
-    }
-
     /**
      * 로그인한 디퍼가 해당 세션에 제출한 결석 사유서를 조회한다. 제출 이력이 없으면 null 을 반환한다.
      */
@@ -39,6 +33,11 @@ class AbsenceReasonQueryService(
                 MyAbsenceReasonResponse(
                     contents = reason.contents,
                     status = reason.status.name,
+                    imageIds =
+                        reason.id
+                            ?.let { absenceReasonImagePersistencePort.findImageIds(it.value) }
+                            .orEmpty()
+                            .map { it.value },
                     createdAt = instantToLocalDateTime(reason.createdAt),
                     updatedAt = instantToLocalDateTime(reason.updatedAt),
                 )
@@ -59,6 +58,11 @@ class AbsenceReasonQueryService(
                 .mapNotNull { member -> member.id?.let { it to member.name } }
                 .toMap()
 
+        val imageIds: Map<Long, List<Long>> =
+            absenceReasonImagePersistencePort
+                .findImageIdsByAbsenceReasonIds(reasons.mapNotNull { it.id?.value })
+                .mapValues { (_, ids) -> ids.map { it.value } }
+
         val items =
             reasons
                 .sortedByDescending { it.createdAt }
@@ -68,6 +72,7 @@ class AbsenceReasonQueryService(
                         memberName = memberNames[reason.memberId] ?: "",
                         contents = reason.contents,
                         status = reason.status.name,
+                        imageIds = reason.id?.let { imageIds[it.value] }.orEmpty(),
                         createdAt = instantToLocalDateTime(reason.createdAt),
                         updatedAt = instantToLocalDateTime(reason.updatedAt),
                     )
@@ -75,5 +80,4 @@ class AbsenceReasonQueryService(
 
         return SessionAbsenceReasonsResponse(items)
     }
-
 }

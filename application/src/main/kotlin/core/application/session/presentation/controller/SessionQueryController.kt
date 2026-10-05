@@ -17,18 +17,16 @@ import core.domain.session.vo.SessionId
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
 
 @RestController
-@RequestMapping("/v1/sessions")
 class SessionQueryController(
     private val sessionQueryService: SessionQueryService,
 ) : SessionQueryApi {
     @PreAuthorize("permitAll()")
-    @GetMapping("/next")
+    @GetMapping("/v1/sessions/next")
     override fun getNextSession(): CustomResponse<NextSessionResponse> {
         val response =
             sessionQueryService
@@ -39,7 +37,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("permitAll()")
-    @GetMapping
+    @GetMapping("/v1/sessions")
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
         val response =
             sessionQueryService
@@ -50,7 +48,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('create:session')")
-    @GetMapping("/{sessionId}")
+    @GetMapping("/v1/sessions/{sessionId}")
     override fun getSessionById(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<SessionDetailResponse> {
@@ -63,7 +61,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:session')")
-    @GetMapping("/{sessionId}/me")
+    @GetMapping("/v1/sessions/{sessionId}/me")
     override fun getSessionByIdForDeeper(
         @PathVariable(name = "sessionId") sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -82,7 +80,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('update:session')")
-    @GetMapping("/{sessionId}/attendance-time")
+    @GetMapping("/v1/sessions/{sessionId}/attendance-time")
     override fun getAttendanceTime(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<AttendanceTimeResponse> {
@@ -95,7 +93,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:session')")
-    @GetMapping("/weeks")
+    @GetMapping("/v1/sessions/weeks")
     override fun getSessionWeeks(): CustomResponse<SessionWeeksResponse> {
         val response =
             sessionQueryService
@@ -106,7 +104,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('update:session')")
-    @GetMapping("/{sessionId}/update-policy")
+    @GetMapping("/v3/sessions/{sessionId}/update-policy")
     override fun queryTargetAttendancesByPolicyChange(
         @PathVariable("sessionId") sessionId: SessionId,
         @RequestParam(value = "attendanceStart", required = true) attendanceStart: LocalDateTime,

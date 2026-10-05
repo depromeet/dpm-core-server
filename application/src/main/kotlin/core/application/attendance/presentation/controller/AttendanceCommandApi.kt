@@ -171,7 +171,9 @@ interface AttendanceCommandApi {
 
     @Operation(
         summary = "결석 사유 제출",
-        description = "결석 사유를 제출합니다.",
+        description =
+            "결석 사유를 제출합니다. 이미 제출했다면 내용을 바꾸고 검토 상태를 대기(PENDING)로 되돌립니다. " +
+                ABSENCE_REASON_IMAGE_FLOW,
         requestBody =
             RequestBody(
                 description = "결석 사유 제출 요청",
@@ -182,7 +184,16 @@ interface AttendanceCommandApi {
                         schema = Schema(implementation = AbsenceReportCreateRequest::class),
                         examples = [
                             ExampleObject(
-                                name = "결석 사유 제출 요청 예시",
+                                name = "이미지 첨부",
+                                value = """
+                                    {
+                                        "contents": "아파서 병원다녀옴",
+                                        "imageIds": [12, 15]
+                                    }
+                                """,
+                            ),
+                            ExampleObject(
+                                name = "이미지 없이(기존 클라이언트, 기존 첨부 유지)",
                                 value = """
                                     {
                                         "contents": "아파서 병원다녀옴"
@@ -200,6 +211,9 @@ interface AttendanceCommandApi {
                 responseCode = "200",
                 description = "결석 사유 제출 성공",
             ),
+            ApiResponse(responseCode = "400", description = ABSENCE_REASON_400_DESCRIPTION),
+            ApiResponse(responseCode = "404", description = "SESSION-404-01 세션 없음"),
+            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-02 다른 결석 사유서에 첨부된 이미지"),
         ],
     )
     fun createAbsenceReport(
@@ -210,7 +224,9 @@ interface AttendanceCommandApi {
 
     @Operation(
         summary = "결석 사유 수정",
-        description = "본인이 제출한 결석 사유서의 내용을 수정합니다. 수정 시 검토 상태는 다시 대기(PENDING)로 전환됩니다.",
+        description =
+            "본인이 제출한 결석 사유서의 내용을 수정합니다. 수정 시 검토 상태는 다시 대기(PENDING)로 전환됩니다. " +
+                ABSENCE_REASON_IMAGE_FLOW,
         requestBody =
             RequestBody(
                 description = "결석 사유 수정 요청",
@@ -221,10 +237,20 @@ interface AttendanceCommandApi {
                         schema = Schema(implementation = AbsenceReportUpdateRequest::class),
                         examples = [
                             ExampleObject(
-                                name = "결석 사유 수정 요청 예시",
+                                name = "첨부 순서 변경/교체",
                                 value = """
                                     {
-                                        "contents": "갑자기 일이 생겨 불참"
+                                        "contents": "갑자기 일이 생겨 불참",
+                                        "imageIds": [15, 12]
+                                    }
+                                """,
+                            ),
+                            ExampleObject(
+                                name = "첨부 모두 해제",
+                                value = """
+                                    {
+                                        "contents": "갑자기 일이 생겨 불참",
+                                        "imageIds": []
                                     }
                                 """,
                             ),
@@ -239,10 +265,12 @@ interface AttendanceCommandApi {
                 responseCode = "200",
                 description = "결석 사유 수정 성공",
             ),
+            ApiResponse(responseCode = "400", description = ABSENCE_REASON_400_DESCRIPTION),
             ApiResponse(
                 responseCode = "404",
-                description = "제출한 결석 사유서가 존재하지 않음",
+                description = "SESSION-404-01 세션 없음(삭제된 세션 포함), ATTENDANCE-404-02 제출한 결석 사유서가 존재하지 않음",
             ),
+            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-02 다른 결석 사유서에 첨부된 이미지"),
         ],
     )
     fun updateAbsenceReport(
@@ -253,7 +281,7 @@ interface AttendanceCommandApi {
 
     @Operation(
         summary = "결석 사유 삭제",
-        description = "본인이 제출한 결석 사유서를 삭제합니다.",
+        description = "본인이 제출한 결석 사유서를 삭제합니다. 첨부만 해제되며 이미지는 남아 다른 사유서에 다시 첨부할 수 있습니다.",
     )
     @ApiResponses(
         value = [
@@ -305,7 +333,7 @@ interface AttendanceCommandApi {
             ),
             ApiResponse(
                 responseCode = "404",
-                description = "제출된 결석 사유서가 존재하지 않음",
+                description = "SESSION-404-01 세션 없음(삭제된 세션 포함), ATTENDANCE-404-02 제출된 결석 사유서가 존재하지 않음",
             ),
         ],
     )
@@ -315,3 +343,11 @@ interface AttendanceCommandApi {
         request: AbsenceReasonReviewRequest,
     ): CustomResponse<Void>
 }
+
+private const val ABSENCE_REASON_IMAGE_FLOW =
+    "POST /v3/images/uploads → 업로드 → POST /v3/images/uploads/{uploadId}/complete 200 으로 받은 imageId 들을 " +
+        "imageIds 에 표시 순서로 담습니다(규칙은 imageIds 스키마). 내용과 첨부는 함께 저장됩니다."
+
+private const val ABSENCE_REASON_400_DESCRIPTION =
+    "ATTENDANCE-400-02 사유 없음, ATTENDANCE-400-03 50자 초과, " +
+        "ATTENDANCE-400-04 없거나 본인 것이 아닌 이미지/잘못된 id, ATTENDANCE-400-05 이미지 중복"
