@@ -16,7 +16,6 @@ import core.application.security.annotation.CurrentMemberId
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
@@ -81,7 +80,7 @@ class AttendanceCommandController(
     ): CustomResponse<Void> {
         attendanceCommandService.updateAttendanceStatusBulk(
             sessionId,
-            AttendanceStatus.valueOf(request.attendanceStatus),
+            request.attendanceStatus,
             request.toMemberIds(),
         )
 

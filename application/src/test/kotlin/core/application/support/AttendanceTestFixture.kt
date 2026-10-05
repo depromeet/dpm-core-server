@@ -42,6 +42,8 @@ class AttendanceTestFixture(
             memberQueryService = mock(MemberQueryService::class.java),
             attendancePersistencePort = attendances,
             attendanceGraduationEvaluator = mock(AttendanceGraduationEvaluator::class.java),
+            cohortQueryUseCase = cohortQueryService,
+            sessionPersistencePort = sessions,
         )
 
     val sessionQueryService =

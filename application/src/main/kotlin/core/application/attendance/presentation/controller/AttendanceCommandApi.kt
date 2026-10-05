@@ -93,7 +93,11 @@ interface AttendanceCommandApi {
 
     @Operation(
         summary = "출석 상태 갱신",
-        description = "출석 상태를 갱신합니다.",
+        description =
+            "출석 상태를 갱신합니다. " +
+                "attendanceStatus 는 PENDING, PRESENT, LATE, ABSENT, EXCUSED_ABSENT 중 하나이며 " +
+                "그 밖의 값은 400(GLOBAL-400-01)입니다. " +
+                "저장된 출석 인증 시각은 지우지 않으며 명단에서는 isManuallyUpdated 로 표시됩니다.",
         requestBody =
             RequestBody(
                 description = "출석 상태 갱신 요청",
@@ -132,7 +136,11 @@ interface AttendanceCommandApi {
 
     @Operation(
         summary = "출석 상태 일괄 갱신",
-        description = "여러 명 멤버의 출석 상태를 한 번에 갱신합니다.",
+        description =
+            "여러 명 멤버의 출석 상태를 한 번에 갱신합니다. " +
+                "attendanceStatus 는 PENDING, PRESENT, LATE, ABSENT, EXCUSED_ABSENT 중 하나이며 " +
+                "그 밖의 값은 400(GLOBAL-400-01)입니다. " +
+                "대상 중 하나라도 출석 기록이 없으면 아무것도 바꾸지 않습니다.",
         requestBody =
             RequestBody(
                 description = "출석 상태 일괄 갱신 요청",

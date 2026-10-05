@@ -9,7 +9,9 @@ import core.application.attendance.presentation.response.MemberAttendanceRespons
 import core.application.attendance.presentation.response.MemberAttendancesResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
+import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.member.application.service.MemberQueryService
+import core.application.session.application.exception.SessionNotFoundException
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
@@ -17,7 +19,10 @@ import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
+import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
+import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
 import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
@@ -30,7 +35,33 @@ class AttendanceQueryService(
     private val memberQueryService: MemberQueryService,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
+    private val cohortQueryUseCase: CohortQueryUseCase,
+    private val sessionPersistencePort: SessionPersistencePort,
 ) {
+    /**
+     * 현재 활성 기수 세션의 전체 출석 명단. 필터와 페이지 없이 준다.
+     * 없거나 삭제됐거나 다른 기수의 세션이면 404 다. (SessionQueryService 가 이 서비스를 의존하므로 세션은 포트로 읽는다.)
+     */
+    fun getSessionRoster(
+        sessionId: SessionId,
+        memberId: MemberId,
+    ): SessionRosterResponse {
+        val cohortId = getActiveCohortIdOf(sessionId)
+
+        val members = attendancePersistencePort.findSessionRoster(sessionId.value, cohortId.value)
+        val myTeamNumber = attendancePersistencePort.findTeamNumberInCohort(memberId.value, cohortId.value)
+
+        return AttendanceMapper.toSessionRosterResponse(members, myTeamNumber)
+    }
+
+    /** 세션이 현재 활성 기수의 삭제되지 않은 세션이면 그 기수 ID, 아니면 404 */
+    private fun getActiveCohortIdOf(sessionId: SessionId): CohortId {
+        val cohortId = cohortQueryUseCase.getLatestCohortId()
+        val session = sessionPersistencePort.findSessionById(sessionId.value)
+        if (session == null || session.cohortId != cohortId) throw SessionNotFoundException()
+        return cohortId
+    }
+
     fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
         val myTeamNumber: TeamNumber =
             query.onlyMyTeam
