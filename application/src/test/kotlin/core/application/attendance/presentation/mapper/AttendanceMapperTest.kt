@@ -2,6 +2,7 @@ package core.application.attendance.presentation.mapper
 
 import core.application.attendance.presentation.response.MemberDetailAbsenceReasonImageInfo
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
+import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
@@ -59,7 +60,7 @@ class AttendanceMapperTest {
     }
 
     @Test
-    fun `세션 명단은 운영진이 바꾼 기록의 인증 시각을 숨기고 팀 없음과 결석 사유를 그대로 준다`() {
+    fun `세션 명단은 운영진이 바꾼 기록(인증 시각이 남은 예전 기록 포함)의 인증 시각을 숨기고 팀 없음과 결석 사유를 그대로 준다`() {
         val attendedAt = Instant.parse("2026-09-05T04:58:21Z")
         val roster =
             listOf(
@@ -80,6 +81,35 @@ class AttendanceMapperTest {
         assertThat(response.myTeamNumber).isNull()
         assertThat(response.totalElements).isEqualTo(3)
         assertThat(AttendanceMapper.toSessionRosterResponse(emptyList(), myTeamNumber = 4).myTeamNumber).isEqualTo(4)
+    }
+
+    @Test
+    fun `사람별 목록은 조회 순서와 팀 없음(0)을 그대로 두고 판정, 내 팀, 전체 수만 붙인다`() {
+        val members =
+            listOf(
+                AttendanceMapper.toMemberAttendanceResponse(
+                    MemberAttendanceQueryModel(1, "신민철", TeamNumber(2), false, "SERVER", AttendanceSummaryQueryModel(4, 2, 0, 0, 0, 0)),
+                    evaluation = "AT_RISK",
+                ),
+                AttendanceMapper.toMemberAttendanceResponse(
+                    MemberAttendanceQueryModel(2, "이정호", TeamNumber(0), true, null, AttendanceSummaryQueryModel(4, 0, 0, 0, 0, 0)),
+                    evaluation = "NORMAL",
+                ),
+            )
+
+        // 전체 수는 목록 크기가 아니라 받은 값 그대로다
+        val response = AttendanceMapper.toMemberAttendancesResponse(members, myTeamNumber = null, totalElements = 5)
+
+        assertThat(response.members.map { it.id }).containsExactly(1L, 2L)
+        assertThat(response.members.map { it.teamNumber }).containsExactly(TeamNumber(2), TeamNumber(0))
+        assertThat(response.members.map { it.part }).containsExactly("SERVER", null)
+        assertThat(response.members.map { it.isAdmin }).containsExactly(false, true)
+        assertThat(response.members.map { it.attendanceStatus }).containsExactly("AT_RISK", "NORMAL")
+        assertThat(response.myTeamNumber).isNull()
+        assertThat(response.totalElements).isEqualTo(5)
+        assertThat(
+            AttendanceMapper.toMemberAttendancesResponse(emptyList(), myTeamNumber = 3, totalElements = 0).myTeamNumber,
+        ).isEqualTo(3)
     }
 
     private fun rosterRow(

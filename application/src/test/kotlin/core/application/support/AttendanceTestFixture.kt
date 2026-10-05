@@ -5,7 +5,6 @@ import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.application.service.AttendanceGraduationEvaluator
 import core.application.attendance.application.service.AttendanceQueryService
 import core.application.cohort.application.service.CohortQueryService
-import core.application.member.application.service.MemberQueryService
 import core.application.session.application.service.SessionCommandService
 import core.application.session.application.service.SessionQueryService
 import core.application.session.application.validator.SessionValidator
@@ -39,9 +38,8 @@ class AttendanceTestFixture(
 
     val attendanceQueryService =
         AttendanceQueryService(
-            memberQueryService = mock(MemberQueryService::class.java),
             attendancePersistencePort = attendances,
-            attendanceGraduationEvaluator = mock(AttendanceGraduationEvaluator::class.java),
+            attendanceGraduationEvaluator = AttendanceGraduationEvaluator(),
             cohortQueryUseCase = cohortQueryService,
             sessionPersistencePort = sessions,
         )

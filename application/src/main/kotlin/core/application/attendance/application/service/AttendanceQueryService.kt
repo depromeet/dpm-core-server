@@ -1,15 +1,12 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
-import core.application.attendance.application.exception.MemberAttendanceAmbiguousException
 import core.application.attendance.presentation.mapper.AttendanceMapper
 import core.application.attendance.presentation.response.DetailAttendancesBySessionResponse
 import core.application.attendance.presentation.response.DetailMemberAttendancesResponse
-import core.application.attendance.presentation.response.MemberAttendanceResponse
 import core.application.attendance.presentation.response.MemberAttendancesResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
-import core.application.member.application.service.MemberQueryService
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
@@ -22,15 +19,12 @@ import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
-import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import kotlin.math.ceil
 
 @Service
 @Transactional(readOnly = true)
 class AttendanceQueryService(
-    private val memberQueryService: MemberQueryService,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
     private val cohortQueryUseCase: CohortQueryUseCase,
@@ -60,42 +54,26 @@ class AttendanceQueryService(
         return cohortId
     }
 
+    /**
+     * 현재 활성 기수 소속 멤버 전원(출석 기록이 없어도 포함)의 수료 판정. 페이지 없이 주고 팀 필터만 받는다.
+     * 정렬(팀, 이름, ID)은 조회 결과 그대로다. totalElements 는 팀 필터와 무관한 기수 전체 소속 멤버 수다.
+     */
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
-        val myTeamNumber =
-            query.onlyMyTeam
-                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber.defaultValue()
+        val cohortId = cohortQueryUseCase.getActiveCohortId().value
 
-        val queryResult =
-            attendancePersistencePort
-                .findMemberAttendancesByQuery(query, myTeamNumber)
-                .sortedBy { it.teamNumber.value }
+        val members = attendancePersistencePort.findMemberAttendances(cohortId, query.teams.orEmpty())
+        val myTeamNumber = attendancePersistencePort.findTeamNumberInCohort(query.memberId.value, cohortId)
+        val totalElements = attendancePersistencePort.countCohortMembers(cohortId)
 
-        val totalElements =
-            attendancePersistencePort.countMemberAttendancesByQuery(query, myTeamNumber)
+        val memberResponses =
+            members.map { member ->
+                AttendanceMapper.toMemberAttendanceResponse(
+                    member,
+                    evaluation = attendanceGraduationEvaluator.evaluate(member.summary).name,
+                )
+            }
 
-        val totalPages =
-            ceil(totalElements / query.size.toDouble()).toInt()
-
-        val hasNext = query.page < totalPages
-
-        return AttendanceMapper.toMemberAttendancesResponse(
-            members =
-                queryResult
-                    .map { member ->
-                        MemberAttendanceResponse(
-                            id = member.id,
-                            name = member.name,
-                            teamNumber = member.teamNumber,
-                            isAdmin = member.isAdmin,
-                            part = member.part,
-                            attendanceStatus = attendanceGraduationEvaluator.evaluate(member.summary).name,
-                        )
-                    }.toList(),
-            onlyMyTeam = (query.teams?.contains(myTeamNumber.value) == true) || (query.onlyMyTeam ?: false),
-            myTeamNumber = myTeamNumber,
-            hasNext = hasNext,
-            totalElements = totalElements,
-        )
+        return AttendanceMapper.toMemberAttendancesResponse(memberResponses, myTeamNumber, totalElements)
     }
 
     fun getDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): DetailAttendancesBySessionResponse {
@@ -111,21 +89,20 @@ class AttendanceQueryService(
         )
     }
 
+    /**
+     * 현재 활성 기수 기준 사람별 출석 상세. 출석 기록이 없는 소속 멤버는 집계 0, 세션 없이 준다.
+     * 없거나 삭제됐거나 현재 기수 소속이 아닌 멤버면 404 다.
+     */
     fun getDetailMemberAttendances(query: GetDetailMemberAttendancesQuery): DetailMemberAttendancesResponse {
-        val memberAttendanceQueryResults =
-            attendancePersistencePort
-                .findDetailMemberAttendance(query)
+        val cohortId = cohortQueryUseCase.getActiveCohortId().value
+        val memberId = query.memberId.value
 
         val memberAttendanceQueryResult =
-            when {
-                memberAttendanceQueryResults.isEmpty() -> throw AttendanceNotFoundException()
-                memberAttendanceQueryResults.size > 1 -> throw MemberAttendanceAmbiguousException()
-                else -> memberAttendanceQueryResults.first()
-            }
+            attendancePersistencePort.findDetailMemberAttendance(memberId, cohortId)
+                ?: throw AttendanceNotFoundException()
 
         val sessionAttendanceQueryResult =
-            attendancePersistencePort
-                .findMemberSessionAttendances(query)
+            attendancePersistencePort.findMemberSessionAttendances(memberId, cohortId)
 
         return AttendanceMapper.toDetailMemberAttendancesResponse(
             memberAttendanceModel = memberAttendanceQueryResult,

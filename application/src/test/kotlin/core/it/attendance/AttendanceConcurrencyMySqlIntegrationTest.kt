@@ -163,6 +163,8 @@ class AttendanceConcurrencyMySqlIntegrationTest {
 
             val row = attendancePort.findAttendanceBy(session.id!!.value, 1L)!!
             assertThat(row.status).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+            // 인증이 먼저 커밋돼도 운영진 변경이 인증 시각을 지운다
+            assertThat(row.attendedAt).isNull()
             assertThat(row.updatedAt).isNotNull()
         }
     }
@@ -211,13 +213,13 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     }
 
     @Test
-    fun `일괄 운영진 변경은 attendedAt 을 보존하고 자동 결석과 경쟁해도 운영진 값이 남는다`() {
+    fun `일괄 운영진 변경은 attendedAt 을 지우고 자동 결석과 경쟁해도 운영진 값이 남는다`() {
         repeat(5) {
             val session = newSession()
             val memberIds = (1L..20L).toList()
             memberIds.forEach { addAttendance(session, memberId = it) }
             attend(session, 1L, times.attendanceStart)
-            val attendedAt = attendancePort.findAttendanceBy(session.id!!.value, 1L)!!.attendedAt
+            assertThat(attendancePort.findAttendanceBy(session.id!!.value, 1L)!!.attendedAt).isNotNull()
 
             runConcurrently(2) { index ->
                 if (index == 0) {
@@ -234,10 +236,10 @@ class AttendanceConcurrencyMySqlIntegrationTest {
             memberIds.forEach { memberId ->
                 val row = attendancePort.findAttendanceBy(session.id!!.value, memberId)!!
                 assertThat(row.status).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+                assertThat(row.attendedAt).isNull()
                 assertThat(row.updatedAt).isNotNull()
                 assertThat(row.autoAbsentAt).isNull()
             }
-            assertThat(attendancePort.findAttendanceBy(session.id!!.value, 1L)!!.attendedAt).isEqualTo(attendedAt)
         }
     }
 

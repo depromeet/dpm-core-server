@@ -14,7 +14,6 @@ enum class AttendanceExceptionCode(
     INVALID_ABSENCE_REASON_IMAGE(HttpStatus.BAD_REQUEST, "ATTENDANCE-400-04", "첨부할 수 없는 이미지입니다"),
     DUPLICATE_ABSENCE_REASON_IMAGE(HttpStatus.BAD_REQUEST, "ATTENDANCE-400-05", "같은 이미지를 중복해서 첨부할 수 없습니다"),
     ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE-404-01", "출석을 찾을 수 없습니다"),
-    MEMBER_ATTENDANCE_AMBIGUOUS(HttpStatus.CONFLICT, "ATTENDANCE-409-01", "멤버 출석 정보를 특정할 수 없습니다"),
     ABSENCE_REASON_IMAGE_ALREADY_ATTACHED(HttpStatus.CONFLICT, "ATTENDANCE-409-02", "이미 다른 결석 사유서에 첨부된 이미지입니다"),
     ABSENCE_REASON_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE-404-02", "결석 사유서를 찾을 수 없습니다"),
     ;

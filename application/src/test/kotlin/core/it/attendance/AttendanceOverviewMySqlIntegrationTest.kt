@@ -6,8 +6,7 @@ import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
-import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
-import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
+import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
@@ -32,6 +31,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -67,10 +67,111 @@ class AttendanceOverviewMySqlIntegrationTest {
     private fun uniqueId(): Long = ThreadLocalRandom.current().nextLong(1_000_000_000L, 9_000_000_000L)
 
     @Test
-    fun `사람별 상세는 최신 기수만, 팀 중복 없이, 삭제된 세션을 빼고 집계하며 결석 사유서를 붙인다`() {
+    fun `사람별 목록은 현재 기수 소속 멤버 전원을 기록이 없어도 한 행씩 팀, 이름, ID 순으로 주고 살아 있는 최신 기록만 센다`() {
+        val name = uniqueName()
+        val (oldCohort, currentCohort) = newCohortPair()
+        val first = newSession(currentCohort, week = 1, isOnline = false)
+        val second = newSession(currentCohort, week = 2, isOnline = true)
+        val third = newSession(currentCohort, week = 3, isOnline = false)
+        val deletedSession = newSession(currentCohort, week = 4, isOnline = false, deletedAt = firstSessionStart)
+        val oldSession = newSession(oldCohort, week = 1, isOnline = true)
+
+        // 이전/현재 기수 소속이고 현재 기수 소속·팀 매핑이 중복돼도 한 행이다
+        val veteran = newMember("$name-b")
+        joinCohort(veteran, oldCohort)
+        joinCohort(veteran, currentCohort)
+        joinCohort(veteran, currentCohort)
+        joinTeam(veteran, oldCohort, teamNumber = 1)
+        joinTeam(veteran, currentCohort, teamNumber = 2)
+        joinTeam(veteran, currentCohort, teamNumber = 2)
+        addAttendance(first, veteran, AttendanceStatus.ABSENT)
+        addAttendance(second, veteran, AttendanceStatus.LATE)
+        addAttendance(third, veteran, AttendanceStatus.ABSENT, deletedAt = firstSessionStart)
+        addAttendance(deletedSession, veteran, AttendanceStatus.ABSENT)
+        addAttendance(oldSession, veteran, AttendanceStatus.PRESENT)
+        // 같은 세션의 살아 있는 기록이 둘이면 attendance_id 가 큰 쪽(출석)만 센다
+        val duplicated = newMember("$name-a")
+        joinCohort(duplicated, currentCohort)
+        joinTeam(duplicated, currentCohort, teamNumber = 2)
+        addAttendance(first, duplicated, AttendanceStatus.ABSENT)
+        addAttendance(first, duplicated, AttendanceStatus.PRESENT)
+        // 출석 기록이 없어도 집계 0 으로 나온다
+        val noRecord = newMember("$name-c")
+        joinCohort(noRecord, currentCohort)
+        joinTeam(noRecord, currentCohort, teamNumber = 1)
+        // 팀이 없으면 마지막이고 팀 0 이다
+        val teamless = newMember("$name-0")
+        joinCohort(teamless, currentCohort)
+        addAttendance(first, teamless, AttendanceStatus.PRESENT)
+
+        // 빠지는 멤버: 이전 기수만 소속(현재 기수 기록이 있어도), 삭제된 멤버, 소속 없이 기록만 있는 멤버
+        val oldOnly = newMember("$name-old")
+        joinCohort(oldOnly, oldCohort)
+        addAttendance(first, oldOnly, AttendanceStatus.PRESENT)
+        val deletedMember = newMember("$name-deleted")
+        joinCohort(deletedMember, currentCohort)
+        addAttendance(first, deletedMember, AttendanceStatus.PRESENT)
+        jdbcTemplate.update("update members set deleted_at = now(6) where member_id = ?", deletedMember)
+        addAttendance(first, newMember("$name-record-only"), AttendanceStatus.PRESENT)
+
+        val rows = attendancePort.findMemberAttendances(currentCohort.value, emptyList())
+
+        assertThat(rows.map { it.id }).containsExactly(noRecord, duplicated, veteran, teamless)
+        assertThat(rows.map { it.teamNumber }).containsExactly(TeamNumber(1), TeamNumber(2), TeamNumber(2), TeamNumber(0))
+        // 분모는 삭제되지 않은 현재 기수 세션 3개로 모두 같다
+        assertThat(rows.map { it.summary }).containsExactly(
+            summary(total = 3),
+            summary(total = 3, present = 1),
+            summary(total = 3, late = 1, offlineAbsent = 1),
+            summary(total = 3, present = 1),
+        )
+        // 전체 수도 같은 대상이다: 소속 중복은 한 번, 기록 없음·팀 없음 포함, 이전 기수만·삭제·소속 없음 제외
+        assertThat(attendancePort.countCohortMembers(currentCohort.value)).isEqualTo(4)
+
+        // 이전 기수로 조회하면 이전 기수 소속과 그 기수 기록만 본다
+        val oldRows = attendancePort.findMemberAttendances(oldCohort.value, emptyList())
+        assertThat(oldRows.map { it.id }).containsExactlyInAnyOrder(veteran, oldOnly)
+        assertThat(oldRows.single { it.id == veteran }.teamNumber).isEqualTo(TeamNumber(1))
+        assertThat(oldRows.single { it.id == veteran }.summary).isEqualTo(summary(total = 1, present = 1))
+        assertThat(oldRows.single { it.id == oldOnly }.summary).isEqualTo(summary(total = 1))
+        assertThat(attendancePort.countCohortMembers(oldCohort.value)).isEqualTo(2)
+    }
+
+    @Test
+    fun `사람별 목록의 팀 필터는 여러 팀을 받고 현재 기수 최신 배정 팀 기준이며 이전 팀이나 다른 기수 팀으로는 걸리지 않는다`() {
+        val name = uniqueName()
+        val (oldCohort, currentCohort) = newCohortPair()
+        val moved = newMember("$name-a")
+        joinCohort(moved, currentCohort)
+        joinTeam(moved, currentCohort, teamNumber = 5)
+        joinTeam(moved, currentCohort, teamNumber = 7)
+        val teamOne = newMember("$name-b")
+        joinCohort(teamOne, currentCohort)
+        joinTeam(teamOne, oldCohort, teamNumber = 7)
+        joinTeam(teamOne, currentCohort, teamNumber = 1)
+        val teamless = newMember("$name-c")
+        joinCohort(teamless, currentCohort)
+        joinTeam(teamless, oldCohort, teamNumber = 5)
+
+        fun idsOf(vararg teams: Int) = attendancePort.findMemberAttendances(currentCohort.value, teams.toList()).map { it.id }
+
+        assertThat(idsOf(5)).isEmpty()
+        assertThat(idsOf(7)).containsExactly(moved)
+        assertThat(idsOf(1, 7)).containsExactly(teamOne, moved)
+        assertThat(idsOf(1, 5, 7, 9)).containsExactly(teamOne, moved)
+        assertThat(idsOf()).containsExactly(teamOne, moved, teamless)
+        // 전체 수는 팀 필터와 무관하게 팀 없는 멤버까지 센다
+        assertThat(idsOf(7).size).isLessThan(attendancePort.countCohortMembers(currentCohort.value))
+        assertThat(attendancePort.countCohortMembers(currentCohort.value)).isEqualTo(3)
+    }
+
+    @Test
+    fun `사람별 상세와 세션별 상세는 목록과 같은 현재 기수 집계를 쓰고 세션별 기록과 결석 사유서를 붙인다`() {
         val name = uniqueName()
         val (oldCohort, currentCohort) = newCohortPair()
         val memberId = newMember(name)
+        joinCohort(memberId, oldCohort)
+        joinCohort(memberId, currentCohort)
         // 두 기수 모두에 팀이 있고 현재 기수에는 팀이 두 번 배정됐다.
         joinTeam(memberId, oldCohort, teamNumber = 3)
         joinTeam(memberId, currentCohort, teamNumber = 5)
@@ -87,7 +188,10 @@ class AttendanceOverviewMySqlIntegrationTest {
         val deleted = newSession(currentCohort, week = 6, isOnline = false, deletedAt = firstSessionStart)
         val attendedAt = firstSessionStart.minus(Duration.ofMinutes(3))
         addAttendance(present, memberId, AttendanceStatus.PRESENT, attendedAt)
+        // 같은 세션에 살아 있는 기록이 둘이면 attendance_id 가 큰 쪽(지각)만 본다. 삭제된 기록은 보지 않는다
+        addAttendance(late, memberId, AttendanceStatus.ABSENT)
         addAttendance(late, memberId, AttendanceStatus.LATE)
+        addAttendance(late, memberId, AttendanceStatus.EXCUSED_ABSENT, deletedAt = firstSessionStart)
         addAttendance(absent, memberId, AttendanceStatus.ABSENT)
         addAttendance(upcoming, memberId, AttendanceStatus.PENDING)
         addAttendance(deleted, memberId, AttendanceStatus.ABSENT)
@@ -101,23 +205,19 @@ class AttendanceOverviewMySqlIntegrationTest {
         linkImage(reasonId, imageBase + 1, displayOrder = 1)
         linkImage(oldReasonId, imageBase + 3, displayOrder = 0)
 
-        val expectedSummary =
-            AttendanceSummaryQueryModel(
-                totalSessionCount = 5,
-                presentCount = 1,
-                lateCount = 1,
-                excusedAbsentCount = 0,
-                onlineAbsentCount = 0,
-                offlineAbsentCount = 1,
-            )
+        val expectedSummary = summary(total = 5, present = 1, late = 1, offlineAbsent = 1)
 
-        val detail = attendancePort.findDetailMemberAttendance(GetDetailMemberAttendancesQuery(MemberId(memberId))).single()
+        val detail = attendancePort.findDetailMemberAttendance(memberId, currentCohort.value)!!
         // 표시 팀은 그 기수의 가장 최근 배정
         assertThat(detail.teamNumber).isEqualTo(TeamNumber(7))
         assertThat(detail.summary).isEqualTo(expectedSummary)
+        // 목록 행과 같은 집계다
+        assertThat(attendancePort.findMemberAttendances(currentCohort.value, emptyList()).single { it.id == memberId }.summary)
+            .isEqualTo(expectedSummary)
 
-        val sessions = attendancePort.findMemberSessionAttendances(GetDetailMemberAttendancesQuery(MemberId(memberId)))
+        val sessions = attendancePort.findMemberSessionAttendances(memberId, currentCohort.value)
         assertThat(sessions.map { it.sessionId }).containsExactly(present.id!!.value, late.id!!.value, absent.id!!.value, upcoming.id!!.value)
+        assertThat(sessions.map { it.sessionAttendanceStatus }).containsExactly("PRESENT", "LATE", "ABSENT", "PENDING")
         assertThat(sessions.map { it.sessionIsOnline }).containsExactly(false, true, false, false)
         assertThat(sessions.map { it.sessionPlace }).containsExactly("1주차 장소", "", "3주차 장소", "4주차 장소")
         assertThat(sessions.map { it.attendedAt }).containsExactly(attendedAt, null, null, null)
@@ -138,113 +238,100 @@ class AttendanceOverviewMySqlIntegrationTest {
                 ),
             )
 
-        // 같은 세션별 개인 상세의 수료 판정도 같은 집계를 쓴다
+        // 세션별 개인 상세도 같은 집계와 같은(최신) 기록을 쓴다. 중복 기록으로 행이 늘지 않는다
         val sessionDetail =
             attendancePort.findDetailAttendanceBySession(GetDetailAttendanceBySessionQuery(late.id!!, MemberId(memberId)))!!
         assertThat(sessionDetail.summary).isEqualTo(expectedSummary)
         assertThat(sessionDetail.teamNumber).isEqualTo(TeamNumber(7))
+        assertThat(sessionDetail.attendanceStatus).isEqualTo("LATE")
 
-        // 출석 기록이 없는 멤버는 결과가 없다(서비스는 기존처럼 404)
-        val newcomer = newMember(name)
-        assertThat(attendancePort.findDetailMemberAttendance(GetDetailMemberAttendancesQuery(MemberId(newcomer)))).isEmpty()
-        assertThat(attendancePort.findMemberSessionAttendances(GetDetailMemberAttendancesQuery(MemberId(newcomer)))).isEmpty()
+        // 이전 기수 집계는 따로다
+        assertThat(attendancePort.findDetailMemberAttendance(memberId, oldCohort.value)!!.summary)
+            .isEqualTo(summary(total = 1, offlineAbsent = 1))
     }
 
     @Test
-    fun `사람별 목록은 기수별 한 행이고 상태와 팀 필터는 멤버만 고르며 집계는 전체 기록으로 한다`() {
+    fun `사람별 상세는 기록이 없는 현재 기수 멤버를 집계 0 으로 주고 소속이 아니거나 삭제·없는 멤버는 없다`() {
         val name = uniqueName()
         val (oldCohort, currentCohort) = newCohortPair()
-        val absentMember = newMember(name)
-        val presentMember = newMember(name)
-        val noTeamMember = newMember(name)
-        joinTeam(absentMember, oldCohort, teamNumber = 1)
-        // 같은 기수 팀 매핑 중복
-        joinTeam(absentMember, currentCohort, teamNumber = 2)
-        joinTeam(absentMember, currentCohort, teamNumber = 2)
-        joinTeam(presentMember, currentCohort, teamNumber = 2)
+        val session = newSession(currentCohort, week = 1, isOnline = false)
+        newSession(currentCohort, week = 2, isOnline = false, deletedAt = firstSessionStart)
 
-        addAttendance(newSession(oldCohort, week = 1, isOnline = true), absentMember, AttendanceStatus.PRESENT)
-        val first = newSession(currentCohort, week = 1, isOnline = false)
-        val second = newSession(currentCohort, week = 2, isOnline = true)
-        addAttendance(first, absentMember, AttendanceStatus.ABSENT)
-        addAttendance(second, absentMember, AttendanceStatus.LATE)
-        addAttendance(first, presentMember, AttendanceStatus.PRESENT)
-        addAttendance(second, presentMember, AttendanceStatus.PRESENT)
-        addAttendance(first, noTeamMember, AttendanceStatus.ABSENT)
+        val newcomer = newMember(name)
+        joinCohort(newcomer, currentCohort)
+        val pastOnly = newMember(name)
+        joinCohort(pastOnly, oldCohort)
+        addAttendance(session, pastOnly, AttendanceStatus.PRESENT)
+        val notJoined = newMember(name)
+        addAttendance(session, notJoined, AttendanceStatus.PRESENT)
+        val deletedMember = newMember(name)
+        joinCohort(deletedMember, currentCohort)
+        addAttendance(session, deletedMember, AttendanceStatus.PRESENT)
+        jdbcTemplate.update("update members set deleted_at = now(6) where member_id = ?", deletedMember)
 
-        val query =
-            GetMemberAttendancesQuery(
-                memberId = MemberId(absentMember),
-                statuses = listOf(AttendanceStatus.ABSENT),
-                teams = null,
-                name = name,
-                onlyMyTeam = null,
-                page = 1,
-                size = 20,
-            )
+        val detail = attendancePort.findDetailMemberAttendance(newcomer, currentCohort.value)!!
+        assertThat(detail.memberId).isEqualTo(newcomer)
+        assertThat(detail.teamNumber).isEqualTo(TeamNumber(0))
+        assertThat(detail.summary).isEqualTo(summary(total = 1))
+        assertThat(attendancePort.findMemberSessionAttendances(newcomer, currentCohort.value)).isEmpty()
 
-        val rows = attendancePort.findMemberAttendancesByQuery(query, TeamNumber.defaultValue())
-
-        // ABSENT 가 있는 기수의 행만, 지각까지 포함해 한 번씩 집계된다. 팀이 없는 멤버는 팀 0 으로 남는다(팀 번호 순)
-        assertThat(rows.map { it.id }).containsExactly(noTeamMember, absentMember)
-        assertThat(rows.map { it.teamNumber }).containsExactly(TeamNumber(0), TeamNumber(2))
-        assertThat(rows.single { it.id == absentMember }.summary)
-            .isEqualTo(
-                AttendanceSummaryQueryModel(
-                    totalSessionCount = 2,
-                    presentCount = 0,
-                    lateCount = 1,
-                    excusedAbsentCount = 0,
-                    onlineAbsentCount = 0,
-                    offlineAbsentCount = 1,
-                ),
-            )
-        assertThat(attendancePort.countMemberAttendancesByQuery(query, TeamNumber.defaultValue())).isEqualTo(2)
-
-        val everyone = query.copy(statuses = null)
-        assertThat(attendancePort.findMemberAttendancesByQuery(everyone, TeamNumber.defaultValue()).map { it.id })
-            .containsExactlyInAnyOrder(absentMember, absentMember, presentMember, noTeamMember)
-        assertThat(attendancePort.countMemberAttendancesByQuery(everyone, TeamNumber.defaultValue())).isEqualTo(4)
-
-        val team2 = query.copy(statuses = null, teams = listOf(2))
-        val team2Rows = attendancePort.findMemberAttendancesByQuery(team2, TeamNumber.defaultValue())
-        assertThat(team2Rows.map { it.id }).containsExactlyInAnyOrder(absentMember, presentMember)
-        assertThat(team2Rows.single { it.id == absentMember }.summary.lateCount).isEqualTo(1)
-        assertThat(attendancePort.countMemberAttendancesByQuery(team2, TeamNumber.defaultValue())).isEqualTo(2)
+        listOf(pastOnly, notJoined, deletedMember, uniqueId()).forEach { memberId ->
+            assertThat(attendancePort.findDetailMemberAttendance(memberId, currentCohort.value)).isNull()
+        }
     }
 
     @Test
-    fun `사람별 목록의 팀 필터와 내 팀 필터는 표시하는 최신 팀 기준이고 같은 기수의 이전 팀으로는 걸리지 않는다`() {
+    fun `운영진 단건·일괄 변경은 인증 시각을 지우고 인증 시각이 남은 예전 운영진 기록도 상세에서는 null 로 읽는다`() {
         val name = uniqueName()
         val (_, currentCohort) = newCohortPair()
-        val movedMember = newMember(name)
-        joinTeam(movedMember, currentCohort, teamNumber = 5)
-        joinTeam(movedMember, currentCohort, teamNumber = 7)
-        addAttendance(newSession(currentCohort, week = 1, isOnline = false), movedMember, AttendanceStatus.PRESENT)
+        val first = newSession(currentCohort, week = 1, isOnline = false)
+        val second = newSession(currentCohort, week = 2, isOnline = false)
+        val attendedAt = firstSessionStart.minus(Duration.ofMinutes(3))
+        val member = newMember("$name-a")
+        val other = newMember("$name-b")
+        listOf(member, other).forEach { joinCohort(it, currentCohort) }
+        addAttendance(first, member, AttendanceStatus.PRESENT, attendedAt)
+        addAttendance(first, other, AttendanceStatus.LATE, attendedAt)
+        // 운영진 변경이 인증 시각을 지우기 전의 기록: 저장값은 그대로 두고 읽을 때만 가린다
+        addAttendance(second, member, AttendanceStatus.LATE, attendedAt, updatedAt = firstSessionStart)
 
-        val query =
-            GetMemberAttendancesQuery(
-                memberId = MemberId(movedMember),
-                statuses = null,
-                teams = null,
-                name = name,
-                onlyMyTeam = null,
-                page = 1,
-                size = 20,
-            )
-        val previousTeam = query.copy(teams = listOf(5))
-        val latestTeam = query.copy(teams = listOf(7))
-        val onlyMyTeam = query.copy(onlyMyTeam = true)
+        assertThat(attendancePort.findMemberSessionAttendances(member, currentCohort.value).map { it.attendedAt })
+            .containsExactly(attendedAt, null)
+        val legacyDetail = attendancePort.findDetailAttendanceBySession(GetDetailAttendanceBySessionQuery(second.id!!, MemberId(member)))!!
+        assertThat(legacyDetail.attendedAt).isNull()
+        // updated_at 은 존을 가정하지 않고 저장한 시각 그대로 읽는다
+        assertThat(legacyDetail.updatedAt).isEqualTo(firstSessionStart)
+        assertThat(attendedAtInDb(second, member)).isNotNull()
+        val untouchedDetail = attendancePort.findDetailAttendanceBySession(GetDetailAttendanceBySessionQuery(first.id!!, MemberId(member)))!!
+        assertThat(untouchedDetail.attendedAt).isEqualTo(attendedAt)
+        assertThat(untouchedDetail.updatedAt).isNull()
 
-        assertThat(attendancePort.findMemberAttendancesByQuery(previousTeam, TeamNumber.defaultValue())).isEmpty()
-        assertThat(attendancePort.countMemberAttendancesByQuery(previousTeam, TeamNumber.defaultValue())).isEqualTo(0)
-        assertThat(attendancePort.findMemberAttendancesByQuery(latestTeam, TeamNumber.defaultValue()).map { it.teamNumber })
-            .containsExactly(TeamNumber(7))
-        assertThat(attendancePort.countMemberAttendancesByQuery(latestTeam, TeamNumber.defaultValue())).isEqualTo(1)
-        assertThat(attendancePort.findMemberAttendancesByQuery(onlyMyTeam, TeamNumber(5))).isEmpty()
-        assertThat(attendancePort.countMemberAttendancesByQuery(onlyMyTeam, TeamNumber(5))).isEqualTo(0)
-        assertThat(attendancePort.findMemberAttendancesByQuery(onlyMyTeam, TeamNumber(7)).map { it.id })
-            .containsExactly(movedMember)
+        // 내 세션 출석 상세도 같은 기준으로 가린다
+        fun myAttendedAt(session: Session) = attendancePort.findMyDetailAttendanceBySession(GetMyAttendanceBySessionQuery(session.id!!, MemberId(member)))!!.attendedAt
+        assertThat(myAttendedAt(second)).isNull()
+        assertThat(myAttendedAt(first)).isEqualTo(attendedAt)
+
+        // 단건: 저장된 인증 시각이 지워지고 변경 시각이 남는다
+        attendanceCommandService.updateAttendanceStatus(AttendanceStatusUpdateCommand(first.id!!, MemberId(member), AttendanceStatus.EXCUSED_ABSENT))
+
+        assertThat(attendedAtInDb(first, member)).isNull()
+        val changed = attendancePort.findAttendanceBy(first.id!!.value, member)!!
+        assertThat(changed.status).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(changed.updatedAt).isEqualTo(clock.now)
+        val changedDetail = attendancePort.findDetailAttendanceBySession(GetDetailAttendanceBySessionQuery(first.id!!, MemberId(member)))!!
+        assertThat(changedDetail.attendedAt).isNull()
+        assertThat(changedDetail.updatedAt).isEqualTo(clock.now)
+        assertThat(myAttendedAt(first)).isNull()
+        assertThat(attendedAtInDb(first, other)).isNotNull()
+
+        // 일괄: 대상 모두 지워진다
+        attendanceCommandService.updateAttendanceStatusBulk(first.id!!, AttendanceStatus.ABSENT, listOf(MemberId(other), MemberId(member)))
+
+        listOf(member, other).forEach { memberId ->
+            assertThat(attendedAtInDb(first, memberId)).isNull()
+            assertThat(attendancePort.findAttendanceBy(first.id!!.value, memberId)!!.status).isEqualTo(AttendanceStatus.ABSENT)
+        }
+        assertThat(attendancePort.findSessionRoster(first.id!!.value, currentCohort.value).map { it.attendedAt }).containsOnlyNulls()
     }
 
     @Test
@@ -297,7 +384,7 @@ class AttendanceOverviewMySqlIntegrationTest {
         assertThat(roster.map { it.memberId }).containsExactly(firstTeam, sameTeam, veteran, teamless)
         assertThat(roster.map { it.teamNumber }).containsExactly(1, 2, 2, null)
         assertThat(roster.map { it.attendanceStatus }).containsExactly("PENDING", "ABSENT", "PRESENT", "EXCUSED_ABSENT")
-        // 운영진 변경 기록도 저장된 인증 시각은 그대로다
+        // 인증 시각이 남은 예전 운영진 변경 기록은 저장값 그대로 읽고 응답에서 가린다(매퍼)
         assertThat(roster.map { it.attendedAt }).containsExactly(null, attendedAt, attendedAt, null)
         assertThat(roster.map { it.updatedAt }).containsExactly(null, firstSessionStart, null, null)
         assertThat(roster.map { it.absenceReason }).containsExactly(null, null, null, "병원 진료")
@@ -311,7 +398,7 @@ class AttendanceOverviewMySqlIntegrationTest {
     }
 
     @Test
-    fun `명단은 멤버당 최신 살아 있는 기록 한 행이고 운영진 변경 뒤에도 저장된 인증 시각을 남긴다`() {
+    fun `명단은 멤버당 최신 살아 있는 기록 한 행이고 운영진 변경은 저장된 인증 시각을 지운다`() {
         val name = uniqueName()
         val (oldCohort, currentCohort) = newCohortPair()
         val session = newSession(currentCohort, week = 1, isOnline = false)
@@ -359,13 +446,13 @@ class AttendanceOverviewMySqlIntegrationTest {
         assertThat(attendancePort.findSessionRoster(otherSession.id!!.value, oldCohort.value).map { it.memberId })
             .containsExactlyInAnyOrder(oldOnly, duplicated)
 
-        // 운영진 단건 변경(PATCH 와 같은 서비스): 상태와 변경 시각만 바뀌고 저장된 인증 시각은 남는다
+        // 운영진 단건 변경(PATCH 와 같은 서비스): 상태와 변경 시각이 바뀌고 저장된 인증 시각은 지워진다
         val changed = members.first()
         attendanceCommandService.updateAttendanceStatus(AttendanceStatusUpdateCommand(session.id!!, MemberId(changed), AttendanceStatus.ABSENT))
 
         val changedRow = attendancePort.findSessionRoster(session.id!!.value, currentCohort.value).single { it.memberId == changed }
         assertThat(changedRow.attendanceStatus).isEqualTo("ABSENT")
-        assertThat(changedRow.attendedAt).isEqualTo(attendedAt)
+        assertThat(changedRow.attendedAt).isNull()
         assertThat(changedRow.updatedAt).isEqualTo(clock.now)
     }
 
@@ -544,6 +631,32 @@ class AttendanceOverviewMySqlIntegrationTest {
             displayOrder,
         )
     }
+
+    /** 저장된 attended_at 원본. 조회 경로의 가림과 무관하게 지워졌는지 본다 */
+    private fun attendedAtInDb(
+        session: Session,
+        memberId: Long,
+    ): Timestamp? =
+        jdbcTemplate.queryForObject(
+            "select max(attended_at) from attendances where session_id = ? and member_id = ? and deleted_at is null",
+            Timestamp::class.java,
+            session.id!!.value,
+            memberId,
+        )
+
+    private fun summary(
+        total: Int,
+        present: Int = 0,
+        late: Int = 0,
+        offlineAbsent: Int = 0,
+    ) = AttendanceSummaryQueryModel(
+        totalSessionCount = total,
+        presentCount = present,
+        lateCount = late,
+        excusedAbsentCount = 0,
+        onlineAbsentCount = 0,
+        offlineAbsentCount = offlineAbsent,
+    )
 
     private fun uniqueName(): String = "it579-" + UUID.randomUUID().toString().substring(0, 8)
 

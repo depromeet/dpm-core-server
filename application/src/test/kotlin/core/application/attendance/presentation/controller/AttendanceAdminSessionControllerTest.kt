@@ -1,10 +1,17 @@
 package core.application.attendance.presentation.controller
 
 import com.fasterxml.jackson.databind.SerializationFeature
+import core.application.attendance.application.exception.AttendanceNotFoundException
 import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.application.service.AttendanceQueryService
+import core.application.attendance.presentation.response.DetailMemberAttendancesResponse
+import core.application.attendance.presentation.response.DetailMemberInfo
+import core.application.attendance.presentation.response.MemberAttendanceResponse
+import core.application.attendance.presentation.response.MemberAttendancesResponse
+import core.application.attendance.presentation.response.MemberDetailAttendanceCountInfo
+import core.application.attendance.presentation.response.MemberDetailSessionInfo
 import core.application.attendance.presentation.response.SessionRosterMemberResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.cohort.application.service.CohortCommandService
@@ -18,6 +25,8 @@ import core.application.session.presentation.controller.SessionQueryController
 import core.application.support.FakeCohortPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
+import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
+import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.member.vo.MemberId
@@ -25,13 +34,17 @@ import core.domain.session.enums.SessionAttendanceStatus
 import core.domain.session.port.inbound.query.SessionSelectorQueryModel
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.vo.SessionId
+import core.domain.team.vo.TeamNumber
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasKey
 import org.hamcrest.Matchers.hasSize
+import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.springframework.aop.framework.ProxyFactory
@@ -144,6 +157,121 @@ class AttendanceAdminSessionControllerTest {
             .andExpect(jsonPath("$.data.totalElements").value(2))
             .andExpect(jsonPath("$.data.members[1]", hasKey("teamNumber")))
             .andExpect(jsonPath("$.data.members[1]", hasKey("attendedAt")))
+    }
+
+    @Test
+    fun `사람별 목록은 출석 생성 권한이 있어야 하고 팀 필터만 받으며 예전 필터와 페이지 파라미터는 무시한다`() {
+        loginAs(1L, "read:attendance")
+        mockMvc
+            .perform(get("/v3/members/attendances"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        verifyNoInteractions(queryService)
+
+        loginAs(1L, "create:attendance")
+        mockMvc.perform(get("/v3/members/attendances").param("teams", "1", "2")).andExpect(status().isOk)
+        mockMvc.perform(get("/v3/members/attendances").param("teams", "1,2")).andExpect(status().isOk)
+        verify(queryService, times(2)).getMemberAttendances(GetMemberAttendancesQuery(MemberId(1), listOf(1, 2)))
+
+        mockMvc
+            .perform(
+                get("/v3/members/attendances")
+                    .param("name", "신민철")
+                    .param("statuses", "ABSENT")
+                    .param("onlyMyTeam", "true")
+                    .param("page", "2")
+                    .param("size", "5"),
+            ).andExpect(status().isOk)
+        verify(queryService).getMemberAttendances(GetMemberAttendancesQuery(MemberId(1), null))
+    }
+
+    @Test
+    fun `사람별 목록 응답은 members, null 인 myTeamNumber, totalElements 만 주고 팀 없음은 0 이다`() {
+        loginAs(1L, "create:attendance")
+        given(queryService.getMemberAttendances(GetMemberAttendancesQuery(MemberId(1), null))).willReturn(
+            MemberAttendancesResponse(
+                members =
+                    listOf(
+                        MemberAttendanceResponse(1, "신민철", TeamNumber(1), false, "SERVER", "AT_RISK"),
+                        MemberAttendanceResponse(2, "이정호", TeamNumber(0), true, null, "NORMAL"),
+                    ),
+                myTeamNumber = null,
+                totalElements = 5,
+            ),
+        )
+
+        mockMvc
+            .perform(get("/v3/members/attendances"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
+            .andExpect(jsonPath("$.data", hasKey("myTeamNumber")))
+            .andExpect(jsonPath("$.data.totalElements").value(5))
+            .andExpect(jsonPath("$.data", not(hasKey("filter"))))
+            .andExpect(jsonPath("$.data", not(hasKey("hasNext"))))
+            .andExpect(jsonPath("$.data.members[*].id", contains(1, 2)))
+            .andExpect(jsonPath("$.data.members[0].teamNumber").value(1))
+            .andExpect(jsonPath("$.data.members[1].teamNumber").value(0))
+            .andExpect(jsonPath("$.data.members[1].attendanceStatus").value("NORMAL"))
+    }
+
+    @Test
+    fun `사람별 상세는 경로별 기존 권한 그대로 me 는 로그인 멤버, id 는 지정 멤버를 조회하고 없으면 404 다`() {
+        loginAs(1L, "read:attendance")
+        mockMvc
+            .perform(get("/v3/members/7/attendances"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        mockMvc.perform(get("/v3/members/me/attendances")).andExpect(status().isOk)
+        verify(queryService).getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(1)))
+
+        loginAs(1L, "update:member")
+        mockMvc
+            .perform(get("/v3/members/me/attendances"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        given(queryService.getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(404))))
+            .willThrow(AttendanceNotFoundException())
+        mockMvc.perform(get("/v3/members/7/attendances")).andExpect(status().isOk)
+        verify(queryService).getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(7)))
+        mockMvc
+            .perform(get("/v3/members/404/attendances"))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.code").value("ATTENDANCE-404-01"))
+    }
+
+    @Test
+    fun `사람별 상세 응답은 집계 0 과 null 인 인증 시각도 키로 주고 날짜는 오프셋 없는 ISO 문자열이다`() {
+        loginAs(1L, "read:attendance")
+        given(queryService.getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(1)))).willReturn(
+            DetailMemberAttendancesResponse(
+                member = DetailMemberInfo(1, "신민철", TeamNumber(0), false, null, "NORMAL"),
+                attendance = MemberDetailAttendanceCountInfo(0, 0, 0, 0),
+                sessions =
+                    listOf(
+                        MemberDetailSessionInfo(
+                            id = 5,
+                            week = 1,
+                            eventName = "OT",
+                            date = LocalDateTime.parse("2025-08-02T14:00:00"),
+                            attendanceStatus = "EXCUSED_ABSENT",
+                            attendedAt = null,
+                            isOnline = false,
+                            place = "공덕",
+                            absenceReason = null,
+                        ),
+                    ),
+            ),
+        )
+
+        mockMvc
+            .perform(get("/v3/members/me/attendances"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.member.teamNumber").value(0))
+            .andExpect(jsonPath("$.data.member.attendanceStatus").value("NORMAL"))
+            .andExpect(jsonPath("$.data.attendance.absentCount").value(0))
+            .andExpect(jsonPath("$.data.sessions[0].date").value("2025-08-02T14:00:00"))
+            .andExpect(jsonPath("$.data.sessions[0]", hasKey("attendedAt")))
+            .andExpect(jsonPath("$.data.sessions[0].attendedAt").value(nullValue()))
     }
 
     @Test
