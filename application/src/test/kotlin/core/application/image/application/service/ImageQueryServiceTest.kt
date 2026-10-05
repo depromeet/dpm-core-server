@@ -53,6 +53,18 @@ class ImageQueryServiceTest {
     }
 
     @Test
+    fun `운영진은 남의 이미지도 조회 URL 과 다운로드 URL 을 받는다`() {
+        val image = store("images/someone", originalFileName = "진단서.png")
+        val admin = MemberId(8L)
+
+        assertThat(service.getImage(admin, image.id!!, canReadOthers = true).url).contains("images/someone")
+        assertThat(service.getDownloadUrl(admin, image.id!!, canReadOthers = true).url).contains("images/someone")
+        assertThat(storage.downloadFileNames).containsExactly("진단서.png")
+        assertThatThrownBy { service.getImage(admin, ImageId(999L), canReadOthers = true) }
+            .isInstanceOf(ImageNotFoundException::class.java)
+    }
+
+    @Test
     fun `직접 업로드 전에 저장된 이미지도 같은 방식으로 읽힌다`() {
         // 이전 multipart 업로드는 images/{임의 UUID} 키였다.
         val legacy = store("images/0f8c5a3e-2b7d-4d8e-9a51-7c6e2f1b3a90")

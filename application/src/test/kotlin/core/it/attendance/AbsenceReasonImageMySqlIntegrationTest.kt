@@ -5,13 +5,9 @@ import core.application.attendance.application.exception.AbsenceReasonTooLongExc
 import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
 import core.application.attendance.application.service.AbsenceReasonCommandService
-import core.application.attendance.application.service.AbsenceReasonImageQueryService
 import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.common.exception.BusinessException
 import core.application.image.FakeImageStoragePort
-import core.application.image.application.exception.ImageNotFoundException
-import core.application.image.application.service.ImageQueryService
-import core.application.support.MutableClock
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
@@ -67,10 +63,6 @@ class AbsenceReasonImageMySqlIntegrationTest {
 
     @Autowired lateinit var queryService: AbsenceReasonQueryService
 
-    @Autowired lateinit var imageQueryService: AbsenceReasonImageQueryService
-
-    @Autowired lateinit var generalImageQueryService: ImageQueryService
-
     @Autowired lateinit var storage: FakeImageStoragePort
 
     @Autowired lateinit var cohortPort: CohortPersistencePort
@@ -80,8 +72,6 @@ class AbsenceReasonImageMySqlIntegrationTest {
     @Autowired lateinit var attendancePort: AttendancePersistencePort
 
     @Autowired lateinit var imagePort: ImagePersistencePort
-
-    @Autowired lateinit var clock: MutableClock
 
     @Autowired lateinit var jdbcTemplate: JdbcTemplate
 
@@ -230,56 +220,6 @@ class AbsenceReasonImageMySqlIntegrationTest {
         assertThat(items.getValue(withoutImages.value).imageIds).isEmpty()
     }
 
-    @Test
-    fun `운영진 이미지 URL 조회는 그 사유서에 붙은 그 멤버 이미지만 허용하고 거부할 때는 저장소를 부르지 않는다`() {
-        val member = newMember()
-        val admin = newMember()
-        val (session, otherSession) = List(2) { newSession() }
-        val (attached, unattached, attachedElsewhere) = List(3) { newImage(member) }
-        val strangers = newImage(newMember())
-        submit(session, member, "사유", listOf(attached))
-        submit(otherSession, member, "다른 사유", listOf(attachedElsewhere))
-        // 서비스로는 만들 수 없는 '남의 이미지 링크'도 소유자 확인에서 막히는지 본다
-        jdbcTemplate.update(
-            "insert into absence_reason_images (absence_reason_id, image_id, display_order) values (?, ?, 9)",
-            reasonId(session, member),
-            strangers.value,
-        )
-
-        storage.calls.clear()
-        val response = imageQueryService.getAbsenceReasonImage(session.id!!, member, attached)
-        assertThat(response.url).isNotBlank()
-        assertThat(response.expiresAt).isAfter(clock.instant())
-        assertThat(storage.calls).containsExactly("par-read")
-        // 다운로드도 같은 첨부 확인을 거친 뒤에만 URL 을 만든다
-        assertThat(imageQueryService.getAbsenceReasonImageDownload(session.id!!, member, attached).url).isNotBlank()
-
-        storage.calls.clear()
-        listOf(
-            Triple(session, member, unattached),
-            Triple(session, member, attachedElsewhere),
-            Triple(session, member, strangers),
-            Triple(session, admin, attached),
-            Triple(otherSession, member, attached),
-        ).forEach { (s, m, image) ->
-            assertThatThrownBy { imageQueryService.getAbsenceReasonImage(s.id!!, m, image) }
-                .isInstanceOf(ImageNotFoundException::class.java)
-            assertThatThrownBy { imageQueryService.getAbsenceReasonImageDownload(s.id!!, m, image) }
-                .isInstanceOf(ImageNotFoundException::class.java)
-        }
-        // 일반 조회는 운영진에게도 소유자 전용이다
-        assertThatThrownBy { generalImageQueryService.getImage(admin, attached) }
-            .isInstanceOf(ImageNotFoundException::class.java)
-
-        update(session, member, "해제", emptyList())
-        assertThatThrownBy { imageQueryService.getAbsenceReasonImage(session.id!!, member, attached) }
-            .isInstanceOf(ImageNotFoundException::class.java)
-        commandService.deleteAbsenceReason(otherSession.id!!, member)
-        assertThatThrownBy { imageQueryService.getAbsenceReasonImage(otherSession.id!!, member, attachedElsewhere) }
-            .isInstanceOf(ImageNotFoundException::class.java)
-        assertThat(storage.calls).isEmpty()
-    }
-
     private fun submit(
         session: Session,
         memberId: MemberId,
@@ -349,17 +289,6 @@ class AbsenceReasonImageMySqlIntegrationTest {
             ),
         )
     }
-
-    private fun reasonId(
-        session: Session,
-        memberId: MemberId,
-    ): Long =
-        jdbcTemplate.queryForObject(
-            "select absence_reason_id from absence_reasons where session_id = ? and member_id = ?",
-            Long::class.javaObjectType,
-            session.id!!.value,
-            memberId.value,
-        )!!
 
     private fun reasonCount(memberId: MemberId): Int = jdbcTemplate.queryForObject("select count(*) from absence_reasons where member_id = ?", Int::class.javaObjectType, memberId.value)!!
 

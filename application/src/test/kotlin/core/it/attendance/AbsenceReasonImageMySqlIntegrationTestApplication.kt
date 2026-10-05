@@ -1,13 +1,11 @@
 package core.it.attendance
 
 import core.application.attendance.application.service.AbsenceReasonCommandService
-import core.application.attendance.application.service.AbsenceReasonImageQueryService
 import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.common.configuration.JooqDslConfig
 import core.application.image.FakeImageStoragePort
 import core.application.image.application.properties.ImageStorageProperties
-import core.application.image.application.service.ImageQueryService
 import core.application.session.application.validator.SessionValidator
 import core.application.support.MutableClock
 import core.persistence.absencereason.repository.AbsenceReasonImageRepository
@@ -41,8 +39,6 @@ import java.time.Instant
     AttendanceCommandService::class,
     AbsenceReasonCommandService::class,
     AbsenceReasonQueryService::class,
-    AbsenceReasonImageQueryService::class,
-    ImageQueryService::class,
 )
 class AbsenceReasonImageMySqlIntegrationTestApplication {
     @Bean

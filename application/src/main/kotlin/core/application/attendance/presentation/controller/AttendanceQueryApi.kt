@@ -8,9 +8,7 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.common.exception.CustomResponse
-import core.application.image.presentation.response.ImageUrlResponse
 import core.domain.attendance.enums.AttendanceStatus
-import core.domain.image.vo.ImageId
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
@@ -20,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.http.ResponseEntity
 
 @Tag(name = "Attendance Query", description = "출석 조회 API")
 interface AttendanceQueryApi {
@@ -494,7 +491,7 @@ interface AttendanceQueryApi {
         description =
             "운영진이 해당 세션에 제출된 모든 결석 사유서를 제출자 이름과 함께 조회합니다. " +
                 "reasons[].imageIds 는 첨부 이미지 id(표시 순서, 없으면 [])이며 " +
-                "조회 URL 은 GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} 로 받습니다.",
+                "조회 URL 은 GET /v3/images/{imageId}, 다운로드는 GET /v3/images/{imageId}/download 로 받습니다.",
     )
     @ApiResponses(
         value = [
@@ -505,74 +502,6 @@ interface AttendanceQueryApi {
         ],
     )
     fun getSessionAbsenceReasons(sessionId: SessionId): CustomResponse<SessionAbsenceReasonsResponse>
-
-    @Operation(
-        summary = "결석 사유서 첨부 이미지 조회 URL 발급 (운영진)",
-        description =
-            "해당 세션·멤버의 결석 사유서에 지금 첨부된 이미지의 만료 시간이 있는 조회 URL 을 받습니다. " +
-                "첨부가 해제됐거나 사유서가 삭제됐으면 404 입니다. url 은 인증 헤더 없이 img 태그로 바로 표시할 수 있으며 " +
-                "expiresAt 이 지나면 다시 발급받아야 합니다. 응답은 캐시하지 않습니다(private, no-store).",
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "이미지 조회 URL 발급 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        examples = [
-                            ExampleObject(
-                                name = "이미지 조회 URL",
-                                value = """
-                                    {
-                                        "status": "OK",
-                                        "message": "요청에 성공했습니다",
-                                        "code": "G000",
-                                        "data": {
-                                            "url": "https://objectstorage.ap-chuncheon-1.oraclecloud.com/p/.../o/...",
-                                            "expiresAt": "2025-08-16T06:05:00Z"
-                                        }
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-            ApiResponse(responseCode = "403", description = "운영진 권한(update:attendance) 없음"),
-            ApiResponse(responseCode = "404", description = "IMAGE-404-01 사유서가 없거나 그 사유서에 첨부된 이미지가 아님"),
-            ApiResponse(responseCode = "503", description = "이미지 저장소 사용 불가"),
-        ],
-    )
-    fun getAbsenceReasonImage(
-        sessionId: SessionId,
-        memberId: MemberId,
-        imageId: ImageId,
-    ): ResponseEntity<CustomResponse<ImageUrlResponse>>
-
-    @Operation(
-        summary = "결석 사유서 첨부 이미지 다운로드 (운영진)",
-        description =
-            "해당 세션·멤버의 결석 사유서에 지금 첨부된 이미지를 원본 파일명으로 내려받도록 1분짜리 다운로드 URL 로 302 리다이렉트합니다. " +
-                "<a href> 로 바로 연결할 수 있습니다(로그인 쿠키로 인증). 첨부가 해제됐거나 사유서가 삭제됐으면 404 입니다.",
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "302",
-                description = "Location: 다운로드 URL (Content-Disposition: attachment). Cache-Control: no-store, private",
-            ),
-            ApiResponse(responseCode = "403", description = "운영진 권한(update:attendance) 없음"),
-            ApiResponse(responseCode = "404", description = "IMAGE-404-01 사유서가 없거나 그 사유서에 첨부된 이미지가 아님"),
-            ApiResponse(responseCode = "503", description = "이미지 저장소 사용 불가"),
-        ],
-    )
-    fun downloadAbsenceReasonImage(
-        sessionId: SessionId,
-        memberId: MemberId,
-        imageId: ImageId,
-    ): ResponseEntity<Void>
 }
 
 private const val MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION =

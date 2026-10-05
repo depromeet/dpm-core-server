@@ -14,7 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 
-@Tag(name = "Image", description = "이미지 업로드/조회 API (비공개 저장소 직접 업로드, 업로드한 본인만 조회)")
+@Tag(name = "Image", description = "이미지 업로드/조회 API (비공개 저장소 직접 업로드, 업로드한 본인과 운영진만 조회)")
 interface ImageApi {
     @Operation(
         summary = "이미지 업로드 URL 발급",
@@ -83,14 +83,15 @@ interface ImageApi {
     @Operation(
         summary = "이미지 조회 URL 발급",
         description =
-            "업로드한 본인에게 원본을 읽을 수 있는 1분짜리 URL 을 줍니다. <img src> 에 바로 쓸 수 있으며 만료 후에는 다시 요청합니다. " +
-                "URL 을 가진 사람은 만료 전까지 누구나 읽을 수 있습니다. 남의 이미지와 없는 이미지는 모두 404 입니다.",
+            "업로드한 본인과 운영진(update:attendance)에게 원본을 읽을 수 있는 1분짜리 URL 을 줍니다. " +
+                "<img src> 에 바로 쓸 수 있으며 만료 후에는 다시 요청합니다. URL 을 가진 사람은 만료 전까지 누구나 읽을 수 있습니다. " +
+                "운영진이 아닌데 남의 이미지이거나 없는 이미지는 모두 404 입니다.",
     )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "data: url, expiresAt (Cache-Control: no-store)"),
             ApiResponse(responseCode = "401", description = "로그인 필요"),
-            ApiResponse(responseCode = "404", description = "없거나 본인 이미지가 아님"),
+            ApiResponse(responseCode = "404", description = "없거나, 운영진이 아닌데 본인 이미지가 아님"),
             ApiResponse(responseCode = "503", description = "이미지 저장소 사용 불가"),
         ],
     )
@@ -102,7 +103,7 @@ interface ImageApi {
     @Operation(
         summary = "이미지 다운로드",
         description =
-            "업로드한 본인의 이미지를 원본 파일명으로 내려받도록 1분짜리 다운로드 URL 로 302 리다이렉트합니다. " +
+            "업로드한 본인 또는 운영진(update:attendance)이 이미지를 원본 파일명으로 내려받도록 1분짜리 다운로드 URL 로 302 리다이렉트합니다. " +
                 "<a href> 로 바로 연결할 수 있습니다(로그인 쿠키로 인증). Bearer 헤더만 쓰는 클라이언트는 fetch 로 호출하면 " +
                 "리다이렉트를 따라가 파일을 받습니다. 파일명 없이 올린 이미지는 저장 이름을 브라우저가 정합니다.",
     )
@@ -113,7 +114,7 @@ interface ImageApi {
                 description = "Location: 다운로드 URL (Content-Disposition: attachment). Cache-Control: no-store",
             ),
             ApiResponse(responseCode = "401", description = "로그인 필요"),
-            ApiResponse(responseCode = "404", description = "없거나 본인 이미지가 아님"),
+            ApiResponse(responseCode = "404", description = "없거나, 운영진이 아닌데 본인 이미지가 아님"),
             ApiResponse(responseCode = "503", description = "이미지 저장소 사용 불가"),
         ],
     )

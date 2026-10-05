@@ -52,10 +52,6 @@ class AttendanceApiV3PathContractTest {
                 "GET /v3/members/me/attendances hasAuthority('read:attendance')",
                 "GET /v3/sessions/{sessionId}/absence-reasons/me hasAuthority('create:attendance')",
                 "GET /v3/sessions/{sessionId}/absence-reasons hasAuthority('update:attendance')",
-                "GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId} " +
-                    "hasAuthority('update:attendance')",
-                "GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId}/download " +
-                    "hasAuthority('update:attendance')",
             )
     }
 
