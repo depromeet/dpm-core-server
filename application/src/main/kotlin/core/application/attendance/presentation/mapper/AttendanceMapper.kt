@@ -15,7 +15,6 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.MyDetailAttendanceInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceSessionInfo
 import core.application.attendance.presentation.response.MyTeamFilterResponse
-import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.attendance.presentation.response.SessionRosterMemberResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
@@ -24,7 +23,6 @@ import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
-import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.member.vo.MemberId
@@ -42,30 +40,6 @@ object AttendanceMapper {
         AttendanceResponse(
             attendanceStatus = attendanceStatus.name,
             attendedAt = instantToLocalDateTime(attendedAt),
-        )
-
-    fun toSessionAttendancesResponse(
-        members: List<SessionAttendanceQueryModel>,
-        onlyMyTeam: Boolean,
-        myTeamNumber: TeamNumber?,
-        hasNext: Boolean,
-        totalElements: Int,
-    ): SessionAttendancesResponse =
-        SessionAttendancesResponse(
-            members =
-                members.map { member ->
-                    MemberAttendanceResponse(
-                        id = member.id,
-                        name = member.name,
-                        teamNumber = member.teamNumber,
-                        isAdmin = member.isAdmin,
-                        part = member.part,
-                        attendanceStatus = member.attendanceStatus,
-                    )
-                },
-            filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
-            hasNext = hasNext,
-            totalElements = totalElements,
         )
 
     /** 운영진이 바꾼 기록(updatedAt 있음)은 저장된 인증 시각을 그대로 두되 응답에서는 attendedAt 을 null 로 준다. */

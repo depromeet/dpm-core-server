@@ -8,12 +8,10 @@ import core.application.attendance.presentation.response.DetailMemberAttendances
 import core.application.attendance.presentation.response.MemberAttendanceResponse
 import core.application.attendance.presentation.response.MemberAttendancesResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
-import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.member.application.service.MemberQueryService
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.attendance.aggregate.Attendance
-import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
@@ -60,32 +58,6 @@ class AttendanceQueryService(
         val session = sessionPersistencePort.findSessionById(sessionId.value)
         if (session == null || session.cohortId != cohortId) throw SessionNotFoundException()
         return cohortId
-    }
-
-    fun getAttendancesBySession(query: GetAttendancesBySessionWeekQuery): SessionAttendancesResponse {
-        val myTeamNumber: TeamNumber =
-            query.onlyMyTeam
-                ?.let { memberQueryService.getMemberTeamNumber(query.memberId) } ?: TeamNumber.defaultValue()
-
-        val queryResult =
-            attendancePersistencePort
-                .findSessionAttendancesByQuery(query, myTeamNumber)
-
-        val totalElements =
-            attendancePersistencePort.countSessionAttendancesByQuery(query, myTeamNumber)
-
-        val totalPages =
-            ceil(totalElements / query.size.toDouble()).toInt()
-
-        val hasNext = query.page < totalPages
-
-        return AttendanceMapper.toSessionAttendancesResponse(
-            members = queryResult,
-            onlyMyTeam = query.onlyMyTeam ?: false,
-            myTeamNumber = myTeamNumber,
-            hasNext = hasNext,
-            totalElements = totalElements,
-        )
     }
 
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {

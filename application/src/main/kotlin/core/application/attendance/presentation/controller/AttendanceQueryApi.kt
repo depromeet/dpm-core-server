@@ -6,7 +6,6 @@ import core.application.attendance.presentation.response.MemberAttendancesRespon
 import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
-import core.application.attendance.presentation.response.SessionAttendancesResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.exception.CustomResponse
 import core.domain.attendance.enums.AttendanceStatus
@@ -23,85 +22,18 @@ import io.swagger.v3.oas.annotations.tags.Tag
 @Tag(name = "Attendance Query", description = "출석 조회 API")
 interface AttendanceQueryApi {
     @Operation(
-        summary = "세션별 출석 조회",
-        description = "세션에 대한 출석을 조회합니다. 요청 시 출석상태, 팀, 이름, 커서 ID를 기준으로 필터링할 수 있습니다",
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "세션별 출석 조회 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "출석 성공 응답",
-                                value = """
-                                    {
-                                        "status": "OK",
-                                        "message": "요청에 성공했습니다",
-                                        "code": "G000",
-                                        "data": {
-                                            "members": [
-                                                {
-                                                    "id": 1,
-                                                    "name": "신민철",
-                                                    "teamNumber": 1,
-                                                    "isAdmin": false,
-                                                    "part": "SERVER",
-                                                    "attendanceStatus": "PRESENT"
-                                                },
-                                                {
-                                                    "id": 2,
-                                                    "name": "이정호",
-                                                    "teamNumber": 2,
-                                                    "isAdmin": false,
-                                                    "part": "WEB",
-                                                    "attendanceStatus": "LATE"
-                                                }
-                                            ],
-                                            "filter": {
-                                              "teamNumber": 7,
-                                              "isMyTeam": false
-                                            },
-                                            "hasNextPage": false,
-                                            "nextCursorId": null,
-                                            "totalElements": 26
-                                        }
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-        ],
-    )
-    fun getAttendancesBySessionId(
-        sessionId: SessionId,
-        memberId: MemberId,
-        statuses: List<AttendanceStatus>?,
-        teams: List<Int>?,
-        name: String?,
-        onlyMyTeam: Boolean?,
-        page: Int,
-        size: Int,
-    ): CustomResponse<SessionAttendancesResponse>
-
-    @Operation(
         summary = "세션 전체 출석 명단 조회 (운영진)",
         description =
             "현재 활성 기수 세션의 출석 명단을 필터와 페이지 없이 전부 조회합니다. " +
                 "이름, 상태, 팀, 파트, 내 팀 필터는 프론트에서 하며 내 팀은 myTeamNumber(현재 기수 팀, 없으면 null)로 고릅니다. " +
                 "totalElements 는 members 전체 인원(결석·미인증 포함)입니다. " +
                 "상태별 인원은 이 명단으로 프론트에서 계산합니다. " +
-                "팀 선택지(멤버가 없는 팀 포함)는 GET /v3/cohorts/current/teams 로 조회합니다. " +
+                "팀 선택지(멤버가 없는 팀 포함)는 GET /v3/cohorts/current/teams, " +
+                "파트 선택지는 GET /v3/members/parts 로 조회합니다. " +
                 "members 는 팀 번호(팀 없음은 마지막), 이름, ID 순이고 teamNumber 는 팀이 없으면 null 입니다. " +
                 "운영진이 상태를 바꾼 기록은 isManuallyUpdated 가 true 이고 attendedAt 은 null 입니다. " +
                 "absenceReason 은 이 세션에 제출한 가장 최근 결석 사유서 내용(없으면 null)이며 첨부 이미지는 주지 않습니다. " +
-                "없거나 삭제됐거나 현재 기수가 아닌 세션이면 404 입니다. 기존 GET /v1/sessions/{sessionId}/attendances 는 호환을 위해 남겨 둡니다.",
+                "없거나 삭제됐거나 현재 기수가 아닌 세션이면 404 입니다.",
     )
     @ApiResponses(
         value = [

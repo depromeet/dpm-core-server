@@ -2,7 +2,6 @@ package core.application.support
 
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
-import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
@@ -12,7 +11,6 @@ import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
-import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.attendance.vo.AttendanceId
@@ -245,11 +243,6 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 it.deletedAt == null
         }
 
-    override fun findSessionAttendancesByQuery(
-        query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: TeamNumber,
-    ): List<SessionAttendanceQueryModel> = throw UnsupportedOperationException()
-
     override fun findMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
         myTeamNumber: TeamNumber,
@@ -285,11 +278,6 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
 
     override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
         throw UnsupportedOperationException()
-
-    override fun countSessionAttendancesByQuery(
-        query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: TeamNumber,
-    ): Int = throw UnsupportedOperationException()
 
     override fun countMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
