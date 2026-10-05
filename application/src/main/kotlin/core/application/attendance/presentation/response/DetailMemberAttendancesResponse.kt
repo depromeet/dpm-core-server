@@ -31,7 +31,7 @@ data class MemberDetailSessionInfo(
     val eventName: String,
     val date: LocalDateTime,
     val attendanceStatus: String,
-    /** 실제 출석 인증 시각. 인증하지 않았으면 null */
+    /** 실제 출석 인증 시각(Asia/Seoul). 인증하지 않았거나 운영진이 상태를 바꿨으면 null */
     val attendedAt: LocalDateTime?,
     val isOnline: Boolean,
     /** 세션 장소. 온라인이면 "온라인", 오프라인이면 저장된 장소명 */

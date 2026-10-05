@@ -119,6 +119,58 @@ class AttendanceCommandServiceTest {
     }
 
     @Test
+    fun `운영진 단건 변경은 인증 시각과 자동 결석 표지를 지우고 변경 시각을 남긴다`() {
+        val attended = fixture.addAttendance(session, memberId = 1L, status = AttendanceStatus.PRESENT, attendedAt = times.attendanceStart)
+        val autoAbsent = fixture.addAttendance(session, memberId = 2L, status = AttendanceStatus.ABSENT, autoAbsentAt = times.absentStart)
+        // 인증 시각이 남아 있는 예전 운영진 변경 기록도 다시 바꾸면 지운다
+        val legacyManual =
+            fixture.addAttendance(
+                session,
+                memberId = 3L,
+                status = AttendanceStatus.LATE,
+                attendedAt = times.lateStart,
+                updatedAt = sessionStart.minusSeconds(60),
+            )
+
+        listOf(1L to AttendanceStatus.LATE, 2L to AttendanceStatus.EXCUSED_ABSENT, 3L to AttendanceStatus.PRESENT).forEach { (memberId, status) ->
+            fixture.attendanceCommandService.updateAttendanceStatus(AttendanceStatusUpdateCommand(sessionId, MemberId(memberId), status))
+        }
+
+        listOf(attended, autoAbsent, legacyManual).forEach { id ->
+            val row = fixture.attendances.row(id)
+            assertThat(row.attendedAt).isNull()
+            assertThat(row.updatedAt).isEqualTo(sessionStart)
+            assertThat(row.autoAbsentAt).isNull()
+        }
+        assertThat(listOf(attended, autoAbsent, legacyManual).map { fixture.attendances.row(it).status })
+            .containsExactly(AttendanceStatus.LATE, AttendanceStatus.EXCUSED_ABSENT, AttendanceStatus.PRESENT)
+        // 운영진 기록이라 이후 인증으로 덮어쓰지 않는다
+        assertThatThrownBy { attend(1L, times.attendanceStart) }.isInstanceOf(AttendanceAlreadyDecidedException::class.java)
+    }
+
+    @Test
+    fun `운영진 일괄 변경은 대상 모두의 인증 시각을 지우고 다른 멤버 기록은 두며 실패하면 아무것도 지우지 않는다`() {
+        val first = fixture.addAttendance(session, memberId = 1L, status = AttendanceStatus.PRESENT, attendedAt = times.attendanceStart)
+        val second = fixture.addAttendance(session, memberId = 2L, status = AttendanceStatus.LATE, attendedAt = times.lateStart)
+        val untouched = fixture.addAttendance(session, memberId = 3L, status = AttendanceStatus.PRESENT, attendedAt = times.attendanceStart)
+
+        assertThatThrownBy {
+            fixture.attendanceCommandService.updateAttendanceStatusBulk(sessionId, AttendanceStatus.ABSENT, listOf(MemberId(1L), MemberId(404L)))
+        }.isInstanceOf(AttendanceNotFoundException::class.java)
+        assertThat(fixture.attendances.row(first).attendedAt).isEqualTo(times.attendanceStart)
+
+        fixture.attendanceCommandService.updateAttendanceStatusBulk(sessionId, AttendanceStatus.EXCUSED_ABSENT, listOf(MemberId(2L), MemberId(1L)))
+
+        listOf(first, second).forEach { id ->
+            assertThat(fixture.attendances.row(id).status).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+            assertThat(fixture.attendances.row(id).attendedAt).isNull()
+            assertThat(fixture.attendances.row(id).updatedAt).isEqualTo(sessionStart)
+        }
+        assertThat(fixture.attendances.row(untouched).attendedAt).isEqualTo(times.attendanceStart)
+        assertThat(fixture.attendances.row(untouched).updatedAt).isNull()
+    }
+
+    @Test
     fun `운영진 일괄 변경은 중복 멤버를 한 번만 반영하고 대상 중 하나라도 없으면 아무것도 바꾸지 않는다`() {
         val first = fixture.addAttendance(session, memberId = 1L)
         val second = fixture.addAttendance(session, memberId = 2L)

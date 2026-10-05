@@ -94,6 +94,24 @@ class AttendanceStatusRuleTest {
     }
 
     @Test
+    fun `운영진 변경은 인증 시각과 자동 결석 표지를 지우고 이후 인증과 재계산에서 보호된다`() {
+        val attended = attendance(AttendanceStatus.PRESENT, attendedAt = sessionStart)
+        val autoAbsent = attendance(AttendanceStatus.ABSENT, autoAbsentAt = absentStart)
+
+        listOf(attended, autoAbsent).forEach { attendance ->
+            attendance.updateStatus(AttendanceStatus.EXCUSED_ABSENT, afterClose)
+
+            assertThat(attendance.status).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+            assertThat(attendance.attendedAt).isNull()
+            assertThat(attendance.updatedAt).isEqualTo(afterClose)
+            assertThat(attendance.autoAbsentAt).isNull()
+            assertThat(attendance.isAttended()).isFalse()
+            assertThat(attendance.canRecordAttendance()).isFalse()
+            assertThat(attendance.recalculateStatusByPolicy(lateStart, absentStart, afterClose)).isNull()
+        }
+    }
+
+    @Test
     fun `인정 결석은 재계산 대상이 아니다`() {
         assertThat(
             attendance(AttendanceStatus.EXCUSED_ABSENT, attendedAt = sessionStart)

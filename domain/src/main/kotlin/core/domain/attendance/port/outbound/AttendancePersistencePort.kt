@@ -3,8 +3,6 @@ package core.domain.attendance.port.outbound
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
-import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
-import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
@@ -12,7 +10,6 @@ import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
-import core.domain.team.vo.TeamNumber
 import java.time.Instant
 
 interface AttendancePersistencePort {
@@ -23,10 +20,18 @@ interface AttendancePersistencePort {
 
     fun save(attendance: Attendance)
 
-    fun findMemberAttendancesByQuery(
-        query: GetMemberAttendancesQuery,
-        myTeamNumber: TeamNumber,
+    /**
+     * [cohortId] 기수에 소속(MEMBER_COHORTS)되고 삭제되지 않은 멤버 전원과 그 기수 출석 집계. 출석 기록이 없어도 집계 0 으로 포함한다.
+     * [teamNumbers] 가 비어 있지 않으면 그 기수의 최신 배정 팀 번호가 그중 하나인 멤버만 준다.
+     * 팀 번호 오름차순(팀 없음은 마지막), 이름, 멤버 ID 순이다.
+     */
+    fun findMemberAttendances(
+        cohortId: Long,
+        teamNumbers: List<Int>,
     ): List<MemberAttendanceQueryModel>
+
+    /** [cohortId] 기수에 소속(MEMBER_COHORTS)되고 삭제되지 않은 멤버 수. 팀·출석 기록과 무관하다. */
+    fun countCohortMembers(cohortId: Long): Int
 
     /**
      * 세션의 전체 출석 명단. [cohortId] 기수에 소속되고 삭제되지 않은 멤버의 살아 있는 출석 기록만, 멤버당 한 행으로 준다.
@@ -46,18 +51,21 @@ interface AttendancePersistencePort {
 
     fun findDetailAttendanceBySession(query: GetDetailAttendanceBySessionQuery): SessionDetailAttendanceQueryModel?
 
-    fun findDetailMemberAttendance(query: GetDetailMemberAttendancesQuery): List<MemberDetailAttendanceQueryModel>
+    /** [findMemberAttendances] 의 한 멤버. [cohortId] 기수 소속이 아니거나 삭제·없는 멤버면 null */
+    fun findDetailMemberAttendance(
+        memberId: Long,
+        cohortId: Long,
+    ): MemberDetailAttendanceQueryModel?
 
-    fun findMemberSessionAttendances(query: GetDetailMemberAttendancesQuery): List<MemberSessionAttendanceQueryModel>
+    /** 멤버의 [cohortId] 기수 삭제되지 않은 세션별 살아 있는 출석 기록. 세션당 attendance_id 가 가장 큰 기록 하나다. */
+    fun findMemberSessionAttendances(
+        memberId: Long,
+        cohortId: Long,
+    ): List<MemberSessionAttendanceQueryModel>
 
     fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel?
 
     fun saveInBatch(attendances: List<Attendance>)
-
-    fun countMemberAttendancesByQuery(
-        query: GetMemberAttendancesQuery,
-        myTeamNumber: TeamNumber,
-    ): Int
 
     fun findAllBySessionId(sessionId: Long): List<Attendance>
 
@@ -73,7 +81,7 @@ interface AttendancePersistencePort {
         attendedAt: Instant,
     ): Boolean
 
-    /** 상태와 updatedAt 을 바꾸고 자동 결석 표지를 지운다. attendedAt 은 보존한다. 갱신한 행 수를 반환한다. */
+    /** 상태와 updatedAt 을 바꾸고 attendedAt 과 자동 결석 표지를 지운다. 갱신한 행 수를 반환한다. */
     fun updateStatusByAdmin(
         sessionId: Long,
         memberIds: List<Long>,
