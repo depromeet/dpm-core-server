@@ -457,7 +457,7 @@ class AttendanceRepository(
             .on(COHORTS.COHORT_ID.eq(summaryCohortId))
 
     /** 표시용 팀 번호: 그 기수의 가장 최근 배정(member_team_id 최대). 없으면 null(팀 0). */
-    private val summaryTeamNumber =
+    private val latestTeamNumber =
         field(
             select(TEAMS.NUMBER)
                 .from(MEMBER_TEAMS)
@@ -466,21 +466,12 @@ class AttendanceRepository(
                 .where(MEMBER_TEAMS.MEMBER_ID.eq(summaryMemberId), TEAMS.COHORT_ID.eq(summaryCohortId))
                 .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
                 .limit(1),
-        ).`as`(TEAM_NUMBER)
-
-    /** 그 기수 팀 소속으로 멤버만 고른다(행을 늘리거나 없애지 않는다). */
-    private fun belongsToTeamIn(teamNumbers: Collection<Int>): Condition =
-        exists(
-            selectOne()
-                .from(MEMBER_TEAMS)
-                .join(TEAMS)
-                .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
-                .where(
-                    MEMBER_TEAMS.MEMBER_ID.eq(summaryMemberId),
-                    TEAMS.COHORT_ID.eq(summaryCohortId),
-                    TEAMS.NUMBER.`in`(teamNumbers),
-                ),
         )
+
+    private val summaryTeamNumber = latestTeamNumber.`as`(TEAM_NUMBER)
+
+    /** 표시하는 팀(그 기수의 최신 배정) 기준으로 멤버만 고른다. 같은 기수의 이전 팀 배정으로는 걸리지 않는다. */
+    private fun belongsToTeamIn(teamNumbers: Collection<Int>): Condition = latestTeamNumber.`in`(teamNumbers)
 
     private fun isAdminField() =
         exists(

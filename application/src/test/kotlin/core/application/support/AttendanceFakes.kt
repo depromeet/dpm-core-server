@@ -216,8 +216,6 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
             rows.values.filter {
                 it.sessionId == sessionId &&
                     it.status == AttendanceStatus.PENDING &&
-                    it.attendedAt == null &&
-                    it.updatedAt == null &&
                     it.deletedAt == null
             }
         targets.forEach {
@@ -242,8 +240,6 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         rows.values.any {
             it.sessionId == sessionId &&
                 it.status == AttendanceStatus.PENDING &&
-                it.attendedAt == null &&
-                it.updatedAt == null &&
                 it.deletedAt == null
         }
 
@@ -332,8 +328,12 @@ class FakeSessionPersistencePort(
     ): List<Session> = throw UnsupportedOperationException()
 
     @Synchronized
-    override fun findSessionIdsToAutoClose(absentStartTo: Instant): List<SessionId> =
+    override fun findSessionIdsToAutoClose(
+        cohortId: CohortId,
+        absentStartTo: Instant,
+    ): List<SessionId> =
         sessions.values
+            .filter { it.cohortId == cohortId }
             .filter { it.deletedAt == null && !it.attendancePolicy.absentStart.isAfter(absentStartTo) }
             .filter { attendances.hasAutoAbsenceTarget(it.id!!.value) }
             .sortedWith(compareBy({ it.attendancePolicy.absentStart }, { it.id!!.value }))

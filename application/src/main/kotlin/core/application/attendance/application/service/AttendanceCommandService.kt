@@ -144,7 +144,7 @@ class AttendanceCommandService(
 
     /**
      * 공유 잠금 후 최신 마감을 다시 확인해, 그 사이 마감이 연장됐거나 세션이 삭제됐으면 처리하지 않는다.
-     * 과거 기수 세션도 대상이며 미인증 기록만 바꾼다.
+     * 기수는 호출자가 고르고(활성 기수), 현재 PENDING 인 기록만 바꾼다. 운영진이 PENDING 으로 되돌린 기록도 결석이 된다.
      */
     fun closeExpiredAttendances(
         sessionId: SessionId,

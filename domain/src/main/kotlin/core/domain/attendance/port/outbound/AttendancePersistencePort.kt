@@ -92,7 +92,10 @@ interface AttendancePersistencePort {
     /** 마감 연장 시 자동 결석(표지 있음)만 PENDING 으로 되돌린다. 표지 없는 기존 ABSENT 는 바꾸지 않는다. */
     fun reopenAutoAbsence(attendanceId: Long): Boolean
 
-    /** 미인증 행만 ABSENT 로 바꾸고 자동 결석 표지를 남긴다. updatedAt 은 기록하지 않는다. */
+    /**
+     * 현재 PENDING 인 행만 ABSENT 로 바꾸고 자동 결석 표지를 남긴다. attendedAt/updatedAt 은 조건으로 보지 않고 그대로 둔다.
+     * 운영진이 PENDING 으로 되돌린 행도 대상이다. updatedAt 은 기록하지 않는다.
+     */
     fun markAutoAbsence(
         sessionId: Long,
         autoAbsentAt: Instant,
