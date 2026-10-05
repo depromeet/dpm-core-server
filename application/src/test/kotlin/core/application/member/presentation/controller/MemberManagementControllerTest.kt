@@ -72,8 +72,8 @@ class MemberManagementControllerTest {
         val result =
             mvc.perform(authenticated("read:member"))
                 .andExpect(status().isOk)
-            .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
-            .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
                 .andExpect(jsonPath("$.data.members[0].signupEmail").value("signup@example.com"))
                 .andReturn()
         assertThat(result.response.contentAsString).contains("\"duplicateSuspected\":null")
