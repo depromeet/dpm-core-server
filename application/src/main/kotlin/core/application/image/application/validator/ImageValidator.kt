@@ -52,7 +52,10 @@ class ImageValidator {
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
                 ?: return null
-        if (name.length > MAX_FILE_NAME_LENGTH) throw InvalidImageException(ImageExceptionCode.FILE_NAME_TOO_LONG)
+        // DB VARCHAR(255)(utf8mb4)와 같이 문자(code point) 수로 센다. 이모지는 String.length 로는 2다.
+        if (name.codePointCount(0, name.length) > MAX_FILE_NAME_LENGTH) {
+            throw InvalidImageException(ImageExceptionCode.FILE_NAME_TOO_LONG)
+        }
         return name
     }
 

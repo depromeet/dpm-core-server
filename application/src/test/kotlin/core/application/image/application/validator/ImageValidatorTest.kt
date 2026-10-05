@@ -95,6 +95,15 @@ class ImageValidatorTest {
         }
     }
 
+    @Test
+    fun `파일명 길이는 UTF-16 단위가 아니라 문자 수로 센다`() {
+        val emoji = "\uD83D\uDCF7" // 📷, 한 글자지만 String.length 는 2
+        val maxEmojiName = emoji.repeat(ImageValidator.MAX_FILE_NAME_LENGTH)
+
+        assertThat(validator.normalizeFileName(maxEmojiName)).isEqualTo(maxEmojiName)
+        assertCode(ImageExceptionCode.FILE_NAME_TOO_LONG) { validator.normalizeFileName(maxEmojiName + "a") }
+    }
+
     /** 검증은 파일만 받는다. 바이트를 임시 파일로 써서 넘긴다. */
     private fun ImageValidator.validate(
         bytes: ByteArray,
