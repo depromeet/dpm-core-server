@@ -7,6 +7,7 @@ import core.application.attendance.presentation.response.DetailMemberAttendances
 import core.application.attendance.presentation.response.DetailMemberInfo
 import core.application.attendance.presentation.response.MemberAttendanceResponse
 import core.application.attendance.presentation.response.MemberAttendancesResponse
+import core.application.attendance.presentation.response.MemberDetailAbsenceReasonInfo
 import core.application.attendance.presentation.response.MemberDetailAttendanceCountInfo
 import core.application.attendance.presentation.response.MemberDetailSessionInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
@@ -132,11 +133,10 @@ object AttendanceMapper {
                 ),
             attendance =
                 MemberDetailAttendanceCountInfo(
-                    presentCount = memberAttendanceModel.presentCount,
-                    lateCount = memberAttendanceModel.lateCount,
-                    excusedAbsentCount = memberAttendanceModel.excusedAbsentCount,
-                    absentCount = memberAttendanceModel.onlineAbsentCount + memberAttendanceModel.offlineAbsentCount,
-                    earlyLeaveCount = memberAttendanceModel.earlyLeaveCount,
+                    presentCount = memberAttendanceModel.summary.presentCount,
+                    lateCount = memberAttendanceModel.summary.lateCount,
+                    excusedAbsentCount = memberAttendanceModel.summary.excusedAbsentCount,
+                    absentCount = memberAttendanceModel.summary.absentCount,
                 ),
             sessions =
                 sessionAttendancesModel.map { session ->
@@ -146,6 +146,15 @@ object AttendanceMapper {
                         eventName = session.sessionEventName,
                         date = instantToLocalDateTime(session.sessionDate),
                         attendanceStatus = session.sessionAttendanceStatus,
+                        isOnline = session.sessionIsOnline,
+                        absenceReason =
+                            session.absenceReason?.let {
+                                MemberDetailAbsenceReasonInfo(
+                                    id = it.id,
+                                    contents = it.contents,
+                                    status = it.status,
+                                )
+                            },
                     )
                 },
         )
