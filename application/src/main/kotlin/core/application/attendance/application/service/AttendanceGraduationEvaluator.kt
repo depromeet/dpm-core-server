@@ -21,10 +21,10 @@ class AttendanceGraduationEvaluator {
         return when {
             cannotReachMinimumRate ||
                 absenceHalfUnits > MAX_ABSENCE_HALF_UNITS ||
-                summary.offlineAbsentCount > MAX_OFFLINE_ABSENT_COUNT ->
+                summary.offlineAbsentCount >= IMPOSSIBLE_OFFLINE_ABSENT_COUNT ->
                 AttendanceGraduationStatus.IMPOSSIBLE
             absenceHalfUnits >= AT_RISK_ABSENCE_HALF_UNITS ||
-                summary.offlineAbsentCount >= MAX_OFFLINE_ABSENT_COUNT ->
+                summary.offlineAbsentCount >= AT_RISK_OFFLINE_ABSENT_COUNT ->
                 AttendanceGraduationStatus.AT_RISK
             else -> AttendanceGraduationStatus.NORMAL
         }
@@ -37,7 +37,10 @@ class AttendanceGraduationEvaluator {
         /** 환산 결석 3회 이상이면 수료 위험 */
         const val AT_RISK_ABSENCE_HALF_UNITS = 6
 
-        /** 오프라인 실제 결석 2회까지 수료 가능(2회면 위험) */
-        const val MAX_OFFLINE_ABSENT_COUNT = 2
+        /** 오프라인 실제 결석 3회 이상이면 수료 불가 */
+        const val IMPOSSIBLE_OFFLINE_ABSENT_COUNT = 3
+
+        /** 오프라인 실제 결석 2회 이상이면 수료 위험 */
+        const val AT_RISK_OFFLINE_ABSENT_COUNT = 2
     }
 }
