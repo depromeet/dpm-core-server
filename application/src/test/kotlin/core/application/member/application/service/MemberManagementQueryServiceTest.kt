@@ -94,6 +94,20 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
+    fun `수료 필터에 빈 값이 섞여도 미평가 회원은 결과에 포함하지 않는다`() {
+        // Spring MVC가 NORMAL, 을 바인딩한 결과와 동일한 입력이다.
+        @Suppress("UNCHECKED_CAST")
+        val statuses = listOf(AttendanceGraduationStatus.NORMAL, null) as List<AttendanceGraduationStatus>
+        `when`(attendance.findSummariesByCohortAndMemberIds(19, source.map { it.memberId })).thenReturn(
+            mapOf(1L to summary(0), 2L to summary(5)),
+        )
+        val response = service.getOverview(MemberManagementRequest(graduationStatuses = statuses))
+        assertThat(response.totalElements).isEqualTo(1)
+        assertThat(response.members.map { it.memberId }).containsExactly(1L)
+        assertThat(response.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
+    }
+
+    @Test
     fun `무소속 대기자는 미승인 목록에만 나오고 수료는 미평가다`() {
         val response = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
         assertThat(response.members.map { it.memberId }).containsExactly(6L, 7L)

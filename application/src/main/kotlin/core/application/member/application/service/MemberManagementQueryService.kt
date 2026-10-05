@@ -77,7 +77,8 @@ class MemberManagementQueryService(
                 .filter { !request.excludeStaff || it.memberType !in STAFF_TYPES }
                 .filter { !request.missingInformationOnly || it.missingInformation }
                 .filter {
-                    request.graduationStatuses.isNullOrEmpty() || it.graduationStatus in request.graduationStatuses
+                    request.graduationStatuses.isNullOrEmpty() ||
+                        (it.graduationStatus != null && it.graduationStatus in request.graduationStatuses)
                 }
                 .sortedWith(compareBy<MemberSummary> { it.name }.thenBy { it.memberId })
                 .toList()

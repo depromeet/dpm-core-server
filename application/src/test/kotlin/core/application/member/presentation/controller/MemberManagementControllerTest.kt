@@ -5,6 +5,7 @@ import core.application.member.application.service.MemberManagementQueryService
 import core.application.member.presentation.request.MemberManagementRequest
 import core.application.member.presentation.response.MemberManagementResponse
 import core.application.member.presentation.response.MemberOverviewResponse
+import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.member.enums.MemberStatus
 import io.swagger.v3.core.converter.ModelConverters
 import jakarta.servlet.Filter
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.clearInvocations
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
@@ -89,6 +91,14 @@ class MemberManagementControllerTest {
         assertThat(current).doesNotContainKey("MemberSummary")
         assertThat(current["MemberManagementSummary"]!!.properties).containsKey("signupEmail")
         assertThat(legacy["MemberSummary"]!!.properties).doesNotContainKey("signupEmail")
+    }
+
+    @Test
+    fun `수료 필터의 후행 빈 값은 Spring 바인딩에서 null 원소가 된다`() {
+        mvc.perform(authenticated("read:member").param("graduationStatuses", "NORMAL,"))
+            .andExpect(status().isOk)
+        val request = mockingDetails(service).invocations.single().arguments.single() as MemberManagementRequest
+        assertThat(request.graduationStatuses).containsExactly(AttendanceGraduationStatus.NORMAL, null)
     }
 
     @Test
