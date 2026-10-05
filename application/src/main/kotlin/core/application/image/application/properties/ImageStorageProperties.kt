@@ -19,6 +19,9 @@ data class ImageStorageProperties(
     // Instance Principal 이 metadata 서비스(169.254.169.254)를 찾을 때. SDK 기본값은 8회·최대 30초 백오프다.
     val metadataTimeoutMillis: Int = 2_000,
     val metadataRetries: Int = 1,
+    // Instance Principal 이 auth 서비스에서 토큰을 받을 때. 사용자 요청 안에서 발급될 수 있어 Object Storage 보다 짧게 둔다.
+    val authConnectTimeoutMillis: Int = 2_000,
+    val authReadTimeoutMillis: Int = 3_000,
 ) {
     enum class AuthMode {
         INSTANCE_PRINCIPAL,
