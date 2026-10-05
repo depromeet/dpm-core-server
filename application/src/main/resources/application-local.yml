@@ -21,3 +21,7 @@ apple:
 logging:
   discord:
     webhook-url: ${DISCORD_WEBHOOK_URL}
+image:
+  storage:
+    # 로컬 전용 버킷. dev/prod 버킷(OCI_OBJECT_STORAGE_BUCKET)으로 떨어지지 않게 기본값을 비운다. 비면 이미지 API 만 503
+    bucket: ${LOCAL_OCI_OBJECT_STORAGE_BUCKET:}

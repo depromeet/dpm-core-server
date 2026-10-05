@@ -19,7 +19,8 @@
 
 | 환경 변수 | 예시 | 설명 |
 |---|---|---|
-| `OCI_OBJECT_STORAGE_BUCKET` | `depromeet-images` | 비공개 버킷 |
+| `OCI_OBJECT_STORAGE_BUCKET` | `depromeet-images` | 비공개 버킷 (dev/prod) |
+| `LOCAL_OCI_OBJECT_STORAGE_BUCKET` | (예: `depromeet-images-local`) | local 프로필 전용 비공개 버킷. local 은 `OCI_OBJECT_STORAGE_BUCKET` 을 읽지 않으며, 비면 dev/prod 버킷으로 가지 않고 503 |
 | `OCI_REGION` | `ap-seoul-1` | |
 | `OCI_OBJECT_STORAGE_NAMESPACE` | `ax8dilxsaxsr` | 테넌시 Object Storage 네임스페이스 |
 | `OCI_AUTH_MODE` | `instance-principal`(기본) / `config-file` | |
@@ -59,8 +60,13 @@
 OCI_AUTH_MODE=config-file
 OCI_CONFIG_FILE=~/.oci/config
 OCI_CONFIG_PROFILE=DEFAULT
+LOCAL_OCI_OBJECT_STORAGE_BUCKET=<로컬 전용 버킷 이름>
 ```
-API 키는 개인 사용자에 발급하고 위와 같은 범위의 정책을 준다. 키 파일과 config 는 커밋하지 않는다. OCI 인스턴스가 아닌 곳에서 instance-principal 로 두면 metadata 탐지가 실패해 503 이 된다.
+로컬은 dev/prod 버킷(`depromeet-images`)을 쓰지 않는다. local 프로필의 버킷은 `LOCAL_OCI_OBJECT_STORAGE_BUCKET` 에서만 오고, 비어 있으면 503 이 된다(`.env` 에 `OCI_OBJECT_STORAGE_BUCKET` 이 있어도 쓰지 않는다). region, namespace 는 위의 `OCI_*` 값을 같이 쓴다.
+
+API 키는 개인 사용자에 발급하고, 위 Instance Principal 정책과 같은 권한을 로컬 버킷에만 준다(`target.bucket.name = '<로컬 버킷>'`). dev/prod 버킷 권한은 주지 않는다. 키 파일과 config 는 커밋하지 않는다. OCI 인스턴스가 아닌 곳에서 instance-principal 로 두면 metadata 탐지가 실패해 503 이 된다.
+
+테스트 객체 자동 삭제가 필요하면 로컬 버킷에만 OCI Object Lifecycle 삭제 규칙과 보존 기간을 설정한다.
 
 ## 배포 순서
 
