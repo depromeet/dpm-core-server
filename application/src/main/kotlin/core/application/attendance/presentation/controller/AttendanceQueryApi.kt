@@ -96,7 +96,8 @@ interface AttendanceQueryApi {
             "현재 활성 기수 세션의 출석 명단을 필터와 페이지 없이 전부 조회합니다. " +
                 "이름, 상태, 팀, 파트, 내 팀 필터는 프론트에서 하며 내 팀은 myTeamNumber(현재 기수 팀, 없으면 null)로 고릅니다. " +
                 "totalElements 는 members 전체 인원(결석·미인증 포함)입니다. " +
-                "상태별 인원과 팀 선택지는 이 명단으로 프론트에서 계산합니다. " +
+                "상태별 인원은 이 명단으로 프론트에서 계산합니다. " +
+                "팀 선택지(멤버가 없는 팀 포함)는 GET /v3/cohorts/current/teams 로 조회합니다. " +
                 "members 는 팀 번호(팀 없음은 마지막), 이름, ID 순이고 teamNumber 는 팀이 없으면 null 입니다. " +
                 "운영진이 상태를 바꾼 기록은 isManuallyUpdated 가 true 이고 attendedAt 은 null 입니다. " +
                 "absenceReason 은 이 세션에 제출한 가장 최근 결석 사유서 내용(없으면 null)이며 첨부 이미지는 주지 않습니다. " +
