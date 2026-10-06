@@ -38,7 +38,7 @@ class AttendanceCommandController(
     private val clock: Clock,
 ) : AttendanceCommandApi {
     @PreAuthorize("hasAuthority('create:attendance')")
-    @PostMapping("/v3/sessions/{sessionId}/attendances")
+    @PostMapping("/v1/sessions/{sessionId}/attendances")
     override fun createAttendance(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
