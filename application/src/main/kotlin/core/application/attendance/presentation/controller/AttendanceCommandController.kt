@@ -127,7 +127,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @DeleteMapping("/v3/sessions/{sessionId}/absence-reasons")
+    @DeleteMapping("/v2/sessions/{sessionId}/absence-reasons")
     override fun deleteAbsenceReport(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -138,7 +138,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @PatchMapping("/v3/sessions/{sessionId}/absence-reasons/{memberId}/review")
+    @PatchMapping("/v2/sessions/{sessionId}/absence-reasons/{memberId}/review")
     override fun reviewAbsenceReport(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
