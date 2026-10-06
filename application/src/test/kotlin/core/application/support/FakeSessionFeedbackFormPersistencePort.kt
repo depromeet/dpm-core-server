@@ -12,6 +12,9 @@ class FakeSessionFeedbackFormPersistencePort : SessionFeedbackFormPersistencePor
 
     @Synchronized
     override fun save(form: SessionFeedbackForm): SessionFeedbackForm {
+        check(rows.values.none { it.sessionId == form.sessionId && it.id != form.id }) {
+            "uk_session_feedback_forms_session_id 위반: ${form.sessionId.value}"
+        }
         val id = form.id?.value ?: sequence.incrementAndGet()
         val persisted =
             SessionFeedbackForm(
