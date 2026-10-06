@@ -79,8 +79,8 @@ class SessionFeedbackFormCommandService(
     ) {
         if (existing == null) return
         if (existing.isCollectionStarted(now)) throw FeedbackAlreadyStartedException()
-        existing.delete(now)
-        feedbackFormPersistencePort.save(existing)
+        // session_id 유니크 제약 때문에 soft delete 하면 다시 켤 때 INSERT 가 실패한다. 시작 전이라 응답도 없다.
+        feedbackFormPersistencePort.delete(existing)
     }
 
     private fun requireStartAt(startAt: Instant?): Instant = startAt ?: throw FeedbackStartAtRequiredException()
