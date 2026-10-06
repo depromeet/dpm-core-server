@@ -3,6 +3,7 @@ package core.application.member.application.service
 import core.application.attendance.application.service.AttendanceGraduationEvaluator
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.application.member.presentation.request.MemberManagementRequest
+import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
 import core.application.member.presentation.request.MemberManagementRequest.ApprovalStatus
 import core.application.member.presentation.response.MemberManagementResponse
 import core.application.member.presentation.response.MemberManagementResponse.MemberSummary
@@ -76,9 +77,21 @@ class MemberManagementQueryService(
                         it.name.contains(search, ignoreCase = true) ||
                         it.email?.contains(search, ignoreCase = true) == true
                 }
-                .filter { request.part == null || it.part == request.part }
-                .filter { request.teamNumber == null || it.teamNumber == request.teamNumber }
-                .filter { request.status == null || it.status.name == request.status }
+                .filter { request.parts.isNullOrEmpty() || it.part in request.parts }
+                .filter { request.teamNumbers.isNullOrEmpty() || it.teamNumber in request.teamNumbers }
+                .filter { member ->
+                    request.activityStatuses.isNullOrEmpty() ||
+                        request.activityStatuses.any { activity ->
+                            when (activity) {
+                                ActivityStatus.NORMAL ->
+                                    member.status == MemberStatus.ACTIVE && member.graduationStatus !in RISK_STATUSES
+                                ActivityStatus.AT_RISK ->
+                                    member.status == MemberStatus.ACTIVE && member.graduationStatus in RISK_STATUSES
+                                ActivityStatus.INACTIVE -> member.status == MemberStatus.INACTIVE
+                                null -> false
+                            }
+                        }
+                }
                 .filter { !request.excludeStaff || it.memberType !in STAFF_TYPES }
                 .filter { !request.missingInformationOnly || it.missingInformation }
                 .filter {
