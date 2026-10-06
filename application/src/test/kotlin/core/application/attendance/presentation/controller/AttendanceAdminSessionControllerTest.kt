@@ -102,18 +102,18 @@ class AttendanceAdminSessionControllerTest {
 
         listOf("EARLY_LEAVE", "UNKNOWN", "present", "").forEach { invalid ->
             mockMvc
-                .perform(patchJson("/v3/sessions/3/attendances/7", """{"attendanceStatus":"$invalid"}"""))
+                .perform(patchJson("/v1/sessions/3/attendances/7", """{"attendanceStatus":"$invalid"}"""))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
             mockMvc
-                .perform(patchJson("/v3/sessions/3/attendances/bulk", """{"attendanceStatus":"$invalid","memberIds":[1]}"""))
+                .perform(patchJson("/v1/sessions/3/attendances/bulk", """{"attendanceStatus":"$invalid","memberIds":[1]}"""))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
         }
         verifyNoInteractions(commandService)
 
         mockMvc
-            .perform(patchJson("/v3/sessions/3/attendances/7", """{"attendanceStatus":"LATE"}"""))
+            .perform(patchJson("/v1/sessions/3/attendances/7", """{"attendanceStatus":"LATE"}"""))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
         verify(commandService).updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(3), MemberId(7), AttendanceStatus.LATE))
