@@ -18,7 +18,7 @@ class SessionCommandController(
     private val sessionCommandService: SessionCommandService,
 ) : SessionCommandApi {
     @PreAuthorize("hasAuthority('create:session')")
-    @PostMapping("/v3/sessions")
+    @PostMapping("/v1/sessions")
     override fun createSession(
         @RequestBody request: SessionCreateRequest,
     ): CustomResponse<Void> {
@@ -30,7 +30,7 @@ class SessionCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:session')")
-    @PatchMapping("/v3/sessions")
+    @PatchMapping("/v1/sessions")
     override fun updateSession(
         @RequestBody request: SessionUpdateRequest,
     ): CustomResponse<Void> {
