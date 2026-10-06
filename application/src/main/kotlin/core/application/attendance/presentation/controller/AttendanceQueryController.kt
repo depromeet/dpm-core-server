@@ -71,7 +71,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:attendance')")
-    @GetMapping("/v1/sessions/{sessionId}/attendances/me")
+    @GetMapping("/v3/sessions/{sessionId}/attendances/me")
     override fun getMyAttendanceBySessionId(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
