@@ -4,6 +4,7 @@ import core.application.attendance.application.service.AttendanceGraduationEvalu
 import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.application.member.presentation.request.MemberManagementRequest
+import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
 import core.application.member.presentation.request.MemberManagementRequest.ApprovalStatus
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
@@ -70,7 +71,7 @@ class MemberManagementQueryServiceTest {
 
     @Test
     fun `상단 현황은 검색과 운영진 제외에 영향받지 않고 각 미입력 회원은 한번만 센다`() {
-        val response = service.getOverview(MemberManagementRequest(search = "가", part = "WEB"))
+        val response = service.getOverview(MemberManagementRequest(search = "가", parts = listOf("WEB")))
         assertThat(response.totalElements).isEqualTo(1)
         assertThat(response.members.map { it.memberId }).containsExactly(1L)
         assertThat(response.summary.totalMemberCount).isEqualTo(4)
@@ -122,11 +123,66 @@ class MemberManagementQueryServiceTest {
     @Test
     fun `미배정과 활동 정지 필터를 조합하고 기본 조회는 운영진 코어만 제외한다`() {
         assertThat(service.getOverview(MemberManagementRequest()).members.map { it.memberId }).containsExactly(1L, 2L, 5L)
-        val result = service.getOverview(MemberManagementRequest(missingInformationOnly = true, part = "UNASSIGNED", teamNumber = 0, status = "INACTIVE"))
+        val result = service.getOverview(MemberManagementRequest(missingInformationOnly = true, parts = listOf("UNASSIGNED"), teamNumbers = listOf(0), activityStatuses = listOf(ActivityStatus.INACTIVE)))
         assertThat(result.members.single().memberId).isEqualTo(5)
         assertThat(result.members.single().memberType).isEqualTo("UNASSIGNED")
         assertThat(result.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
         assertThat(service.getOverview(MemberManagementRequest(excludeStaff = false)).members).hasSize(5)
+    }
+
+    @Test
+    fun `파트와 팀은 각 그룹에서 OR로 그룹 사이는 AND로 적용한 뒤 페이지를 나눈다`() {
+        val candidates =
+            source.map {
+                when (it.memberId) {
+                    2L -> it.copy(part = MemberPart.DESIGN, teamNumber = 2)
+                    3L -> it.copy(part = MemberPart.SERVER)
+                    4L -> it.copy(part = MemberPart.DESIGN, teamNumber = 3)
+                    else -> it
+                }
+            }
+        `when`(members.findManagementMembers(19)).thenReturn(candidates)
+        val request = MemberManagementRequest(parts = listOf("WEB", "DESIGN"), teamNumbers = listOf(1, 2), excludeStaff = false, page = 2, size = 1)
+        val response = service.getOverview(request)
+        assertThat(response.totalElements).isEqualTo(2)
+        assertThat(response.members.single().memberId).isEqualTo(2L)
+        assertThat(response.summary.totalMemberCount).isEqualTo(4)
+        assertThat(response.summary.graduationRiskCount).isEqualTo(2)
+        assertThat(service.getOverview(request.copy(page = 1)).members.single().memberId).isEqualTo(1L)
+        assertThat(service.getOverview(request.copy(page = Int.MAX_VALUE)).members).isEmpty()
+        val unassigned = service.getOverview(MemberManagementRequest(parts = listOf("WEB", "UNASSIGNED"), teamNumbers = listOf(0, 1)))
+        assertThat(unassigned.members.map { it.memberId }).containsExactly(1L, 5L)
+    }
+
+    @Test
+    fun `활동 정상 위험 정지를 구분하고 위험 카드는 정지한 위험 회원도 포함한다`() {
+        `when`(attendance.findMemberAttendances(19, emptyList())).thenReturn(
+            listOf(attendanceRow(1, 3), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5, 5), attendanceRow(7, 5)),
+        )
+        val request = MemberManagementRequest(excludeStaff = false)
+        val normal = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.NORMAL)))
+        assertThat(normal.members.map { it.memberId }).containsExactly(3L, 4L)
+        val risk = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.AT_RISK)))
+        assertThat(risk.members.map { it.memberId }).containsExactly(1L, 2L)
+        val inactive = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.INACTIVE)))
+        assertThat(inactive.members.single().memberId).isEqualTo(5L)
+        assertThat(inactive.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.IMPOSSIBLE)
+        val combined = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.NORMAL, ActivityStatus.INACTIVE)))
+        assertThat(combined.members.map { it.memberId }).containsExactly(3L, 4L, 5L)
+        val card = service.getOverview(request.copy(graduationStatuses = listOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)))
+        assertThat(card.members.map { it.memberId }).containsExactly(1L, 2L, 5L)
+        assertThat(card.summary.graduationRiskCount).isEqualTo(card.totalElements)
+        val intersection = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.AT_RISK), graduationStatuses = listOf(AttendanceGraduationStatus.IMPOSSIBLE)))
+        assertThat(intersection.members.single().memberId).isEqualTo(2L)
+    }
+
+    @Test
+    fun `선택하지 않은 빈 필터는 전체를 유지하고 대기자는 활동 상태 선택에 포함하지 않는다`() {
+        assertThat(service.getOverview(MemberManagementRequest(parts = emptyList(), teamNumbers = emptyList(), activityStatuses = emptyList())))
+            .isEqualTo(service.getOverview(MemberManagementRequest()))
+        val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, activityStatuses = ActivityStatus.entries))
+        assertThat(pending.members).isEmpty()
+        assertThat(pending.summary.pendingCount).isEqualTo(2)
     }
 
     @Test
@@ -174,7 +230,7 @@ class MemberManagementQueryServiceTest {
             )
         `when`(members.findManagementMembers(19)).thenReturn(candidates)
         `when`(roles.findActiveRoleAssignmentsByMemberIds(candidates.map { it.memberId })).thenReturn(mapOf(3L to listOf(role("CORE"))))
-        val filtered = service.getOverview(MemberManagementRequest(search = "user1@example.com", part = "WEB", teamNumber = 1))
+        val filtered = service.getOverview(MemberManagementRequest(search = "user1@example.com", parts = listOf("WEB"), teamNumbers = listOf(1)))
         assertThat(filtered.members.single().memberId).isEqualTo(1L)
         assertThat(filtered.members.single().duplicateSuspected).isTrue()
         val page = service.getOverview(MemberManagementRequest(page = 2, size = 1))

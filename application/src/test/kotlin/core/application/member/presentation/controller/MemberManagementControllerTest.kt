@@ -7,6 +7,7 @@ import core.application.cohort.presentation.controller.CohortController
 import core.application.common.exception.GlobalExceptionHandler
 import core.application.member.application.service.MemberManagementQueryService
 import core.application.member.presentation.request.MemberManagementRequest
+import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
 import core.application.member.presentation.response.MemberManagementResponse
 import core.application.member.presentation.response.MemberOverviewResponse
 import core.domain.attendance.enums.AttendanceGraduationStatus
@@ -106,6 +107,10 @@ class MemberManagementControllerTest {
         assertThat(properties["email"]!!.nullable).isTrue()
         assertThat(properties["duplicateSuspected"]!!.nullable == true).isFalse()
         assertThat(legacy["MemberSummary"]!!.properties).doesNotContainKeys("email", "signupEmail", "duplicateSuspected")
+        val requestProperties = ModelConverters.getInstance().readAll(MemberManagementRequest::class.java)["MemberManagementRequest"]!!.properties
+        assertThat(requestProperties).containsKeys("parts", "teamNumbers", "activityStatuses")
+            .doesNotContainKeys("part", "teamNumber", "status", "filterValuesValid", "isFilterValuesValid")
+        assertThat(ObjectMapper().writeValueAsString(MemberManagementRequest())).doesNotContain("FilterValuesValid", "filterValuesValid")
     }
 
     @Test
@@ -135,12 +140,42 @@ class MemberManagementControllerTest {
 
         // 공통 응답의 팀 ID가 아니라 number를 목록 필터에 사용한다. 미배정 팀은 0이다.
         listOf(team.path("number").asInt(), 0).forEach { number ->
-            mvc.perform(authenticatedRequest(PATH, *authorities).param("part", unassigned).param("teamNumber", number.toString()))
+            mvc.perform(authenticatedRequest(PATH, *authorities).param("parts", unassigned).param("teamNumbers", number.toString()))
                 .andExpect(status().isOk)
         }
         val requests = mockingDetails(service).invocations.map { it.arguments.single() as MemberManagementRequest }
-        assertThat(requests.map { it.part }).containsOnly("UNASSIGNED")
-        assertThat(requests.map { it.teamNumber }).containsExactly(3, 0)
+        assertThat(requests.map { it.parts }).containsOnly(listOf("UNASSIGNED"))
+        assertThat(requests.map { it.teamNumbers }).containsExactly(listOf(3), listOf(0))
+    }
+
+    @Test
+    fun `여러 필터 값을 반복 파라미터와 쉼표로 전달한다`() {
+        mvc.perform(
+            authenticated("read:member")
+                .param("parts", "WEB", "DESIGN")
+                .param("teamNumbers", "0,3")
+                .param("activityStatuses", "NORMAL", "INACTIVE"),
+        ).andExpect(status().isOk)
+        val request = mockingDetails(service).invocations.single().arguments.single() as MemberManagementRequest
+        assertThat(request.parts).containsExactly("WEB", "DESIGN")
+        assertThat(request.teamNumbers).containsExactly(0, 3)
+        assertThat(request.activityStatuses).containsExactly(ActivityStatus.NORMAL, ActivityStatus.INACTIVE)
+    }
+
+    @Test
+    fun `빈 필터와 최대 페이지 값도 정상적으로 바인딩한다`() {
+        mvc.perform(
+            authenticated("read:member")
+                .param("parts", "")
+                .param("teamNumbers", "")
+                .param("activityStatuses", "")
+                .param("page", Int.MAX_VALUE.toString()),
+        ).andExpect(status().isOk)
+        val request = mockingDetails(service).invocations.single().arguments.single() as MemberManagementRequest
+        assertThat(request.parts).isNullOrEmpty()
+        assertThat(request.teamNumbers).isNullOrEmpty()
+        assertThat(request.activityStatuses).isNullOrEmpty()
+        assertThat(request.page).isEqualTo(Int.MAX_VALUE)
     }
 
     @Test
@@ -153,7 +188,7 @@ class MemberManagementControllerTest {
 
     @Test
     fun `잘못된 페이지 크기와 필터를 400으로 반환한다`() {
-        listOf("page" to "0", "size" to "101", "part" to "MASTER", "status" to "WITHDRAWN", "teamNumber" to "-1", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
+        listOf("page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
             mvc.perform(authenticated("read:member").param(key, value))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))

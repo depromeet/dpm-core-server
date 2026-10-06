@@ -115,7 +115,7 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(rows.single { it.memberId == 3L }.cohortId).isNull()
         assertThat(roles.findActiveRoleAssignmentsByMemberIds(listOf(1, 2, 8))[8]).isNull()
         assertThat(roles.findActiveRoleAssignmentsByMemberIds(emptyList())).isEmpty()
-        val response = service.getOverview(MemberManagementRequest(teamNumber = 3))
+        val response = service.getOverview(MemberManagementRequest(teamNumbers = listOf(3)))
         assertThat(response.cohortId).isEqualTo(current.value)
         assertThat(response.members.map { it.memberId }).containsExactly(1L)
         assertThat(response.totalElements).isEqualTo(1)
