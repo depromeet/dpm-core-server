@@ -162,6 +162,29 @@ class MemberManagementUpdateControllerTest {
         verifyNoInteractions(teams, roles, roleQueries)
     }
 
+    @Test
+    fun `식별자의 소수 범위 초과 문자열과 다른 JSON 타입은 400으로 거절한다`() {
+        listOf("-0.5", "1.9", "1.0", "9223372036854775808", "-9223372036854775809", "\"1\"", "true", "{}", "[]").forEach { value ->
+            mvc.perform(request("1", """{"teamId":$value}"""))
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
+            mvc.perform(request("bulk", """{"memberIds":[$value],"changes":{"part":"SERVER"}}"""))
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
+        }
+        verifyNoInteractions(members, teams, roles, cohorts, roleQueries)
+    }
+
+    @Test
+    fun `잘못된 회원 경로는 서버 오류 대신 400으로 반환한다`() {
+        listOf("abc", "1.9", "9223372036854775808", "-9223372036854775809").forEach { id ->
+            mvc.perform(request(id, """{"part":"SERVER"}"""))
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
+        }
+        verifyNoInteractions(members, teams, roles, cohorts, roleQueries)
+    }
+
     private fun request(
         path: String,
         body: String,

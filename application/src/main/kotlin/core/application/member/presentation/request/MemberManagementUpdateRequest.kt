@@ -1,6 +1,7 @@
 package core.application.member.presentation.request
 
 import com.fasterxml.jackson.annotation.JsonAnySetter
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
@@ -13,6 +14,7 @@ data class MemberManagementUpdateRequest(
     val part: String? = null,
     @field:Schema(description = "현재 기수 팀 ID. 0은 미배정, 생략/null은 유지. 목록의 팀 번호와 구별")
     @field:Min(0)
+    @field:JsonDeserialize(using = MemberManagementLongDeserializer::class)
     val teamId: Long? = null,
     @field:Schema(description = "변경할 멤버 타입. UNASSIGNED는 미배정, 생략/null은 유지. update:authorization 권한 필요")
     @field:Pattern(regexp = "DEEPER|ORGANIZER|CORE|UNASSIGNED")
@@ -31,6 +33,7 @@ data class MemberManagementUpdateRequest(
 data class MemberManagementBulkUpdateRequest(
     @field:Schema(description = "수정할 멤버 ID 목록. 빈 목록, 중복 ID, null, 0 이하 ID는 허용하지 않음")
     @field:NotEmpty
+    @field:JsonDeserialize(contentUsing = MemberManagementLongDeserializer::class)
     val memberIds: List<Long?>,
     @field:Schema(description = "한 컬럼만 지정하며 선택한 모든 멤버에게 같은 값을 적용")
     @field:Valid

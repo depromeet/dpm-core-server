@@ -8,6 +8,7 @@ import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.name
 import org.jooq.dsl.tables.references.MEMBER_ROLES
+import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.ROLES
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -124,18 +125,26 @@ class MemberRoleRepository(
         roleId: Long,
         cohortId: Long,
     ) {
+        // v3 멤버 수정과 같은 상위 멤버 잠금을 사용한다. 호출 서비스의 쓰기 트랜잭션 안에서 유지한다.
+        dsl.select(MEMBERS.MEMBER_ID).from(MEMBERS)
+            .where(MEMBERS.MEMBER_ID.eq(memberId))
+            .forUpdate().fetch()
         val now = LocalDateTime.now(ZoneId.of(TIME_ZONE))
-        val cohortBoundRoleNames = listOf("ORGANIZER", "DEEPER")
+        val cohortBoundRoleNames = listOf("CORE", "ORGANIZER", "DEEPER")
         val activeRoles =
             dsl
                 .select(MEMBER_ROLES.MEMBER_ROLE_ID, MEMBER_ROLES.ROLE_ID, COHORT_ID_FIELD)
                 .from(MEMBER_ROLES)
-                .join(ROLES).on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
                 .where(MEMBER_ROLES.MEMBER_ID.eq(memberId))
                 .and(MEMBER_ROLES.DELETED_AT.isNull)
-                .and(ROLES.NAME.`in`(cohortBoundRoleNames))
+                .and(
+                    MEMBER_ROLES.ROLE_ID.`in`(
+                        dsl.select(ROLES.ROLE_ID).from(ROLES).where(ROLES.NAME.`in`(cohortBoundRoleNames)),
+                    ),
+                )
                 .and(COHORT_ID_FIELD.eq(cohortId))
                 .orderBy(MEMBER_ROLES.MEMBER_ROLE_ID.asc())
+                .forUpdate()
                 .fetch()
 
         if (activeRoles.isEmpty()) {
