@@ -1,6 +1,5 @@
 package core.application.session.presentation.controller
 
-import core.application.attendance.presentation.request.UpdateAttendanceTimeRequest
 import core.application.common.exception.CustomResponse
 import core.application.session.presentation.request.SessionCreateRequest
 import core.application.session.presentation.request.SessionUpdateRequest
@@ -16,52 +15,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Tag(name = "Session Mutation", description = "세션 추가/변경 API")
 interface SessionCommandApi {
-    @Operation(
-        summary = "세션 출석시간 갱신",
-        description =
-            "세션의 출석 시작 시간을 갱신합니다. 출석 시작 < 지각 시작 < 출석 마감 순서여야 하며(SESSION-400-08), " +
-                "세션과 다른 날짜여도 됩니다.",
-        requestBody =
-            RequestBody(
-                description = "세션 출석시간 갱신 요청",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = UpdateAttendanceTimeRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "세션 출석시간 갱신 요청 예시",
-                                value = """
-                                {
-                                    "attendanceStartTime": "2025-08-02T14:05:00.000000"
-                                }
-                            """,
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "200",
-                description = "세션 출석시간 갱신 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
-                        examples = [],
-                    ),
-                ],
-            ),
-        ],
-    )
-    fun updateAttendanceTime(
-        sessionId: SessionId,
-        request: UpdateAttendanceTimeRequest,
-    ): CustomResponse<Void>
-
     @Operation(
         summary = "세션 추가",
         description =

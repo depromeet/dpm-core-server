@@ -22,7 +22,7 @@
 
 `POST /v3/sessions`에서 attendanceStart, lateStart, absentStart를 모두 생략하면 기본값으로 계산한 절대 시각을 저장하고, 모두 보내면 그대로 사용한다. 일부만 보내면 거절한다.
 
-기본값을 바꿔도 이미 만든 세션은 바뀌지 않는다. 기존 세션의 시각은 세션 수정 API(`PATCH /v3/sessions`, 출석 시작만은 `PATCH /v3/sessions/{sessionId}/attendance-time`)로 바꾼다.
+기본값을 바꿔도 이미 만든 세션은 바뀌지 않는다. 기존 세션의 시각은 세션 수정 API(`PATCH /v3/sessions`)로 바꾼다. 출석 시작만 바꾸던 `PATCH /sessions/{sessionId}/attendance-time`은 세션 수정 API와 기능이 겹쳐 제거했다.
 
 세션·출석 판정 규칙이 바뀐 API 는 `/v3` 로 옮겼다.
 

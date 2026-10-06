@@ -1,7 +1,5 @@
 package core.application.session.presentation.controller
 
-import core.application.attendance.presentation.request.UpdateAttendanceTimeRequest
-import core.application.common.converter.TimeMapper
 import core.application.common.exception.CustomResponse
 import core.application.session.application.service.SessionCommandService
 import core.application.session.presentation.mapper.SessionMapper
@@ -26,20 +24,6 @@ class SessionCommandController(
     ): CustomResponse<Void> {
         sessionCommandService.createSession(
             SessionMapper.toSessionCreateCommand(request),
-        )
-
-        return CustomResponse.ok()
-    }
-
-    @PreAuthorize("hasAuthority('update:session')")
-    @PatchMapping("/v3/sessions/{sessionId}/attendance-time")
-    override fun updateAttendanceTime(
-        @PathVariable(name = "sessionId") sessionId: SessionId,
-        @RequestBody request: UpdateAttendanceTimeRequest,
-    ): CustomResponse<Void> {
-        sessionCommandService.updateSessionStartTime(
-            sessionId = sessionId,
-            attendanceStartTime = TimeMapper.localDateTimeToInstant(request.attendanceStartTime),
         )
 
         return CustomResponse.ok()
