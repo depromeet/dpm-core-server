@@ -40,7 +40,7 @@ class AttendanceApiV3PathContractTest {
     fun `출석 API 는 바뀐 것만 v3 이고 권한은 그대로다`() {
         assertThat(endpoints(AttendanceCommandController::class.java, AttendanceQueryController::class.java))
             .containsExactlyInAnyOrder(
-                "POST /v3/sessions/{sessionId}/attendances hasAuthority('create:attendance')",
+                "POST /v1/sessions/{sessionId}/attendances hasAuthority('create:attendance')",
                 "PATCH /v3/sessions/{sessionId}/attendances/{memberId} hasAuthority('update:attendance')",
                 "PATCH /v3/sessions/{sessionId}/attendances/bulk hasAuthority('update:attendance')",
                 "POST /v3/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
