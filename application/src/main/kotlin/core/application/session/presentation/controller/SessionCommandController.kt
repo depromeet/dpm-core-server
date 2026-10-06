@@ -13,16 +13,14 @@ import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v3/sessions")
 class SessionCommandController(
     private val sessionCommandService: SessionCommandService,
 ) : SessionCommandApi {
     @PreAuthorize("hasAuthority('create:session')")
-    @PostMapping
+    @PostMapping("/v3/sessions")
     override fun createSession(
         @RequestBody request: SessionCreateRequest,
     ): CustomResponse<Void> {
@@ -34,7 +32,7 @@ class SessionCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:session')")
-    @PatchMapping("/{sessionId}/attendance-time")
+    @PatchMapping("/v3/sessions/{sessionId}/attendance-time")
     override fun updateAttendanceTime(
         @PathVariable(name = "sessionId") sessionId: SessionId,
         @RequestBody request: UpdateAttendanceTimeRequest,
@@ -48,7 +46,7 @@ class SessionCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:session')")
-    @PatchMapping
+    @PatchMapping("/v3/sessions")
     override fun updateSession(
         @RequestBody request: SessionUpdateRequest,
     ): CustomResponse<Void> {
@@ -60,7 +58,7 @@ class SessionCommandController(
     }
 
     @PreAuthorize("hasAuthority('delete:session')")
-    @PatchMapping("/{sessionId}/delete")
+    @PatchMapping("/v1/sessions/{sessionId}/delete")
     override fun softDeleteSession(
         @PathVariable("sessionId") sessionId: SessionId,
     ): CustomResponse<Void> {
