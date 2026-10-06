@@ -135,6 +135,64 @@ class MemberManagementMySqlIntegrationTest {
         val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
         assertThat(pending.members.single().memberId).isEqualTo(3L)
         assertThat(pending.members.single().graduationStatus).isNull()
+
+        verifyManagementEmailsAndDuplicates(current.value)
+    }
+
+    private fun verifyManagementEmailsAndDuplicates(cohortId: Long) {
+        // 기존 출석 fixture에 OAuth와 닉네임 조건을 추가해 같은 관리 대상에서 함께 확인한다.
+        (9L..11L).forEach { id ->
+            jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at) values (?, ?, ?, 'SERVER', 'ACTIVE', '2026-10-01 00:00:00')", id, "member$id", "member$id@example.com")
+            joinCohort(id, cohortId)
+        }
+        oauth(1001, 1, "KAKAO", "kakao1@example.com")
+        oauth(1002, 1, "APPLE", "apple1@example.com") // 애플 연결이 나중에 생겨도 카카오 우선.
+        oauth(1003, 2, "APPLE", "old-apple2@example.com")
+        oauth(1004, 2, "APPLE", "  apple2@example.com  ")
+        oauth(1005, 7, "APPLE", "apple7@example.com")
+        oauth(1006, 7, "KAKAO", null)
+        oauth(1007, 8, "KAKAO", "old-kakao8@example.com")
+        oauth(1008, 8, "KAKAO", " \t ")
+        oauth(1009, 8, "APPLE", "apple8@example.com")
+        oauth(1010, 9, "APPLE", " \n ")
+        oauth(1011, 10, "APPLE", null)
+        oauth(1012, 11, "KAKAO", "old-kakao11@example.com")
+        oauth(1013, 11, "KAKAO", "kakao11@example.com")
+        jdbc.update("update members set name = '중복별명' where member_id = 1")
+        jdbc.update("update members set name = '  중복별명  ' where member_id = 3")
+        jdbc.update("update members set name = '이전별명' where member_id in (2, 4)")
+        jdbc.update("update members set name = '삭제별명' where member_id in (5, 7)")
+        jdbc.update("update members set name = '탈퇴별명' where member_id in (6, 8)")
+
+        val rows = members.findManagementMembers(cohortId)
+        assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L, 9L, 10L, 11L)
+        assertThat(rows.associate { it.memberId to it.email }).containsExactlyInAnyOrderEntriesOf(
+            mapOf(1L to "kakao1@example.com", 2L to "apple2@example.com", 3L to "member3@example.com", 7L to null, 8L to null, 9L to "member9@example.com", 10L to "member10@example.com", 11L to "kakao11@example.com"),
+        )
+        rows.forEach { row ->
+            assertThat(jdbc.queryForObject("select signup_email from members where member_id = ?", String::class.java, row.memberId)).isEqualTo("member${row.memberId}@example.com")
+        }
+        val response = service.getOverview(MemberManagementRequest(excludeStaff = false))
+        assertThat(response.totalElements).isEqualTo(7)
+        assertThat(response.summary.totalMemberCount).isEqualTo(3)
+        assertThat(response.members.filter { it.duplicateSuspected }.map { it.memberId }).containsExactly(1L)
+        assertThat(response.members.single { it.memberId == 1L }.name).isEqualTo("중복별명")
+        val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
+        assertThat(pending.members.single().name).isEqualTo("  중복별명  ")
+        assertThat(pending.members.single().duplicateSuspected).isTrue()
+        assertThat(service.getOverview(MemberManagementRequest(search = " KAKAO1@EXAMPLE.COM ")).members.single().memberId).isEqualTo(1L)
+        listOf("member1@example.com", "apple1@example.com", "old-kakao8@example.com", "apple7@example.com").forEach { hiddenEmail ->
+            assertThat(service.getOverview(MemberManagementRequest(search = hiddenEmail, excludeStaff = false)).members).isEmpty()
+        }
+    }
+
+    private fun oauth(
+        id: Long,
+        memberId: Long,
+        provider: String,
+        email: String?,
+    ) {
+        jdbc.update("insert into member_oauth (member_oauth_id, external_id, member_id, provider, email) values (?, ?, ?, ?, ?)", id, "member593-$id", memberId, provider, email)
     }
 
     private fun joinCohort(

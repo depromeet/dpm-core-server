@@ -34,6 +34,10 @@ class MemberManagementQueryService(
         val assignments = roles.findActiveRoleAssignmentsByMemberIds(memberIds)
         val attendanceSummaries =
             attendances.findMemberAttendances(cohortId, emptyList()).associate { it.id to it.summary }
+        val duplicateCounts =
+            source.filter { it.name.isNotBlank() && it.part != null }
+                .groupingBy { it.name.trim() to it.part }
+                .eachCount()
         val allMembers =
             source.map { member ->
                 val role =
@@ -48,7 +52,7 @@ class MemberManagementQueryService(
                     memberId = member.memberId,
                     cohortId = member.cohortId,
                     name = member.name,
-                    signupEmail = member.signupEmail,
+                    email = member.email,
                     part = member.part?.name ?: UNASSIGNED,
                     memberType = type,
                     teamNumber = member.teamNumber,
@@ -59,7 +63,7 @@ class MemberManagementQueryService(
                         attendanceSummaries[member.memberId]?.takeIf { approved && member.cohortId == cohortId }?.let(
                             graduationEvaluator::evaluate,
                         ),
-                    duplicateSuspected = null,
+                    duplicateSuspected = duplicateCounts.getOrDefault(member.name.trim() to member.part, 0) > 1,
                     updatedAt = member.updatedAt,
                 )
             }
@@ -70,7 +74,7 @@ class MemberManagementQueryService(
                 .filter {
                     search.isEmpty() ||
                         it.name.contains(search, ignoreCase = true) ||
-                        it.signupEmail.contains(search, ignoreCase = true)
+                        it.email?.contains(search, ignoreCase = true) == true
                 }
                 .filter { request.part == null || it.part == request.part }
                 .filter { request.teamNumber == null || it.teamNumber == request.teamNumber }

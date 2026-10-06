@@ -8,7 +8,7 @@ import java.time.Instant
 data class MemberManagementQueryModel(
     val memberId: Long,
     val name: String,
-    val signupEmail: String,
+    val email: String?,
     val part: MemberPart?,
     val status: MemberStatus,
     val cohortId: Long?,

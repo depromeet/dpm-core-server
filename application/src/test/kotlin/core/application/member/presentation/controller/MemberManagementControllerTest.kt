@@ -74,19 +74,23 @@ class MemberManagementControllerTest {
     }
 
     @Test
-    fun `조회 권한이 있으면 기존 응답 형식을 사용하고 중복 미평가 null을 반환한다`() {
-        val member = MemberManagementResponse.MemberSummary(1, 19, "성휘", "signup@example.com", "SERVER", "DEEPER", 1, MemberStatus.ACTIVE, false, null, null, null)
-        val response = MemberManagementResponse(19, MemberManagementResponse.Summary(1, 1, 0, 0, 0, 0, 0), 1, 1, 20, null, listOf(member))
+    fun `조회 권한이 있으면 닉네임 표시 이메일과 중복 여부를 기존 응답 형식으로 반환한다`() {
+        val member = MemberManagementResponse.MemberSummary(1, 19, "휘", "kakao@example.com", "SERVER", "DEEPER", 1, MemberStatus.ACTIVE, false, null, true, null)
+        val missingEmail = member.copy(memberId = 2, name = "별명", email = null, duplicateSuspected = false)
+        val response = MemberManagementResponse(19, MemberManagementResponse.Summary(2, 2, 0, 0, 0, 0, 0), 2, 1, 20, null, listOf(member, missingEmail))
         `when`(service.getOverview(MemberManagementRequest())).thenReturn(response)
         val result =
             mvc.perform(authenticated("read:member"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
-                .andExpect(jsonPath("$.data.totalElements").value(1))
-                .andExpect(jsonPath("$.data.members[0].signupEmail").value("signup@example.com"))
+                .andExpect(jsonPath("$.data.totalElements").value(2))
+                .andExpect(jsonPath("$.data.members[0].name").value("휘"))
+                .andExpect(jsonPath("$.data.members[0].email").value("kakao@example.com"))
+                .andExpect(jsonPath("$.data.members[0].duplicateSuspected").value(true))
+                .andExpect(jsonPath("$.data.members[1].duplicateSuspected").value(false))
                 .andReturn()
-        assertThat(result.response.contentAsString).contains("\"duplicateSuspected\":null")
-        assertThat(result.response.contentAsString).doesNotContain("\"email\":")
+        assertThat(result.response.contentAsString).contains("\"email\":null")
+        assertThat(result.response.contentAsString).doesNotContain("\"signupEmail\":")
     }
 
     @Test
@@ -96,8 +100,12 @@ class MemberManagementControllerTest {
         assertThat(legacy).containsKey("MemberSummary")
         assertThat(current).containsKeys("MemberManagementSummary", "MemberManagementTotals")
         assertThat(current).doesNotContainKey("MemberSummary")
-        assertThat(current["MemberManagementSummary"]!!.properties).containsKey("signupEmail")
-        assertThat(legacy["MemberSummary"]!!.properties).doesNotContainKey("signupEmail")
+        val properties = current["MemberManagementSummary"]!!.properties
+        assertThat(properties).containsKeys("name", "email", "duplicateSuspected").doesNotContainKey("signupEmail")
+        assertThat(properties["name"]!!.description).isEqualTo("닉네임")
+        assertThat(properties["email"]!!.nullable).isTrue()
+        assertThat(properties["duplicateSuspected"]!!.nullable == true).isFalse()
+        assertThat(legacy["MemberSummary"]!!.properties).doesNotContainKeys("email", "signupEmail", "duplicateSuspected")
     }
 
     @Test
