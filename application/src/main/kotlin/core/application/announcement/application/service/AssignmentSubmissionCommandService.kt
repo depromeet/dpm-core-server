@@ -9,7 +9,9 @@ import core.domain.announcement.port.outbound.AssignmentSubmissionPersistencePor
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
+import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
+import core.domain.team.vo.TeamId
 import org.springframework.stereotype.Service
 
 @Service
@@ -17,6 +19,7 @@ class AssignmentSubmissionCommandService(
     val assignmentSubmissionPersistencePort: AssignmentSubmissionPersistencePort,
     val cohortQueryUseCase: CohortQueryUseCase,
     val memberQueryService: MemberQueryService,
+    private val memberPersistencePort: MemberPersistencePort,
 ) : AssignmentSubmissionCommandUseCase {
     override fun updateAssignmentSubmission(assignmentSubmission: AssignmentSubmission): AssignmentSubmission =
         assignmentSubmissionPersistencePort.save(assignmentSubmission)
@@ -24,6 +27,15 @@ class AssignmentSubmissionCommandService(
     override fun ensureAssignmentSubmission(
         assignment: Assignment,
         memberId: MemberId,
+    ): AssignmentSubmission =
+        ensureAssignmentSubmission(assignment, memberId) {
+            memberQueryService.getMemberTeamId(memberId)
+        }
+
+    private fun ensureAssignmentSubmission(
+        assignment: Assignment,
+        memberId: MemberId,
+        teamId: () -> TeamId,
     ): AssignmentSubmission {
         val assignmentId = assignment.id ?: throw AssignmentNotFoundException()
         return assignmentSubmissionPersistencePort.findByAssignmentIdAndMemberId(
@@ -33,7 +45,7 @@ class AssignmentSubmissionCommandService(
             AssignmentSubmission.create(
                 assignmentId = assignmentId,
                 memberId = memberId,
-                teamId = memberQueryService.getMemberTeamId(memberId),
+                teamId = teamId(),
                 submitType = assignment.submitType,
             ),
         )
@@ -53,9 +65,11 @@ class AssignmentSubmissionCommandService(
     override fun initializeForNewCohortMember(
         memberId: MemberId,
         assignments: List<Assignment>,
+        cohortId: CohortId,
     ) {
+        val teamId = TeamId(memberPersistencePort.findMemberTeamIdByMemberIdAndCohortId(memberId, cohortId) ?: 0L)
         assignments.forEach { assignment ->
-            ensureAssignmentSubmission(assignment, memberId)
+            ensureAssignmentSubmission(assignment, memberId) { teamId }
         }
     }
 }

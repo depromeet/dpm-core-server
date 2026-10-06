@@ -2,6 +2,7 @@ package core.domain.announcement.port.inbound
 
 import core.domain.announcement.aggregate.Assignment
 import core.domain.announcement.aggregate.AssignmentSubmission
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 
 interface AssignmentSubmissionCommandUseCase {
@@ -17,5 +18,6 @@ interface AssignmentSubmissionCommandUseCase {
     fun initializeForNewCohortMember(
         memberId: MemberId,
         assignments: List<Assignment>,
+        cohortId: CohortId,
     )
 }
