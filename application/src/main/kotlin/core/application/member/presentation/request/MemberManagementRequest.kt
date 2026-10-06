@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Size
 data class MemberManagementRequest(
     @field:Schema(description = "승인 탭. APPROVED는 ACTIVE/INACTIVE를 포함")
     val approvalStatus: ApprovalStatus = ApprovalStatus.APPROVED,
-    @field:Schema(description = "이름 또는 가입 이메일 부분 검색. 앞뒤 공백 무시, 대소문자 구분 없음")
+    @field:Schema(description = "닉네임 또는 관리 목록에 표시하는 이메일 부분 검색. 앞뒤 공백 무시, 대소문자 구분 없음")
     @field:Size(max = 255)
     val search: String? = null,
     @field:Schema(description = "파트. 미배정은 UNASSIGNED")

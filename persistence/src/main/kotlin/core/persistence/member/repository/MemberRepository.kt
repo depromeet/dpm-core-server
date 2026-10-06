@@ -77,6 +77,24 @@ class MemberRepository(
                     .where(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID), TEAMS.COHORT_ID.eq(cohortId))
                     .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc()).limit(1),
             )
+        val hasKakao =
+            exists(
+                selectOne().from(MEMBER_OAUTH)
+                    .where(MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID), MEMBER_OAUTH.PROVIDER.eq("KAKAO")),
+            )
+        // 같은 제공자의 연결이 여러 개면 가장 최근 ID를 사용한다. 조인하지 않아 회원 행이 늘지 않는다.
+        val oauthEmail =
+            field(
+                DSL.select(MEMBER_OAUTH.EMAIL).from(MEMBER_OAUTH)
+                    .where(
+                        MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID),
+                        MEMBER_OAUTH.PROVIDER.`in`("KAKAO", "APPLE"),
+                    )
+                    .orderBy(
+                        `when`(MEMBER_OAUTH.PROVIDER.eq("KAKAO"), 0).otherwise(1),
+                        MEMBER_OAUTH.MEMBER_OAUTH_ID.desc(),
+                    ).limit(1),
+            )
         return dsl.select(
             MEMBERS.MEMBER_ID, MEMBERS.NAME, MEMBERS.SIGNUP_EMAIL, MEMBERS.PART, MEMBERS.STATUS,
             MEMBERS.CREATED_AT, MEMBERS.UPDATED_AT,
@@ -84,15 +102,23 @@ class MemberRepository(
                 "is_current_cohort",
             ),
             teamNumber.`as`("team_number"),
+            hasKakao.`as`("has_kakao"),
+            oauthEmail.`as`("oauth_email"),
         ).from(MEMBERS)
             .where(MEMBERS.DELETED_AT.isNull)
             .and(MEMBERS.STATUS.`in`("ACTIVE", "INACTIVE", "PENDING"))
             .and(isCurrentCohort.or(MEMBERS.STATUS.eq("PENDING").and(hasNoCohort)))
             .fetch { record ->
+                val selectedEmail = record.get("oauth_email", String::class.java)?.trim()?.takeIf { it.isNotEmpty() }
                 MemberManagementQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
                     name = requireNotNull(record[MEMBERS.NAME]),
-                    signupEmail = requireNotNull(record[MEMBERS.SIGNUP_EMAIL]),
+                    email =
+                        if (record.get("has_kakao", Boolean::class.java) == true) {
+                            selectedEmail
+                        } else {
+                            selectedEmail ?: requireNotNull(record[MEMBERS.SIGNUP_EMAIL])
+                        },
                     part = record[MEMBERS.PART]?.let(MemberPart::valueOf),
                     status = MemberStatus.valueOf(requireNotNull(record[MEMBERS.STATUS])),
                     cohortId = cohortId.takeIf { record.get("is_current_cohort", Boolean::class.java) == true },

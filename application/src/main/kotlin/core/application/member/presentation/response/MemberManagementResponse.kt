@@ -13,7 +13,7 @@ data class MemberManagementResponse(
     val totalElements: Int,
     val page: Int,
     val size: Int,
-    @field:Schema(description = "조회 대상 회원의 저장된 기본정보 변경/생성 시각 중 최댓값. 팀·역할만 바뀐 시각과 삭제는 포함하지 않음", nullable = true)
+    @field:Schema(description = "회원 기본정보 변경/생성 시각 중 최댓값. 팀·역할·OAuth만 바뀐 시각과 삭제는 포함하지 않음", nullable = true)
     val lastUpdatedAt: Instant?,
     val members: List<MemberSummary>,
 ) {
@@ -36,9 +36,15 @@ data class MemberManagementResponse(
     data class MemberSummary(
         val memberId: Long,
         val cohortId: Long?,
+        @field:Schema(description = "닉네임")
         val name: String,
-        @field:Schema(description = "가입 이메일. 로그인별 이메일 또는 통합 후 대표 이메일을 의미하지 않음")
-        val signupEmail: String,
+        @field:Schema(
+            description =
+                "관리 표시 이메일. 카카오 우선, 미연결이면 애플·가입 이메일 순. " +
+                    "카카오 연결의 이메일이 없으면 null. 같은 제공자는 가장 큰 연결 ID 기준",
+            nullable = true,
+        )
+        val email: String?,
         @field:Schema(description = "WEB/SERVER/DESIGN/IOS/ANDROID/UNASSIGNED")
         val part: String,
         @field:Schema(description = "DEEPER/ORGANIZER/CORE/UNASSIGNED. 내부 MASTER 권한은 표시하지 않음")
@@ -49,8 +55,8 @@ data class MemberManagementResponse(
         val missingInformation: Boolean,
         @field:Schema(description = "현재 기수 승인 회원은 출석 기록이 없어도 0건으로 판정(NORMAL). 미승인·기수 미소속은 null", nullable = true)
         val graduationStatus: AttendanceGraduationStatus?,
-        @field:Schema(description = "중복 의심 판별 기준 확정 전이므로 null(미평가). false로 해석하지 않음", nullable = true)
-        val duplicateSuspected: Boolean?,
+        @field:Schema(description = "관리 대상 중 앞뒤 공백을 제외한 닉네임과 실제 파트가 같은 다른 회원 존재 여부. 대소문자 구분, 빈 닉네임·미배정 파트 제외")
+        val duplicateSuspected: Boolean,
         @field:Schema(description = "저장된 기본정보 변경/생성 시각", nullable = true)
         val updatedAt: Instant?,
     )

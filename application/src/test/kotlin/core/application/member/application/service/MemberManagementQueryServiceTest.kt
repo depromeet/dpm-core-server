@@ -81,7 +81,7 @@ class MemberManagementQueryServiceTest {
         assertThat(response.summary.missingInformationCount).isEqualTo(1)
         assertThat(response.summary.graduationRiskCount).isEqualTo(2)
         assertThat(response.lastUpdatedAt).isEqualTo(updatedAt)
-        assertThat(response.members.single().duplicateSuspected).isNull()
+        assertThat(response.members.single().duplicateSuspected).isFalse()
     }
 
     @Test
@@ -130,12 +130,59 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
-    fun `가입 이메일을 검색하며 공백과 대소문자를 정규화하고 없는 결과는 빈 페이지다`() {
+    fun `닉네임과 표시 이메일을 검색하며 이메일이 없는 회원도 조회한다`() {
+        `when`(members.findManagementMembers(19)).thenReturn(source.map { if (it.memberId == 5L) it.copy(email = null) else it })
         assertThat(service.getOverview(MemberManagementRequest(search = "  USER1@EXAMPLE.COM ")).members.single().memberId).isEqualTo(1)
+        assertThat(service.getOverview(MemberManagementRequest(search = "마")).members.single().email).isNull()
         val empty = service.getOverview(MemberManagementRequest(search = "없는이름"))
         assertThat(empty.totalElements).isZero()
         assertThat(empty.members).isEmpty()
         assertThat(empty.summary.totalMemberCount).isEqualTo(4)
+    }
+
+    @Test
+    fun `앞뒤 공백을 제외한 닉네임과 실제 파트가 모두 같아야 중복 의심이다`() {
+        val candidates =
+            listOf(
+                member(1, "닉네임", MemberPart.WEB),
+                member(2, "  닉네임  ", MemberPart.WEB),
+                member(3, "닉네임", MemberPart.SERVER),
+                member(4, "다른닉", MemberPart.WEB).copy(email = "user1@example.com"),
+                member(5, "Nick", MemberPart.SERVER),
+                member(6, "nick", MemberPart.SERVER),
+                member(7, "미배정", null),
+                member(8, "미배정", null),
+                member(9, " ", MemberPart.WEB),
+                member(10, "", MemberPart.WEB),
+            )
+        `when`(members.findManagementMembers(19)).thenReturn(candidates)
+        val result = service.getOverview(MemberManagementRequest(excludeStaff = false)).members.associateBy { it.memberId }
+        assertThat(result.filterValues { it.duplicateSuspected }.keys).containsExactlyInAnyOrder(1L, 2L)
+        assertThat(result.getValue(2).name).isEqualTo("  닉네임  ")
+        assertThat(result.filterKeys { it !in setOf(1L, 2L) }.values.map { it.duplicateSuspected }).containsOnly(false)
+    }
+
+    @Test
+    fun `비교 상대가 다른 탭 검색 팀 필터 페이지나 운영진 제외로 숨겨져도 중복 배지를 유지한다`() {
+        val candidates =
+            listOf(
+                member(1, "닉네임", MemberPart.WEB, team = 1),
+                member(2, "닉네임", MemberPart.WEB, team = 2),
+                member(3, "코어별명", MemberPart.SERVER),
+                member(6, "닉네임", MemberPart.WEB, status = MemberStatus.PENDING, cohortId = null),
+                member(7, "코어별명", MemberPart.SERVER, status = MemberStatus.PENDING),
+            )
+        `when`(members.findManagementMembers(19)).thenReturn(candidates)
+        `when`(roles.findActiveRoleAssignmentsByMemberIds(candidates.map { it.memberId })).thenReturn(mapOf(3L to listOf(role("CORE"))))
+        val filtered = service.getOverview(MemberManagementRequest(search = "user1@example.com", part = "WEB", teamNumber = 1))
+        assertThat(filtered.members.single().memberId).isEqualTo(1L)
+        assertThat(filtered.members.single().duplicateSuspected).isTrue()
+        val page = service.getOverview(MemberManagementRequest(page = 2, size = 1))
+        assertThat(page.members.single().memberId).isEqualTo(2L)
+        assertThat(page.members.single().duplicateSuspected).isTrue()
+        val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
+        assertThat(pending.members.map { it.memberId }).containsExactly(6L, 7L)
+        assertThat(pending.members.map { it.duplicateSuspected }).containsOnly(true)
     }
 
     @Test
