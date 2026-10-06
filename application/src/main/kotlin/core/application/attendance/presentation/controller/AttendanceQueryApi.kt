@@ -447,7 +447,9 @@ interface AttendanceQueryApi {
         summary = "내 결석 사유서 조회",
         description =
             "로그인한 디퍼가 해당 세션에 제출한 결석 사유서를 조회합니다. 제출 이력이 없으면 data 가 비어있습니다. " +
-                "imageIds 는 첨부 이미지 id(표시 순서, 없으면 [])이며 조회 URL 은 GET /v3/images/{imageId} 로 받습니다.",
+                "images 는 첨부 이미지 id 와 원본 파일명(표시 순서, 없으면 [])이며 조회 URL 은 GET /v3/images/{imageId} 로 받습니다. " +
+                "파일명 없이 올렸거나 파일명 저장 전에 올린 이미지는 fileName 이 null 입니다. " +
+                "imageIds 는 같은 순서의 id 목록으로 호환을 위해 유지합니다.",
     )
     @ApiResponses(
         value = [
@@ -469,6 +471,10 @@ interface AttendanceQueryApi {
                                             "contents": "병원 진료",
                                             "status": "PENDING",
                                             "imageIds": [12, 15],
+                                            "images": [
+                                                { "imageId": 12, "fileName": "진단서.jpg" },
+                                                { "imageId": 15, "fileName": null }
+                                            ],
                                             "createdAt": "2025-08-16T15:00:00",
                                             "updatedAt": null
                                         }
@@ -490,8 +496,10 @@ interface AttendanceQueryApi {
         summary = "세션 결석 사유서 목록 조회 (운영진)",
         description =
             "운영진이 해당 세션에 제출된 모든 결석 사유서를 제출자 이름과 함께 조회합니다. " +
-                "reasons[].imageIds 는 첨부 이미지 id(표시 순서, 없으면 [])이며 " +
-                "조회 URL 은 GET /v3/images/{imageId}, 다운로드는 GET /v3/images/{imageId}/download 로 받습니다.",
+                "reasons[].images 는 첨부 이미지 id 와 원본 파일명(표시 순서, 없으면 [])이며 " +
+                "조회 URL 은 GET /v3/images/{imageId}, 다운로드는 GET /v3/images/{imageId}/download 로 받습니다. " +
+                "파일명 없이 올렸거나 파일명 저장 전에 올린 이미지는 fileName 이 null 입니다. " +
+                "reasons[].imageIds 는 같은 순서의 id 목록으로 호환을 위해 유지합니다.",
     )
     @ApiResponses(
         value = [

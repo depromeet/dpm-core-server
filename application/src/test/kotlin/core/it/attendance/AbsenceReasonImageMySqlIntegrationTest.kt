@@ -6,6 +6,7 @@ import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
 import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AbsenceReasonQueryService
+import core.application.attendance.presentation.response.AbsenceReasonImageInfo
 import core.application.common.exception.BusinessException
 import core.application.image.FakeImageStoragePort
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
@@ -207,17 +208,33 @@ class AbsenceReasonImageMySqlIntegrationTest {
     }
 
     @Test
-    fun `운영진 목록은 사유서별 imageIds 를 순서대로, 없으면 빈 목록으로 준다`() {
+    fun `운영진 목록은 사유서별 imageIds 와 파일명을 순서대로, 없으면 빈 목록으로 준다`() {
         val session = newSession()
         val (withImages, withoutImages) = List(2) { newMember() }
-        val (a, b) = List(2) { newImage(withImages) }
+        val a = newImage(withImages, fileName = "진단서.jpg")
+        val b = newImage(withImages)
         submit(session, withImages, "첨부", listOf(b, a))
         submit(session, withoutImages, "첨부 없음", null)
 
         val items = queryService.getSessionAbsenceReasons(session.id!!).reasons.associateBy { it.memberId }
 
         assertThat(items.getValue(withImages.value).imageIds).containsExactly(b.value, a.value)
+        assertThat(items.getValue(withImages.value).images)
+            .containsExactly(AbsenceReasonImageInfo(b.value, null), AbsenceReasonImageInfo(a.value, "진단서.jpg"))
         assertThat(items.getValue(withoutImages.value).imageIds).isEmpty()
+        assertThat(items.getValue(withoutImages.value).images).isEmpty()
+    }
+
+    @Test
+    fun `내 사유서는 첨부 이미지 파일명을 순서대로 준다`() {
+        val session = newSession()
+        val member = newMember()
+        val a = newImage(member, fileName = "진단서.jpg")
+        val b = newImage(member)
+        submit(session, member, "첨부", listOf(a, b))
+
+        assertThat(queryService.getMyAbsenceReason(session.id!!, member)!!.images)
+            .containsExactly(AbsenceReasonImageInfo(a.value, "진단서.jpg"), AbsenceReasonImageInfo(b.value, null))
     }
 
     private fun submit(
@@ -247,7 +264,10 @@ class AbsenceReasonImageMySqlIntegrationTest {
         return memberId
     }
 
-    private fun newImage(owner: MemberId): ImageId {
+    private fun newImage(
+        owner: MemberId,
+        fileName: String? = null,
+    ): ImageId {
         val bytes = UUID.randomUUID().toString().toByteArray()
         // 이미지 행은 업로드 완료로만 만들어지고 entity 모듈은 이 모듈 컴파일 경로에 없으므로 행을 직접 넣는다.
         val objectKey = Image.OBJECT_KEY_PREFIX + UUID.randomUUID()
@@ -255,7 +275,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
         jdbcTemplate.update({ connection ->
             connection
                 .prepareStatement(
-                    "insert into images (owner_member_id, object_key, content_type, size_bytes, created_at) values (?, ?, ?, ?, ?)",
+                    "insert into images (owner_member_id, object_key, content_type, size_bytes, created_at, original_file_name) " +
+                        "values (?, ?, ?, ?, ?, ?)",
                     arrayOf("image_id"),
                 ).apply {
                     setLong(1, owner.value)
@@ -263,6 +284,7 @@ class AbsenceReasonImageMySqlIntegrationTest {
                     setString(3, ImageContentType.PNG.mimeType)
                     setLong(4, bytes.size.toLong())
                     setTimestamp(5, Timestamp.from(Instant.now()))
+                    setString(6, fileName)
                 }
         }, keyHolder)
         storage.put(objectKey, bytes)

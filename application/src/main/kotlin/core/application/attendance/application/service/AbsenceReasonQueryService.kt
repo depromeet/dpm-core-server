@@ -1,5 +1,6 @@
 package core.application.attendance.application.service
 
+import core.application.attendance.presentation.response.AbsenceReasonImageInfo
 import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.SessionAbsenceReasonItem
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
@@ -7,6 +8,8 @@ import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.absencereason.aggregate.AbsenceReason
 import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
+import core.domain.image.port.outbound.ImagePersistencePort
+import core.domain.image.vo.ImageId
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 class AbsenceReasonQueryService(
     private val absenceReasonPersistencePort: AbsenceReasonPersistencePort,
     private val absenceReasonImagePersistencePort: AbsenceReasonImagePersistencePort,
+    private val imagePersistencePort: ImagePersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
 ) {
     /**
@@ -30,14 +34,13 @@ class AbsenceReasonQueryService(
         absenceReasonPersistencePort
             .findBySessionIdAndMemberId(sessionId.value, memberId.value)
             ?.let { reason ->
+                val imageIds = reason.id?.let { absenceReasonImagePersistencePort.findImageIds(it.value) }.orEmpty()
+                val fileNames = findFileNames(imageIds)
                 MyAbsenceReasonResponse(
                     contents = reason.contents,
                     status = reason.status.name,
-                    imageIds =
-                        reason.id
-                            ?.let { absenceReasonImagePersistencePort.findImageIds(it.value) }
-                            .orEmpty()
-                            .map { it.value },
+                    imageIds = imageIds.map { it.value },
+                    images = imageIds.map { AbsenceReasonImageInfo(it.value, fileNames[it]) },
                     createdAt = instantToLocalDateTime(reason.createdAt),
                     updatedAt = instantToLocalDateTime(reason.updatedAt),
                 )
@@ -58,21 +61,22 @@ class AbsenceReasonQueryService(
                 .mapNotNull { member -> member.id?.let { it to member.name } }
                 .toMap()
 
-        val imageIds: Map<Long, List<Long>> =
-            absenceReasonImagePersistencePort
-                .findImageIdsByAbsenceReasonIds(reasons.mapNotNull { it.id?.value })
-                .mapValues { (_, ids) -> ids.map { it.value } }
+        val imageIds: Map<Long, List<ImageId>> =
+            absenceReasonImagePersistencePort.findImageIdsByAbsenceReasonIds(reasons.mapNotNull { it.id?.value })
+        val fileNames = findFileNames(imageIds.values.flatten())
 
         val items =
             reasons
                 .sortedByDescending { it.createdAt }
                 .map { reason ->
+                    val reasonImageIds = reason.id?.let { imageIds[it.value] }.orEmpty()
                     SessionAbsenceReasonItem(
                         memberId = reason.memberId.value,
                         memberName = memberNames[reason.memberId] ?: "",
                         contents = reason.contents,
                         status = reason.status.name,
-                        imageIds = reason.id?.let { imageIds[it.value] }.orEmpty(),
+                        imageIds = reasonImageIds.map { it.value },
+                        images = reasonImageIds.map { AbsenceReasonImageInfo(it.value, fileNames[it]) },
                         createdAt = instantToLocalDateTime(reason.createdAt),
                         updatedAt = instantToLocalDateTime(reason.updatedAt),
                     )
@@ -80,4 +84,10 @@ class AbsenceReasonQueryService(
 
         return SessionAbsenceReasonsResponse(items)
     }
+
+    private fun findFileNames(imageIds: List<ImageId>): Map<ImageId, String?> =
+        imagePersistencePort
+            .findAllByIds(imageIds)
+            .mapNotNull { image -> image.id?.let { it to image.originalFileName } }
+            .toMap()
 }
