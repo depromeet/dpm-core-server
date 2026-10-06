@@ -13,4 +13,7 @@ data class SessionUpdateCommand(
     val attendanceStart: Instant,
     val lateStart: Instant,
     val absentStart: Instant,
+    val feedbackEnabled: Boolean = false,
+    val feedbackStartAt: Instant? = null,
+    val feedbackPushEnabled: Boolean = true,
 )

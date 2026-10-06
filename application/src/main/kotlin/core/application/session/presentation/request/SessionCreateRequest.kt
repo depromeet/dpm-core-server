@@ -11,4 +11,7 @@ data class SessionCreateRequest(
     val attendanceStart: LocalDateTime? = null,
     val lateStart: LocalDateTime? = null,
     val absentStart: LocalDateTime? = null,
+    val feedbackEnabled: Boolean? = false,
+    val feedbackStartAt: LocalDateTime? = null,
+    val feedbackPushEnabled: Boolean? = true,
 )

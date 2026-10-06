@@ -12,6 +12,7 @@ import core.application.session.presentation.response.SessionListDetailResponse
 import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
+import core.application.sessionFeedback.presentation.response.SessionFeedbackSettingsResponse
 import core.domain.attendance.aggregate.Attendance
 import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
@@ -20,6 +21,8 @@ import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
+import core.domain.sessionFeedback.aggregate.SessionFeedbackForm
+import java.time.Clock
 import java.time.LocalDateTime
 
 object SessionMapper {
@@ -58,7 +61,11 @@ object SessionMapper {
             )
         }
 
-    fun toSessionDetailResponse(session: Session): SessionDetailResponse =
+    fun toSessionDetailResponse(
+        session: Session,
+        feedbackForm: SessionFeedbackForm?,
+        clock: Clock,
+    ): SessionDetailResponse =
         with(session) {
             SessionDetailResponse(
                 id = id!!.value,
@@ -72,6 +79,7 @@ object SessionMapper {
                 lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
                 absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
                 attendanceCode = session.attendancePolicy.attendanceCode,
+                feedback = feedbackForm?.let { SessionFeedbackSettingsResponse.of(it, clock) },
             )
         }
 
@@ -114,6 +122,9 @@ object SessionMapper {
             attendanceStart = localDateTimeToInstant(request.attendanceStart),
             lateStart = localDateTimeToInstant(request.lateStart),
             absentStart = localDateTimeToInstant(request.absentStart),
+            feedbackEnabled = request.feedbackEnabled ?: false,
+            feedbackStartAt = localDateTimeToInstant(request.feedbackStartAt),
+            feedbackPushEnabled = request.feedbackPushEnabled ?: true,
         )
 
     fun toSessionUpdateCommand(request: SessionUpdateRequest) =
@@ -127,6 +138,9 @@ object SessionMapper {
             attendanceStart = localDateTimeToInstant(request.attendanceStart),
             lateStart = localDateTimeToInstant(request.lateStart),
             absentStart = localDateTimeToInstant(request.absentStart),
+            feedbackEnabled = request.feedbackEnabled ?: false,
+            feedbackStartAt = localDateTimeToInstant(request.feedbackStartAt),
+            feedbackPushEnabled = request.feedbackPushEnabled ?: true,
         )
 
     fun toSessionWeeksResponse(model: List<SessionWeekQueryModel>): SessionWeeksResponse {
