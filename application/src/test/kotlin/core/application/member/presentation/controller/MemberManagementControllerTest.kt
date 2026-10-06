@@ -5,6 +5,7 @@ import core.application.cohort.application.service.CohortCommandService
 import core.application.cohort.application.service.CohortQueryService
 import core.application.cohort.presentation.controller.CohortController
 import core.application.common.exception.GlobalExceptionHandler
+import core.application.member.application.service.MemberManagementCommandService
 import core.application.member.application.service.MemberManagementQueryService
 import core.application.member.presentation.request.MemberManagementRequest
 import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
@@ -215,6 +216,9 @@ class MemberManagementControllerTest {
     class Config {
         @Bean
         fun service(): MemberManagementQueryService = mock(MemberManagementQueryService::class.java)
+
+        @Bean
+        fun commands(): MemberManagementCommandService = mock(MemberManagementCommandService::class.java)
 
         @Bean
         fun cohorts(): CohortQueryService = mock(CohortQueryService::class.java)

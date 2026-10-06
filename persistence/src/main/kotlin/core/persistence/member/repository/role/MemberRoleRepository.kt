@@ -32,6 +32,52 @@ class MemberRoleRepository(
             ).execute()
     }
 
+    override fun replaceCurrentCohortRoles(
+        memberIds: List<Long>,
+        cohortId: Long,
+        roleId: Long?,
+    ): Set<Long> {
+        if (memberIds.isEmpty()) return emptySet()
+        val existing =
+            dsl.select(MEMBER_ROLES.MEMBER_ID, MEMBER_ROLES.MEMBER_ROLE_ID, MEMBER_ROLES.ROLE_ID, COHORT_ID_FIELD)
+                .from(MEMBER_ROLES)
+                .where(
+                    MEMBER_ROLES.MEMBER_ID.`in`(memberIds),
+                    MEMBER_ROLES.DELETED_AT.isNull,
+                    MEMBER_ROLES.ROLE_ID.`in`(
+                        dsl.select(ROLES.ROLE_ID).from(ROLES).where(ROLES.NAME.`in`("CORE", "ORGANIZER", "DEEPER")),
+                    ),
+                    COHORT_ID_FIELD.eq(cohortId).or(COHORT_ID_FIELD.isNull),
+                ).forUpdate().fetchGroups(MEMBER_ROLES.MEMBER_ID)
+        val changed =
+            memberIds.filter { id ->
+                val assigned = existing[id].orEmpty()
+                if (roleId == null) {
+                    assigned.isNotEmpty()
+                } else {
+                    assigned.size != 1 ||
+                        assigned.single()[MEMBER_ROLES.ROLE_ID] != roleId ||
+                        assigned.single()[COHORT_ID_FIELD] != cohortId
+                }
+            }.toSet()
+        if (changed.isEmpty()) return emptySet()
+
+        val now = LocalDateTime.now(ZoneId.of(TIME_ZONE))
+        val replacedIds =
+            changed.flatMap { memberId ->
+                existing[memberId].orEmpty().mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }
+            }
+        softDeleteDuplicates(replacedIds, now)
+        if (roleId != null) {
+            val insert =
+                dsl.insertInto(MEMBER_ROLES)
+                    .columns(MEMBER_ROLES.MEMBER_ID, MEMBER_ROLES.ROLE_ID, COHORT_ID_FIELD, MEMBER_ROLES.GRANTED_AT)
+            changed.forEach { insert.values(it, roleId, cohortId, now) }
+            insert.execute()
+        }
+        return changed
+    }
+
     override fun upsertSingleActiveRole(
         memberId: Long,
         roleId: Long,
