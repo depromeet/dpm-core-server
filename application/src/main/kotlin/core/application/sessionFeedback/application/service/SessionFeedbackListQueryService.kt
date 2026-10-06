@@ -14,12 +14,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 
-/**
- * 세션 목록 응답에 붙일 피드백 상태/버튼 노출 여부를 계산한다.
- *
- * 설문이 없는 세션은 결과 Map 에서 `null` 로 내려가고, 응답은 `feedback: null` 로 직렬화된다.
- * `canSubmit` 는 로그인 멤버 기준이며, 비로그인(`memberId=null`) 은 항상 `false`.
- */
 @Service
 @Transactional(readOnly = true)
 class SessionFeedbackListQueryService(

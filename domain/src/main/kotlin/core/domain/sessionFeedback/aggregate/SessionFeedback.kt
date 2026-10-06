@@ -8,12 +8,6 @@ import core.domain.sessionFeedback.enums.SessionFeedbackSatisfaction
 import core.domain.sessionFeedback.vo.SessionFeedbackId
 import java.time.Instant
 
-/**
- * 세션 피드백 응답(SessionFeedback) 도메인 모델.
- *
- * `(sessionId, memberId)` 당 1건만 존재하며 제출 후 수정하지 않는다.
- * 선택형 문항(`likedAspects`, `improvementAspects`) 은 집계 편의를 위해 선택 항목별로 평탄화되어 저장된다.
- */
 class SessionFeedback(
     val id: SessionFeedbackId? = null,
     val sessionId: SessionId,

@@ -5,12 +5,6 @@ import core.domain.sessionFeedback.enums.SessionFeedbackSatisfaction
 import core.domain.sessionFeedback.enums.SessionFeedbackStatus
 import java.time.LocalDateTime
 
-/**
- * 운영진 피드백 인사이트 응답.
- *
- * 응답자 식별 정보(memberId·이름·팀)는 포함하지 않는다. 실시간 집계라 수집 중에도 조회 가능하다.
- * 수집 전·응답 0건은 에러가 아니라 200 + `respondentCount=0` 으로 내려주고, FE 가 빈 상태 화면을 보여준다.
- */
 data class SessionFeedbackInsightResponse(
     val sessionId: Long,
     val sessionName: String,

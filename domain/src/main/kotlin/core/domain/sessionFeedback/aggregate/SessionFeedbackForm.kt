@@ -6,11 +6,6 @@ import core.domain.sessionFeedback.vo.SessionFeedbackFormId
 import java.time.Duration
 import java.time.Instant
 
-/**
- * 세션 피드백 설문 설정(SessionFeedbackForm) 도메인 모델.
- *
- * `피드백 받기` ON 세션에만 생성된다. `endAt` 은 서버가 `startAt + 72h` 로 계산하며 직접 수정하지 않는다.
- */
 class SessionFeedbackForm(
     val id: SessionFeedbackFormId? = null,
     val sessionId: SessionId,
@@ -43,7 +38,6 @@ class SessionFeedbackForm(
     var deletedAt: Instant? = deletedAt
         private set
 
-    /** 수집 시작 시각과 PUSH 설정을 함께 변경한다. `endAt` 은 재계산된다. */
     fun updateSchedule(
         startAt: Instant,
         pushEnabled: Boolean,
@@ -54,14 +48,12 @@ class SessionFeedbackForm(
         this.updatedAt = Instant.now()
     }
 
-    /** PUSH 설정만 변경한다. 수집이 시작된 뒤에도 호출 가능. */
     fun updatePushEnabled(pushEnabled: Boolean) {
         if (this.pushEnabled == pushEnabled) return
         this.pushEnabled = pushEnabled
         this.updatedAt = Instant.now()
     }
 
-    /** 수집 시작 PUSH 를 발송했음을 기록한다. 중복 발송 방지 용도. */
     fun markPushSent(at: Instant) {
         this.pushSentAt = at
         this.updatedAt = Instant.now()

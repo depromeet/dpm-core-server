@@ -13,13 +13,6 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 
-/**
- * `SESSION_FEEDBACK_OPENED` PUSH 를 수집 시작 시각에 1회 발송하는 스케줄러.
- *
- * 5분 주기로 돌면서 `startAt <= now` 이고 `pushEnabled=true`, `pushSentAt IS NULL` 인 설문을 찾아
- * 해당 세션의 **출석·지각자**에게만 발송한다. 발송 후 `pushSentAt` 을 기록해 중복 발송을 막는다.
- * cohort 전체가 아니라 세션별 대상자에게 보내므로 `SentSessionNotification` 대신 form 의 `pushSentAt` 으로 관리한다.
- */
 @Component
 class SessionFeedbackReminderScheduler(
     private val feedbackFormPersistencePort: SessionFeedbackFormPersistencePort,

@@ -18,12 +18,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Instant
 
-/**
- * `GET /v2/sessions/{sessionId}/feedbacks/me` 응답을 조립한다.
- *
- * `myStatus` 판정 우선순위: `DISABLED` → `NOT_TARGET` → `SUBMITTED` → `BEFORE_START` → `CLOSED` → `AVAILABLE`.
- * 상태 화면은 에러가 아니라 200 응답으로 내려주며, 세션 없음만 `SESSION-404-01` 로 처리한다.
- */
 @Service
 @Transactional(readOnly = true)
 class SessionFeedbackMyQueryService(
@@ -50,7 +44,12 @@ class SessionFeedbackMyQueryService(
             startAt = form?.startAt?.let(::instantToLocalDateTime),
             endAt = form?.endAt?.let(::instantToLocalDateTime),
             myStatus = myStatus,
-            questions = if (myStatus == SessionFeedbackMyStatus.AVAILABLE) SessionFeedbackQuestionsResponse.DEFAULT else null,
+            questions =
+                if (myStatus == SessionFeedbackMyStatus.AVAILABLE) {
+                    SessionFeedbackQuestionsResponse.forSession(session.eventName)
+                } else {
+                    null
+                },
         )
     }
 

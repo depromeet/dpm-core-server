@@ -26,13 +26,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 
-/**
- * `GET /v2/sessions/{sessionId}/feedbacks/insight` 응답을 조립한다.
- *
- * 마감 후 한 번에 공개하지 않고 **제출 즉시 실시간 누적** 집계한다. 수집 중에도 조회 가능하다.
- * 응답자 식별 정보(`memberId`, 이름, 팀)는 응답에 포함하지 않으며, 수집 전·응답 0건도
- * 에러가 아니라 200 + `respondentCount=0` 응답으로 내려 FE 가 빈 상태 화면을 보여주게 한다.
- */
 @Service
 @Transactional(readOnly = true)
 class SessionFeedbackInsightQueryService(

@@ -13,12 +13,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 
-/**
- * 홈 카드용: 지금 작성 가능한(`canSubmit=true`) 세션 1건을 반환한다.
- *
- * 수집 중(`IN_PROGRESS`) 설문을 `endAt` 오름차순으로 돌면서 멤버가 대상이고 미제출인 첫 세션을
- * 찾는다. 활성 설문은 72h 윈도우라 동시에 떠 있는 수가 작다는 가정 하에 N+1 질의를 허용한다.
- */
 @Service
 @Transactional(readOnly = true)
 class SessionFeedbackPendingQueryService(

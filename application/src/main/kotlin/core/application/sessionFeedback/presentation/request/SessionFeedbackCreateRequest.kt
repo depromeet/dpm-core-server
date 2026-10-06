@@ -5,7 +5,6 @@ import core.domain.sessionFeedback.enums.SessionFeedbackSatisfaction
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 
-/** 피드백 제출 요청. 선택 수·중복·NOTHING·ETC 비즈니스 검증은 서비스에서 수행한다. */
 data class SessionFeedbackCreateRequest(
     @field:NotNull
     val satisfaction: SessionFeedbackSatisfaction?,
