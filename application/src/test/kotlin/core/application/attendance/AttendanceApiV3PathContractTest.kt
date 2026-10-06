@@ -12,8 +12,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestMapping
 
 /**
- * 스택 PR 에서 새로 만들었거나 요청·응답 형식, 응답 의미, 오류 응답이 바뀐 API 만 /v3 이고,
- * 내부 로직만 바뀐 API 는 기존 경로와 메서드 권한 그대로인지 확인한다.
+ * 스택 PR 에서 새로 만들었거나 클라이언트가 대응해야 하는 요청·응답 변경이 있는 API 만 /v3 이고,
+ * 나머지는 기존 경로와 메서드 권한 그대로인지 확인한다.
  */
 class AttendanceApiV3PathContractTest {
     private fun endpoints(vararg controllers: Class<*>): Set<String> =
@@ -41,8 +41,8 @@ class AttendanceApiV3PathContractTest {
         assertThat(endpoints(AttendanceCommandController::class.java, AttendanceQueryController::class.java))
             .containsExactlyInAnyOrder(
                 "POST /v1/sessions/{sessionId}/attendances hasAuthority('create:attendance')",
-                "PATCH /v3/sessions/{sessionId}/attendances/{memberId} hasAuthority('update:attendance')",
-                "PATCH /v3/sessions/{sessionId}/attendances/bulk hasAuthority('update:attendance')",
+                "PATCH /v1/sessions/{sessionId}/attendances/{memberId} hasAuthority('update:attendance')",
+                "PATCH /v1/sessions/{sessionId}/attendances/bulk hasAuthority('update:attendance')",
                 "POST /v3/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
                 "PATCH /v3/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
                 "DELETE /v2/sessions/{sessionId}/absence-reasons hasAuthority('create:attendance')",
@@ -62,8 +62,8 @@ class AttendanceApiV3PathContractTest {
     fun `세션 API 는 바뀐 것만 v3 이고 권한은 그대로다`() {
         assertThat(endpoints(SessionCommandController::class.java, SessionQueryController::class.java))
             .containsExactlyInAnyOrder(
-                "POST /v3/sessions hasAuthority('create:session')",
-                "PATCH /v3/sessions hasAuthority('update:session')",
+                "POST /v1/sessions hasAuthority('create:session')",
+                "PATCH /v1/sessions hasAuthority('update:session')",
                 "PATCH /v1/sessions/{sessionId}/delete hasAuthority('delete:session')",
                 "GET /v1/sessions/next permitAll()",
                 "GET /v1/sessions permitAll()",

@@ -60,7 +60,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @PatchMapping("/v3/sessions/{sessionId}/attendances/{memberId}")
+    @PatchMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
     override fun updateAttendance(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
@@ -74,7 +74,7 @@ class AttendanceCommandController(
     }
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @PatchMapping("/v3/sessions/{sessionId}/attendances/bulk")
+    @PatchMapping("/v1/sessions/{sessionId}/attendances/bulk")
     override fun updateAttendanceBulk(
         @PathVariable sessionId: SessionId,
         @Valid @RequestBody request: AttendanceStatusBulkUpdateRequest,
