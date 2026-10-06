@@ -13,6 +13,7 @@ import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.application.sessionFeedback.presentation.response.SessionFeedbackSettingsResponse
+import core.application.sessionFeedback.presentation.response.SessionListFeedbackResponse
 import core.domain.attendance.aggregate.Attendance
 import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
@@ -42,20 +43,25 @@ object SessionMapper {
             )
         }
 
-    fun toSessionListResponse(sessions: List<Session>): SessionListResponse =
+    fun toSessionListResponse(
+        sessions: List<Session>,
+        feedbackBySessionId: Map<Long, SessionListFeedbackResponse> = emptyMap(),
+    ): SessionListResponse =
         sessions.run {
             if (isEmpty()) return SessionListResponse(sessions = emptyList())
 
             SessionListResponse(
                 sessions =
                     map {
+                        val sessionId = it.id!!.value
                         SessionListDetailResponse(
-                            id = it.id!!.value,
+                            id = sessionId,
                             week = it.week,
                             name = it.eventName,
                             date = instantToLocalDateTime(it.date),
                             place = it.place,
                             isOnline = it.isOnline,
+                            feedback = feedbackBySessionId[sessionId],
                         )
                     },
             )
