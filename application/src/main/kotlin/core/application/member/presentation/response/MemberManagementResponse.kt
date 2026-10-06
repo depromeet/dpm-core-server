@@ -47,7 +47,7 @@ data class MemberManagementResponse(
         val teamNumber: Int,
         val status: MemberStatus,
         val missingInformation: Boolean,
-        @field:Schema(description = "미승인 또는 출석 집계 자료가 없으면 null(미평가)", nullable = true)
+        @field:Schema(description = "현재 기수 승인 회원은 출석 기록이 없어도 0건으로 판정(NORMAL). 미승인·기수 미소속은 null", nullable = true)
         val graduationStatus: AttendanceGraduationStatus?,
         @field:Schema(description = "중복 의심 판별 기준 확정 전이므로 null(미평가). false로 해석하지 않음", nullable = true)
         val duplicateSuspected: Boolean?,

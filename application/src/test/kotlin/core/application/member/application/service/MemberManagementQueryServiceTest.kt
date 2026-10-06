@@ -8,6 +8,7 @@ import core.application.member.presentation.request.MemberManagementRequest.Appr
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
+import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberPart
@@ -17,6 +18,7 @@ import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.port.outbound.query.MemberManagementQueryModel
 import core.domain.member.vo.MemberRoleAssignment
+import core.domain.team.vo.TeamNumber
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -61,8 +63,8 @@ class MemberManagementQueryServiceTest {
                 7L to listOf(role("GUEST", null)),
             ),
         )
-        `when`(attendance.findSummariesByCohortAndMemberIds(19, source.map { it.memberId })).thenReturn(
-            mapOf(1L to summary(3), 2L to summary(5), 6L to summary(5)),
+        `when`(attendance.findMemberAttendances(19, emptyList())).thenReturn(
+            listOf(attendanceRow(1, 3), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5), attendanceRow(7)),
         )
     }
 
@@ -98,13 +100,13 @@ class MemberManagementQueryServiceTest {
         // Spring MVC가 NORMAL, 을 바인딩한 결과와 동일한 입력이다.
         @Suppress("UNCHECKED_CAST")
         val statuses = listOf(AttendanceGraduationStatus.NORMAL, null) as List<AttendanceGraduationStatus>
-        `when`(attendance.findSummariesByCohortAndMemberIds(19, source.map { it.memberId })).thenReturn(
-            mapOf(1L to summary(0), 2L to summary(5)),
-        )
         val response = service.getOverview(MemberManagementRequest(graduationStatuses = statuses))
         assertThat(response.totalElements).isEqualTo(1)
-        assertThat(response.members.map { it.memberId }).containsExactly(1L)
+        assertThat(response.members.map { it.memberId }).containsExactly(5L)
         assertThat(response.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
+        val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, graduationStatuses = statuses))
+        assertThat(pending.totalElements).isZero()
+        assertThat(pending.members).isEmpty()
     }
 
     @Test
@@ -123,7 +125,7 @@ class MemberManagementQueryServiceTest {
         val result = service.getOverview(MemberManagementRequest(missingInformationOnly = true, part = "UNASSIGNED", teamNumber = 0, status = "INACTIVE"))
         assertThat(result.members.single().memberId).isEqualTo(5)
         assertThat(result.members.single().memberType).isEqualTo("UNASSIGNED")
-        assertThat(result.members.single().graduationStatus).isNull()
+        assertThat(result.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
         assertThat(service.getOverview(MemberManagementRequest(excludeStaff = false)).members).hasSize(5)
     }
 
@@ -142,7 +144,7 @@ class MemberManagementQueryServiceTest {
         verify(cohorts).getLatestCohortId()
         verify(members).findManagementMembers(19)
         verify(roles).findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })
-        verify(attendance).findSummariesByCohortAndMemberIds(19, source.map { it.memberId })
+        verify(attendance).findMemberAttendances(19, emptyList())
         verifyNoMoreInteractions(cohorts, members, roles, attendance)
     }
 
@@ -160,5 +162,11 @@ class MemberManagementQueryServiceTest {
         cohortId: Long? = 19,
     ) = MemberRoleAssignment(name, cohortId?.let(::CohortId))
 
-    private fun summary(absent: Int) = AttendanceSummaryQueryModel(20, 0, 0, 0, absent, 0)
+    private fun attendanceRow(
+        id: Long,
+        absent: Int = 0,
+    ): MemberAttendanceQueryModel {
+        val member = source.single { it.memberId == id }
+        return MemberAttendanceQueryModel(id, member.name, TeamNumber(member.teamNumber), false, member.part?.name, AttendanceSummaryQueryModel(20, 0, 0, 0, absent, 0))
+    }
 }

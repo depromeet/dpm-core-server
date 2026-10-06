@@ -32,7 +32,8 @@ class MemberManagementQueryService(
         val source = members.findManagementMembers(cohortId)
         val memberIds = source.map { it.memberId }
         val assignments = roles.findActiveRoleAssignmentsByMemberIds(memberIds)
-        val attendanceSummaries = attendances.findSummariesByCohortAndMemberIds(cohortId, memberIds)
+        val attendanceSummaries =
+            attendances.findMemberAttendances(cohortId, emptyList()).associate { it.id to it.summary }
         val allMembers =
             source.map { member ->
                 val role =
@@ -55,7 +56,7 @@ class MemberManagementQueryService(
                     missingInformation =
                         approved && (member.part == null || member.teamNumber == 0 || type == UNASSIGNED),
                     graduationStatus =
-                        attendanceSummaries[member.memberId]?.takeIf { approved }?.let(
+                        attendanceSummaries[member.memberId]?.takeIf { approved && member.cohortId == cohortId }?.let(
                             graduationEvaluator::evaluate,
                         ),
                     duplicateSuspected = null,
