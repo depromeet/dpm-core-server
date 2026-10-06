@@ -4,7 +4,9 @@ import core.application.attendance.application.service.AttendanceGraduationEvalu
 import core.application.member.application.service.MemberManagementQueryService
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.application.member.presentation.request.MemberManagementRequest
+import core.application.member.presentation.request.MemberManagementRequest.ApprovalStatus
 import core.domain.attendance.aggregate.Attendance
+import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.cohort.aggregate.Cohort
@@ -63,7 +65,7 @@ class MemberManagementMySqlIntegrationTest {
     @MockitoBean lateinit var notifications: SentSessionNotificationCommandUseCase
 
     @Test
-    fun `현재 기수의 단일 회원과 팀 역할을 읽고 출석집계 및 기본정보 시각을 보존한다`() {
+    fun `공통 출석 집계를 회원별로 연결하고 최신 유효 기록과 0건으로 수료를 판정한다`() {
         val old = cohorts.save(Cohort(value = "18")).id!!
         val current = cohorts.save(Cohort(value = "19")).id!!
         // 번호가 더 큰 준비 기수가 있어도 활성 기수를 조회해야 한다.
@@ -97,9 +99,14 @@ class MemberManagementMySqlIntegrationTest {
         val start = Instant.parse("2026-09-01T03:00:00Z")
         val first = sessions.save(Session(cohortId = current, date = start, week = 1, place = "test", eventName = "test", isOnline = true, attendancePolicy = AttendancePolicy(start, start.plusSeconds(600), start.plusSeconds(1200), "1234")))
         val deleted = sessions.save(Session(cohortId = current, date = start, week = 2, place = "test", eventName = "test", isOnline = false, deletedAt = start, attendancePolicy = AttendancePolicy(start, start.plusSeconds(600), start.plusSeconds(1200), "1234")))
+        val oldSession = sessions.save(Session(cohortId = old, date = start, week = 1, place = "test", eventName = "test", isOnline = false, attendancePolicy = AttendancePolicy(start, start.plusSeconds(600), start.plusSeconds(1200), "1234")))
         attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(1), status = AttendanceStatus.ABSENT))
+        attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(1), status = AttendanceStatus.PRESENT))
+        attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(1), status = AttendanceStatus.ABSENT, deletedAt = start))
         attendances.save(Attendance(sessionId = deleted.id!!, memberId = MemberId(1), status = AttendanceStatus.ABSENT))
-        attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(7), status = AttendanceStatus.ABSENT, deletedAt = start))
+        attendances.save(Attendance(sessionId = oldSession.id!!, memberId = MemberId(1), status = AttendanceStatus.ABSENT))
+        attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(7), status = AttendanceStatus.ABSENT))
+        attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(8), status = AttendanceStatus.ABSENT, deletedAt = start))
 
         val rows = members.findManagementMembers(current.value)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L)
@@ -108,13 +115,6 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(rows.single { it.memberId == 3L }.cohortId).isNull()
         assertThat(roles.findActiveRoleAssignmentsByMemberIds(listOf(1, 2, 8))[8]).isNull()
         assertThat(roles.findActiveRoleAssignmentsByMemberIds(emptyList())).isEmpty()
-        val summary = attendances.findSummariesByCohortAndMemberIds(current.value, listOf(1, 7))
-        assertThat(summary.keys).containsExactly(1L)
-        assertThat(summary[1]!!.totalSessionCount).isEqualTo(1)
-        assertThat(summary[1]!!.onlineAbsentCount).isEqualTo(1)
-        assertThat(summary[1]!!.offlineAbsentCount).isZero()
-        assertThat(attendances.findSummariesByCohortAndMemberIds(current.value, emptyList())).isEmpty()
-
         val response = service.getOverview(MemberManagementRequest(teamNumber = 3))
         assertThat(response.cohortId).isEqualTo(current.value)
         assertThat(response.members.map { it.memberId }).containsExactly(1L)
@@ -123,6 +123,18 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(response.summary.pendingCount).isEqualTo(1)
         assertThat(response.summary.graduationRiskCount).isEqualTo(1)
         assertThat(response.summary.missingInformationCount).isEqualTo(2)
+        assertThat(response.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
+
+        // 최신 유효 기록이 PRESENT인 1번, 출석 기록 없는 2번, 삭제된 기록만 있는 8번은 모두 NORMAL이다.
+        val normal = service.getOverview(MemberManagementRequest(excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.NORMAL)))
+        assertThat(normal.members.map { it.memberId }).containsExactly(1L, 2L, 8L)
+        assertThat(normal.totalElements).isEqualTo(3)
+        val risk = service.getOverview(MemberManagementRequest(graduationStatuses = listOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)))
+        assertThat(risk.members.single().memberId).isEqualTo(7L)
+        assertThat(risk.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.IMPOSSIBLE)
+        val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
+        assertThat(pending.members.single().memberId).isEqualTo(3L)
+        assertThat(pending.members.single().graduationStatus).isNull()
     }
 
     private fun joinCohort(

@@ -1,11 +1,16 @@
 package core.application.member.presentation.controller
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import core.application.cohort.application.service.CohortCommandService
+import core.application.cohort.application.service.CohortQueryService
+import core.application.cohort.presentation.controller.CohortController
 import core.application.common.exception.GlobalExceptionHandler
 import core.application.member.application.service.MemberManagementQueryService
 import core.application.member.presentation.request.MemberManagementRequest
 import core.application.member.presentation.response.MemberManagementResponse
 import core.application.member.presentation.response.MemberOverviewResponse
 import core.domain.attendance.enums.AttendanceGraduationStatus
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.member.enums.MemberStatus
 import io.swagger.v3.core.converter.ModelConverters
 import jakarta.servlet.Filter
@@ -48,6 +53,8 @@ class MemberManagementControllerTest {
 
     @Autowired lateinit var service: MemberManagementQueryService
 
+    @Autowired lateinit var cohorts: CohortQueryService
+
     private lateinit var mvc: MockMvc
 
     @BeforeEach
@@ -56,7 +63,7 @@ class MemberManagementControllerTest {
             MockMvcBuilders.webAppContextSetup(context)
                 .addFilters<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(context.getBean("springSecurityFilterChain", Filter::class.java))
                 .build()
-        clearInvocations(service)
+        clearInvocations(service, cohorts)
     }
 
     @Test
@@ -102,6 +109,41 @@ class MemberManagementControllerTest {
     }
 
     @Test
+    fun `공통 파트와 팀 선택지를 목록의 파트와 팀 번호 필터로 전달한다`() {
+        `when`(cohorts.getActiveCohortTeams()).thenReturn(listOf(CohortTeamQueryModel(id = 42, number = 3)))
+        val authorities = arrayOf("read:member", "update:attendance")
+        val mapper = ObjectMapper()
+        val parts =
+            mvc.perform(authenticatedRequest("/v3/members/parts", *authorities))
+                .andExpect(status().isOk)
+                .andReturn().response.contentAsString
+        val teams =
+            mvc.perform(authenticatedRequest("/v3/cohorts/current/teams", *authorities))
+                .andExpect(status().isOk)
+                .andReturn().response.contentAsString
+        val unassigned = mapper.readTree(parts).path("data").path("parts").single { it.asText() == "UNASSIGNED" }.asText()
+        val team = mapper.readTree(teams).path("data").path("teams").single()
+        assertThat(team.path("id").asLong()).isEqualTo(42)
+
+        // 공통 응답의 팀 ID가 아니라 number를 목록 필터에 사용한다. 미배정 팀은 0이다.
+        listOf(team.path("number").asInt(), 0).forEach { number ->
+            mvc.perform(authenticatedRequest(PATH, *authorities).param("part", unassigned).param("teamNumber", number.toString()))
+                .andExpect(status().isOk)
+        }
+        val requests = mockingDetails(service).invocations.map { it.arguments.single() as MemberManagementRequest }
+        assertThat(requests.map { it.part }).containsOnly("UNASSIGNED")
+        assertThat(requests.map { it.teamNumber }).containsExactly(3, 0)
+    }
+
+    @Test
+    fun `목록 조회 권한만으로 공통 선택지 조회 권한을 대신하지 않는다`() {
+        mvc.perform(authenticated("read:member")).andExpect(status().isOk)
+        mvc.perform(authenticatedRequest("/v3/members/parts", "read:member")).andExpect(status().isForbidden)
+        mvc.perform(authenticatedRequest("/v3/cohorts/current/teams", "read:member")).andExpect(status().isForbidden)
+        verifyNoInteractions(cohorts)
+    }
+
+    @Test
     fun `잘못된 페이지 크기와 필터를 400으로 반환한다`() {
         listOf("page" to "0", "size" to "101", "part" to "MASTER", "status" to "WITHDRAWN", "teamNumber" to "-1", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
             mvc.perform(authenticated("read:member").param(key, value))
@@ -111,20 +153,31 @@ class MemberManagementControllerTest {
         verifyNoInteractions(service)
     }
 
-    private fun authenticated(authority: String): MockHttpServletRequestBuilder =
-        get(PATH).requestAttr(
+    private fun authenticated(authority: String): MockHttpServletRequestBuilder = authenticatedRequest(PATH, authority)
+
+    private fun authenticatedRequest(
+        path: String,
+        vararg authorities: String,
+    ): MockHttpServletRequestBuilder =
+        get(path).requestAttr(
             RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
-            SecurityContextImpl(UsernamePasswordAuthenticationToken("operator", null, listOf(SimpleGrantedAuthority(authority)))),
+            SecurityContextImpl(UsernamePasswordAuthenticationToken("operator", null, authorities.map(::SimpleGrantedAuthority))),
         )
 
     @Configuration
     @EnableWebMvc
     @EnableWebSecurity
     @EnableMethodSecurity(proxyTargetClass = true)
-    @Import(MemberManagementController::class, GlobalExceptionHandler::class)
+    @Import(MemberManagementController::class, MemberPartController::class, CohortController::class, GlobalExceptionHandler::class)
     class Config {
         @Bean
         fun service(): MemberManagementQueryService = mock(MemberManagementQueryService::class.java)
+
+        @Bean
+        fun cohorts(): CohortQueryService = mock(CohortQueryService::class.java)
+
+        @Bean
+        fun cohortCommands(): CohortCommandService = mock(CohortCommandService::class.java)
 
         @Bean
         fun security(http: HttpSecurity): SecurityFilterChain =
