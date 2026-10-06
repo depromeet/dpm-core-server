@@ -12,4 +12,7 @@ data class SessionUpdateRequest(
     val attendanceStart: LocalDateTime,
     val lateStart: LocalDateTime,
     val absentStart: LocalDateTime,
+    val feedbackEnabled: Boolean? = false,
+    val feedbackStartAt: LocalDateTime? = null,
+    val feedbackPushEnabled: Boolean? = true,
 )
