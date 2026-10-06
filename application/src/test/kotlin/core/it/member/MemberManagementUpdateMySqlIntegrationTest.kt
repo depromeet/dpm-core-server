@@ -1,21 +1,26 @@
 package core.it.member
 
+import core.application.authorization.application.service.RoleCommandService
+import core.application.authorization.presentation.request.UpdateMemberRoleRequest
 import core.application.member.application.exception.InvalidMemberManagementTeamException
 import core.application.member.application.exception.MemberManagementTargetNotAllowedException
 import core.application.member.application.service.MemberManagementCommandService
+import core.application.member.application.service.MemberQueryService
+import core.application.member.application.service.role.CurrentCohortRoleResolver
+import core.application.member.application.service.role.MemberRoleService
 import core.application.member.presentation.request.MemberManagementBulkUpdateRequest
 import core.application.member.presentation.request.MemberManagementUpdateRequest
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
-import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.notification.port.inbound.SentSessionNotificationCommandUseCase
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.it.attendance.AttendanceMySqlIntegrationTestApplication
 import core.persistence.member.repository.MemberRepository
+import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
 import jakarta.persistence.EntityManager
@@ -41,11 +46,12 @@ import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class, MemberManagementCommandService::class)
+@Import(MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class, MemberManagementCommandService::class, RoleCommandService::class, MemberRoleService::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class)
 class MemberManagementUpdateMySqlIntegrationTest {
     @Autowired lateinit var jdbc: JdbcTemplate
 
@@ -53,11 +59,13 @@ class MemberManagementUpdateMySqlIntegrationTest {
 
     @Autowired lateinit var service: MemberManagementCommandService
 
+    @Autowired lateinit var legacyRoleService: RoleCommandService
+
     @Autowired lateinit var transactionManager: PlatformTransactionManager
 
     @Autowired lateinit var entityManager: EntityManager
 
-    @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
+    @MockitoBean lateinit var memberQueryService: MemberQueryService
 
     @MockitoBean lateinit var notifications: SentSessionNotificationCommandUseCase
 
@@ -91,6 +99,7 @@ class MemberManagementUpdateMySqlIntegrationTest {
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
         `when`(roleQueries.findIdByName("ORGANIZER")).thenReturn(2)
         `when`(roleQueries.findIdByName("CORE")).thenReturn(3)
+        `when`(memberQueryService.getMemberById(MemberId(1))).thenAnswer { members.findById(MemberId(1))!! }
     }
 
     @Test
@@ -219,6 +228,79 @@ class MemberManagementUpdateMySqlIntegrationTest {
             assertThat(teamIds(id)).containsExactlyInAnyOrder(180, 192)
             assertThat(activeRoles(id)).containsExactlyInAnyOrder("2:18", "2:19", "4:null", "5:null")
         }
+    }
+
+    @Test
+    fun `v3에서 CORE로 변경한 회원도 기존 역할 API에서 다른 타입으로 교체한다`() {
+        service.update(1, MemberManagementUpdateRequest(memberType = "CORE"))
+        legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("DEEPER", 19))
+        assertThat(activeRoles(1)).containsExactlyInAnyOrder("1:19", "2:18", "4:null", "5:null")
+    }
+
+    @Test
+    fun `기존 역할 API는 v3 변경의 잠금을 기다린 뒤 최신 타입 한 개를 교체한다`() {
+        runOrderedRoleChanges(
+            first = { service.update(1, MemberManagementUpdateRequest(memberType = "CORE")) },
+            second = { legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("DEEPER", 19)) },
+        )
+        assertThat(activeRoles(1)).containsExactlyInAnyOrder("1:19", "2:18", "4:null", "5:null")
+    }
+
+    @Test
+    fun `v3 수정도 기존 역할 API 트랜잭션 이후 최신 타입으로 교체한다`() {
+        runOrderedRoleChanges(
+            first = { legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("ORGANIZER", 19)) },
+            second = { service.update(1, MemberManagementUpdateRequest(memberType = "DEEPER")) },
+        )
+        assertThat(activeRoles(1)).containsExactlyInAnyOrder("1:19", "2:18", "4:null", "5:null")
+    }
+
+    /** 첫 쓰기의 커밋을 보류하고 MySQL이 두 번째 쓰기를 실제로 잠금 대기시키는지 확인한다. */
+    private fun runOrderedRoleChanges(
+        first: () -> Unit,
+        second: () -> Unit,
+    ) {
+        val changed = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val connectionId = AtomicLong()
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val firstResult =
+                pool.submit(
+                    Callable {
+                        TransactionTemplate(transactionManager).executeWithoutResult {
+                            first()
+                            connectionId.set(jdbc.queryForObject("select connection_id()", Long::class.java)!!)
+                            changed.countDown()
+                            check(release.await(10, TimeUnit.SECONDS)) { "첫 역할 변경 트랜잭션 해제 시간 초과" }
+                        }
+                    },
+                )
+            check(changed.await(10, TimeUnit.SECONDS)) { "첫 역할 변경 준비 시간 초과" }
+            val secondResult = pool.submit(Callable { second() })
+            awaitDatabaseLockWait(connectionId.get())
+            release.countDown()
+            firstResult.get(10, TimeUnit.SECONDS)
+            secondResult.get(10, TimeUnit.SECONDS)
+        } finally {
+            release.countDown()
+            pool.shutdownNow()
+        }
+    }
+
+    private fun awaitDatabaseLockWait(blockingConnectionId: Long) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+        while (System.nanoTime() < deadline) {
+            val count =
+                jdbc.queryForObject(
+                    "select count(*) from performance_schema.data_lock_waits w join performance_schema.threads t on t.thread_id = w.blocking_thread_id where t.processlist_id = ?",
+                    Long::class.java,
+                    blockingConnectionId,
+                )!!
+            if (count > 0) return
+            CountDownLatch(1).await(20, TimeUnit.MILLISECONDS)
+        }
+        error("두 번째 역할 변경이 첫 트랜잭션의 잠금을 기다리지 않았습니다")
     }
 
     private fun teamIds(memberId: Long): List<Long> = jdbc.queryForList("select team_id from member_teams where member_id = ?", Long::class.java, memberId)
