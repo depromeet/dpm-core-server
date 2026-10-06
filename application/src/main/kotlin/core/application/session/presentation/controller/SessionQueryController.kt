@@ -12,10 +12,14 @@ import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.application.sessionFeedback.application.service.SessionFeedbackFormQueryService
+import core.application.sessionFeedback.application.service.SessionFeedbackListQueryService
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.vo.SessionId
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.authentication.AnonymousAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
@@ -27,6 +31,7 @@ import java.time.LocalDateTime
 class SessionQueryController(
     private val sessionQueryService: SessionQueryService,
     private val sessionFeedbackFormQueryService: SessionFeedbackFormQueryService,
+    private val sessionFeedbackListQueryService: SessionFeedbackListQueryService,
     private val clock: Clock,
 ) : SessionQueryApi {
     @PreAuthorize("permitAll()")
@@ -43,12 +48,26 @@ class SessionQueryController(
     @PreAuthorize("permitAll()")
     @GetMapping("/v1/sessions")
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
-        val response =
-            sessionQueryService
-                .getAllCurrentCohortSessions()
-                .let { SessionMapper.toSessionListResponse(it) }
+        val sessions = sessionQueryService.getAllCurrentCohortSessions()
+        val feedbackBySessionId = sessionFeedbackListQueryService.buildFor(sessions, currentMemberIdOrNull())
+        val response = SessionMapper.toSessionListResponse(sessions, feedbackBySessionId)
 
         return CustomResponse.ok(response)
+    }
+
+    /**
+     * 세션 목록은 `permitAll` 이라 비로그인 접근이 가능하다.
+     * 비로그인 요청은 `canSubmit=false` 로 돌려주고, 로그인 요청만 멤버 기준으로 계산한다.
+     */
+    private fun currentMemberIdOrNull(): MemberId? {
+        val authentication: Authentication? = SecurityContextHolder.getContext().authentication
+        if (authentication == null ||
+            authentication is AnonymousAuthenticationToken ||
+            authentication.name == "anonymousUser"
+        ) {
+            return null
+        }
+        return runCatching { MemberId(authentication.name.toLong()) }.getOrNull()
     }
 
     @PreAuthorize("hasAuthority('create:session')")
