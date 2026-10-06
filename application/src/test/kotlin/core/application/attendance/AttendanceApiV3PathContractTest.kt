@@ -64,7 +64,6 @@ class AttendanceApiV3PathContractTest {
             .containsExactlyInAnyOrder(
                 "POST /v3/sessions hasAuthority('create:session')",
                 "PATCH /v3/sessions hasAuthority('update:session')",
-                "PATCH /v3/sessions/{sessionId}/attendance-time hasAuthority('update:session')",
                 "PATCH /v1/sessions/{sessionId}/delete hasAuthority('delete:session')",
                 "GET /v1/sessions/next permitAll()",
                 "GET /v1/sessions permitAll()",
