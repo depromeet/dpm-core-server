@@ -4,6 +4,7 @@ import core.application.attendance.presentation.response.MemberDetailAbsenceReas
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.team.vo.TeamNumber
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -56,6 +57,49 @@ class AttendanceMapperTest {
             MemberDetailAbsenceReasonImageInfo(imageId = 12, fileName = null),
         )
     }
+
+    @Test
+    fun `세션 명단은 운영진이 바꾼 기록의 인증 시각을 숨기고 팀 없음과 결석 사유를 그대로 준다`() {
+        val attendedAt = Instant.parse("2026-09-05T04:58:21Z")
+        val roster =
+            listOf(
+                rosterRow(memberId = 1, teamNumber = 1, status = "PRESENT", attendedAt = attendedAt, updatedAt = null),
+                rosterRow(memberId = 2, teamNumber = 1, status = "ABSENT", attendedAt = attendedAt, updatedAt = Instant.parse("2026-09-05T06:00:00Z")),
+                rosterRow(memberId = 3, teamNumber = null, status = "EXCUSED_ABSENT", attendedAt = null, updatedAt = null, absenceReason = "병원 진료"),
+            )
+
+        val response = AttendanceMapper.toSessionRosterResponse(roster, myTeamNumber = null)
+
+        // 순서는 조회 결과 그대로다
+        assertThat(response.members.map { it.id }).containsExactly(1L, 2L, 3L)
+        assertThat(response.members.map { it.attendedAt }).containsExactly(LocalDateTime.parse("2026-09-05T13:58:21"), null, null)
+        assertThat(response.members.map { it.isManuallyUpdated }).containsExactly(false, true, false)
+        assertThat(response.members.map { it.teamNumber }).containsExactly(1, 1, null)
+        assertThat(response.members.map { it.absenceReason }).containsExactly(null, null, "병원 진료")
+        assertThat(response.members.map { it.attendanceStatus }).containsExactly("PRESENT", "ABSENT", "EXCUSED_ABSENT")
+        assertThat(response.myTeamNumber).isNull()
+        assertThat(response.totalElements).isEqualTo(3)
+        assertThat(AttendanceMapper.toSessionRosterResponse(emptyList(), myTeamNumber = 4).myTeamNumber).isEqualTo(4)
+    }
+
+    private fun rosterRow(
+        memberId: Long,
+        teamNumber: Int?,
+        status: String,
+        attendedAt: Instant?,
+        updatedAt: Instant?,
+        absenceReason: String? = null,
+    ) = SessionRosterQueryModel(
+        memberId = memberId,
+        name = "멤버$memberId",
+        teamNumber = teamNumber,
+        isAdmin = false,
+        part = "SERVER",
+        attendanceStatus = status,
+        attendedAt = attendedAt,
+        updatedAt = updatedAt,
+        absenceReason = absenceReason,
+    )
 
     private fun member() =
         MemberDetailAttendanceQueryModel(

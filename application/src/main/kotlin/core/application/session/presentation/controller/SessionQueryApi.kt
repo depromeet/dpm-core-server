@@ -7,6 +7,7 @@ import core.application.session.presentation.response.SessionDetailForDeeperResp
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
+import core.application.session.presentation.response.SessionSelectorResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
@@ -289,6 +290,65 @@ interface SessionQueryApi {
         ],
     )
     fun getSessionWeeks(): CustomResponse<SessionWeeksResponse>
+
+    @Operation(
+        summary = "세션 선택 목록 조회 (v3)",
+        description =
+            "현재 활성 기수의 세션을 세션 일시 오름차순, 같으면 세션 ID 오름차순으로 조회합니다. " +
+                "week 는 표시용이며 정렬에 쓰지 않습니다. 이전/다음 세션 이동은 이 목록의 순서를 사용합니다. " +
+                "attendanceStatus 는 서버 현재 시각 기준 출석 인증 상태로, 출석 시작 전 NOT_STARTED, " +
+                "출석 시작부터 인증 마감(결석 시작) 전까지 IN_PROGRESS(지각 구간 포함), 마감 정각부터 CLOSED 입니다. " +
+                "기존 GET /v1/sessions/weeks(id, week, date, ID 순)는 그대로 둡니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "세션 선택 목록 조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "세션 선택 목록 조회 성공 응답",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "sessions": [
+                                              {
+                                                "id": 5,
+                                                "week": 1,
+                                                "date": "2025-08-02T13:00:00",
+                                                "eventName": "OT",
+                                                "place": "디프만 오프라인 장소",
+                                                "isOnline": false,
+                                                "attendanceStatus": "CLOSED"
+                                              },
+                                              {
+                                                "id": 6,
+                                                "week": 2,
+                                                "date": "2025-08-09T14:00:00",
+                                                "eventName": "2주차 세션",
+                                                "place": "온라인",
+                                                "isOnline": true,
+                                                "attendanceStatus": "NOT_STARTED"
+                                              }
+                                            ]
+                                        }
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getSessionSelector(): CustomResponse<SessionSelectorResponse>
 
     @Operation(
         summary = "세션 시간 수정 시 출석 상태 변경 대상 조회",

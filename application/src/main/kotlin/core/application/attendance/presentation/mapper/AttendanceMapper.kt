@@ -15,15 +15,16 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.MyDetailAttendanceInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceSessionInfo
 import core.application.attendance.presentation.response.MyTeamFilterResponse
-import core.application.attendance.presentation.response.SessionAttendancesResponse
+import core.application.attendance.presentation.response.SessionRosterMemberResponse
+import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
-import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import core.domain.team.vo.TeamNumber
@@ -41,28 +42,28 @@ object AttendanceMapper {
             attendedAt = instantToLocalDateTime(attendedAt),
         )
 
-    fun toSessionAttendancesResponse(
-        members: List<SessionAttendanceQueryModel>,
-        onlyMyTeam: Boolean,
-        myTeamNumber: TeamNumber?,
-        hasNext: Boolean,
-        totalElements: Int,
-    ): SessionAttendancesResponse =
-        SessionAttendancesResponse(
+    /** 운영진이 바꾼 기록(updatedAt 있음)은 저장된 인증 시각을 그대로 두되 응답에서는 attendedAt 을 null 로 준다. */
+    fun toSessionRosterResponse(
+        members: List<SessionRosterQueryModel>,
+        myTeamNumber: Int?,
+    ): SessionRosterResponse =
+        SessionRosterResponse(
             members =
                 members.map { member ->
-                    MemberAttendanceResponse(
-                        id = member.id,
+                    val isManuallyUpdated = member.updatedAt != null
+                    SessionRosterMemberResponse(
+                        id = member.memberId,
                         name = member.name,
                         teamNumber = member.teamNumber,
                         isAdmin = member.isAdmin,
                         part = member.part,
                         attendanceStatus = member.attendanceStatus,
+                        attendedAt = if (isManuallyUpdated) null else instantToLocalDateTime(member.attendedAt),
+                        isManuallyUpdated = isManuallyUpdated,
+                        absenceReason = member.absenceReason,
                     )
                 },
-            filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
-            hasNext = hasNext,
-            totalElements = totalElements,
+            myTeamNumber = myTeamNumber,
         )
 
     fun toMemberAttendancesResponse(
@@ -87,7 +88,7 @@ object AttendanceMapper {
         AttendanceStatusUpdateCommand(
             sessionId = sessionId,
             memberId = memberId,
-            attendanceStatus = AttendanceStatus.valueOf(request.attendanceStatus),
+            attendanceStatus = request.attendanceStatus,
         )
 
     fun toDetailAttendanceBySessionResponse(

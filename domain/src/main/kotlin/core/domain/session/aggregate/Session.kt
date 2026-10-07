@@ -3,6 +3,7 @@ package core.domain.session.aggregate
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.vo.AttendanceResult
 import core.domain.cohort.vo.CohortId
+import core.domain.session.enums.SessionAttendanceStatus
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.vo.AttendancePolicy
@@ -53,6 +54,14 @@ class Session(
 
     /** 마감 시각 정각부터 마감이다. */
     fun isAttendanceClosedAt(now: Instant): Boolean = !now.isBefore(attendancePolicy.absentStart)
+
+    /** 출석 시작 시각 정각부터 진행 중, 마감 시각 정각부터 마감이다. */
+    fun attendanceStatusAt(now: Instant): SessionAttendanceStatus =
+        when {
+            isAttendanceClosedAt(now) -> SessionAttendanceStatus.CLOSED
+            now.isBefore(attendancePolicy.attendanceStart) -> SessionAttendanceStatus.NOT_STARTED
+            else -> SessionAttendanceStatus.IN_PROGRESS
+        }
 
     /**
      * 현재 시각을 기준으로 출석 상태를 결정하고 해당 상태를 sealed class 의 형태로 반환합니다.

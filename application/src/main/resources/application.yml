@@ -14,6 +14,11 @@ spring:
   jooq:
     sql-dialect: mysql
 
+  jackson:
+    deserialization:
+      # enum 은 이름 문자열만 받는다. 기본값은 순서 숫자(1, "1")도 받아 엉뚱한 값으로 바꾼다.
+      fail-on-numbers-for-enums: true
+
   security:
     jwt:
       secret_key: ${JWT_SECRET_KEY}
@@ -97,7 +102,7 @@ attendance:
 member:
   default-team-id: ${DEFAULT_TEAM_ID:0}
 image:
-  # OCI Object Storage (비공개 버킷). 값이 비어도 기동은 되고 이미지 API 만 503 이 된다. docs/images/oci-object-storage.md 참고
+  # OCI Object Storage (비공개 버킷). 값이 비어도 기동은 되고 이미지 API 만 503 이 된다.
   storage:
     auth-mode: ${OCI_AUTH_MODE:instance-principal}
     region: ${OCI_REGION:}

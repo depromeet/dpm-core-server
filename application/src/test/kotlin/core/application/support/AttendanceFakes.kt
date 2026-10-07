@@ -2,7 +2,6 @@ package core.application.support
 
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
-import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
@@ -12,11 +11,12 @@ import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
-import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.attendance.vo.AttendanceId
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.SentSessionNotification
@@ -243,15 +243,26 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 it.deletedAt == null
         }
 
-    override fun findSessionAttendancesByQuery(
-        query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: TeamNumber,
-    ): List<SessionAttendanceQueryModel> = throw UnsupportedOperationException()
-
     override fun findMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
         myTeamNumber: TeamNumber,
     ): List<MemberAttendanceQueryModel> = throw UnsupportedOperationException()
+
+    /** 명단 SQL 은 MySQL 통합 테스트에서 검증한다. 여기서는 (sessionId, cohortId) 로 미리 넣은 결과를 돌려준다. */
+    val rosters = mutableMapOf<Pair<Long, Long>, List<SessionRosterQueryModel>>()
+
+    /** (memberId, cohortId) 별 팀 번호 */
+    val cohortTeamNumbers = mutableMapOf<Pair<Long, Long>, Int>()
+
+    override fun findSessionRoster(
+        sessionId: Long,
+        cohortId: Long,
+    ): List<SessionRosterQueryModel> = rosters[sessionId to cohortId].orEmpty()
+
+    override fun findTeamNumberInCohort(
+        memberId: Long,
+        cohortId: Long,
+    ): Int? = cohortTeamNumbers[memberId to cohortId]
 
     override fun findDetailAttendanceBySession(
         query: GetDetailAttendanceBySessionQuery,
@@ -267,11 +278,6 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
 
     override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
         throw UnsupportedOperationException()
-
-    override fun countSessionAttendancesByQuery(
-        query: GetAttendancesBySessionWeekQuery,
-        myTeamNumber: TeamNumber,
-    ): Int = throw UnsupportedOperationException()
 
     override fun countMemberAttendancesByQuery(
         query: GetMemberAttendancesQuery,
@@ -398,6 +404,12 @@ class FakeCohortPersistencePort : CohortPersistencePort {
 
     @Synchronized
     override fun findActive(): Cohort? = cohorts.values.firstOrNull { it.isActive }
+
+    /** 기수 ID 별 팀. 정렬 SQL 은 MySQL 통합 테스트에서 검증한다 */
+    val teams = mutableMapOf<Long, List<CohortTeamQueryModel>>()
+
+    override fun findTeamsByCohortId(cohortId: CohortId): List<CohortTeamQueryModel> =
+        teams[cohortId.value].orEmpty()
 
     @Synchronized
     override fun deactivateAll() {

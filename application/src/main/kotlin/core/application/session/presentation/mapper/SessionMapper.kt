@@ -10,6 +10,8 @@ import core.application.session.presentation.response.SessionDetailForDeeperResp
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListDetailResponse
 import core.application.session.presentation.response.SessionListResponse
+import core.application.session.presentation.response.SessionSelectorItemResponse
+import core.application.session.presentation.response.SessionSelectorResponse
 import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.domain.attendance.aggregate.Attendance
@@ -17,6 +19,7 @@ import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
+import core.domain.session.port.inbound.query.SessionSelectorQueryModel
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
@@ -147,6 +150,22 @@ object SessionMapper {
                 },
         )
     }
+
+    fun toSessionSelectorResponse(models: List<SessionSelectorQueryModel>): SessionSelectorResponse =
+        SessionSelectorResponse(
+            sessions =
+                models.map {
+                    SessionSelectorItemResponse(
+                        id = it.sessionId,
+                        week = it.week,
+                        date = instantToLocalDateTime(it.date),
+                        eventName = it.eventName,
+                        place = it.place,
+                        isOnline = it.isOnline,
+                        attendanceStatus = it.attendanceStatus,
+                    )
+                },
+        )
 
     fun toSessionAttendancePolicyChangedCommand(
         sessionId: SessionId,
