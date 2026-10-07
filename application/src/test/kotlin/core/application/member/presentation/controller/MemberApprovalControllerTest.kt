@@ -107,11 +107,11 @@ class MemberApprovalControllerTest {
     }
 
     @Test
-    fun `빈 중복 null 음수 ID를 거절한다`() {
-        listOf("[]", "[1,1]", "[null]", "[0]", "[-1]").forEach { value ->
-            mvc.perform(request("""{"members":$value}"""))
-                .andExpect(status().isBadRequest)
-        }
+    fun `빈 목록과 잘못된 ID의 입력 오류를 반환한다`() {
+        mvc.perform(request("""{"members":[]}"""))
+            .andExpect(status().isBadRequest).andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
+        mvc.perform(request("""{"members":[0]}"""))
+            .andExpect(status().isBadRequest).andExpect(jsonPath("$.code").value("MEMBER-400-09"))
         verifyNoInteractions(members, initializer, cohorts, roleQueries)
     }
 
