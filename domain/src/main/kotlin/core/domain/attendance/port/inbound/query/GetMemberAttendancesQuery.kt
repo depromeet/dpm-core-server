@@ -1,14 +1,9 @@
 package core.domain.attendance.port.inbound.query
 
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.member.vo.MemberId
 
 data class GetMemberAttendancesQuery(
     val memberId: MemberId,
-    val statuses: List<AttendanceStatus>?,
+    /** 현재 기수 최신 배정 팀 번호 필터. 없거나 비면 전체 */
     val teams: List<Int>?,
-    val name: String?,
-    val onlyMyTeam: Boolean?,
-    val page: Int,
-    val size: Int,
 )

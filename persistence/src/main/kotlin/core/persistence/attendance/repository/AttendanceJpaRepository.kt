@@ -34,10 +34,12 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         @Param("attendedAt") attendedAt: Instant,
     ): Int
 
+    /** 운영진 변경. 운영진이 정한 상태라 출석 인증 시각과 자동 결석 표지를 지운다. */
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :status, a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
+        "update AttendanceEntity a " +
+            "set a.status = :status, a.attendedAt = null, a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
             "where a.sessionId = :sessionId " +
             "and a.memberId in :memberIds " +
             "and a.deletedAt is null",

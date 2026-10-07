@@ -73,7 +73,7 @@ class AttendanceCommandService(
         return status
     }
 
-    /** 운영진 변경. attendedAt 은 보존한다. */
+    /** 운영진 변경. 출석 인증 시각(attendedAt)은 지운다. */
     fun updateAttendanceStatus(command: AttendanceStatusUpdateCommand) {
         sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
             ?: throw SessionNotFoundException()

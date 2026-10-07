@@ -11,7 +11,7 @@ data class SessionRosterQueryModel(
     val isAdmin: Boolean,
     val part: String?,
     val attendanceStatus: String,
-    /** 저장된 출석 인증 시각. 운영진 변경 뒤에도 그대로 남아 있다 */
+    /** 저장된 출석 인증 시각. 운영진 변경은 지우지만 그 전의 운영진 변경 기록에는 남아 있을 수 있다 */
     val attendedAt: Instant?,
     /** 운영진 변경 시각. 운영진만 기록한다 */
     val updatedAt: Instant?,

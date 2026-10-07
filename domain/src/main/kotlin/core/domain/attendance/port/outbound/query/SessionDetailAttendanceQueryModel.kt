@@ -15,6 +15,8 @@ data class SessionDetailAttendanceQueryModel(
     val sessionEventName: String,
     val sessionDate: Instant,
     val attendanceStatus: String,
+    /** 실제 출석 인증 시각. 인증하지 않았거나 운영진이 상태를 바꿨으면(updatedAt 있음) null */
     val attendedAt: Instant?,
+    /** 운영진 변경 시각. 운영진만 기록한다 */
     val updatedAt: Instant?,
 )

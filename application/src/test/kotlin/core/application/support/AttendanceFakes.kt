@@ -3,8 +3,6 @@ package core.application.support
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
-import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
-import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
@@ -24,7 +22,6 @@ import core.domain.notification.port.inbound.SentSessionNotificationCommandUseCa
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
-import core.domain.team.vo.TeamNumber
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 
@@ -160,6 +157,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
             rows.values.filter { it.sessionId == sessionId && it.memberId in memberIds && it.deletedAt == null }
         targets.forEach {
             it.status = status
+            it.attendedAt = null
             it.updatedAt = updatedAt
             it.autoAbsentAt = null
         }
@@ -243,10 +241,22 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 it.deletedAt == null
         }
 
-    override fun findMemberAttendancesByQuery(
-        query: GetMemberAttendancesQuery,
-        myTeamNumber: TeamNumber,
-    ): List<MemberAttendanceQueryModel> = throw UnsupportedOperationException()
+    /** 사람별 SQL 은 MySQL 통합 테스트에서 검증한다. 여기서는 cohortId 별로 미리 넣은 (정렬된) 결과에 팀 필터만 적용한다. */
+    val memberAttendances = mutableMapOf<Long, List<MemberAttendanceQueryModel>>()
+
+    /** (memberId, cohortId) 별 사람별 상세 집계와 세션 기록 */
+    val memberDetails = mutableMapOf<Pair<Long, Long>, MemberDetailAttendanceQueryModel>()
+    val memberSessions = mutableMapOf<Pair<Long, Long>, List<MemberSessionAttendanceQueryModel>>()
+
+    override fun findMemberAttendances(
+        cohortId: Long,
+        teamNumbers: List<Int>,
+    ): List<MemberAttendanceQueryModel> =
+        memberAttendances[cohortId]
+            .orEmpty()
+            .filter { teamNumbers.isEmpty() || it.teamNumber.value in teamNumbers }
+
+    override fun countCohortMembers(cohortId: Long): Int = memberAttendances[cohortId].orEmpty().size
 
     /** 명단 SQL 은 MySQL 통합 테스트에서 검증한다. 여기서는 (sessionId, cohortId) 로 미리 넣은 결과를 돌려준다. */
     val rosters = mutableMapOf<Pair<Long, Long>, List<SessionRosterQueryModel>>()
@@ -269,20 +279,17 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
     ): SessionDetailAttendanceQueryModel? = throw UnsupportedOperationException()
 
     override fun findDetailMemberAttendance(
-        query: GetDetailMemberAttendancesQuery,
-    ): List<MemberDetailAttendanceQueryModel> = throw UnsupportedOperationException()
+        memberId: Long,
+        cohortId: Long,
+    ): MemberDetailAttendanceQueryModel? = memberDetails[memberId to cohortId]
 
     override fun findMemberSessionAttendances(
-        query: GetDetailMemberAttendancesQuery,
-    ): List<MemberSessionAttendanceQueryModel> = throw UnsupportedOperationException()
+        memberId: Long,
+        cohortId: Long,
+    ): List<MemberSessionAttendanceQueryModel> = memberSessions[memberId to cohortId].orEmpty()
 
     override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
         throw UnsupportedOperationException()
-
-    override fun countMemberAttendancesByQuery(
-        query: GetMemberAttendancesQuery,
-        myTeamNumber: TeamNumber,
-    ): Int = throw UnsupportedOperationException()
 }
 
 /** 세션 저장소 가짜 구현. 조회마다 사본을 돌려줘 저장하지 않은 변경이 새지 않도록 한다. */
@@ -408,8 +415,7 @@ class FakeCohortPersistencePort : CohortPersistencePort {
     /** 기수 ID 별 팀. 정렬 SQL 은 MySQL 통합 테스트에서 검증한다 */
     val teams = mutableMapOf<Long, List<CohortTeamQueryModel>>()
 
-    override fun findTeamsByCohortId(cohortId: CohortId): List<CohortTeamQueryModel> =
-        teams[cohortId.value].orEmpty()
+    override fun findTeamsByCohortId(cohortId: CohortId): List<CohortTeamQueryModel> = teams[cohortId.value].orEmpty()
 
     @Synchronized
     override fun deactivateAll() {
