@@ -88,11 +88,11 @@ class AttendanceMapperTest {
         val members =
             listOf(
                 AttendanceMapper.toMemberAttendanceResponse(
-                    MemberAttendanceQueryModel(1, "신민철", TeamNumber(2), false, "SERVER", AttendanceSummaryQueryModel(4, 2, 0, 0, 0, 0)),
+                    MemberAttendanceQueryModel(1, "김철수", TeamNumber(2), false, "SERVER", AttendanceSummaryQueryModel(4, 2, 0, 0, 0, 0)),
                     evaluation = "AT_RISK",
                 ),
                 AttendanceMapper.toMemberAttendanceResponse(
-                    MemberAttendanceQueryModel(2, "이정호", TeamNumber(0), true, null, AttendanceSummaryQueryModel(4, 0, 0, 0, 0, 0)),
+                    MemberAttendanceQueryModel(2, "최지우", TeamNumber(0), true, null, AttendanceSummaryQueryModel(4, 0, 0, 0, 0, 0)),
                     evaluation = "NORMAL",
                 ),
             )
@@ -134,7 +134,7 @@ class AttendanceMapperTest {
     private fun member() =
         MemberDetailAttendanceQueryModel(
             memberId = 1,
-            memberName = "신민규",
+            memberName = "홍길동",
             teamNumber = TeamNumber(1),
             isAdmin = false,
             part = "SERVER",

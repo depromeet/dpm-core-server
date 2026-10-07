@@ -57,7 +57,7 @@ interface AttendanceQueryApi {
                                             "members": [
                                                 {
                                                     "id": 1,
-                                                    "name": "신민철",
+                                                    "name": "김철수",
                                                     "teamNumber": 1,
                                                     "isAdmin": false,
                                                     "part": "SERVER",
@@ -68,7 +68,7 @@ interface AttendanceQueryApi {
                                                 },
                                                 {
                                                     "id": 2,
-                                                    "name": "이정호",
+                                                    "name": "최지우",
                                                     "teamNumber": null,
                                                     "isAdmin": true,
                                                     "part": "WEB",
@@ -129,7 +129,7 @@ interface AttendanceQueryApi {
                                             "members": [
                                                 {
                                                     "id": 1,
-                                                    "name": "신민철",
+                                                    "name": "김철수",
                                                     "teamNumber": 1,
                                                     "isAdmin": false,
                                                     "part": "SERVER",
@@ -137,7 +137,7 @@ interface AttendanceQueryApi {
                                                 },
                                                 {
                                                     "id": 2,
-                                                    "name": "이정호",
+                                                    "name": "최지우",
                                                     "teamNumber": 0,
                                                     "isAdmin": true,
                                                     "part": "WEB",
@@ -193,7 +193,7 @@ interface AttendanceQueryApi {
                                         "data": {
                                             "member": {
                                                 "id": 1,
-                                                "name": "신민철",
+                                                "name": "김철수",
                                                 "teamNumber": 2,
                                                 "isAdmin": false,
                                                 "part": "SERVER",
@@ -296,7 +296,7 @@ interface AttendanceQueryApi {
                                         "data": {
                                             "member": {
                                                 "id": 1,
-                                                "name": "신민철",
+                                                "name": "김철수",
                                                 "teamNumber": 2,
                                                 "isAdmin": false,
                                                 "part": "SERVER",
@@ -388,7 +388,7 @@ interface AttendanceQueryApi {
                                         "data": {
                                             "member": {
                                                 "id": 1,
-                                                "name": "신민철",
+                                                "name": "김철수",
                                                 "teamNumber": 2,
                                                 "isAdmin": false,
                                                 "part": "SERVER",
