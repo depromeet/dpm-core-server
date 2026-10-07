@@ -109,14 +109,14 @@ interface AttendanceApi {
                                             "members": [
                                                 {
                                                     "id": 1,
-                                                    "name": "신민철",
+                                                    "name": "김철수",
                                                     "teamNumber": 1,
                                                     "part": "SERVER",
                                                     "attendanceStatus": "PRESENT"
                                                 },
                                                 {
                                                     "id": 2,
-                                                    "name": "이정호",
+                                                    "name": "최지우",
                                                     "teamNumber": 2,
                                                     "part": "WEB",
                                                     "attendanceStatus": "LATE"
@@ -169,14 +169,14 @@ interface AttendanceApi {
                                             "members": [
                                                 {
                                                     "id": 1,
-                                                    "name": "신민철",
+                                                    "name": "김철수",
                                                     "teamNumber": 1,
                                                     "part": "SERVER",
                                                     "attendanceStatus": "AT_RISK"
                                                 },
                                                 {
                                                     "id": 1,
-                                                    "name": "이정호",
+                                                    "name": "최지우",
                                                     "teamNumber": 2,
                                                     "part": "WEB",
                                                     "attendanceStatus": "NORMAL"
@@ -227,7 +227,7 @@ interface AttendanceApi {
                                         "data": {
                                             "member": {
                                                 "id": 1,
-                                                "name": "신민철",
+                                                "name": "김철수",
                                                 "teamNumber": 2,
                                                 "part": "SERVER",
                                                 "attendanceStatus": "NORMAL"
@@ -328,7 +328,7 @@ interface AttendanceApi {
                                         "data": {
                                             "member": {
                                                 "id": 1,
-                                                "name": "신민철",
+                                                "name": "김철수",
                                                 "teamNumber": 2,
                                                 "part": "SERVER",
                                                 "attendanceStatus": "NORMAL"
@@ -391,7 +391,7 @@ interface AttendanceApi {
                                         "data": {
                                             "member": {
                                                 "id": 1,
-                                                "name": "신민철",
+                                                "name": "김철수",
                                                 "teamNumber": 2,
                                                 "part": "SERVER",
                                                 "attendanceStatus": "NORMAL"

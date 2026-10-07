@@ -37,7 +37,7 @@ interface BillAccountQueryApi {
                                         "data": {
                                             "id": 1,
                                             "billAccountValue": "12345-00-123456",
-                                            "accountHolderName": "정준원",
+                                            "accountHolderName": "박민수",
                                             "bankName": "KB 국민",
                                             "accountType": "ACCOUNT",
                                         }
