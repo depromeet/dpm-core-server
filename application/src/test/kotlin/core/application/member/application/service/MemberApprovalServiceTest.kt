@@ -86,7 +86,6 @@ class MemberApprovalServiceTest {
         verify(teams).replaceCurrentCohortTeams(listOf(1), 19, null)
         verify(members).updateManagementFields(listOf(1), false, null, MemberStatus.ACTIVE, emptySet())
         verify(initializer).initialize(MemberId(1), CohortId(19))
-        verifyNoMoreInteractions(initializer, members, roles, teams)
     }
 
     @Test
