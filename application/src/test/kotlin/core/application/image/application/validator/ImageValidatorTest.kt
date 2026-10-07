@@ -80,6 +80,30 @@ class ImageValidatorTest {
         assertThat(validator.parseContentType(null)).isNull()
     }
 
+    @Test
+    fun `원본 파일명은 경로와 제어 문자를 떼고, 비어 있으면 null, 255자를 넘으면 거절한다`() {
+        assertThat(validator.normalizeFileName("  진단서.jpg ")).isEqualTo("진단서.jpg")
+        assertThat(validator.normalizeFileName("C:\\fakepath\\진단서.jpg")).isEqualTo("진단서.jpg")
+        assertThat(validator.normalizeFileName("../../etc/passwd")).isEqualTo("passwd")
+        assertThat(validator.normalizeFileName("a\u0000b\nc.png")).isEqualTo("abc.png")
+        assertThat(validator.normalizeFileName("   ")).isNull()
+        assertThat(validator.normalizeFileName("dir/")).isNull()
+        assertThat(validator.normalizeFileName(null)).isNull()
+        assertThat(validator.normalizeFileName("a".repeat(ImageValidator.MAX_FILE_NAME_LENGTH))).hasSize(255)
+        assertCode(ImageExceptionCode.FILE_NAME_TOO_LONG) {
+            validator.normalizeFileName("a".repeat(ImageValidator.MAX_FILE_NAME_LENGTH + 1))
+        }
+    }
+
+    @Test
+    fun `파일명 길이는 UTF-16 단위가 아니라 문자 수로 센다`() {
+        val emoji = "\uD83D\uDCF7" // 📷, 한 글자지만 String.length 는 2
+        val maxEmojiName = emoji.repeat(ImageValidator.MAX_FILE_NAME_LENGTH)
+
+        assertThat(validator.normalizeFileName(maxEmojiName)).isEqualTo(maxEmojiName)
+        assertCode(ImageExceptionCode.FILE_NAME_TOO_LONG) { validator.normalizeFileName(maxEmojiName + "a") }
+    }
+
     /** 검증은 파일만 받는다. 바이트를 임시 파일로 써서 넘긴다. */
     private fun ImageValidator.validate(
         bytes: ByteArray,

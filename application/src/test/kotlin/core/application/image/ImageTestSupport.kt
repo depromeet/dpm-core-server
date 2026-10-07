@@ -186,7 +186,16 @@ class FakeImageUploadPersistencePort(
         if (upload.status != ImageUploadStatus.COPYING || upload.leaseToken != token) return null
         check(images.images.values.none { it.objectKey == image.objectKey }) { "uk_images_object_key 위반" }
         val id = ImageId(++imageSequence)
-        val saved = Image(id, image.ownerMemberId, image.objectKey, image.contentType, image.size, image.createdAt)
+        val saved =
+            Image(
+                id = id,
+                ownerMemberId = image.ownerMemberId,
+                objectKey = image.objectKey,
+                contentType = image.contentType,
+                size = image.size,
+                originalFileName = image.originalFileName,
+                createdAt = image.createdAt,
+            )
         images.images[saved.id!!] = saved
         uploads[uploadId] =
             upload.copyWith(status = ImageUploadStatus.COMPLETED, imageId = id, leaseToken = null, leaseUntil = null)
@@ -250,6 +259,7 @@ fun ImageUpload.copyWith(
         ownerMemberId = ownerMemberId,
         contentType = contentType,
         size = size,
+        originalFileName = originalFileName,
         parId = parId,
         status = status,
         expiresAt = expiresAt,
@@ -308,6 +318,7 @@ class FakeImageStoragePort : ImageStoragePort {
 
     /** 쓰기 PAR 을 만든 객체 키(회수 여부와 무관). */
     val writeParKeys = mutableListOf<String>()
+    val downloadFileNames = mutableListOf<String?>()
 
     /** 낸 복사 요청 (원본, 원본 ETag 조건, 대상). */
     val copyRequests = mutableListOf<Triple<String, String, String>>()
@@ -350,6 +361,16 @@ class FakeImageStoragePort : ImageStoragePort {
         objectKey: String,
         expiresAt: Instant,
     ): PreauthenticatedUrl = createPar("read", objectKey, expiresAt)
+
+    override fun createDownloadUrl(
+        objectKey: String,
+        expiresAt: Instant,
+        fileName: String?,
+    ): PreauthenticatedUrl {
+        val par = createPar("read", objectKey, expiresAt)
+        downloadFileNames += fileName
+        return PreauthenticatedUrl(par.parId, "${par.url}?download", par.expiresAt)
+    }
 
     override fun revokeUrl(parId: String) {
         calls += "revoke"

@@ -16,6 +16,8 @@ class Image(
     val contentType: ImageContentType,
     val size: Long,
     val createdAt: Instant,
+    /** 업로드할 때 받은 원본 파일명. 표시용이며, 파일명 없이 올렸거나 기능 도입 전 이미지는 null */
+    val originalFileName: String? = null,
 ) {
     fun isOwnedBy(memberId: MemberId): Boolean = ownerMemberId == memberId
 
@@ -40,12 +42,14 @@ class Image(
             contentType: ImageContentType,
             size: Long,
             createdAt: Instant,
+            originalFileName: String? = null,
         ): Image =
             Image(
                 ownerMemberId = ownerMemberId,
                 objectKey = objectKey,
                 contentType = contentType,
                 size = size,
+                originalFileName = originalFileName,
                 createdAt = createdAt,
             )
     }

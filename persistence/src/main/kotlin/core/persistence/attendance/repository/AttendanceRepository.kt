@@ -27,6 +27,7 @@ import org.jooq.dsl.tables.references.ABSENCE_REASONS
 import org.jooq.dsl.tables.references.ABSENCE_REASON_IMAGES
 import org.jooq.dsl.tables.references.ATTENDANCES
 import org.jooq.dsl.tables.references.COHORTS
+import org.jooq.dsl.tables.references.IMAGES
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
@@ -221,7 +222,9 @@ class AttendanceRepository(
                     SESSIONS.EVENT_NAME,
                     SESSIONS.DATE,
                     SESSIONS.IS_ONLINE,
+                    SESSIONS.PLACE,
                     ATTENDANCES.STATUS,
+                    ATTENDANCES.ATTENDED_AT,
                 ).from(ATTENDANCES)
                 .join(SESSIONS)
                 .on(ATTENDANCES.SESSION_ID.eq(SESSIONS.SESSION_ID))
@@ -241,7 +244,9 @@ class AttendanceRepository(
                 sessionEventName = record[SESSIONS.EVENT_NAME]!!,
                 sessionDate = record[SESSIONS.DATE]!!,
                 sessionIsOnline = record[SESSIONS.IS_ONLINE]!!,
+                sessionPlace = record[SESSIONS.PLACE].orEmpty(),
                 sessionAttendanceStatus = record[ATTENDANCES.STATUS]!!,
+                attendedAt = record[ATTENDANCES.ATTENDED_AT],
                 absenceReason = absenceReasons[record[SESSIONS.SESSION_ID]!!],
             )
         }
@@ -277,18 +282,27 @@ class AttendanceRepository(
                 }
         if (reasons.isEmpty()) return reasons
 
-        val imageIds = findImageIdsByAbsenceReason(reasons.values.map { it.id })
-        return reasons.mapValues { (_, reason) -> reason.copy(imageIds = imageIds[reason.id].orEmpty()) }
+        val images = findImagesByAbsenceReason(reasons.values.map { it.id })
+        return reasons.mapValues { (_, reason) -> reason.copy(images = images[reason.id].orEmpty()) }
     }
 
-    private fun findImageIdsByAbsenceReason(absenceReasonIds: List<Long>): Map<Long, List<Long>> =
+    private fun findImagesByAbsenceReason(
+        absenceReasonIds: List<Long>,
+    ): Map<Long, List<MemberSessionAttendanceQueryModel.Image>> =
         dsl
-            .select(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID, ABSENCE_REASON_IMAGES.IMAGE_ID)
+            .select(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID, ABSENCE_REASON_IMAGES.IMAGE_ID, IMAGES.ORIGINAL_FILE_NAME)
             .from(ABSENCE_REASON_IMAGES)
+            .leftJoin(IMAGES)
+            .on(ABSENCE_REASON_IMAGES.IMAGE_ID.eq(IMAGES.IMAGE_ID))
             .where(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID.`in`(absenceReasonIds))
             .orderBy(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID.asc(), ABSENCE_REASON_IMAGES.DISPLAY_ORDER.asc())
             .fetch()
-            .groupBy({ it[ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID]!! }, { it[ABSENCE_REASON_IMAGES.IMAGE_ID]!! })
+            .groupBy({ it[ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID]!! }) {
+                MemberSessionAttendanceQueryModel.Image(
+                    imageId = it[ABSENCE_REASON_IMAGES.IMAGE_ID]!!,
+                    fileName = it[IMAGES.ORIGINAL_FILE_NAME],
+                )
+            }
 
     override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
         dsl

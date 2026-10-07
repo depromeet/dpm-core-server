@@ -86,16 +86,6 @@ class Session(
         return result
     }
 
-    fun updateAttendanceStartTime(newStartTime: Instant) {
-        val ordered =
-            SessionAttendanceTimes.isOrdered(newStartTime, attendancePolicy.lateStart, attendancePolicy.absentStart)
-        require(ordered) { "출석 시각은 attendanceStart < lateStart < absentStart 순서여야 합니다." }
-        this.attendancePolicy =
-            attendancePolicy.copy(
-                attendanceStart = newStartTime,
-            )
-    }
-
     fun updateSession(command: SessionUpdateCommand) {
         require(SessionAttendanceTimes.isOrdered(command.attendanceStart, command.lateStart, command.absentStart)) {
             "출석 시각은 attendanceStart < lateStart < absentStart 순서여야 합니다."

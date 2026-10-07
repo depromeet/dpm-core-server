@@ -13,6 +13,7 @@ enum class ImageExceptionCode(
     INVALID_IMAGE(HttpStatus.BAD_REQUEST, "IMAGE-400-03", "이미지를 읽을 수 없습니다"),
     DIMENSIONS_TOO_LARGE(HttpStatus.BAD_REQUEST, "IMAGE-400-04", "이미지 해상도가 너무 큽니다 (최대 2,500만 픽셀)"),
     SIZE_MISMATCH(HttpStatus.BAD_REQUEST, "IMAGE-400-05", "업로드한 파일 크기가 요청한 크기와 다릅니다"),
+    FILE_NAME_TOO_LONG(HttpStatus.BAD_REQUEST, "IMAGE-400-06", "파일명은 255자 이하만 사용할 수 있습니다"),
     IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "IMAGE-404-01", "이미지를 찾을 수 없습니다"),
     UPLOAD_NOT_FOUND(HttpStatus.NOT_FOUND, "IMAGE-404-02", "업로드를 찾을 수 없습니다"),
     NOT_UPLOADED(HttpStatus.CONFLICT, "IMAGE-409-01", "업로드된 파일이 없습니다. 업로드 URL 로 파일을 올린 뒤 다시 요청해주세요"),

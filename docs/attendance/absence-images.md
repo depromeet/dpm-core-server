@@ -45,11 +45,11 @@
 
 - `imageIds` (순서, 없으면 `[]`): `GET /v3/sessions/{sessionId}/absence-reasons/me`, 운영진 `GET /v3/sessions/{sessionId}/absence-reasons`,
   `GET /v3/members/{memberId}/attendances`·`/v3/members/me/attendances` 의 `sessions[].absenceReason`
-- 조회 URL (`CustomResponse` 의 `data` 가 `{ "url", "expiresAt" }`)
-  - 본인: `GET /v3/images/{imageId}` (소유자 전용)
-  - 운영진(`update:attendance`): `GET /v3/sessions/{sessionId}/absence-reasons/{memberId}/images/{imageId}`
-    그 세션·멤버의 사유서에 지금 붙어 있고 그 멤버가 올린 이미지만. 아니면 `IMAGE-404-01`. 확인을 마친 뒤에만 저장소에 URL 을 요청한다.
-  - 둘 다 `Cache-Control: no-store, private`.
+- `images` (`[{imageId, fileName}]`, 순서 같음): `/v3/members/{memberId}/attendances`·`/v3/members/me/attendances` 의 `sessions[].absenceReason`.
+  `fileName` 은 업로드 요청에 보낸 원본 파일명이며 없으면 `null`
+- 조회 URL: `GET /v3/images/{imageId}` (`CustomResponse` 의 `data` 가 `{ "url", "expiresAt" }`, `Cache-Control: no-store`)
+- 다운로드: `GET /v3/images/{imageId}/download` → 302, `Location` 은 원본 파일명으로 저장되는 1분짜리 URL
+- 둘 다 업로드한 본인과 운영진(`update:attendance`)만. 그 외와 없는 이미지는 `IMAGE-404-01`. 권한 확인을 마친 뒤에만 저장소에 URL 을 요청한다.
 
 ```json
 { "status": "OK", "message": "요청에 성공했습니다", "code": "G000",

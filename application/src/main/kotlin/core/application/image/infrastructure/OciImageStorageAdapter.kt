@@ -25,6 +25,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.URLEncoder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -52,6 +53,18 @@ class OciImageStorageAdapter(
         objectKey: String,
         expiresAt: Instant,
     ): PreauthenticatedUrl = createPar(objectKey, expiresAt, CreatePreauthenticatedRequestDetails.AccessType.ObjectRead)
+
+    // 읽기 PAR 은 GetObject 의 httpResponseContentDisposition 쿼리를 받아 응답 헤더로 돌려준다(로컬 버킷에서 확인).
+    // PAR 마다 붙는 게 아니라 URL 쿼리라 같은 PAR 의 다른 URL 과 권한은 같다.
+    override fun createDownloadUrl(
+        objectKey: String,
+        expiresAt: Instant,
+        fileName: String?,
+    ): PreauthenticatedUrl {
+        val par = createReadUrl(objectKey, expiresAt)
+        val disposition = URLEncoder.encode(attachmentDisposition(fileName), Charsets.UTF_8).replace("+", "%20")
+        return PreauthenticatedUrl(par.parId, "${par.url}?httpResponseContentDisposition=$disposition", par.expiresAt)
+    }
 
     override fun revokeUrl(parId: String) {
         call("revoke-par", "parId=$parId", notFound = { }) {
@@ -240,6 +253,23 @@ class OciImageStorageAdapter(
             )
         }
 
+    /** RFC 6266: ASCII 대체 이름(filename)과 UTF-8 원래 이름(filename*)을 같이 준다. */
+    private fun attachmentDisposition(fileName: String?): String {
+        if (fileName.isNullOrBlank()) return "attachment"
+        val asciiFallback = fileName.map { if (isSafeAscii(it)) it else '_' }.joinToString("")
+        return "attachment; filename=\"$asciiFallback\"; filename*=UTF-8''${encodeRfc5987(fileName)}"
+    }
+
+    private fun encodeRfc5987(value: String): String =
+        value.toByteArray(Charsets.UTF_8).joinToString("") { byte ->
+            val c = (byte.toInt() and 0xFF).toChar()
+            if (isAttrChar(c)) c.toString() else "%%%02X".format(c.code)
+        }
+
+    private fun isSafeAscii(c: Char): Boolean = c.code in 0x20..0x7E && c != '"' && c != '\\'
+
+    private fun isAttrChar(c: Char): Boolean = (c.isLetterOrDigit() && c.code < 0x80) || c in RFC5987_ATTR_CHARS
+
     private fun <T> call(
         operation: String,
         target: String,
@@ -297,5 +327,8 @@ class OciImageStorageAdapter(
 
         // 원본 ETag 불일치(412), 대상 존재(409/412)만 복사 거절로 본다. 404 는 권한 없음일 수 있어 503 으로 낸다.
         private val PRECONDITION_STATUSES = setOf(409, 412)
+
+        // RFC 5987 attr-char 중 영숫자를 뺀 나머지. 이 밖의 바이트는 %XX 로 쓴다.
+        private const val RFC5987_ATTR_CHARS = "!#$&+-.^_`|~"
     }
 }

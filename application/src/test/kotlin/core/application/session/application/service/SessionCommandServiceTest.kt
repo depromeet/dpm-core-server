@@ -106,14 +106,16 @@ class SessionCommandServiceTest {
     }
 
     @Test
-    fun `인증 시작만 바꿀 때 날짜가 달라도 순서만 맞으면 허용한다`() {
+    fun `인증 시작을 세션 전날로 바꿔도 순서만 맞으면 허용한다`() {
         val kst = ZoneId.of("Asia/Seoul")
         val midnight = LocalDateTime.of(2026, 10, 11, 0, 5).atZone(kst).toInstant()
         fixture.sessionCommandService.createSession(createCommand(midnight))
         val session = onlySession()
         val previousDay = LocalDateTime.of(2026, 10, 10, 23, 40).atZone(kst).toInstant()
 
-        fixture.sessionCommandService.updateSessionStartTime(session.id!!, previousDay)
+        fixture.sessionCommandService.updateSession(
+            updateCommand(session, session.attendancePolicy.lateStart, session.attendancePolicy.absentStart, previousDay),
+        )
 
         assertThat(fixture.sessions.stored(session.id!!.value).attendancePolicy.attendanceStart).isEqualTo(previousDay)
     }
@@ -123,9 +125,6 @@ class SessionCommandServiceTest {
         fixture.sessionCommandService.createSession(createCommand(sessionStart))
         val session = onlySession()
 
-        assertThatThrownBy {
-            fixture.sessionCommandService.updateSessionStartTime(session.id!!, session.attendancePolicy.lateStart)
-        }.isInstanceOf(InvalidAttendanceTimeOrderException::class.java)
         assertThatThrownBy {
             fixture.sessionCommandService.updateSession(
                 updateCommand(session, session.attendancePolicy.absentStart, session.attendancePolicy.lateStart),
@@ -247,6 +246,7 @@ class SessionCommandServiceTest {
         session: Session,
         lateStart: Instant,
         absentStart: Instant,
+        attendanceStart: Instant = session.attendancePolicy.attendanceStart,
     ) = SessionUpdateCommand(
         sessionId = session.id!!,
         date = session.date,
@@ -254,7 +254,7 @@ class SessionCommandServiceTest {
         place = session.place,
         eventName = session.eventName,
         isOnline = session.isOnline,
-        attendanceStart = session.attendancePolicy.attendanceStart,
+        attendanceStart = attendanceStart,
         lateStart = lateStart,
         absentStart = absentStart,
     )
