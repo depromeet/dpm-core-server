@@ -79,12 +79,13 @@ class Attendance(
         this.autoAbsentAt = null
     }
 
-    /** 운영진 변경 표지(updatedAt)를 기록하고 자동 결석 표지를 지운다. */
+    /** 운영진 변경 표지(updatedAt)를 기록하고 출석 인증 시각과 자동 결석 표지를 지운다. 운영진이 정한 상태는 인증 시각과 무관하다. */
     fun updateStatus(
         newStatus: AttendanceStatus,
         updatedAt: Instant = Instant.now(),
     ) {
         this.status = newStatus
+        this.attendedAt = null
         this.updatedAt = updatedAt
         this.autoAbsentAt = null
     }

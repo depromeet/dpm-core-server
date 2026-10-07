@@ -11,7 +11,7 @@ data class MemberSessionAttendanceQueryModel(
     /** 저장된 세션 장소명. 온라인 세션이면 비어 있을 수 있다 */
     val sessionPlace: String,
     val sessionAttendanceStatus: String,
-    /** 실제 출석 인증 시각. 인증하지 않았으면 null */
+    /** 실제 출석 인증 시각. 인증하지 않았거나 운영진이 상태를 바꿨으면 null */
     val attendedAt: Instant?,
     /** 이 세션에 제출한 결석 사유서. 없으면 null */
     val absenceReason: AbsenceReason?,

@@ -8,10 +8,10 @@ import core.application.attendance.presentation.response.MyDetailAttendanceBySes
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.exception.CustomResponse
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
@@ -33,7 +33,8 @@ interface AttendanceQueryApi {
                 "members 는 팀 번호(팀 없음은 마지막), 이름, ID 순이고 teamNumber 는 팀이 없으면 null 입니다. " +
                 "운영진이 상태를 바꾼 기록은 isManuallyUpdated 가 true 이고 attendedAt 은 null 입니다. " +
                 "absenceReason 은 이 세션에 제출한 가장 최근 결석 사유서 내용(없으면 null)이며 첨부 이미지는 주지 않습니다. " +
-                "없거나 삭제됐거나 현재 기수가 아닌 세션이면 404 입니다.",
+                "없거나 삭제됐거나 현재 기수가 아닌 세션이면 404 입니다. " +
+                DATE_TIME_DESCRIPTION,
     )
     @ApiResponses(
         value = [
@@ -96,7 +97,16 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "사람별 출석 조회",
-        description = "사람별 출석을 조회합니다. 요청 시 출석상태, 팀, 이름, 커서 ID를 기준으로 필터링할 수 있습니다",
+        description =
+            "현재 활성 기수에 소속된 멤버 전원(출석 기록이 없어도 포함)의 수료 판정을 페이지 없이 조회합니다. " +
+                "teams 로 현재 기수 최신 배정 팀 번호를 여러 개 고를 수 있으며(teams=1&teams=2 또는 teams=1,2), 없거나 비면 전원입니다. " +
+                "이름, 상태, 파트, 내 팀 필터와 필터별 인원 수 계산은 프론트에서 합니다. " +
+                "myTeamNumber 는 조회한 운영진의 현재 기수 팀 번호이며 없으면 null 입니다. " +
+                "totalElements 는 teams 와 무관하게 현재 기수에 소속된 삭제되지 않은 멤버 전체 수입니다" +
+                "(출석 기록이 없거나 팀이 없는 멤버 포함). " +
+                "members 는 팀 번호(팀 없음은 마지막), 이름, ID 순이고 팀이 없는 멤버의 teamNumber 는 0 입니다. " +
+                "members[].attendanceStatus 는 조회 시점에 계산한 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE)이며 " +
+                "분모는 현재 기수의 삭제되지 않은 전체 세션 수입니다.",
     )
     @ApiResponses(
         value = [
@@ -109,12 +119,12 @@ interface AttendanceQueryApi {
                         schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
-                                name = "출석 성공 응답",
+                                name = "사람별 출석 조회 성공 응답",
                                 value = """
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "members": [
                                                 {
@@ -126,21 +136,16 @@ interface AttendanceQueryApi {
                                                     "attendanceStatus": "AT_RISK"
                                                 },
                                                 {
-                                                    "id": 1,
+                                                    "id": 2,
                                                     "name": "이정호",
-                                                    "teamNumber": 2,
-                                                    "isAdmin": false,
+                                                    "teamNumber": 0,
+                                                    "isAdmin": true,
                                                     "part": "WEB",
                                                     "attendanceStatus": "NORMAL"
                                                 }
                                             ],
-                                            "filter": {
-                                              "teamNumber": 7,
-                                              "isMyTeam": false
-                                            },
-                                            "hasNextPage": false,
-                                            "nextCursorId": null,
-                                            "totalElements": 26
+                                            "myTeamNumber": 1,
+                                            "totalElements": 2
                                         }
                                     }
                                 """,
@@ -153,17 +158,20 @@ interface AttendanceQueryApi {
     )
     fun getMemberAttendances(
         memberId: MemberId,
-        statuses: List<AttendanceStatus>?,
+        @Parameter(
+            description = "현재 기수 최신 배정 팀 번호. 여러 개면 그중 하나에 속한 멤버. 없거나 비면 전체",
+            example = "1,2",
+        )
         teams: List<Int>?,
-        name: String?,
-        onlyMyTeam: Boolean?,
-        page: Int,
-        size: Int,
     ): CustomResponse<MemberAttendancesResponse>
 
     @Operation(
         summary = "세션별 개인 출석 상세 조회",
-        description = "세션별 개인 출석을 조회합니다.",
+        description =
+            "세션별 개인 출석을 조회합니다. member.attendanceStatus 는 사람별 출석 조회와 같은 집계로 계산한 그 세션 기수의 수료 판정입니다. " +
+                "같은 세션에 살아 있는 기록이 여러 개면 attendance_id 가 가장 큰 기록을 씁니다. " +
+                "attendance.updatedAt 은 운영진 변경 시각(없으면 null)이며, 운영진이 바꾼 기록의 attendedAt 은 null 입니다. " +
+                DATE_TIME_DESCRIPTION,
     )
     @ApiResponses(
         value = [
@@ -199,8 +207,8 @@ interface AttendanceQueryApi {
                                             },
                                             "attendance": {
                                                 "status": "LATE",
-                                                "attendedAt": "2025-08-09T14:05:12.000000",
-                                                "updatedAt": "2025-08-09T14:05:12.000000"
+                                                "attendedAt": null,
+                                                "updatedAt": "2025-08-09T15:10:00.000000"
                                             }
                                         }
                                     }
@@ -517,15 +525,22 @@ interface AttendanceQueryApi {
     fun getSessionAbsenceReasons(sessionId: SessionId): CustomResponse<SessionAbsenceReasonsResponse>
 }
 
+private const val DATE_TIME_DESCRIPTION =
+    "날짜/시각은 Asia/Seoul 기준 오프셋 없는 ISO-8601 문자열(예: 2025-08-09T14:00:00)이며 표시 형식은 프론트에서 정한다."
+
 private const val MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION =
-    "member.attendanceStatus 는 조회 시점에 계산한 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE)이다. " +
+    "현재 활성 기수 기준이다. 현재 기수 소속이면 출석 기록이 없어도 집계 0, sessions [], 판정 NORMAL 로 준다. " +
+        "없거나 삭제됐거나 현재 기수 소속이 아닌 멤버면 404(ATTENDANCE-404-01)다. " +
+        "member.attendanceStatus 는 조회 시점에 계산한 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE)이며 사람별 출석 조회와 같은 집계를 쓴다. " +
         "결석 1회, 지각 0.5회로 환산하고 인정 결석은 출석으로, 미인증(PENDING)은 0으로 본다. " +
-        "IMPOSSIBLE: 남은 세션을 모두 출석해도 출석률 80% 미만(분모는 해당 기수의 삭제되지 않은 전체 세션 수), " +
+        "IMPOSSIBLE: 남은 세션을 모두 출석해도 출석률 80% 미만(분모는 현재 기수의 삭제되지 않은 전체 세션 수), " +
         "환산 결석 4회 초과(4.5회부터), 오프라인 결석 3회 이상 중 하나. " +
         "AT_RISK: 환산 결석 3회 이상 또는 오프라인 결석 2회. " +
-        "sessions[].attendedAt 은 실제 출석 인증 시각이며 인증하지 않았으면 null 이다. " +
+        "삭제된 세션과 기록은 빼고, 같은 세션에 살아 있는 기록이 여러 개면 attendance_id 가 가장 큰 기록을 쓴다. " +
+        "sessions[].attendedAt 은 실제 출석 인증 시각이며 인증하지 않았거나 운영진이 상태를 바꿨으면 null 이다. " +
         "sessions[].place 는 온라인 세션이면 \"온라인\", 오프라인이면 저장된 장소명이다. " +
         "sessions[].absenceReason 은 해당 세션에 제출한 결석 사유서이며 없으면 null 이다. " +
         "absenceReason.images 는 첨부 이미지 id 와 원본 파일명(표시 순서, 없으면 [])이며, " +
         "파일명 없이 올렸거나 파일명 저장 전에 올린 이미지는 fileName 이 null 이다. " +
-        "absenceReason.imageIds 는 같은 순서의 id 목록으로 호환을 위해 유지한다."
+        "absenceReason.imageIds 는 같은 순서의 id 목록으로 호환을 위해 유지한다. " +
+        DATE_TIME_DESCRIPTION

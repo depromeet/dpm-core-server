@@ -95,7 +95,8 @@ object SessionMapper {
                 lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
                 absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
                 attendanceStatus = attendance.status,
-                attendedAt = instantToLocalDateTime(attendance.attendedAt),
+                // 운영진이 바꾼 기록(updatedAt 있음)은 인증 시각이 남은 예전 기록도 attendedAt 을 null 로 준다
+                attendedAt = if (attendance.updatedAt != null) null else instantToLocalDateTime(attendance.attendedAt),
             )
         }
 

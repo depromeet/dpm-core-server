@@ -11,7 +11,6 @@ import core.application.attendance.presentation.response.SessionAbsenceReasonsRe
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
@@ -41,23 +40,13 @@ class AttendanceQueryController(
     @GetMapping("/v3/members/attendances")
     override fun getMemberAttendances(
         @CurrentMemberId memberId: MemberId,
-        @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
-        @RequestParam(name = "name", required = false) name: String?,
-        @RequestParam(name = "onlyMyTeam", required = false) onlyMyTeam: Boolean?,
-        @RequestParam(name = "page", required = false, defaultValue = "1") page: Int,
-        @RequestParam(name = "size", required = false, defaultValue = "20") size: Int,
     ): CustomResponse<MemberAttendancesResponse> {
         val response =
             attendanceQueryService.getMemberAttendances(
                 GetMemberAttendancesQuery(
                     memberId = memberId,
-                    statuses = statuses,
                     teams = teams,
-                    name = name,
-                    onlyMyTeam = onlyMyTeam,
-                    page = page,
-                    size = size,
                 ),
             )
 
@@ -82,7 +71,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:attendance')")
-    @GetMapping("/v1/sessions/{sessionId}/attendances/me")
+    @GetMapping("/v3/sessions/{sessionId}/attendances/me")
     override fun getMyAttendanceBySessionId(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
