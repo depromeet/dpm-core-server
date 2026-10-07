@@ -1,5 +1,6 @@
 package core.application.attendance.presentation.controller
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AbsenceReasonQueryService
@@ -70,10 +71,14 @@ class AttendanceAdminSessionControllerTest {
                 withPreAuthorize(CohortController(CohortQueryService(cohorts), mock(CohortCommandService::class.java))),
                 withPreAuthorize(MemberPartController()),
             ).setControllerAdvice(GlobalExceptionHandler())
-            // Spring Boot 기본값처럼 날짜를 ISO 문자열로 쓴다(설정 파일에 jackson 재정의 없음).
+            // Spring Boot 기본값처럼 날짜를 ISO 문자열로 쓰고, application.yml 처럼 enum 숫자를 거절한다.
             .setMessageConverters(
                 MappingJackson2HttpMessageConverter(
-                    Jackson2ObjectMapperBuilder.json().featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS).build(),
+                    Jackson2ObjectMapperBuilder
+                        .json()
+                        .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                        .featuresToEnable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
+                        .build(),
                 ),
             )
             .setCustomArgumentResolvers(CurrentMemberIdArgumentResolver())
