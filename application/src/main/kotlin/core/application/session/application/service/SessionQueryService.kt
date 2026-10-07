@@ -14,6 +14,7 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
+import core.domain.session.port.inbound.query.SessionSelectorQueryModel
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.AttendancePolicy
@@ -75,6 +76,30 @@ class SessionQueryService(
         return sessionPersistencePort
             .findAllCohortSessions(cohortId.value)
             .map { SessionWeekQueryModel(sessionId = it.id!!, week = it.week, date = it.date) }
+    }
+
+    /**
+     * 현재 활성 기수 세션을 일시, ID 오름차순으로 준다. 주차는 표시용이라 정렬에 쓰지 않는다.
+     * 출석 인증 상태는 한 번 읽은 현재 시각으로 모든 세션을 판단한다.
+     */
+    fun getSessionSelector(): List<SessionSelectorQueryModel> {
+        val cohortId = cohortQueryUseCase.getLatestCohortId()
+        val now = clock.instant()
+
+        return sessionPersistencePort
+            .findAllCohortSessions(cohortId.value)
+            .sortedWith(compareBy<Session>({ it.date }, { it.id!!.value }))
+            .map {
+                SessionSelectorQueryModel(
+                    sessionId = it.id!!,
+                    week = it.week,
+                    date = it.date,
+                    eventName = it.eventName,
+                    place = it.place,
+                    isOnline = it.isOnline,
+                    attendanceStatus = it.attendanceStatusAt(now),
+                )
+            }
     }
 
     fun queryTargetAttendancesByPolicyChange(

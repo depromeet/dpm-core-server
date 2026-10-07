@@ -10,6 +10,7 @@ import core.application.session.presentation.response.SessionDetailForDeeperResp
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
+import core.application.session.presentation.response.SessionSelectorResponse
 import core.application.session.presentation.response.SessionWeeksResponse
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
@@ -102,6 +103,11 @@ class SessionQueryController(
 
         return CustomResponse.ok(response)
     }
+
+    @PreAuthorize("hasAuthority('read:session')")
+    @GetMapping("/v3/sessions/weeks")
+    override fun getSessionSelector(): CustomResponse<SessionSelectorResponse> =
+        CustomResponse.ok(SessionMapper.toSessionSelectorResponse(sessionQueryService.getSessionSelector()))
 
     @PreAuthorize("hasAuthority('update:session')")
     @GetMapping("/v1/sessions/{sessionId}/update-policy")

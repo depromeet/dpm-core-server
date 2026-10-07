@@ -2,8 +2,10 @@ package core.persistence.cohort.repository
 
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
@@ -70,6 +72,14 @@ class CohortRepository(
             ),
         )
     }
+
+    override fun findTeamsByCohortId(cohortId: CohortId): List<CohortTeamQueryModel> =
+        dsl
+            .select(TEAMS.TEAM_ID, TEAMS.NUMBER)
+            .from(TEAMS)
+            .where(TEAMS.COHORT_ID.eq(cohortId.value))
+            .orderBy(TEAMS.NUMBER.asc(), TEAMS.TEAM_ID.asc())
+            .fetch { CohortTeamQueryModel(id = it[TEAMS.TEAM_ID]!!, number = it[TEAMS.NUMBER]!!) }
 
     override fun deleteById(cohortId: CohortId) {
         cohortJpaRepository.deleteById(cohortId.value)
