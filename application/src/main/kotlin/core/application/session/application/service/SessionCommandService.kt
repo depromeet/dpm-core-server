@@ -25,7 +25,6 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
-import java.time.Instant
 
 /**
  * 세션 행 쓰기 잠금을 먼저 잡고 출석 행을 바꿔 인증/자동 결석/운영진 변경과 직렬화한다
@@ -43,25 +42,6 @@ class SessionCommandService(
     private val attendanceCommandService: AttendanceCommandService,
     private val clock: Clock,
 ) {
-    // 판정 경계(지각 시작, 마감)는 그대로라 출석 기록은 재판정하지 않는다.
-    fun updateSessionStartTime(
-        sessionId: SessionId,
-        attendanceStartTime: Instant,
-    ) {
-        val session =
-            sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)
-                ?: throw SessionNotFoundException()
-
-        sessionValidator.validateAttendanceTimes(
-            attendanceStartTime,
-            session.attendancePolicy.lateStart,
-            session.attendancePolicy.absentStart,
-        )
-        session.updateAttendanceStartTime(attendanceStartTime)
-
-        sessionPersistencePort.save(session)
-    }
-
     fun createSession(command: SessionCreateCommand) {
         val latestCohortId = cohortQueryService.getLatestCohortId()
         val attendanceTimes = resolveAttendanceTimes(command)

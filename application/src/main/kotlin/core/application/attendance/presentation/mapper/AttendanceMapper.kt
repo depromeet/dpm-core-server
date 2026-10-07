@@ -7,6 +7,7 @@ import core.application.attendance.presentation.response.DetailMemberAttendances
 import core.application.attendance.presentation.response.DetailMemberInfo
 import core.application.attendance.presentation.response.MemberAttendanceResponse
 import core.application.attendance.presentation.response.MemberAttendancesResponse
+import core.application.attendance.presentation.response.MemberDetailAbsenceReasonImageInfo
 import core.application.attendance.presentation.response.MemberDetailAbsenceReasonInfo
 import core.application.attendance.presentation.response.MemberDetailAttendanceCountInfo
 import core.application.attendance.presentation.response.MemberDetailSessionInfo
@@ -29,6 +30,8 @@ import core.domain.team.vo.TeamNumber
 import java.time.Instant
 
 object AttendanceMapper {
+    private const val ONLINE_PLACE = "온라인"
+
     fun toAttendanceResponse(
         attendanceStatus: AttendanceStatus,
         attendedAt: Instant,
@@ -146,14 +149,20 @@ object AttendanceMapper {
                         eventName = session.sessionEventName,
                         date = instantToLocalDateTime(session.sessionDate),
                         attendanceStatus = session.sessionAttendanceStatus,
+                        attendedAt = session.attendedAt?.let { instantToLocalDateTime(it) },
                         isOnline = session.sessionIsOnline,
+                        place = if (session.sessionIsOnline) ONLINE_PLACE else session.sessionPlace,
                         absenceReason =
                             session.absenceReason?.let {
                                 MemberDetailAbsenceReasonInfo(
                                     id = it.id,
                                     contents = it.contents,
                                     status = it.status,
-                                    imageIds = it.imageIds,
+                                    imageIds = it.images.map { image -> image.imageId },
+                                    images =
+                                        it.images.map { image ->
+                                            MemberDetailAbsenceReasonImageInfo(image.imageId, image.fileName)
+                                        },
                                 )
                             },
                     )

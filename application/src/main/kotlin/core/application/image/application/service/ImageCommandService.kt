@@ -53,12 +53,14 @@ class ImageCommandService(
         ownerMemberId: MemberId,
         contentType: String,
         size: Long,
+        fileName: String? = null,
     ): ImageUploadCreateResponse {
         val type =
             imageValidator.parseContentType(contentType)
                 ?: throw InvalidImageException(ImageExceptionCode.UNSUPPORTED_TYPE)
         if (size <= 0) throw InvalidImageException(ImageExceptionCode.EMPTY_FILE)
         if (size > ImageValidator.MAX_BYTES) throw InvalidImageException(ImageExceptionCode.FILE_TOO_LARGE)
+        val originalFileName = imageValidator.normalizeFileName(fileName)
 
         val now = Instant.now(clock)
         val uploadId = UUID.randomUUID().toString()
@@ -66,7 +68,16 @@ class ImageCommandService(
         val par = imageStoragePort.createUploadUrl(stagingKey, now.plus(properties.uploadUrlTtl))
         try {
             imageUploadPersistencePort.save(
-                ImageUpload.create(uploadId, ownerMemberId, type, size, par.parId, par.expiresAt, now),
+                ImageUpload.create(
+                    uploadId,
+                    ownerMemberId,
+                    type,
+                    size,
+                    par.parId,
+                    par.expiresAt,
+                    now,
+                    originalFileName,
+                ),
             )
         } catch (e: Exception) {
             runQuietly("세션 저장 실패 후 PAR 회수", uploadId) { imageStoragePort.revokeUrl(par.parId) }
@@ -284,7 +295,14 @@ class ImageCommandService(
             return fail(upload, token, ImageExceptionCode.UPLOAD_FAILED)
         }
         val image =
-            Image.create(upload.ownerMemberId, upload.finalKey, upload.contentType, upload.size, Instant.now(clock))
+            Image.create(
+                upload.ownerMemberId,
+                upload.finalKey,
+                upload.contentType,
+                upload.size,
+                Instant.now(clock),
+                upload.originalFileName,
+            )
         val saved =
             imageUploadPersistencePort.complete(upload.id, token, image) ?: return ImageUploadCompletion.InProgress
 
@@ -297,6 +315,7 @@ class ImageCommandService(
                 imageId = requireNotNull(saved.id) { "저장된 이미지에 id 가 없습니다" }.value,
                 contentType = saved.contentType.mimeType,
                 size = saved.size,
+                fileName = saved.originalFileName,
             ),
         )
     }
@@ -369,6 +388,7 @@ class ImageCommandService(
             imageId = requireNotNull(upload.imageId) { "완료된 업로드에 imageId 가 없습니다: ${upload.id}" }.value,
             contentType = upload.contentType.mimeType,
             size = upload.size,
+            fileName = upload.originalFileName,
         )
 
     private fun failureCode(upload: ImageUpload): ImageExceptionCode =

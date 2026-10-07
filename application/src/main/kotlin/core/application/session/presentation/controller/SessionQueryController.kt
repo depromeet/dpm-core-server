@@ -104,7 +104,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('update:session')")
-    @GetMapping("/v3/sessions/{sessionId}/update-policy")
+    @GetMapping("/v1/sessions/{sessionId}/update-policy")
     override fun queryTargetAttendancesByPolicyChange(
         @PathVariable("sessionId") sessionId: SessionId,
         @RequestParam(value = "attendanceStart", required = true) attendanceStart: LocalDateTime,

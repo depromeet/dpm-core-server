@@ -20,6 +20,16 @@ interface ImageStoragePort {
         expiresAt: Instant,
     ): PreauthenticatedUrl
 
+    /**
+     * [objectKey] 한 객체만 읽을 수 있고, 브라우저가 열면 [fileName] 으로 저장하는 URL(Content-Disposition: attachment).
+     * [fileName] 이 없으면 저장 이름은 브라우저가 정한다.
+     */
+    fun createDownloadUrl(
+        objectKey: String,
+        expiresAt: Instant,
+        fileName: String?,
+    ): PreauthenticatedUrl
+
     /** 이미 없거나 만료로 지워진 PAR 은 성공으로 본다. */
     fun revokeUrl(parId: String)
 
