@@ -97,16 +97,17 @@ class AttendanceAdminSessionControllerTest {
     }
 
     @Test
-    fun `수정 상태는 다섯 상태만 받고 없앤 조퇴나 모르는 값은 단건과 일괄 모두 400 이다`() {
+    fun `수정 상태는 다섯 상태 이름만 받고 없앤 조퇴나 모르는 값이나 숫자는 단건과 일괄 모두 400 이다`() {
         loginAs(1L, "update:attendance")
 
-        listOf("EARLY_LEAVE", "UNKNOWN", "present", "").forEach { invalid ->
+        // 순서(ordinal) 숫자나 숫자 문자열도 상태 이름이 아니므로 거절한다.
+        listOf("\"EARLY_LEAVE\"", "\"UNKNOWN\"", "\"present\"", "\"\"", "1", "\"1\"").forEach { invalid ->
             mockMvc
-                .perform(patchJson("/v1/sessions/3/attendances/7", """{"attendanceStatus":"$invalid"}"""))
+                .perform(patchJson("/v1/sessions/3/attendances/7", """{"attendanceStatus":$invalid}"""))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
             mockMvc
-                .perform(patchJson("/v1/sessions/3/attendances/bulk", """{"attendanceStatus":"$invalid","memberIds":[1]}"""))
+                .perform(patchJson("/v1/sessions/3/attendances/bulk", """{"attendanceStatus":$invalid,"memberIds":[1]}"""))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
         }
