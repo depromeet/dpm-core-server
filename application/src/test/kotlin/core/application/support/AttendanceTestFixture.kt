@@ -8,6 +8,7 @@ import core.application.cohort.application.service.CohortQueryService
 import core.application.session.application.service.SessionCommandService
 import core.application.session.application.service.SessionQueryService
 import core.application.session.application.validator.SessionValidator
+import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.vo.CohortId
@@ -29,6 +30,7 @@ class AttendanceTestFixture(
     val attendances = FakeAttendancePersistencePort()
     val sessions = FakeSessionPersistencePort(attendances)
     val cohorts = FakeCohortPersistencePort()
+    val feedbackForms = FakeSessionFeedbackFormPersistencePort()
     val notifications = RecordingSentSessionNotificationCommandUseCase()
     val events: MutableList<Any> = Collections.synchronizedList(mutableListOf())
     val memberQueryUseCase: MemberQueryUseCase = mock(MemberQueryUseCase::class.java)
@@ -62,6 +64,12 @@ class AttendanceTestFixture(
             clock = clock,
         )
 
+    val sessionFeedbackFormCommandService =
+        SessionFeedbackFormCommandService(
+            feedbackFormPersistencePort = feedbackForms,
+            clock = clock,
+        )
+
     val sessionCommandService =
         SessionCommandService(
             sessionPersistencePort = sessions,
@@ -71,6 +79,7 @@ class AttendanceTestFixture(
             sentSessionNotificationCommandUseCase = notifications,
             attendancePolicyProperties = policyProperties,
             attendanceCommandService = attendanceCommandService,
+            sessionFeedbackFormCommandService = sessionFeedbackFormCommandService,
             clock = clock,
         )
 
