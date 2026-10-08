@@ -159,7 +159,7 @@ class SessionFeedbackInsightQueryService(
     private fun ratePercent(
         numerator: Int,
         denominator: Int,
-    ): Int = if (denominator == 0) 0 else (numerator * 100) / denominator
+    ): Int = if (denominator == 0) 0 else (numerator * 200 + denominator) / (denominator * 2)
 
     private fun SessionFeedback.questionsWithEtc(): Set<SessionFeedbackQuestion> =
         buildSet {
