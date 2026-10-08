@@ -51,7 +51,7 @@ class SessionFeedbackMyQueryService(
             return SessionFeedbackMyStatus.SUBMITTED
         }
         if (!now.isBefore(form.endAt)) return SessionFeedbackMyStatus.EXPIRED
-        if (now.isBefore(form.startAt)) return SessionFeedbackMyStatus.NOT_TARGET
+        if (now.isBefore(form.startAt)) return SessionFeedbackMyStatus.BEFORE_START
         return SessionFeedbackMyStatus.AVAILABLE
     }
 
