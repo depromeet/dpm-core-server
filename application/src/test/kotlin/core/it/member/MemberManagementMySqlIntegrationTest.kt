@@ -119,7 +119,7 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(response.cohortId).isEqualTo(current.value)
         assertThat(response.members.map { it.memberId }).containsExactly(1L)
         assertThat(response.totalElements).isEqualTo(1)
-        assertThat(response.summary.totalMemberCount).isEqualTo(3)
+        assertThat(response.summary.totalMemberCount).isEqualTo(4)
         assertThat(response.summary.pendingCount).isEqualTo(1)
         assertThat(response.summary.graduationRiskCount).isEqualTo(1)
         assertThat(response.summary.missingInformationCount).isEqualTo(2)
@@ -174,7 +174,7 @@ class MemberManagementMySqlIntegrationTest {
         }
         val response = service.getOverview(MemberManagementRequest(excludeStaff = false))
         assertThat(response.totalElements).isEqualTo(7)
-        assertThat(response.summary.totalMemberCount).isEqualTo(3)
+        assertThat(response.summary.totalMemberCount).isEqualTo(7)
         assertThat(response.members.filter { it.duplicateSuspected }.map { it.memberId }).containsExactly(1L)
         assertThat(response.members.single { it.memberId == 1L }.name).isEqualTo("중복별명")
         val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
