@@ -14,7 +14,7 @@ interface SessionFeedbackQueryApi {
         description =
             "홈 카드·세션 목록·공유 링크 공통 진입. 세션 이름과 작성 상태(myStatus)만 내려준다. " +
                 "AVAILABLE(작성 가능), BEFORE_START(수집 시작 전), SUBMITTED(이미 제출함), " +
-                "EXPIRED(제출 기한 지남), NOT_TARGET(제출 자격 없음).",
+                "EXPIRED(제출 기한 지남), NOT_TARGET(제출 자격 없음). startAt 은 수집 시작 시각(피드백 OFF 세션은 null).",
     )
     fun getMyFeedback(
         sessionId: SessionId,

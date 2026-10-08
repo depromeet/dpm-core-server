@@ -1,5 +1,6 @@
 package core.application.sessionFeedback.application.service
 
+import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.sessionFeedback.presentation.response.SessionFeedbackMyResponse
 import core.domain.attendance.enums.AttendanceStatus
@@ -36,6 +37,7 @@ class SessionFeedbackMyQueryService(
         return SessionFeedbackMyResponse(
             sessionName = session.eventName,
             myStatus = resolveStatus(form, sessionId, memberId, now),
+            startAt = form?.startAt?.let(::instantToLocalDateTime),
         )
     }
 
