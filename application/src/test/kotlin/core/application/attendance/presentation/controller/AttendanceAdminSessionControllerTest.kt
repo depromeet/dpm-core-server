@@ -1,5 +1,6 @@
 package core.application.attendance.presentation.controller
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import core.application.attendance.application.exception.AttendanceNotFoundException
 import core.application.attendance.application.service.AbsenceReasonCommandService
@@ -83,10 +84,14 @@ class AttendanceAdminSessionControllerTest {
                 withPreAuthorize(CohortController(CohortQueryService(cohorts), mock(CohortCommandService::class.java))),
                 withPreAuthorize(MemberPartController()),
             ).setControllerAdvice(GlobalExceptionHandler())
-            // Spring Boot 기본값처럼 날짜를 ISO 문자열로 쓴다(설정 파일에 jackson 재정의 없음).
+            // Spring Boot 기본값처럼 날짜를 ISO 문자열로 쓰고, application.yml 처럼 enum 숫자를 거절한다.
             .setMessageConverters(
                 MappingJackson2HttpMessageConverter(
-                    Jackson2ObjectMapperBuilder.json().featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS).build(),
+                    Jackson2ObjectMapperBuilder
+                        .json()
+                        .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                        .featuresToEnable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
+                        .build(),
                 ),
             )
             .setCustomArgumentResolvers(CurrentMemberIdArgumentResolver())
@@ -110,16 +115,17 @@ class AttendanceAdminSessionControllerTest {
     }
 
     @Test
-    fun `수정 상태는 다섯 상태만 받고 없앤 조퇴나 모르는 값은 단건과 일괄 모두 400 이다`() {
+    fun `수정 상태는 다섯 상태 이름만 받고 없앤 조퇴나 모르는 값이나 숫자는 단건과 일괄 모두 400 이다`() {
         loginAs(1L, "update:attendance")
 
-        listOf("EARLY_LEAVE", "UNKNOWN", "present", "").forEach { invalid ->
+        // 순서(ordinal) 숫자나 숫자 문자열도 상태 이름이 아니므로 거절한다.
+        listOf("\"EARLY_LEAVE\"", "\"UNKNOWN\"", "\"present\"", "\"\"", "1", "\"1\"").forEach { invalid ->
             mockMvc
-                .perform(patchJson("/v1/sessions/3/attendances/7", """{"attendanceStatus":"$invalid"}"""))
+                .perform(patchJson("/v1/sessions/3/attendances/7", """{"attendanceStatus":$invalid}"""))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
             mockMvc
-                .perform(patchJson("/v1/sessions/3/attendances/bulk", """{"attendanceStatus":"$invalid","memberIds":[1]}"""))
+                .perform(patchJson("/v1/sessions/3/attendances/bulk", """{"attendanceStatus":$invalid,"memberIds":[1]}"""))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
         }

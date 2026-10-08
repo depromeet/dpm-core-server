@@ -7,6 +7,7 @@ import core.application.session.application.exception.InvalidSessionIdException
 import core.application.session.application.exception.PartialAttendanceTimesException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.validator.SessionValidator
+import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.domain.notification.aggregate.SentSessionNotification
 import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.inbound.SentSessionNotificationCommandUseCase
@@ -40,6 +41,7 @@ class SessionCommandService(
     private val sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase,
     private val attendancePolicyProperties: AttendancePolicyProperties,
     private val attendanceCommandService: AttendanceCommandService,
+    private val sessionFeedbackFormCommandService: SessionFeedbackFormCommandService,
     private val clock: Clock,
 ) {
     fun createSession(command: SessionCreateCommand) {
@@ -48,6 +50,14 @@ class SessionCommandService(
         val newSession = Session.create(command, latestCohortId, attendanceTimes)
 
         val savedSession = sessionPersistencePort.save(newSession)
+        val savedSessionId = savedSession.id ?: throw InvalidSessionIdException()
+
+        sessionFeedbackFormCommandService.applyOnSessionCreate(
+            sessionId = savedSessionId,
+            feedbackEnabled = command.feedbackEnabled,
+            feedbackStartAt = command.feedbackStartAt,
+            feedbackPushEnabled = command.feedbackPushEnabled,
+        )
 
         // 세션 알림 이력 레코드 2개 생성 (ATTENDANCE_STARTED, SESSION_DAY_BEFORE)
         listOf(
@@ -57,7 +67,7 @@ class SessionCommandService(
             sentSessionNotificationCommandUseCase.save(
                 SentSessionNotification(
                     sentSessionNotificationId = SentSessionNotificationId(0L),
-                    sessionId = savedSession.id ?: throw InvalidSessionIdException(),
+                    sessionId = savedSessionId,
                     notificationMessageType = messageType,
                     sentAt = null,
                 ),
@@ -66,7 +76,7 @@ class SessionCommandService(
 
         eventPublisher.publishEvent(
             SessionCreateEvent(
-                sessionId = savedSession.id ?: throw InvalidSessionIdException(),
+                sessionId = savedSessionId,
                 cohortId = savedSession.cohortId,
             ),
         )
@@ -84,6 +94,13 @@ class SessionCommandService(
 
         session.updateSession(command)
         sessionPersistencePort.save(session)
+
+        sessionFeedbackFormCommandService.applyOnSessionUpdate(
+            sessionId = command.sessionId,
+            feedbackEnabled = command.feedbackEnabled,
+            feedbackStartAt = command.feedbackStartAt,
+            feedbackPushEnabled = command.feedbackPushEnabled ?: true,
+        )
 
         val attendanceTimesChanged =
             previousAttendancePolicy.hasChangedComparedTo(
