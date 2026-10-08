@@ -4,6 +4,7 @@ import core.domain.session.vo.SessionId
 import core.domain.sessionFeedback.aggregate.SessionFeedbackForm
 import core.domain.sessionFeedback.port.outbound.SessionFeedbackFormPersistencePort
 import core.domain.sessionFeedback.vo.SessionFeedbackFormId
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 
 class FakeSessionFeedbackFormPersistencePort : SessionFeedbackFormPersistencePort {
@@ -42,6 +43,12 @@ class FakeSessionFeedbackFormPersistencePort : SessionFeedbackFormPersistencePor
         val set = sessionIds.toSet()
         return rows.values.filter { it.sessionId.value in set && it.deletedAt == null }
     }
+
+    @Synchronized
+    override fun findAllInProgressAt(now: Instant): List<SessionFeedbackForm> =
+        rows.values
+            .filter { it.deletedAt == null && !now.isBefore(it.startAt) && now.isBefore(it.endAt) }
+            .sortedBy { it.endAt }
 
     @Synchronized
     override fun delete(form: SessionFeedbackForm) {
