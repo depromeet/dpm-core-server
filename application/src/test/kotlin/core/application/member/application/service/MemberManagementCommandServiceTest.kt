@@ -101,6 +101,7 @@ class MemberManagementCommandServiceTest {
             MemberManagementUpdateRequest(part = "GUEST"),
             MemberManagementUpdateRequest(memberType = "MASTER"),
             MemberManagementUpdateRequest(status = "PENDING"),
+            MemberManagementUpdateRequest(status = "REJECTED"),
             MemberManagementUpdateRequest(status = "AT_RISK"),
             MemberManagementUpdateRequest(teamId = -1),
         ).forEach { changes ->

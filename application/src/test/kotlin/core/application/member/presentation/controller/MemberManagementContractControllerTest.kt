@@ -3,6 +3,7 @@ package core.application.member.presentation.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import core.application.common.configuration.SwaggerConfig
 import core.application.common.exception.GlobalExceptionHandler
+import core.application.member.application.service.MemberAdmissionService
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import jakarta.servlet.Filter
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -10,6 +11,9 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.reset
+import org.mockito.Mockito.verify
 import org.springdoc.core.configuration.SpringDocConfiguration
 import org.springdoc.core.properties.SpringDocConfigProperties
 import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration
@@ -50,10 +54,13 @@ class MemberManagementContractControllerTest {
 
     @Autowired lateinit var mapper: ObjectMapper
 
+    @Autowired lateinit var admissionService: MemberAdmissionService
+
     private lateinit var mvc: MockMvc
 
     @BeforeEach
     fun setup() {
+        reset(admissionService)
         mvc =
             MockMvcBuilders.webAppContextSetup(context)
                 .addFilters<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(context.getBean("springSecurityFilterChain", Filter::class.java))
@@ -62,7 +69,7 @@ class MemberManagementContractControllerTest {
 
     @Test
     fun `권한이 있어도 명세 전용 API는 성공을 반환하지 않는다`() {
-        endpoints().forEach { request ->
+        stubEndpoints().forEach { request ->
             mvc.perform(authenticated(request, "create:member", "delete:member", "read:member"))
                 .andExpect(status().isNotImplemented)
                 .andExpect(jsonPath("$.code").value("MEMBER-501-01"))
@@ -88,7 +95,24 @@ class MemberManagementContractControllerTest {
                 .andExpect(status().isForbidden)
         }
         mvc.perform(authenticated(post("/v3/members/me/reapplication")))
-            .andExpect(status().isNotImplemented)
+            .andExpect(status().isOk)
+        verify(admissionService).reapply(1)
+    }
+
+    @Test
+    fun `가입 반려는 생성 권한을 확인하고 경로 식별자를 전달한다`() {
+        mvc.perform(authenticated(post("/v3/members/42/rejection"), "create:member"))
+            .andExpect(status().isOk)
+        verify(admissionService).reject(42)
+        mvc.perform(authenticated(post("/v3/members/wrong/rejection"), "create:member"))
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `재신청은 요청에 타인 ID가 있어도 인증된 본인 ID만 사용한다`() {
+        mvc.perform(authenticated(json(post("/v3/members/me/reapplication"), """{"memberId":42}""")))
+            .andExpect(status().isOk)
+        verify(admissionService).reapply(1)
     }
 
     @Test
@@ -140,6 +164,11 @@ class MemberManagementContractControllerTest {
             )
         expected.forEach { (path, method) ->
             val operation = document["paths"][path][method]
+            if (path.endsWith("/rejection") || path.endsWith("/reapplication")) {
+                assertFalse(operation["responses"].has("501"), path)
+                assertTrue(operation["responses"].has("200"), path)
+                return@forEach
+            }
             assertTrue(operation["responses"].has("501"), path)
             assertTrue(operation["responses"]["200"].has("content"), path)
             val errorSchema = operation["responses"]["501"].path("content").elements().asSequence().firstOrNull()?.path("schema")
@@ -160,11 +189,11 @@ class MemberManagementContractControllerTest {
         assertTrue(document["paths"]["/v3/members/me/reapplication"]["post"].path("parameters").isMissingNode)
     }
 
-    private fun endpoints(): List<MockHttpServletRequestBuilder> =
+    private fun endpoints(): List<MockHttpServletRequestBuilder> = stubEndpoints() + listOf(post("/v3/members/1/rejection"), post("/v3/members/me/reapplication"))
+
+    private fun stubEndpoints(): List<MockHttpServletRequestBuilder> =
         listOf(
             json(post("/v3/members/merge"), MERGE_BODY),
-            post("/v3/members/1/rejection"),
-            post("/v3/members/me/reapplication"),
             delete("/v3/members/1"),
             json(delete("/v3/members/bulk"), """{"memberIds":[1,2]}"""),
             get("/v3/members/badges"),
@@ -201,6 +230,9 @@ class MemberManagementContractControllerTest {
     )
     @ImportAutoConfiguration(JacksonAutoConfiguration::class)
     class Config : WebMvcConfigurer {
+        @Bean
+        fun admissionService(): MemberAdmissionService = mock(MemberAdmissionService::class.java)
+
         override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
             resolvers.add(CurrentMemberIdArgumentResolver())
         }
