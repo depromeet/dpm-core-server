@@ -85,24 +85,30 @@ interface SessionQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "GLOBAL-200-1",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "sessions": [
                                                 {
                                                     "id": 1,
                                                     "week": 1,
-                                                    "name": "디프만 17기 OT",
-                                                    "date": "2025-08-02T14:00:00.000000",
+                                                    "name": "디프만 19기 OT",
+                                                    "date": "2026-10-10T14:00:00",
                                                     "place": "공덕 프론트원",
-                                                    "isOnline": false
+                                                    "isOnline": false,
+                                                    "feedback": {
+                                                        "status": "IN_PROGRESS",
+                                                        "endAt": "2026-10-13T18:00:00",
+                                                        "canSubmit": true
+                                                    }
                                                 },
                                                 {
                                                     "id": 2,
                                                     "week": 2,
                                                     "name": "미니 디프콘",
-                                                    "date": "2025-08-09T14:00:00.000000",
+                                                    "date": "2026-10-17T14:00:00",
                                                     "place": null,
-                                                    "isOnline": true
+                                                    "isOnline": true,
+                                                    "feedback": null
                                                 }
                                             ]
                                         }
@@ -132,23 +138,29 @@ interface SessionQueryApi {
                         schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
-                                name = "세션 상세 조회 성공 응답",
+                                name = "세션 상세 조회 성공 응답 (피드백 ON)",
                                 value = """
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "GLOBAL-200-1",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "id": 1,
                                             "week": 1,
-                                            "name": "디프만 17기 OT",
+                                            "name": "디프만 19기 OT",
                                             "place": "공덕 프론트원",
                                             "isOnline": false,
-                                            "date": "2025-08-02T14:00:00.000000",
-                                            "attendanceStart": "2025-08-02T14:00:00.000000",
-                                            "lateStart": "2025-08-02T14:10:00.000000",
-                                            "absentStart": "2025-08-02T14:20:00.000000",
-                                            "attendanceCode": "3821"
+                                            "date": "2026-10-10T14:00:00",
+                                            "attendanceStart": "2026-10-10T14:00:00",
+                                            "lateStart": "2026-10-10T14:16:00",
+                                            "absentStart": "2026-10-10T14:31:00",
+                                            "attendanceCode": "3821",
+                                            "feedback": {
+                                                "status": "SCHEDULED",
+                                                "startAt": "2026-10-10T18:00:00",
+                                                "endAt": "2026-10-13T18:00:00",
+                                                "pushEnabled": true
+                                            }
                                         }
                                     }
                                 """,
