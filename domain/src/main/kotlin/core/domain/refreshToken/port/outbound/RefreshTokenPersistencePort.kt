@@ -8,6 +8,9 @@ interface RefreshTokenPersistencePort {
 
     fun findByTokenHash(tokenHash: String): RefreshToken?
 
+    /** 회원 행 잠금 다음에 토큰의 최신 상태를 잠금 조회한다. */
+    fun lockByTokenHash(tokenHash: String): RefreshToken?
+
     fun findAllByMemberId(memberId: Long): List<RefreshToken>
 
     fun markRotated(

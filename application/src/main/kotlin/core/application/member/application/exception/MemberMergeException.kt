@@ -1,0 +1,7 @@
+package core.application.member.application.exception
+
+import core.application.common.exception.BusinessException
+
+class InvalidMemberMergeException : BusinessException(MemberExceptionCode.INVALID_MEMBER_MERGE)
+
+class MemberOAuthConflictException : BusinessException(MemberExceptionCode.MEMBER_OAUTH_CONFLICT)

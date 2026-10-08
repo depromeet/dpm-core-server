@@ -44,14 +44,14 @@ import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.SENT_ANNOUNCEMENT_NOTIFICATIONS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
+import org.jooq.impl.DSL.`when`
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.inline
-import org.jooq.impl.DSL.noCondition
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
+import org.jooq.impl.DSL.noCondition
 import org.jooq.impl.DSL.selectOne
-import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -61,6 +61,25 @@ class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val dsl: DSLContext,
 ) : MemberPersistencePort {
+    override fun softDeleteMembers(memberIds: List<Long>) {
+        if (memberIds.isEmpty()) return
+        dsl.update(MEMBERS)
+            .set(MEMBERS.STATUS, MemberStatus.WITHDRAWN.name)
+            .set(MEMBERS.DELETED_AT, LocalDateTime.now(ZoneId.of("UTC")))
+            .where(MEMBERS.MEMBER_ID.`in`(memberIds))
+            .execute()
+    }
+
+    override fun isLoginAvailable(memberId: Long): Boolean =
+        dsl.fetchExists(
+            dsl.selectOne().from(MEMBERS)
+                .where(
+                    MEMBERS.MEMBER_ID.eq(memberId),
+                    MEMBERS.DELETED_AT.isNull,
+                    MEMBERS.STATUS.ne(MemberStatus.WITHDRAWN.name),
+                ),
+        )
+
     override fun lockApprovalTargets(memberIds: List<Long>): List<MemberApprovalTarget> {
         if (memberIds.isEmpty()) return emptyList()
         val lockedMembers =

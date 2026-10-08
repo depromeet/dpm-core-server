@@ -12,6 +12,9 @@ import core.application.security.properties.TokenProperties
 import core.domain.authorization.aggregate.Role
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.member.enums.LoginMethod
+import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.refreshToken.aggregate.RefreshToken
@@ -20,6 +23,8 @@ import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import java.time.Instant
@@ -145,6 +150,21 @@ class RefreshTokenServiceTest {
             .isInstanceOf(TokenInvalidException::class.java)
     }
 
+    @Test
+    fun `삭제 회원은 기존 refresh를 회전하거나 지우지 않고 재발급을 거절한다`() {
+        val provider = createProvider()
+        val plainToken = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val original = stored(plainToken)
+        val port = FakeRefreshTokenPersistencePort(original)
+        val service = createService(provider, port, loginAvailable = false)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", plainToken)) }
+        val response = MockHttpServletResponse()
+        assertThatThrownBy { service.reissue(request, response) }.isInstanceOf(TokenInvalidException::class.java)
+        assertThat(port.findAllByMemberId(memberId.value)).containsExactly(original)
+        assertThat(original.isRotated()).isFalse()
+        assertThat(response.getHeaders("Set-Cookie")).isEmpty()
+    }
+
     private fun stored(plainToken: String): RefreshToken {
         val now = Instant.now()
         return RefreshToken(
@@ -160,6 +180,7 @@ class RefreshTokenServiceTest {
     private fun createService(
         provider: JwtTokenProvider,
         port: RefreshTokenPersistencePort,
+        loginAvailable: Boolean = true,
     ): RefreshTokenService {
         val securityProperties = testSecurityProperties()
         return RefreshTokenService(
@@ -169,6 +190,10 @@ class RefreshTokenServiceTest {
             tokenInjector = JwtTokenInjector(TEST_TOKEN_PROPERTIES, securityProperties),
             tokenProvider = provider,
             deviceIdResolver = DeviceIdResolver(securityProperties),
+            members =
+                mock(MemberPersistencePort::class.java).also {
+                    `when`(it.lockApprovalTargets(listOf(memberId.value))).thenReturn(listOf(MemberApprovalTarget(memberId.value, MemberStatus.ACTIVE, emptySet(), !loginAvailable)))
+                },
         )
     }
 
@@ -205,6 +230,8 @@ private class FakeRefreshTokenPersistencePort(
     }
 
     override fun findByTokenHash(tokenHash: String): RefreshToken? = store.firstOrNull { it.tokenHash == tokenHash }
+
+    override fun lockByTokenHash(tokenHash: String): RefreshToken? = findByTokenHash(tokenHash)
 
     override fun findAllByMemberId(memberId: Long): List<RefreshToken> = store.filter { it.memberId.value == memberId }
 
