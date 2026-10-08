@@ -89,6 +89,7 @@ import java.util.concurrent.atomic.AtomicLong
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(
+    core.application.attendance.application.service.AttendanceGraduationEvaluator::class,
     MemberRepository::class,
     MemberRoleRepository::class,
     MemberTeamRepository::class,
@@ -110,6 +111,8 @@ import java.util.concurrent.atomic.AtomicLong
     AfterPartyInviteeRepository::class,
 )
 class MemberApprovalMySqlIntegrationTest {
+    @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
+
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var service: MemberApprovalService

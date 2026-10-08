@@ -14,7 +14,10 @@ class MemberActivatedEventListener(
 ) {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(
+        propagation = Propagation.REQUIRES_NEW,
+        isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED,
+    )
     fun handleMemberActivatedEvent(memberActivatedEvent: MemberActivatedEvent) {
         initializer.initialize(memberActivatedEvent.memberId, memberActivatedEvent.cohortId)
     }

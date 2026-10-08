@@ -16,13 +16,14 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class MemberAdmissionService(
     private val members: MemberPersistencePort,
     private val events: MemberAdmissionEventPersistencePort,
     private val cohorts: CohortQueryUseCase,
     private val memberCohorts: MemberCohortService,
 ) {
+    @TrackMemberBadges
     fun reject(memberId: Long) {
         val target = lockTarget(memberId)
         val cohortId = cohorts.getActiveCohortId().value
@@ -35,6 +36,7 @@ class MemberAdmissionService(
         members.updateManagementFields(listOf(memberId), false, null, MemberStatus.REJECTED, emptySet())
     }
 
+    @TrackMemberBadges
     fun reapply(memberId: Long) {
         val target = lockTarget(memberId)
         if (target.status == MemberStatus.PENDING) return

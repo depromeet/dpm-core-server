@@ -33,11 +33,8 @@ enum class MemberExceptionCode(
     MEMBER_ADMISSION_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-13", "가입 반려와 재신청은 전용 API를 사용해주세요"),
     INVALID_MEMBER_MERGE(HttpStatus.BAD_REQUEST, "MEMBER-400-21", "현재 기수 또는 기수 없는 서로 다른 소셜 가입 대기 계정만 통합할 수 있습니다"),
     MEMBER_OAUTH_CONFLICT(HttpStatus.CONFLICT, "MEMBER-409-21", "로그인 수단이 충돌하거나 소유 계정이 변경되었습니다. 다시 로그인해주세요"),
-    MEMBER_MANAGEMENT_NOT_IMPLEMENTED(
-        HttpStatus.NOT_IMPLEMENTED,
-        "MEMBER-501-01",
-        "명세만 제공하는 API입니다. 기능 구현 후 사용할 수 있습니다",
-    ),
+    INVALID_MEMBER_BADGE_VERSION(HttpStatus.BAD_REQUEST, "MEMBER-400-31", "NEW 확인 버전이 올바르지 않습니다"),
+    MEMBER_BADGE_COHORT_CHANGED(HttpStatus.CONFLICT, "MEMBER-409-31", "관리 기수가 변경되었습니다. 다시 조회해주세요"),
     ;
 
     override fun getStatus(): HttpStatus = status

@@ -14,7 +14,10 @@ import org.springframework.transaction.annotation.Transactional
 class CohortQueryService(
     private val cohortPersistencePort: CohortPersistencePort,
 ) : CohortQueryUseCase {
-    fun getActiveCohort(): Cohort = cohortPersistencePort.findActive() ?: getLatestCohortByMaxValue()
+    fun getActiveCohort(): Cohort = findCurrentCohortOrNull() ?: throw CohortNotFoundException()
+
+    /** An installation without a numeric or active cohort is a normal pre-initialization state. */
+    fun findCurrentCohortOrNull(): Cohort? = cohortPersistencePort.findActive() ?: getLatestCohortByMaxValue()
 
     fun getLatestCohort(): Cohort = getActiveCohort()
 
@@ -49,11 +52,10 @@ class CohortQueryService(
 
     fun isNumericCohortValue(value: String): Boolean = NUMERIC_COHORT_REGEX.matches(value.trim())
 
-    private fun getLatestCohortByMaxValue(): Cohort =
+    private fun getLatestCohortByMaxValue(): Cohort? =
         cohortPersistencePort.findAll()
             .maxByOrNull { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
             ?.takeIf { isNumericCohortValue(it.value) }
-            ?: throw CohortNotFoundException()
 
     private fun toNumericCohortValue(value: String): Int? =
         value.trim().takeIf { NUMERIC_COHORT_REGEX.matches(it) }?.toIntOrNull()

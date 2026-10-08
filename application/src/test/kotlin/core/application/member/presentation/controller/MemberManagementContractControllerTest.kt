@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import core.application.common.configuration.SwaggerConfig
 import core.application.common.exception.GlobalExceptionHandler
 import core.application.member.application.service.MemberAdmissionService
+import core.application.member.application.service.MemberBadgeService
 import core.application.member.application.service.MemberDeletionService
+import core.application.member.presentation.response.MemberBadgeCard
+import core.application.member.presentation.response.MemberBadgeResponse
+import core.application.member.presentation.response.MemberBadgesResponse
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -15,10 +19,10 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.springdoc.core.configuration.SpringDocConfiguration
 import org.springdoc.core.properties.SpringDocConfigProperties
 import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration
@@ -60,13 +64,18 @@ class MemberManagementContractControllerTest {
     @Autowired lateinit var mapper: ObjectMapper
 
     @Autowired lateinit var admissionService: MemberAdmissionService
+
+    @Autowired lateinit var badgeService: MemberBadgeService
+
     @Autowired lateinit var members: MemberPersistencePort
 
     private lateinit var mvc: MockMvc
 
     @BeforeEach
     fun setup() {
-        reset(admissionService)
+        reset(admissionService, badgeService)
+        `when`(badgeService.getBadges()).thenReturn(MemberBadgesResponse(19, listOf(MemberBadgeResponse(MemberBadgeCard.PENDING, true, 3))))
+        `when`(badgeService.acknowledge(MemberBadgeCard.PENDING, 19, 3)).thenReturn(MemberBadgeResponse(MemberBadgeCard.PENDING, false, 3))
         reset(members)
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19))))
         `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.INACTIVE, setOf(18))))
@@ -77,20 +86,20 @@ class MemberManagementContractControllerTest {
     }
 
     @Test
-    fun `권한이 있어도 명세 전용 API는 성공을 반환하지 않는다`() {
-        stubEndpoints().forEach { request ->
-            mvc.perform(authenticated(request, "create:member", "delete:member", "read:member"))
-                .andExpect(status().isNotImplemented)
-                .andExpect(jsonPath("$.code").value("MEMBER-501-01"))
-                .andExpect(jsonPath("$.data").doesNotExist())
-        }
+    fun `NEW 조회와 확인은 서비스를 호출하고 상태를 반환한다`() {
+        mvc.perform(authenticated(get("/v3/members/badges"), "read:member"))
+            .andExpect(status().isOk).andExpect(jsonPath("$.data.cohortId").value(19))
+            .andExpect(jsonPath("$.data.cards[0].hasNew").value(true))
+        mvc.perform(authenticated(json(post(BADGE_PATH), BADGE_BODY), "read:member"))
+            .andExpect(status().isOk).andExpect(jsonPath("$.data.hasNew").value(false))
+        verify(badgeService).acknowledge(MemberBadgeCard.PENDING, 19, 3)
     }
 
     @Test
     fun `통합 권한이 있으면 서비스에 두 ID를 전달한다`() {
         mvc.perform(authenticated(json(post("/v3/members/merge"), MERGE_BODY), "create:member", "delete:member"))
             .andExpect(status().isOk)
-        org.mockito.Mockito.verify(context.getBean(core.application.member.application.service.MemberMergeService::class.java)).mergeAndApprove(1, 2)
+        verify(context.getBean(core.application.member.application.service.MemberMergeService::class.java)).mergeAndApprove(1, 2)
     }
 
     @Test
@@ -165,7 +174,7 @@ class MemberManagementContractControllerTest {
     }
 
     @Test
-    fun `생성된 OpenAPI에 경로와 정상 응답 및 미구현 응답이 모두 포함된다`() {
+    fun `생성된 OpenAPI에 실제 경로와 정상 응답이 포함되고 미구현 응답은 없다`() {
         val result = mvc.perform(get("/v3/api-docs")).andExpect(status().isOk).andReturn()
         val document = mapper.readTree(result.response.contentAsString)
         val expected =
@@ -180,16 +189,8 @@ class MemberManagementContractControllerTest {
             )
         expected.forEach { (path, method) ->
             val operation = document["paths"][path][method]
-            if (method == "delete" || path == "/v3/members/merge" || path.endsWith("/rejection") || path.endsWith("/reapplication")) {
-                assertFalse(operation["responses"].has("501"), path)
-                assertTrue(operation["responses"].has("200"), path)
-                return@forEach
-            }
-            assertTrue(operation["responses"].has("501"), path)
-            assertTrue(operation["responses"]["200"].has("content"), path)
-            val errorSchema = operation["responses"]["501"].path("content").elements().asSequence().firstOrNull()?.path("schema")
-            assertTrue(errorSchema != null && !errorSchema.isMissingNode, "$path: ${operation["responses"]["501"]}")
-            assertFalse(errorSchema.toString().contains("MemberBadge"), "$path: $errorSchema")
+            assertFalse(operation["responses"].has("501"), path)
+            assertTrue(operation["responses"].has("200"), path)
         }
         assertFalse(document["security"].isEmpty)
         val schemas = document["components"]["schemas"]
@@ -226,10 +227,7 @@ class MemberManagementContractControllerTest {
         mvc.perform(authenticated(delete("/v3/members/1"), "delete:member")).andExpect(status().isNotFound)
     }
 
-    private fun endpoints(): List<MockHttpServletRequestBuilder> = stubEndpoints() + listOf(
-        json(post("/v3/members/merge"), MERGE_BODY), post("/v3/members/1/rejection"), post("/v3/members/me/reapplication"),
-        delete("/v3/members/1"), json(delete("/v3/members/bulk"), """{"memberIds":[1,2]}"""),
-    )
+    private fun endpoints(): List<MockHttpServletRequestBuilder> = stubEndpoints() + listOf(post("/v3/members/1/rejection"), post("/v3/members/me/reapplication"), json(post("/v3/members/merge"), MERGE_BODY), delete("/v3/members/1"), json(delete("/v3/members/bulk"), """{"memberIds":[1,2]}"""))
 
     private fun stubEndpoints(): List<MockHttpServletRequestBuilder> =
         listOf(
@@ -268,11 +266,14 @@ class MemberManagementContractControllerTest {
     )
     @ImportAutoConfiguration(JacksonAutoConfiguration::class)
     class Config : WebMvcConfigurer {
+        @Bean fun badgeService(): MemberBadgeService = mock(MemberBadgeService::class.java)
+
         @Bean
-        fun mergeService(): core.application.member.application.service.MemberMergeService = org.mockito.Mockito.mock(core.application.member.application.service.MemberMergeService::class.java)
+        fun mergeService(): core.application.member.application.service.MemberMergeService = mock(core.application.member.application.service.MemberMergeService::class.java)
 
         @Bean
         fun admissionService(): MemberAdmissionService = mock(MemberAdmissionService::class.java)
+
         @Bean fun members(): MemberPersistencePort = mock(MemberPersistencePort::class.java)
 
         override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
