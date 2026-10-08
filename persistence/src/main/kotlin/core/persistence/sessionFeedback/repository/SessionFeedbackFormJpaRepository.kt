@@ -13,4 +13,8 @@ interface SessionFeedbackFormJpaRepository : JpaRepository<SessionFeedbackFormEn
         startAt: Instant,
         endAt: Instant,
     ): List<SessionFeedbackFormEntity>
+
+    fun findAllByStartAtLessThanEqualAndPushEnabledIsTrueAndPushSentAtIsNullAndDeletedAtIsNullOrderByStartAtAsc(
+        startAt: Instant,
+    ): List<SessionFeedbackFormEntity>
 }
