@@ -3,8 +3,8 @@ package core.application.member.presentation.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import core.application.common.configuration.SwaggerConfig
 import core.application.common.exception.GlobalExceptionHandler
-import core.application.member.application.service.MemberDeletionService
 import core.application.member.application.service.MemberAdmissionService
+import core.application.member.application.service.MemberDeletionService
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -59,14 +59,15 @@ class MemberManagementContractControllerTest {
 
     @Autowired lateinit var mapper: ObjectMapper
 
-    @Autowired lateinit var members: MemberPersistencePort
     @Autowired lateinit var admissionService: MemberAdmissionService
+    @Autowired lateinit var members: MemberPersistencePort
 
     private lateinit var mvc: MockMvc
 
     @BeforeEach
     fun setup() {
-        reset(members, admissionService)
+        reset(admissionService)
+        reset(members)
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19))))
         `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.INACTIVE, setOf(18))))
         mvc =
@@ -83,6 +84,13 @@ class MemberManagementContractControllerTest {
                 .andExpect(jsonPath("$.code").value("MEMBER-501-01"))
                 .andExpect(jsonPath("$.data").doesNotExist())
         }
+    }
+
+    @Test
+    fun `통합 권한이 있으면 서비스에 두 ID를 전달한다`() {
+        mvc.perform(authenticated(json(post("/v3/members/merge"), MERGE_BODY), "create:member", "delete:member"))
+            .andExpect(status().isOk)
+        org.mockito.Mockito.verify(context.getBean(core.application.member.application.service.MemberMergeService::class.java)).mergeAndApprove(1, 2)
     }
 
     @Test
@@ -172,9 +180,9 @@ class MemberManagementContractControllerTest {
             )
         expected.forEach { (path, method) ->
             val operation = document["paths"][path][method]
-            if (method == "delete" || path.endsWith("/rejection") || path.endsWith("/reapplication")) {
+            if (method == "delete" || path == "/v3/members/merge" || path.endsWith("/rejection") || path.endsWith("/reapplication")) {
                 assertFalse(operation["responses"].has("501"), path)
-                assertTrue(operation["responses"]["200"].has("content"), path)
+                assertTrue(operation["responses"].has("200"), path)
                 return@forEach
             }
             assertTrue(operation["responses"].has("501"), path)
@@ -218,17 +226,13 @@ class MemberManagementContractControllerTest {
         mvc.perform(authenticated(delete("/v3/members/1"), "delete:member")).andExpect(status().isNotFound)
     }
 
-    private fun endpoints(): List<MockHttpServletRequestBuilder> =
-        stubEndpoints() + listOf(
-            post("/v3/members/1/rejection"),
-            post("/v3/members/me/reapplication"),
-            delete("/v3/members/1"),
-            json(delete("/v3/members/bulk"), """{"memberIds":[1,2]}"""),
-        )
+    private fun endpoints(): List<MockHttpServletRequestBuilder> = stubEndpoints() + listOf(
+        json(post("/v3/members/merge"), MERGE_BODY), post("/v3/members/1/rejection"), post("/v3/members/me/reapplication"),
+        delete("/v3/members/1"), json(delete("/v3/members/bulk"), """{"memberIds":[1,2]}"""),
+    )
 
     private fun stubEndpoints(): List<MockHttpServletRequestBuilder> =
         listOf(
-            json(post("/v3/members/merge"), MERGE_BODY),
             get("/v3/members/badges"),
             json(post(BADGE_PATH), BADGE_BODY),
         )
@@ -264,9 +268,12 @@ class MemberManagementContractControllerTest {
     )
     @ImportAutoConfiguration(JacksonAutoConfiguration::class)
     class Config : WebMvcConfigurer {
-        @Bean fun members(): MemberPersistencePort = mock(MemberPersistencePort::class.java)
+        @Bean
+        fun mergeService(): core.application.member.application.service.MemberMergeService = org.mockito.Mockito.mock(core.application.member.application.service.MemberMergeService::class.java)
+
         @Bean
         fun admissionService(): MemberAdmissionService = mock(MemberAdmissionService::class.java)
+        @Bean fun members(): MemberPersistencePort = mock(MemberPersistencePort::class.java)
 
         override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
             resolvers.add(CurrentMemberIdArgumentResolver())
