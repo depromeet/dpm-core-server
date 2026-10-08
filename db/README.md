@@ -1,7 +1,16 @@
-# DB 스키마 관리 (`db/pending`)
+# DB 변경 관리 (`db/pending`)
 
 Flyway/Liquibase 같은 자동 마이그레이션은 쓰지 않는다.  
-**JPA 엔티티 + 수동 SQL**로 스키마를 맞춘다.
+**JPA 엔티티 + 수동 SQL**로 DB를 맞춘다.
+
+`db/pending`에는 **DDL뿐 아니라 DML도** 들어갈 수 있다.
+
+| 종류 | 예시 |
+|------|------|
+| DDL | 테이블/컬럼/인덱스 생성·변경 (`CREATE`, `ALTER`, …) |
+| DML | 시드·데이터 보정 (`INSERT`, `UPDATE`, …) — 예: 권한 시드 |
+
+한 파일에 DDL과 DML을 같이 넣어도 되고, 목적별로 파일을 나눠도 된다.
 
 ## 폴더
 
@@ -11,7 +20,7 @@ Flyway/Liquibase 같은 자동 마이그레이션은 쓰지 않는다.
 | `db/release/{YYMMDDHHMM}/` | 적용이 끝난 SQL을 옮기는 곳 |
 
 파일명: `YYMMDDHHMM_짧은설명.sql`  
-예: `2610062200_session_feedback.sql`
+예: `2610062200_session_feedback.sql`, `2609142320_role_system_seed.sql`
 
 ## 환경별 ddl-auto
 
@@ -35,9 +44,9 @@ Flyway/Liquibase 같은 자동 마이그레이션은 쓰지 않는다.
 
 - 상단 헤더: 날짜·제목 / 목적 / 선행 / 후행 / 검증 / 주의
 - `[1]`, `[2]` 구역 + `START TRANSACTION` … `COMMIT`
-- **재실행 안전하게**: `CREATE TABLE IF NOT EXISTS`, 또는 `information_schema` 확인 후 `PREPARE`/`EXECUTE`
+- **재실행 안전하게**: DDL은 `CREATE TABLE IF NOT EXISTS` / `information_schema` 확인 후 `PREPARE`/`EXECUTE`, DML은 이미 있는지 확인 후 insert·update
 - 하단 **VERIFY**(읽기 전용) 쿼리
-- 컬럼 타입·이름은 엔티티와 **정확히** 일치 (`validate` 통과 조건)
+- DDL 시 컬럼 타입·이름은 엔티티와 **정확히** 일치 (`validate` 통과 조건)
 - 가능하면 기존 테이블 변경보다 **신규 테이블**로 범위 한정
 
 ## 배포 시 체크
