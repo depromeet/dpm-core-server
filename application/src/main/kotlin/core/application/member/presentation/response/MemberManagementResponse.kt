@@ -19,7 +19,7 @@ data class MemberManagementResponse(
 ) {
     @Schema(name = "MemberManagementTotals")
     data class Summary(
-        @field:Schema(description = "제목 옆 현재 기수 총원. 디퍼+운영진+코어 합계, 무소속 대기자 제외")
+        @field:Schema(description = "제목 옆 현재 기수 승인 회원 수. 타입 미배정 포함, 가입 대기자 제외")
         val totalMemberCount: Int,
         val deeperCount: Int,
         val organizerCount: Int,
