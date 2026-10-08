@@ -14,6 +14,8 @@ import core.application.session.presentation.response.SessionSelectorItemRespons
 import core.application.session.presentation.response.SessionSelectorResponse
 import core.application.session.presentation.response.SessionWeekResponse
 import core.application.session.presentation.response.SessionWeeksResponse
+import core.application.sessionFeedback.presentation.response.SessionFeedbackSettingsResponse
+import core.application.sessionFeedback.presentation.response.SessionListFeedbackResponse
 import core.domain.attendance.aggregate.Attendance
 import core.domain.session.aggregate.Session
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
@@ -23,6 +25,8 @@ import core.domain.session.port.inbound.query.SessionSelectorQueryModel
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
 import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
+import core.domain.sessionFeedback.aggregate.SessionFeedbackForm
+import java.time.Clock
 import java.time.LocalDateTime
 
 object SessionMapper {
@@ -42,26 +46,35 @@ object SessionMapper {
             )
         }
 
-    fun toSessionListResponse(sessions: List<Session>): SessionListResponse =
+    fun toSessionListResponse(
+        sessions: List<Session>,
+        feedbackBySessionId: Map<Long, SessionListFeedbackResponse> = emptyMap(),
+    ): SessionListResponse =
         sessions.run {
             if (isEmpty()) return SessionListResponse(sessions = emptyList())
 
             SessionListResponse(
                 sessions =
                     map {
+                        val sessionId = it.id!!.value
                         SessionListDetailResponse(
-                            id = it.id!!.value,
+                            id = sessionId,
                             week = it.week,
                             name = it.eventName,
                             date = instantToLocalDateTime(it.date),
                             place = it.place,
                             isOnline = it.isOnline,
+                            feedback = feedbackBySessionId[sessionId],
                         )
                     },
             )
         }
 
-    fun toSessionDetailResponse(session: Session): SessionDetailResponse =
+    fun toSessionDetailResponse(
+        session: Session,
+        feedbackForm: SessionFeedbackForm?,
+        clock: Clock,
+    ): SessionDetailResponse =
         with(session) {
             SessionDetailResponse(
                 id = id!!.value,
@@ -75,6 +88,7 @@ object SessionMapper {
                 lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
                 absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
                 attendanceCode = session.attendancePolicy.attendanceCode,
+                feedback = feedbackForm?.let { SessionFeedbackSettingsResponse.of(it, clock) },
             )
         }
 
@@ -118,6 +132,9 @@ object SessionMapper {
             attendanceStart = localDateTimeToInstant(request.attendanceStart),
             lateStart = localDateTimeToInstant(request.lateStart),
             absentStart = localDateTimeToInstant(request.absentStart),
+            feedbackEnabled = request.feedbackEnabled ?: false,
+            feedbackStartAt = localDateTimeToInstant(request.feedbackStartAt),
+            feedbackPushEnabled = request.feedbackPushEnabled ?: true,
         )
 
     fun toSessionUpdateCommand(request: SessionUpdateRequest) =
@@ -131,6 +148,9 @@ object SessionMapper {
             attendanceStart = localDateTimeToInstant(request.attendanceStart),
             lateStart = localDateTimeToInstant(request.lateStart),
             absentStart = localDateTimeToInstant(request.absentStart),
+            feedbackEnabled = request.feedbackEnabled,
+            feedbackStartAt = localDateTimeToInstant(request.feedbackStartAt),
+            feedbackPushEnabled = request.feedbackPushEnabled,
         )
 
     fun toSessionWeeksResponse(model: List<SessionWeekQueryModel>): SessionWeeksResponse {

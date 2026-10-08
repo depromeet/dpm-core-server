@@ -12,19 +12,28 @@ import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.application.session.presentation.response.SessionSelectorResponse
 import core.application.session.presentation.response.SessionWeeksResponse
+import core.application.sessionFeedback.application.service.SessionFeedbackFormQueryService
+import core.application.sessionFeedback.application.service.SessionFeedbackListQueryService
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.vo.SessionId
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.authentication.AnonymousAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.Clock
 import java.time.LocalDateTime
 
 @RestController
 class SessionQueryController(
     private val sessionQueryService: SessionQueryService,
+    private val sessionFeedbackFormQueryService: SessionFeedbackFormQueryService,
+    private val sessionFeedbackListQueryService: SessionFeedbackListQueryService,
+    private val clock: Clock,
 ) : SessionQueryApi {
     @PreAuthorize("permitAll()")
     @GetMapping("/v1/sessions/next")
@@ -40,12 +49,22 @@ class SessionQueryController(
     @PreAuthorize("permitAll()")
     @GetMapping("/v1/sessions")
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
-        val response =
-            sessionQueryService
-                .getAllCurrentCohortSessions()
-                .let { SessionMapper.toSessionListResponse(it) }
+        val sessions = sessionQueryService.getAllCurrentCohortSessions()
+        val feedbackBySessionId = sessionFeedbackListQueryService.buildFor(sessions, currentMemberIdOrNull())
+        val response = SessionMapper.toSessionListResponse(sessions, feedbackBySessionId)
 
         return CustomResponse.ok(response)
+    }
+
+    private fun currentMemberIdOrNull(): MemberId? {
+        val authentication: Authentication? = SecurityContextHolder.getContext().authentication
+        if (authentication == null ||
+            authentication is AnonymousAuthenticationToken ||
+            authentication.name == "anonymousUser"
+        ) {
+            return null
+        }
+        return runCatching { MemberId(authentication.name.toLong()) }.getOrNull()
     }
 
     @PreAuthorize("hasAuthority('create:session')")
@@ -53,10 +72,9 @@ class SessionQueryController(
     override fun getSessionById(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<SessionDetailResponse> {
-        val response =
-            sessionQueryService
-                .getSessionById(sessionId)
-                .let { SessionMapper.toSessionDetailResponse(it) }
+        val session = sessionQueryService.getSessionById(sessionId)
+        val feedbackForm = sessionFeedbackFormQueryService.findBySessionId(sessionId)
+        val response = SessionMapper.toSessionDetailResponse(session, feedbackForm, clock)
 
         return CustomResponse.ok(response)
     }
