@@ -44,7 +44,12 @@ class SessionFeedbackMyQueryService(
             startAt = form?.startAt?.let(::instantToLocalDateTime),
             endAt = form?.endAt?.let(::instantToLocalDateTime),
             myStatus = myStatus,
-            questions = if (myStatus == SessionFeedbackMyStatus.AVAILABLE) SessionFeedbackQuestionsResponse.DEFAULT else null,
+            questions =
+                if (myStatus == SessionFeedbackMyStatus.AVAILABLE) {
+                    SessionFeedbackQuestionsResponse.forSession(session.eventName)
+                } else {
+                    null
+                },
         )
     }
 
