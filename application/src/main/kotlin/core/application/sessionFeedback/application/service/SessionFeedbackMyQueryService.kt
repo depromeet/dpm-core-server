@@ -1,9 +1,7 @@
 package core.application.sessionFeedback.application.service
 
-import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.sessionFeedback.presentation.response.SessionFeedbackMyResponse
-import core.application.sessionFeedback.presentation.response.SessionFeedbackQuestionsResponse
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.member.vo.MemberId
@@ -35,21 +33,9 @@ class SessionFeedbackMyQueryService(
         val form = feedbackFormPersistencePort.findBySessionId(sessionId.value)
         val now = clock.instant()
 
-        val myStatus = resolveStatus(form, sessionId, memberId, now)
-
         return SessionFeedbackMyResponse(
-            sessionId = session.id?.value ?: sessionId.value,
-            week = session.week,
             sessionName = session.eventName,
-            startAt = form?.startAt?.let(::instantToLocalDateTime),
-            endAt = form?.endAt?.let(::instantToLocalDateTime),
-            myStatus = myStatus,
-            questions =
-                if (myStatus == SessionFeedbackMyStatus.AVAILABLE) {
-                    SessionFeedbackQuestionsResponse.DEFAULT
-                } else {
-                    null
-                },
+            myStatus = resolveStatus(form, sessionId, memberId, now),
         )
     }
 
@@ -59,13 +45,13 @@ class SessionFeedbackMyQueryService(
         memberId: MemberId,
         now: Instant,
     ): SessionFeedbackMyStatus {
-        if (form == null) return SessionFeedbackMyStatus.DISABLED
+        if (form == null) return SessionFeedbackMyStatus.NOT_TARGET
         if (!isTarget(sessionId, memberId)) return SessionFeedbackMyStatus.NOT_TARGET
         if (feedbackPersistencePort.existsBySessionIdAndMemberId(sessionId.value, memberId.value)) {
             return SessionFeedbackMyStatus.SUBMITTED
         }
-        if (now.isBefore(form.startAt)) return SessionFeedbackMyStatus.BEFORE_START
-        if (!now.isBefore(form.endAt)) return SessionFeedbackMyStatus.CLOSED
+        if (!now.isBefore(form.endAt)) return SessionFeedbackMyStatus.EXPIRED
+        if (now.isBefore(form.startAt)) return SessionFeedbackMyStatus.NOT_TARGET
         return SessionFeedbackMyStatus.AVAILABLE
     }
 
