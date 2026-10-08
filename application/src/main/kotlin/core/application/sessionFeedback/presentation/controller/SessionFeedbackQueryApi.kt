@@ -91,8 +91,50 @@ interface SessionFeedbackQueryApi {
     @Operation(
         summary = "홈 카드용 pending 피드백 조회",
         description =
-            "지금 작성 가능한(canSubmit=true) 세션 1건을 반환한다. 여러 건이면 endAt 이 가장 빠른 것. " +
+            "지금 작성 가능한 세션 1건을 반환한다. 여러 건이면 endAt 이 가장 빠른 것. " +
                 "없으면 data 키가 생략된 200 응답이 내려간다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = CustomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "작성 가능 세션 있음",
+                                value = """
+                                    {
+                                      "status": "OK",
+                                      "message": "요청에 성공했습니다",
+                                      "code": "GLOBAL-200-01",
+                                      "data": {
+                                        "sessionId": 1,
+                                        "week": 1,
+                                        "sessionName": "디프만 19기 OT",
+                                        "endAt": "2026-10-11T00:00:00"
+                                      }
+                                    }
+                                """,
+                            ),
+                            ExampleObject(
+                                name = "작성 가능 세션 없음",
+                                value = """
+                                    {
+                                      "status": "OK",
+                                      "message": "요청에 성공했습니다",
+                                      "code": "GLOBAL-200-01"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
     )
     fun getPendingFeedback(memberId: MemberId): CustomResponse<SessionFeedbackPendingResponse>
 }
