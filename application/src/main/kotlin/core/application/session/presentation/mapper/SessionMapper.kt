@@ -144,9 +144,9 @@ object SessionMapper {
             attendanceStart = localDateTimeToInstant(request.attendanceStart),
             lateStart = localDateTimeToInstant(request.lateStart),
             absentStart = localDateTimeToInstant(request.absentStart),
-            feedbackEnabled = request.feedbackEnabled ?: false,
+            feedbackEnabled = request.feedbackEnabled,
             feedbackStartAt = localDateTimeToInstant(request.feedbackStartAt),
-            feedbackPushEnabled = request.feedbackPushEnabled ?: true,
+            feedbackPushEnabled = request.feedbackPushEnabled,
         )
 
     fun toSessionWeeksResponse(model: List<SessionWeekQueryModel>): SessionWeeksResponse {
