@@ -29,4 +29,16 @@ class SessionFeedbackFormCommandServiceTest {
         assertThat(form.endAt).isEqualTo(restartAt.plus(Duration.ofHours(72)))
         assertThat(form.pushEnabled).isFalse()
     }
+
+    @Test
+    fun `수정에서 feedbackEnabled를 생략하면 기존 피드백 설정을 유지한다`() {
+        val startAt = now.plus(Duration.ofHours(1))
+        service.applyOnSessionCreate(sessionId, true, startAt, true)
+
+        service.applyOnSessionUpdate(sessionId, null, null, false)
+
+        val form = forms.all().single()
+        assertThat(form.startAt).isEqualTo(startAt)
+        assertThat(form.pushEnabled).isTrue()
+    }
 }

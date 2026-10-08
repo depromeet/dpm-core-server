@@ -39,10 +39,13 @@ class SessionFeedbackFormCommandService(
 
     fun applyOnSessionUpdate(
         sessionId: SessionId,
-        feedbackEnabled: Boolean,
+        feedbackEnabled: Boolean?,
         feedbackStartAt: Instant?,
         feedbackPushEnabled: Boolean,
     ) {
+        // null 이면 피드백 ON/OFF·일정을 건드리지 않는다. false 일 때만 끈다.
+        if (feedbackEnabled == null) return
+
         val now = clock.instant()
         val existing = feedbackFormPersistencePort.findBySessionId(sessionId.value)
 

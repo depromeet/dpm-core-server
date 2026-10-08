@@ -119,7 +119,7 @@ class SessionCommandService(
             sessionId = command.sessionId,
             feedbackEnabled = command.feedbackEnabled,
             feedbackStartAt = command.feedbackStartAt,
-            feedbackPushEnabled = command.feedbackPushEnabled,
+            feedbackPushEnabled = command.feedbackPushEnabled ?: true,
         )
 
         val attendanceTimesChanged =
