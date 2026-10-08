@@ -22,22 +22,15 @@ Flyway/Liquibase 같은 자동 마이그레이션은 쓰지 않는다.
 파일명: `YYMMDDHHMM_짧은설명.sql`  
 예: `2610062200_session_feedback.sql`, `2609142320_role_system_seed.sql`
 
-## 환경별 ddl-auto
+## ddl-auto (dev / prod)
 
-| 환경 | 설정 | 의미 |
-|------|------|------|
-| local | `update` | 엔티티 기준으로 테이블/컬럼 자동 생성 |
-| dev / prod | `validate` | 엔티티 ≠ DB면 **서버 기동 실패** |
-
-→ **dev/prod는 앱 배포 전에 SQL을 먼저 실행**해야 한다.
+dev·prod는 `ddl-auto: validate`다. 엔티티와 DB가 다르면 **서버 기동 실패**하므로, **앱 배포 전에 SQL을 먼저 실행**한다.
 
 ## 작업 흐름
 
-1. **엔티티 추가/변경** (`entity` 모듈)
-2. **로컬 확인** — `local` 프로필로 기동 (`ddl-auto: update`)
-3. **SQL 작성** — `db/pending/YYMMDDHHMM_설명.sql`
-4. PR 머지 전 dev db에 SQL 적용해 sql 이상 없는지 확인 후 PR 머지
-5. 이후 운영 배포 시 pending에 있는 파일들을 prod DB에 적용 후 `db/release/{YYMMDDHHMM}/`로 이동 
+1. **SQL 작성** — `db/pending/YYMMDDHHMM_설명.sql` (DDL·DML 모두 가능)
+2. PR 머지 전 **dev DB에 SQL 적용**해 이상 없는지 확인 후 PR 머지
+3. 운영 배포 시 pending 파일을 **prod DB에 적용**한 뒤 `db/release/{YYMMDDHHMM}/`로 이동
 
 
 ## SQL 작성 규칙
