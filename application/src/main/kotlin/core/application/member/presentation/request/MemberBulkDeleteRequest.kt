@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotEmpty
 data class MemberBulkDeleteRequest(
     @field:NotEmpty
     @field:JsonDeserialize(contentUsing = MemberManagementLongDeserializer::class)
-    @field:Schema(description = "영구 삭제할 멤버 ID 목록. 중복, null, 0 이하 ID는 허용하지 않음", example = "[1,2]")
+    @field:Schema(description = "소프트 삭제할 멤버 ID 목록. 연관 데이터 보존. 중복, null, 0 이하 ID는 허용하지 않음", example = "[1,2]")
     val memberIds: List<Long?>,
 ) {
     @get:JsonIgnore

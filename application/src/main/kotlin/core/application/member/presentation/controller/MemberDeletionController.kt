@@ -20,13 +20,13 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RequestMapping("/v3/members")
 class MemberDeletionController : MemberDeletionApi {
     @PreAuthorize("hasAuthority('delete:member')")
-    @DeleteMapping("/{memberId}/hard-delete")
+    @DeleteMapping("/{memberId}")
     override fun delete(
         @PathVariable memberId: Long,
     ): CustomResponse<Void> = throw MemberManagementNotImplementedException()
 
     @PreAuthorize("hasAuthority('delete:member')")
-    @DeleteMapping("/hard-delete/bulk")
+    @DeleteMapping("/bulk")
     override fun deleteBulk(
         @Valid @RequestBody request: MemberBulkDeleteRequest,
     ): CustomResponse<Void> = throw MemberManagementNotImplementedException()
