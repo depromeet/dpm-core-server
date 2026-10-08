@@ -5,30 +5,14 @@ import core.domain.sessionFeedback.enums.SessionFeedbackAspect
 import core.domain.sessionFeedback.enums.SessionFeedbackSatisfaction
 
 data class SessionFeedbackQuestionsResponse(
-    val satisfaction: SatisfactionQuestion,
-    val likedAspects: AspectQuestion,
-    val improvementAspects: AspectQuestion,
-    val freeComment: FreeCommentQuestion,
+    val satisfaction: List<SatisfactionOption>,
+    val likedAspects: List<AspectOption>,
+    val improvementAspects: List<AspectOption>,
 ) {
-    data class SatisfactionQuestion(
-        val title: String,
-        val required: Boolean = true,
-        val options: List<SatisfactionOption>,
-    )
-
     data class SatisfactionOption(
         val code: SessionFeedbackSatisfaction,
         val score: Int,
         val label: String,
-    )
-
-    data class AspectQuestion(
-        val title: String,
-        val description: String,
-        val required: Boolean = true,
-        val maxSelect: Int = 2,
-        val options: List<AspectOption>,
-        val etcPlaceholder: String,
     )
 
     data class AspectOption(
@@ -38,12 +22,6 @@ data class SessionFeedbackQuestionsResponse(
         val requiresText: Boolean = false,
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         val exclusive: Boolean = false,
-    )
-
-    data class FreeCommentQuestion(
-        val title: String,
-        val placeholder: String,
-        val required: Boolean = false,
     )
 
     companion object {
@@ -67,13 +45,6 @@ data class SessionFeedbackQuestionsResponse(
                 SessionFeedbackAspect.NOTHING to "특별히 없음",
             )
 
-        private const val ASPECT_DESCRIPTION = "최대 2개까지 선택해주세요."
-        private const val LIKED_ETC_PLACEHOLDER = "어떤 부분이 좋았는지 적어주세요."
-        private const val IMPROVEMENT_ETC_PLACEHOLDER = "어떤 부분의 개선이 필요한지 적어주세요."
-        private const val FREE_COMMENT_TITLE = "세션에 대해 더 전하고 싶은 이야기가 있나요?"
-        private const val FREE_COMMENT_PLACEHOLDER =
-            "앞에서 고른 항목의 이유나 그 밖의 의견을 자유롭게 남겨주세요. (선택)"
-
         private val SATISFACTION_OPTIONS: List<SatisfactionOption> =
             SessionFeedbackSatisfaction.entries
                 .sortedByDescending { it.score }
@@ -95,32 +66,11 @@ data class SessionFeedbackQuestionsResponse(
                 )
             }
 
-        fun forSession(sessionName: String): SessionFeedbackQuestionsResponse =
+        val DEFAULT: SessionFeedbackQuestionsResponse =
             SessionFeedbackQuestionsResponse(
-                satisfaction =
-                    SatisfactionQuestion(
-                        title = "$sessionName\n이번 세션에 얼마나 만족하셨나요?",
-                        options = SATISFACTION_OPTIONS,
-                    ),
-                likedAspects =
-                    AspectQuestion(
-                        title = "이번 세션에서 특히 좋았던 부분이 있었나요?",
-                        description = ASPECT_DESCRIPTION,
-                        options = ASPECT_OPTIONS,
-                        etcPlaceholder = LIKED_ETC_PLACEHOLDER,
-                    ),
-                improvementAspects =
-                    AspectQuestion(
-                        title = "이번 세션에서 개선이 필요한 부분이 있었나요?",
-                        description = ASPECT_DESCRIPTION,
-                        options = ASPECT_OPTIONS,
-                        etcPlaceholder = IMPROVEMENT_ETC_PLACEHOLDER,
-                    ),
-                freeComment =
-                    FreeCommentQuestion(
-                        title = FREE_COMMENT_TITLE,
-                        placeholder = FREE_COMMENT_PLACEHOLDER,
-                    ),
+                satisfaction = SATISFACTION_OPTIONS,
+                likedAspects = ASPECT_OPTIONS,
+                improvementAspects = ASPECT_OPTIONS,
             )
     }
 }

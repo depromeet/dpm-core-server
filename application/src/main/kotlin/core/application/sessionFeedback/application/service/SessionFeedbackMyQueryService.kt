@@ -46,7 +46,7 @@ class SessionFeedbackMyQueryService(
             myStatus = myStatus,
             questions =
                 if (myStatus == SessionFeedbackMyStatus.AVAILABLE) {
-                    SessionFeedbackQuestionsResponse.forSession(session.eventName)
+                    SessionFeedbackQuestionsResponse.DEFAULT
                 } else {
                     null
                 },
