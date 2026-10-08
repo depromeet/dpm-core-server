@@ -27,7 +27,7 @@ class SessionFeedbackQueryController(
         CustomResponse.ok(sessionFeedbackMyQueryService.getMyFeedback(sessionId, memberId))
 
     @PreAuthorize("hasAuthority('read:session')")
-    @GetMapping("/v2/sessions/feedbacks/me/pending")
+    @GetMapping("/v1/sessions/feedbacks/me/pending")
     override fun getPendingFeedback(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<SessionFeedbackPendingResponse> =
