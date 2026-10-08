@@ -12,5 +12,7 @@ interface SessionFeedbackFormPersistencePort {
 
     fun findAllInProgressAt(now: Instant): List<SessionFeedbackForm>
 
+    fun findAllPendingPushAt(now: Instant): List<SessionFeedbackForm>
+
     fun delete(form: SessionFeedbackForm)
 }

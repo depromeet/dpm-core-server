@@ -51,6 +51,12 @@ class FakeSessionFeedbackFormPersistencePort : SessionFeedbackFormPersistencePor
             .sortedBy { it.endAt }
 
     @Synchronized
+    override fun findAllPendingPushAt(now: Instant): List<SessionFeedbackForm> =
+        rows.values
+            .filter { it.deletedAt == null && it.pushEnabled && it.pushSentAt == null && !now.isBefore(it.startAt) }
+            .sortedBy { it.startAt }
+
+    @Synchronized
     override fun delete(form: SessionFeedbackForm) {
         val id = form.id?.value ?: return
         rows.remove(id)
