@@ -2,6 +2,7 @@ package core.application.sessionFeedback.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.sessionFeedback.presentation.response.SessionFeedbackMyResponse
+import core.application.sessionFeedback.presentation.response.SessionFeedbackPendingResponse
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
@@ -86,4 +87,12 @@ interface SessionFeedbackQueryApi {
         sessionId: SessionId,
         memberId: MemberId,
     ): CustomResponse<SessionFeedbackMyResponse>
+
+    @Operation(
+        summary = "홈 카드용 pending 피드백 조회",
+        description =
+            "지금 작성 가능한(canSubmit=true) 세션 1건을 반환한다. 여러 건이면 endAt 이 가장 빠른 것. " +
+                "없으면 data 키가 생략된 200 응답이 내려간다.",
+    )
+    fun getPendingFeedback(memberId: MemberId): CustomResponse<SessionFeedbackPendingResponse>
 }
