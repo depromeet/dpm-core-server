@@ -40,12 +40,10 @@ import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v1/members")
 class MemberController(
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
@@ -57,7 +55,7 @@ class MemberController(
     private val deviceIdResolver: DeviceIdResolver,
 ) : MemberApi {
     @PreAuthorize("permitAll()")
-    @PostMapping("/name/hash-type/validation")
+    @PostMapping("/v1/members/name/hash-type/validation")
     override fun validateMemberNameHashType(
         @Valid @RequestBody request: MemberNameHashValidationRequest,
     ): CustomResponse<MemberNameHashValidationResponse> =
@@ -68,7 +66,7 @@ class MemberController(
         )
 
     @PreAuthorize("isAuthenticated()")
-    @PostMapping("/apple/profile")
+    @PostMapping("/v1/members/apple/profile")
     override fun updateAppleMemberProfile(
         @CurrentMemberId memberId: MemberId,
         @Valid @RequestBody request: AppleMemberProfileUpdateRequest,
@@ -81,7 +79,7 @@ class MemberController(
         )
 
     @PreAuthorize("hasAuthority('read:member')")
-    @GetMapping("/apple/hidden-email")
+    @GetMapping("/v1/members/apple/hidden-email")
     override fun getAppleHiddenEmailMembers(): CustomResponse<AppleHiddenEmailMembersResponse> =
         CustomResponse.ok(
             memberQueryService.getAppleHiddenEmailMembers(),
@@ -89,7 +87,7 @@ class MemberController(
 
     //    @PreAuthorize("hasAuthority('read:member')")
     @PreAuthorize("permitAll()")
-    @GetMapping("/me")
+    @GetMapping("/v3/members/me")
     override fun me(
         memberId: MemberId,
         loginIdentity: LoginIdentity?,
@@ -99,7 +97,7 @@ class MemberController(
     }
 
     @PreAuthorize("hasAuthority('read:member')")
-    @GetMapping("/overview")
+    @GetMapping("/v1/members/overview")
     override fun getMembersOverview(
         @RequestParam(required = false) latest: Boolean?,
     ): CustomResponse<MemberOverviewResponse> {
@@ -123,7 +121,7 @@ class MemberController(
 
     //    @PreAuthorize("hasAuthority('delete:member')")
     @PreAuthorize("isAuthenticated()")
-    @PatchMapping("/withdraw")
+    @PatchMapping("/v1/members/withdraw")
     override fun withdraw(
         memberId: MemberId,
         response: HttpServletResponse,
@@ -133,7 +131,7 @@ class MemberController(
     }
 
     @PreAuthorize("hasAuthority('delete:member')")
-    @DeleteMapping("/{memberId}/hard-delete")
+    @DeleteMapping("/v1/members/{memberId}/hard-delete")
     override fun hardDelete(
         @PathVariable memberId: MemberId,
     ): CustomResponse<Void> {
@@ -142,7 +140,7 @@ class MemberController(
     }
 
     @PreAuthorize("hasAuthority('update:member')")
-    @PatchMapping("/init")
+    @PatchMapping("/v1/members/init")
     override fun initMemberDataAndApprove(
         @Valid @RequestBody request: InitMemberDataRequest,
     ): CustomResponse<Void> {
@@ -152,7 +150,7 @@ class MemberController(
 
     //    @PreAuthorize("hasAuthority('create:member')")
     @PreAuthorize("hasAuthority('create:member')")
-    @PatchMapping("/whitelist")
+    @PatchMapping("/v1/members/whitelist")
     override fun checkWhiteList(
         @Valid @RequestBody request: WhiteListCheckRequest,
     ): CustomResponse<Void> {
@@ -162,7 +160,7 @@ class MemberController(
     }
 
     @PreAuthorize("hasAuthority('update:member')")
-    @PatchMapping("/status")
+    @PatchMapping("/v1/members/status")
     override fun updateMemberStatus(
         @Valid @RequestBody request: UpdateMemberStatusRequest,
     ): CustomResponse<Void> {
@@ -171,7 +169,7 @@ class MemberController(
     }
 
     @PreAuthorize("hasAuthority('update:member')")
-    @PostMapping("/authority/cohort/init/{cohortId}/{memberId}")
+    @PostMapping("/v1/members/authority/cohort/init/{cohortId}/{memberId}")
     override fun initMemberCohort(
         @PathVariable memberId: MemberId,
         @PathVariable cohortId: CohortId,
@@ -180,7 +178,7 @@ class MemberController(
         return CustomResponse.ok()
     }
 
-    @PostMapping("/login/auth/apple")
+    @PostMapping("/v1/members/login/auth/apple")
     @Operation(
         summary = "Apple OAuth2 Login V1",
         description = "Login with Apple authorization code to receive JWT tokens",
@@ -209,7 +207,7 @@ class MemberController(
         return tokens
     }
 
-    @PatchMapping("/password")
+    @PatchMapping("/v1/members/password")
     @Operation(
         summary = "Set Email Password",
         description = "Set or update email password for a member. OAuth-only users can use this to enable email login.",

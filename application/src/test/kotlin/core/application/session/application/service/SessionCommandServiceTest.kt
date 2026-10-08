@@ -214,6 +214,7 @@ class SessionCommandServiceTest {
             sentSessionNotificationCommandUseCase = fixture.notifications,
             attendancePolicyProperties = properties,
             attendanceCommandService = fixture.attendanceCommandService,
+            sessionFeedbackFormCommandService = fixture.sessionFeedbackFormCommandService,
             clock = fixture.clock,
         )
 
