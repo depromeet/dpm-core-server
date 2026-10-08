@@ -14,7 +14,7 @@ class SessionFeedbackInsightController(
     private val sessionFeedbackInsightQueryService: SessionFeedbackInsightQueryService,
 ) : SessionFeedbackInsightApi {
     @PreAuthorize("hasAuthority('update:session')")
-    @GetMapping("/v2/sessions/{sessionId}/feedbacks/insight")
+    @GetMapping("/v1/sessions/{sessionId}/feedbacks/insight")
     override fun getInsight(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<SessionFeedbackInsightResponse> =
