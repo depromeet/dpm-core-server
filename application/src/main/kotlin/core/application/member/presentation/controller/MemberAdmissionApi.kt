@@ -30,34 +30,32 @@ interface MemberAdmissionApi {
     fun mergeAndApprove(request: MemberMergeRequest): CustomResponse<Void>
 
     @Operation(
-        summary = "가입 반려 (명세)",
+        summary = "가입 반려",
         description =
             "create:member 권한으로 현재 기수 또는 기수 없는 PENDING 멤버를 반려합니다. 기록을 보존하고 미승인 목록·집계에서 제외합니다. " +
-                "이미 반려되거나 승인된 멤버는 거절합니다. 반려 사유 입력은 받지 않습니다. " +
-                "현재는 데이터 변경 없이 MEMBER-501-01을 반환합니다.",
+                "이미 반려되거나 승인된 멤버는 거절합니다. 반려 사유 입력은 받지 않습니다.",
     )
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "반려 완료 (구현 후 제공)", useReturnTypeSchema = true),
+        ApiResponse(responseCode = "200", description = "반려 완료", useReturnTypeSchema = true),
         ApiResponse(responseCode = "400", description = "잘못된 ID 또는 반려할 수 없는 대상"),
         ApiResponse(responseCode = "403", description = "가입 관리 권한 없음"),
         ApiResponse(responseCode = "404", description = "멤버 없음"),
-        ApiResponse(responseCode = "501", description = "MEMBER-501-01: 명세만 제공, 데이터 변경 없음"),
     )
     fun reject(memberId: Long): CustomResponse<Void>
 
     @Operation(
-        summary = "본인 가입 재신청 (명세)",
+        summary = "본인 가입 재신청",
         description =
-            "로그인한 반려 회원 본인만 명시적으로 재신청합니다. 반려 이력은 보존하고 PENDING으로 전환합니다. " +
+            "로그인한 반려 회원 본인만 명시적으로 재신청합니다. 과거 소속과 반려 이력을 보존하고 현재 기수에 PENDING으로 재신청합니다. " +
                 "단순 재로그인으로 재신청하지 않습니다. 이미 PENDING인 반복 요청은 추가 신청 기록 없이 성공하며 승인 회원은 거절합니다. " +
-                "회원 ID는 토큰에서 가져옵니다. 현재는 데이터 변경 없이 MEMBER-501-01을 반환합니다.",
+                "회원 ID는 토큰에서 가져옵니다.",
     )
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "가입 대기 전환 완료 (구현 후 제공)", useReturnTypeSchema = true),
+        ApiResponse(responseCode = "200", description = "가입 대기 전환 완료", useReturnTypeSchema = true),
         ApiResponse(responseCode = "400", description = "재신청할 수 없는 회원 상태"),
         ApiResponse(responseCode = "401", description = "인증 필요"),
         ApiResponse(responseCode = "403", description = "접근 거절"),
-        ApiResponse(responseCode = "501", description = "MEMBER-501-01: 명세만 제공, 데이터 변경 없음"),
+        ApiResponse(responseCode = "404", description = "멤버 또는 신청할 기수 없음"),
     )
     fun reapply(
         @Parameter(hidden = true) memberId: Long,
