@@ -2,6 +2,8 @@ package core.persistence.sessionFeedback.repository
 
 import core.entity.sessionFeedback.SessionFeedbackEntity
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 
 interface SessionFeedbackJpaRepository : JpaRepository<SessionFeedbackEntity, Long> {
     fun findBySessionIdAndMemberId(
@@ -14,7 +16,14 @@ interface SessionFeedbackJpaRepository : JpaRepository<SessionFeedbackEntity, Lo
         memberId: Long,
     ): Boolean
 
-    fun findAllBySessionId(sessionId: Long): List<SessionFeedbackEntity>
+    @Query(
+        "select distinct f from SessionFeedbackEntity f " +
+            "left join fetch f.aspects " +
+            "where f.sessionId = :sessionId",
+    )
+    fun findAllBySessionId(
+        @Param("sessionId") sessionId: Long,
+    ): List<SessionFeedbackEntity>
 
     fun countBySessionId(sessionId: Long): Long
 }
