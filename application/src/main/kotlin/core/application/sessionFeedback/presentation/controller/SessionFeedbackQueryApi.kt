@@ -12,8 +12,8 @@ interface SessionFeedbackQueryApi {
     @Operation(
         summary = "피드백 화면 진입",
         description =
-            "홈 카드·세션 목록·공유 링크 공통 진입. 상태 화면은 에러가 아니라 200 + myStatus 로 응답한다. " +
-                "AVAILABLE 일 때만 questions 가 함께 내려간다.",
+            "홈 카드·세션 목록·공유 링크 공통 진입. 세션 이름과 작성 상태(myStatus)만 내려준다. " +
+                "AVAILABLE(작성 가능), SUBMITTED(이미 제출함), EXPIRED(제출 기한 지남), NOT_TARGET(제출 자격 없음).",
     )
     fun getMyFeedback(
         sessionId: SessionId,
