@@ -70,11 +70,11 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
-    fun `상단 현황은 검색과 운영진 제외에 영향받지 않고 각 미입력 회원은 한번만 센다`() {
+    fun `총원은 타입 미배정 승인 회원을 포함하고 대기자는 제외하며 검색에 영향받지 않는다`() {
         val response = service.getOverview(MemberManagementRequest(search = "가", parts = listOf("WEB")))
         assertThat(response.totalElements).isEqualTo(1)
         assertThat(response.members.map { it.memberId }).containsExactly(1L)
-        assertThat(response.summary.totalMemberCount).isEqualTo(4)
+        assertThat(response.summary.totalMemberCount).isEqualTo(5)
         assertThat(response.summary.deeperCount).isEqualTo(2)
         assertThat(response.summary.coreCount).isEqualTo(1)
         assertThat(response.summary.organizerCount).isEqualTo(1)
@@ -146,7 +146,7 @@ class MemberManagementQueryServiceTest {
         val response = service.getOverview(request)
         assertThat(response.totalElements).isEqualTo(2)
         assertThat(response.members.single().memberId).isEqualTo(2L)
-        assertThat(response.summary.totalMemberCount).isEqualTo(4)
+        assertThat(response.summary.totalMemberCount).isEqualTo(5)
         assertThat(response.summary.graduationRiskCount).isEqualTo(2)
         assertThat(service.getOverview(request.copy(page = 1)).members.single().memberId).isEqualTo(1L)
         assertThat(service.getOverview(request.copy(page = Int.MAX_VALUE)).members).isEmpty()
@@ -193,7 +193,7 @@ class MemberManagementQueryServiceTest {
         val empty = service.getOverview(MemberManagementRequest(search = "없는이름"))
         assertThat(empty.totalElements).isZero()
         assertThat(empty.members).isEmpty()
-        assertThat(empty.summary.totalMemberCount).isEqualTo(4)
+        assertThat(empty.summary.totalMemberCount).isEqualTo(5)
     }
 
     @Test

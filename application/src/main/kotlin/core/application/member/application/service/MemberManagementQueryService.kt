@@ -102,14 +102,18 @@ class MemberManagementQueryService(
                 .toList()
         // 수료 판정/필터를 끝낸 뒤 페이지를 나눈다. 큰 page 값도 정수 오버플로 없이 빈 목록이 된다.
         val offset = ((request.page.toLong() - 1) * request.size).coerceAtMost(filtered.size.toLong()).toInt()
-        val deeper = allMembers.count { it.memberType == RoleType.Deeper.code }
-        val organizer = allMembers.count { it.memberType == RoleType.Organizer.code }
-        val core = allMembers.count { it.memberType == RoleType.Core.code }
+        val approvedMembers =
+            allMembers.filter {
+                it.cohortId == cohortId && (it.status == MemberStatus.ACTIVE || it.status == MemberStatus.INACTIVE)
+            }
+        val deeper = approvedMembers.count { it.memberType == RoleType.Deeper.code }
+        val organizer = approvedMembers.count { it.memberType == RoleType.Organizer.code }
+        val core = approvedMembers.count { it.memberType == RoleType.Core.code }
         return MemberManagementResponse(
             cohortId = cohortId,
             summary =
                 Summary(
-                    totalMemberCount = deeper + organizer + core,
+                    totalMemberCount = approvedMembers.size,
                     deeperCount = deeper,
                     organizerCount = organizer,
                     coreCount = core,
