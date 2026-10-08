@@ -26,6 +26,11 @@ class SessionFeedbackFormRepository(
             .findAllByStartAtLessThanEqualAndEndAtGreaterThanAndDeletedAtIsNullOrderByEndAtAsc(now, now)
             .map { it.toDomain() }
 
+    override fun findAllPendingPushAt(now: Instant): List<SessionFeedbackForm> =
+        jpaRepository
+            .findAllByStartAtLessThanEqualAndPushEnabledIsTrueAndPushSentAtIsNullAndDeletedAtIsNullOrderByStartAtAsc(now)
+            .map { it.toDomain() }
+
     override fun delete(form: SessionFeedbackForm) {
         val id = form.id?.value ?: return
         jpaRepository.deleteById(id)
