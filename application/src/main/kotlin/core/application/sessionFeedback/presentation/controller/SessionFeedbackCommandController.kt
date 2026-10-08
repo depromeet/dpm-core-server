@@ -1,9 +1,12 @@
 package core.application.sessionFeedback.presentation.controller
 
+import core.application.common.exception.BusinessException
 import core.application.common.exception.CustomResponse
+import core.application.common.exception.GlobalExceptionCode
 import core.application.security.annotation.CurrentMemberId
 import core.application.sessionFeedback.application.service.SessionFeedbackCommandService
 import core.application.sessionFeedback.presentation.request.SessionFeedbackCreateRequest
+import core.domain.sessionFeedback.enums.SessionFeedbackAspect
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import jakarta.validation.Valid
@@ -28,12 +31,24 @@ class SessionFeedbackCommandController(
             sessionId = sessionId,
             memberId = memberId,
             satisfaction = requireNotNull(request.satisfaction),
-            likedAspects = requireNotNull(request.likedAspects),
-            improvementAspects = requireNotNull(request.improvementAspects),
+            likedAspects = requireNonNullAspects(request.likedAspects, "likedAspects"),
+            improvementAspects = requireNonNullAspects(request.improvementAspects, "improvementAspects"),
             likedEtc = request.likedEtc,
             improvementEtc = request.improvementEtc,
             freeComment = request.freeComment?.takeIf { it.isNotBlank() },
         )
         return CustomResponse.ok()
+    }
+
+    private fun requireNonNullAspects(
+        aspects: List<SessionFeedbackAspect?>?,
+        fieldName: String,
+    ): List<SessionFeedbackAspect> {
+        val values = requireNotNull(aspects) { "$fieldName: 필수 입력값입니다" }
+        if (values.any { it == null }) {
+            throw BusinessException(GlobalExceptionCode.INVALID_INPUT)
+        }
+        @Suppress("UNCHECKED_CAST")
+        return values as List<SessionFeedbackAspect>
     }
 }
