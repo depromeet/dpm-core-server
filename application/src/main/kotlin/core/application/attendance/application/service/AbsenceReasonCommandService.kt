@@ -6,6 +6,7 @@ import core.application.attendance.application.exception.AbsenceReasonRequiredEx
 import core.application.attendance.application.exception.AbsenceReasonTooLongException
 import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
+import core.application.member.application.service.TrackMemberBadges
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.absencereason.aggregate.AbsenceReason
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
@@ -30,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional
 
 /** 모든 변경은 세션 행 쓰기 잠금을 먼저 잡는다(잠금 순서 세션 -> 출석 -> 사유서). */
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class AbsenceReasonCommandService(
     private val absenceReasonPersistencePort: AbsenceReasonPersistencePort,
     private val absenceReasonImagePersistencePort: AbsenceReasonImagePersistencePort,
@@ -99,6 +100,7 @@ class AbsenceReasonCommandService(
     }
 
     /** 승인 시 출석을 인정결석([AttendanceStatus.EXCUSED_ABSENT])으로 바꾸고, 반려 시 출석은 그대로 둔다. */
+    @TrackMemberBadges
     fun reviewAbsenceReason(command: AbsenceReasonReviewCommand) {
         lockSession(command.sessionId)
 

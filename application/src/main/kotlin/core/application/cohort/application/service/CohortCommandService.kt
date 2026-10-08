@@ -2,6 +2,7 @@ package core.application.cohort.application.service
 
 import core.application.cohort.application.exception.CohortAlreadyExistsException
 import core.application.cohort.application.exception.CohortReferencedException
+import core.application.member.application.service.TrackMemberBadges
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
@@ -9,12 +10,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class CohortCommandService(
     private val cohortPersistencePort: CohortPersistencePort,
     private val cohortQueryService: CohortQueryService,
     private val cohortRoleService: CohortRoleService,
 ) {
+    @TrackMemberBadges
     fun create(value: String): Cohort {
         val normalizedValue = value.trim()
         if (cohortPersistencePort.existsByValue(normalizedValue)) {
@@ -33,6 +35,7 @@ class CohortCommandService(
         return saved
     }
 
+    @TrackMemberBadges
     fun update(
         cohortId: CohortId,
         value: String,
@@ -52,6 +55,7 @@ class CohortCommandService(
         )
     }
 
+    @TrackMemberBadges
     fun delete(cohortId: CohortId) {
         cohortQueryService.getCohort(cohortId)
         if (cohortPersistencePort.hasAnyReference(cohortId)) {
@@ -60,6 +64,7 @@ class CohortCommandService(
         cohortPersistencePort.deleteById(cohortId)
     }
 
+    @TrackMemberBadges
     fun activateCohort(cohortId: CohortId): Cohort {
         cohortQueryService.getCohort(cohortId)
         cohortPersistencePort.activate(cohortId)

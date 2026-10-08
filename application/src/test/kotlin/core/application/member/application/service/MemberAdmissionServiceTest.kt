@@ -2,9 +2,9 @@ package core.application.member.application.service
 
 import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.common.exception.BusinessException
-import core.application.member.application.service.cohort.MemberCohortService
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.service.cohort.MemberCohortService
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberAdmissionEventType

@@ -5,6 +5,7 @@ import core.application.attendance.application.service.AttendanceCommandService
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.service.SessionCommandService
+import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.application.support.MutableClock
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
@@ -82,6 +83,8 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
 
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
+
+    @MockitoBean lateinit var feedbackForms: SessionFeedbackFormCommandService
 
     private val decidedAt = Instant.parse("2026-01-01T00:00:00Z")
     private val sessionStart = Instant.parse("2026-10-10T10:00:00Z")

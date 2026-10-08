@@ -2,6 +2,7 @@ package core.application.member.application.service.auth
 
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.service.MemberIdentityLockService
+import core.application.member.application.service.TrackMemberBadges
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
@@ -32,7 +33,8 @@ class AppleAuthService(
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
 ) {
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    @TrackMemberBadges
     fun login(
         authorizationCode: String,
         redirectUri: String? = null,
