@@ -103,7 +103,7 @@ class MemberManagementContractControllerTest {
                 .andExpect(status().isBadRequest)
         }
         listOf("[]", "[null]", "[0]", "[1,1]", "[1.5]", "[\"1\"]").forEach { ids ->
-            mvc.perform(authenticated(json(delete("/v3/members/hard-delete/bulk"), """{"memberIds":$ids}"""), "delete:member"))
+            mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":$ids}"""), "delete:member"))
                 .andExpect(status().isBadRequest)
         }
     }
@@ -133,8 +133,8 @@ class MemberManagementContractControllerTest {
                 "/v3/members/merge" to "post",
                 "/v3/members/{memberId}/rejection" to "post",
                 "/v3/members/me/reapplication" to "post",
-                "/v3/members/{memberId}/hard-delete" to "delete",
-                "/v3/members/hard-delete/bulk" to "delete",
+                "/v3/members/{memberId}" to "delete",
+                "/v3/members/bulk" to "delete",
                 "/v3/members/badges" to "get",
                 "/v3/members/badges/{card}/acknowledgement" to "post",
             )
@@ -155,6 +155,8 @@ class MemberManagementContractControllerTest {
             schemas["MemberBadgeResponse"]["properties"]["card"]["enum"].map { it.asText() },
         )
         assertFalse(schemas["MemberMergeRequest"]["properties"].has("distinct"))
+        assertFalse(document["paths"].has("/v3/members/{memberId}/hard-delete"))
+        assertFalse(document["paths"].has("/v3/members/hard-delete/bulk"))
         assertTrue(document["paths"]["/v3/members/me/reapplication"]["post"].path("parameters").isMissingNode)
     }
 
@@ -163,8 +165,8 @@ class MemberManagementContractControllerTest {
             json(post("/v3/members/merge"), MERGE_BODY),
             post("/v3/members/1/rejection"),
             post("/v3/members/me/reapplication"),
-            delete("/v3/members/1/hard-delete"),
-            json(delete("/v3/members/hard-delete/bulk"), """{"memberIds":[1,2]}"""),
+            delete("/v3/members/1"),
+            json(delete("/v3/members/bulk"), """{"memberIds":[1,2]}"""),
             get("/v3/members/badges"),
             json(post(BADGE_PATH), BADGE_BODY),
         )
