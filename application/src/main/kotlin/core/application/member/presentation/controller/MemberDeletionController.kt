@@ -2,7 +2,7 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.common.exception.GlobalExceptionCode
-import core.application.member.application.exception.MemberManagementNotImplementedException
+import core.application.member.application.service.MemberDeletionService
 import core.application.member.presentation.request.MemberBulkDeleteRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -18,18 +18,24 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestController
 @RequestMapping("/v3/members")
-class MemberDeletionController : MemberDeletionApi {
+class MemberDeletionController(private val service: MemberDeletionService) : MemberDeletionApi {
     @PreAuthorize("hasAuthority('delete:member')")
     @DeleteMapping("/{memberId}")
     override fun delete(
         @PathVariable memberId: Long,
-    ): CustomResponse<Void> = throw MemberManagementNotImplementedException()
+    ): CustomResponse<Void> {
+        service.delete(listOf(memberId))
+        return CustomResponse.ok()
+    }
 
     @PreAuthorize("hasAuthority('delete:member')")
     @DeleteMapping("/bulk")
     override fun deleteBulk(
         @Valid @RequestBody request: MemberBulkDeleteRequest,
-    ): CustomResponse<Void> = throw MemberManagementNotImplementedException()
+    ): CustomResponse<Void> {
+        service.delete(request.memberIds)
+        return CustomResponse.ok()
+    }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
