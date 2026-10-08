@@ -37,7 +37,7 @@ data class SessionFeedbackInsightResponse(
     )
 
     data class AspectsInsight(
-        val totalSelectionCount: Int,
+        val respondentCount: Int,
         val items: List<AspectInsightItem>,
         val etcComments: List<String>,
     )
