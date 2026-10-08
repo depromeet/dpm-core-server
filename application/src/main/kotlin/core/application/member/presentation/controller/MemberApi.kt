@@ -197,7 +197,14 @@ interface MemberApi {
                                     "cohort": "17",
                                     "teamNumber": 3,
                                     "isAdmin": false,
-                                    "status": "ACTIVE"
+                                    "status": "ACTIVE",
+                                    "loginMethod": "KAKAO",
+                                    "isActiveCohort": true,
+                                    "presentCount": 8,
+                                    "lateCount": 1,
+                                    "excusedAbsentCount": 1,
+                                    "absentCount": 0,
+                                    "attendanceStatus": "NORMAL"
                                 }
                             }
                         """,
@@ -206,7 +213,15 @@ interface MemberApi {
             ),
         ],
     )
-    @Operation(summary = "로그인 한 멤버 조회 API", description = "현재 로그인한 멤버의 기본 정보를 조회 합니다.")
+    @Operation(
+        summary = "로그인 한 멤버 조회 API",
+        description =
+            "현재 로그인한 멤버의 기본 정보를 조회 합니다. " +
+                "cohort, teamNumber, 출석 집계(presentCount/lateCount/excusedAbsentCount/absentCount), " +
+                "attendanceStatus 는 마지막 소속 기수 기준입니다. isActiveCohort 는 그 기수가 현재 활성 기수인지 여부입니다. " +
+                "attendanceStatus 는 현재 기수면 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE), 이전 기수면 COMPLETED, " +
+                "소속 기수가 없으면 null 이며 멤버 상태(status)와 별개입니다.",
+    )
     fun me(
         @CurrentMemberId memberId: MemberId,
         @CurrentLoginIdentity loginIdentity: LoginIdentity?,

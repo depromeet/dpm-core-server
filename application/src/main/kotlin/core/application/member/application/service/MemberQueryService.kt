@@ -1,5 +1,6 @@
 package core.application.member.application.service
 
+import core.application.attendance.application.service.AttendanceGraduationEvaluator
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberTeamNotFoundException
@@ -8,6 +9,8 @@ import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.presentation.response.AppleHiddenEmailMemberResponse
 import core.application.member.presentation.response.AppleHiddenEmailMembersResponse
 import core.application.member.presentation.response.MemberDetailsResponse
+import core.domain.attendance.enums.AttendanceGraduationStatus
+import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.authorization.vo.RoleId
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.AuthorityId
@@ -34,6 +37,8 @@ class MemberQueryService(
     private val memberOAuthService: MemberOAuthService,
     private val memberLoginEmailResolver: MemberLoginEmailResolver,
     private val cohortQueryUseCase: CohortQueryUseCase,
+    private val attendancePersistencePort: AttendancePersistencePort,
+    private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
 ) : MemberQueryByRoleUseCase,
@@ -41,6 +46,7 @@ class MemberQueryService(
     /**
      * 멤버의 식별자를 기반으로 이메일, 이름, 파트, 기수, 관리자 여부를 포함한 기본 프로필 정보를 조회함.
      * 이메일은 현재 세션에 로그인한 계정의 이메일을 내려줌.
+     * 팀, 출석 집계, 수료 상태는 마지막 소속 기수 기준이다. 현재 기수는 수료 판정, 이전 기수는 COMPLETED, 기수가 없으면 null 이다.
      *
      * @throws MemberNotFoundException
      *
@@ -52,12 +58,29 @@ class MemberQueryService(
         loginIdentity: LoginIdentity?,
     ): MemberDetailsResponse {
         val member = getMemberById(memberId)
+        val cohortId = member.latestCohortId()
+        val attendance =
+            cohortId?.let { attendancePersistencePort.findDetailMemberAttendance(memberId.value, it.value) }
+        val isActiveCohort = cohortId != null && cohortId == cohortQueryUseCase.getActiveCohortId()
+        val attendanceStatus =
+            attendance?.let {
+                if (isActiveCohort) {
+                    attendanceGraduationEvaluator.evaluate(it.summary)
+                } else {
+                    AttendanceGraduationStatus.COMPLETED
+                }
+            }
+
         return MemberDetailsResponse.of(
             member,
             memberLoginEmailResolver.resolve(member, loginIdentity),
             memberAccessService.isAdmin(memberId),
-            getMemberTeamNumber(memberId),
+            // 집계 조회는 팀 미배정을 0 으로 주므로 기존처럼 설정된 기본 팀으로 바꾼다.
+            attendance?.teamNumber?.takeIf { it != TeamNumber.defaultValue() } ?: TeamNumber(defaultTeamId),
             loginIdentity?.method,
+            isActiveCohort,
+            attendance?.summary,
+            attendanceStatus,
         )
     }
 
