@@ -18,7 +18,7 @@ class SessionFeedbackCommandController(
     private val sessionFeedbackCommandService: SessionFeedbackCommandService,
 ) : SessionFeedbackCommandApi {
     @PreAuthorize("hasAuthority('read:session')")
-    @PostMapping("/v2/sessions/{sessionId}/feedbacks")
+    @PostMapping("/v1/sessions/{sessionId}/feedbacks")
     override fun submitFeedback(
         @PathVariable(name = "sessionId") sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,

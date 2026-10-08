@@ -16,7 +16,7 @@ class SessionFeedbackQueryController(
     private val sessionFeedbackMyQueryService: SessionFeedbackMyQueryService,
 ) : SessionFeedbackQueryApi {
     @PreAuthorize("hasAuthority('read:session')")
-    @GetMapping("/v2/sessions/{sessionId}/feedbacks/me")
+    @GetMapping("/v1/sessions/{sessionId}/feedbacks/me")
     override fun getMyFeedback(
         @PathVariable(name = "sessionId") sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
