@@ -110,7 +110,6 @@ class SessionFeedbackInsightQueryService(
     ): AspectsInsight {
         val perRespondent = feedbacks.map { it.aspectsOf(question) }
         val respondentCount = perRespondent.count { it.isNotEmpty() }
-        val totalSelectionCount = perRespondent.sumOf { it.size }
 
         val countByAspect: Map<SessionFeedbackAspect, Int> =
             perRespondent
@@ -119,8 +118,8 @@ class SessionFeedbackInsightQueryService(
                 .eachCount()
 
         val items =
-            countByAspect.entries
-                .asSequence()
+            SessionFeedbackAspect.entries
+                .map { code -> code to (countByAspect[code] ?: 0) }
                 .filterNot { (code, count) -> code == SessionFeedbackAspect.ETC && count == 0 }
                 .map { (code, count) ->
                     AspectInsightItem(
@@ -130,7 +129,6 @@ class SessionFeedbackInsightQueryService(
                         rate = ratePercent(count, respondentCount),
                     )
                 }.sortedWith(compareByDescending<AspectInsightItem> { it.count }.thenBy { it.code.ordinal })
-                .toList()
 
         val etcComments =
             feedbacks
@@ -141,7 +139,7 @@ class SessionFeedbackInsightQueryService(
                 .toList()
 
         return AspectsInsight(
-            totalSelectionCount = totalSelectionCount,
+            respondentCount = respondentCount,
             items = items,
             etcComments = etcComments,
         )
