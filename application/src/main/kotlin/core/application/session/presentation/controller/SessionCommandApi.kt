@@ -20,7 +20,8 @@ interface SessionCommandApi {
         description =
             "세션 기본 정보와 출결 시간을 설정합니다. attendanceStart/lateStart/absentStart 를 모두 생략하면 " +
                 "서버 기본값(기본: 시작 10분 전 출석 시작, 15분 후 지각, 30분 후 마감)을 date 기준으로 계산해 저장하고, " +
-                "모두 입력하면 그대로 사용합니다(순서 오류 SESSION-400-08, 일부만 입력 SESSION-400-09).",
+                "모두 입력하면 그대로 사용합니다(순서 오류 SESSION-400-08, 일부만 입력 SESSION-400-09). " +
+                "feedbackEnabled=true 이면 feedbackStartAt 필수(현재 이후). 종료 시각은 startAt+72h 로 저장.",
         requestBody =
             RequestBody(
                 description = "세션 추가 요청",
@@ -30,29 +31,33 @@ interface SessionCommandApi {
                         schema = Schema(implementation = SessionCreateRequest::class),
                         examples = [
                             ExampleObject(
-                                name = "세션 추가 요청 예시 (출석 시각 명시)",
+                                name = "세션 추가 (피드백 ON)",
                                 value = """
                                 {
                                   "name": "OT & 팀빌딩",
-                                  "date": "2025-08-02T14:00:00",
+                                  "date": "2026-10-10T14:00:00",
                                   "isOnline": false,
                                   "place": "서울시공익활동지원센터",
                                   "week": 1,
-                                  "attendanceStart": "2025-08-02T14:00:00",
-                                  "lateStart": "2025-08-02T14:20:00",
-                                  "absentStart": "2025-08-02T14:35:00"
+                                  "attendanceStart": "2026-10-10T14:00:00",
+                                  "lateStart": "2026-10-10T14:20:00",
+                                  "absentStart": "2026-10-10T14:35:00",
+                                  "feedbackEnabled": true,
+                                  "feedbackStartAt": "2026-10-10T18:00:00",
+                                  "feedbackPushEnabled": true
                                 }
                             """,
                             ),
                             ExampleObject(
-                                name = "세션 추가 요청 예시 (서버 기본 출석 시간 적용)",
+                                name = "세션 추가 (피드백 OFF, 출석 시각 생략)",
                                 value = """
                                 {
                                   "name": "OT & 팀빌딩",
-                                  "date": "2025-08-02T14:00:00",
+                                  "date": "2026-10-10T14:00:00",
                                   "isOnline": false,
                                   "place": "서울시공익활동지원센터",
-                                  "week": 1
+                                  "week": 1,
+                                  "feedbackEnabled": false
                                 }
                             """,
                             ),
@@ -87,7 +92,9 @@ interface SessionCommandApi {
             "세션을 수정하고 연관된 멤버의 출석 상태를 갱신 합니다. 출석 시각 세 개는 모두 필요하며 " +
                 "출석 시작 < 지각 시작 < 출석 마감 순서여야 합니다(SESSION-400-08). " +
                 "인증 기록은 새 시각으로 다시 판정하고, 운영진이 변경한 기록은 유지합니다. " +
-                "마감이 연장되면 자동 결석만 다시 인증할 수 있도록 PENDING 으로 돌아갑니다.",
+                "마감이 연장되면 자동 결석만 다시 인증할 수 있도록 PENDING 으로 돌아갑니다. " +
+                "feedbackEnabled 생략(null)이면 기존 피드백 설정 유지, false 일 때만 OFF. " +
+                "수집 시작 후 시작 시각 변경·OFF 전환은 SESSION_FEEDBACK-409-02.",
         requestBody =
             RequestBody(
                 description = "세션 수정 요청",
@@ -97,18 +104,37 @@ interface SessionCommandApi {
                         schema = Schema(implementation = SessionUpdateRequest::class),
                         examples = [
                             ExampleObject(
-                                name = "세션 수정 요청 예시",
+                                name = "세션 수정 (피드백 ON 유지)",
                                 value = """
                                 {
                                   "sessionId": 1,
                                   "name": "OT & 팀빌딩",
-                                  "date": "2025-08-02T14:00:00",
+                                  "date": "2026-10-10T14:00:00",
                                   "isOnline": false,
                                   "place": "서울시공익활동지원센터",
                                   "week": 1,
-                                  "attendanceStart": "2025-08-02T14:00:00",
-                                  "lateStart": "2025-08-02T14:20:00",
-                                  "absentStart": "2025-08-02T14:35:00"
+                                  "attendanceStart": "2026-10-10T14:00:00",
+                                  "lateStart": "2026-10-10T14:20:00",
+                                  "absentStart": "2026-10-10T14:35:00",
+                                  "feedbackEnabled": true,
+                                  "feedbackStartAt": "2026-10-10T18:00:00",
+                                  "feedbackPushEnabled": true
+                                }
+                            """,
+                            ),
+                            ExampleObject(
+                                name = "세션 수정 (피드백 필드 생략 → 기존 유지)",
+                                value = """
+                                {
+                                  "sessionId": 1,
+                                  "name": "OT & 팀빌딩 (장소만 수정)",
+                                  "date": "2026-10-10T14:00:00",
+                                  "isOnline": false,
+                                  "place": "공덕 창업허브",
+                                  "week": 1,
+                                  "attendanceStart": "2026-10-10T14:00:00",
+                                  "lateStart": "2026-10-10T14:20:00",
+                                  "absentStart": "2026-10-10T14:35:00"
                                 }
                             """,
                             ),

@@ -12,4 +12,7 @@ data class SessionCreateCommand(
     val attendanceStart: Instant? = null,
     val lateStart: Instant? = null,
     val absentStart: Instant? = null,
+    val feedbackEnabled: Boolean = false,
+    val feedbackStartAt: Instant? = null,
+    val feedbackPushEnabled: Boolean = true,
 )
