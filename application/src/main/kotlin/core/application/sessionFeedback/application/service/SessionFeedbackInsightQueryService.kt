@@ -78,8 +78,8 @@ class SessionFeedbackInsightQueryService(
             if (respondentCount == 0) {
                 0.0
             } else {
-                BigDecimal(feedbacks.sumOf { it.satisfaction.score }.toDouble() / respondentCount)
-                    .setScale(1, RoundingMode.HALF_UP)
+                BigDecimal(feedbacks.sumOf { it.satisfaction.score })
+                    .divide(BigDecimal(respondentCount), 1, RoundingMode.HALF_UP)
                     .toDouble()
             }
 
