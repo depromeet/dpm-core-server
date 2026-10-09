@@ -65,8 +65,8 @@ class MemberProfileControllerTest {
 
     @Test
     fun `익명은 조회와 입력을 사용할 수 없다`() {
-        mvc.perform(get(PATH)).andExpect(status().isForbidden)
-        mvc.perform(patch(PATH).contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isForbidden)
+        mvc.perform(get(PATH)).andExpect(status().isUnauthorized)
+        mvc.perform(patch(PATH).contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isUnauthorized)
         verifyNoInteractions(profiles)
     }
 
