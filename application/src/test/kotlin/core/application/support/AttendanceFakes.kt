@@ -314,10 +314,16 @@ class FakeSessionPersistencePort(
     }
 
     @Synchronized
-    override fun findNextSessionBy(startOfToday: Instant): Session? =
+    override fun findNextSessionBy(
+        cohortId: Long,
+        startOfToday: Instant,
+    ): Session? =
         sessions.values
-            .filter { it.deletedAt == null && it.date.isAfter(startOfToday) }
-            .minByOrNull { it.date }
+            .filter {
+                it.deletedAt == null &&
+                    it.cohortId.value == cohortId &&
+                    !it.date.isBefore(startOfToday)
+            }.minByOrNull { it.date }
             ?.let { copyOf(it) }
 
     @Synchronized

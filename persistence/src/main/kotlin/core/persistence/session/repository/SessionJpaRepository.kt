@@ -9,7 +9,10 @@ import org.springframework.data.repository.query.Param
 import java.time.Instant
 
 interface SessionJpaRepository : JpaRepository<SessionEntity, Long> {
-    fun findFirstByDateAfterAndDeletedAtIsNullOrderByDateAsc(startOfToday: Instant): SessionEntity?
+    fun findFirstByCohortIdAndDateGreaterThanEqualAndDeletedAtIsNullOrderByDateAsc(
+        cohortId: Long,
+        startOfToday: Instant,
+    ): SessionEntity?
 
     fun findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId: Long): List<SessionEntity>
 
