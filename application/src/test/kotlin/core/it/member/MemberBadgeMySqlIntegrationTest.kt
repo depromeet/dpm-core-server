@@ -144,7 +144,7 @@ class MemberBadgeMySqlIntegrationTest {
         assertThat(card(MemberBadgeCard.INCOMPLETE).hasNew).isFalse()
         management.update(1, MemberManagementUpdateRequest(part = "UNASSIGNED"))
         assertThat(card(MemberBadgeCard.INCOMPLETE).version).isEqualTo(2)
-        deletion.delete(listOf(1))
+        deletion.delete(listOf(1), 3)
         assertThat(card(MemberBadgeCard.INCOMPLETE).hasNew).isFalse()
     }
 
