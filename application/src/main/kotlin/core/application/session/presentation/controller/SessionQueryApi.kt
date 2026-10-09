@@ -2,7 +2,7 @@ package core.application.session.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.session.presentation.response.AttendanceTimeResponse
-import core.application.session.presentation.response.NextSessionResponse
+import core.application.session.presentation.response.NextSessionHomeResponse
 import core.application.session.presentation.response.SessionDetailForDeeperResponse
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
@@ -23,37 +23,75 @@ import java.time.LocalDateTime
 @Tag(name = "Session Query", description = "세션 조회 API")
 interface SessionQueryApi {
     @Operation(
-        summary = "다음 세션 조회",
-        description = "현재 시간 이후의 가장 가까운 세션을 조회합니다. 만약 현재 시간이 세션이 없는 경우, data를 반환하지 않습니다.",
+        summary = "홈 다음 세션 조회",
+        description =
+            "로그인 멤버 기수 기준으로 홈 세션 카드 상태를 조회합니다. " +
+                "AVAILABLE(다음 세션 있음) / NOT_REGISTERED(활성 기수·세션 미등록) / " +
+                "COHORT_ENDED(기수 종료). 로그인만 있으면 되고 read:session 권한은 필요 없다 " +
+                "(과거 기수 유저도 COHORT_ENDED를 받을 수 있게).",
     )
     @ApiResponses(
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "다음 세션 조회 성공",
+                description = "홈 다음 세션 조회 성공",
                 content = [
                     Content(
                         mediaType = "application/json",
                         schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
-                                name = "다음 세션 조회 성공 응답",
+                                name = "AVAILABLE",
                                 value = """
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "GLOBAL-200-1",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
-                                            "id": 1,
-                                            "week": 1,
-                                            "name": "디프만 17기 OT",
-                                            "place": "공덕 프론트원",
-                                            "isOnline": false,
-                                            "date": "2025-08-02T14:00:00.000000",
-                                            "attendanceStart": "2025-08-02T14:00:00.000000",
-                                            "lateStart": "2025-08-02T14:10:00.000000",
-                                            "absentStart": "2025-08-02T14:20:00.000000",
-                                            "attendanceCode": "3821"
+                                            "status": "AVAILABLE",
+                                            "cohortValue": "19",
+                                            "session": {
+                                                "id": 1,
+                                                "week": 1,
+                                                "name": "디프만 19기 OT",
+                                                "place": "공덕 프론트원",
+                                                "isOnline": false,
+                                                "date": "2026-10-10T14:00:00",
+                                                "attendanceStart": "2026-10-10T14:00:00",
+                                                "lateStart": "2026-10-10T14:10:00",
+                                                "absentStart": "2026-10-10T14:20:00",
+                                                "attendanceCode": "3821"
+                                            }
+                                        }
+                                    }
+                                """,
+                            ),
+                            ExampleObject(
+                                name = "NOT_REGISTERED",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "status": "NOT_REGISTERED",
+                                            "cohortValue": "19",
+                                            "session": null
+                                        }
+                                    }
+                                """,
+                            ),
+                            ExampleObject(
+                                name = "COHORT_ENDED",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "status": "COHORT_ENDED",
+                                            "cohortValue": "19",
+                                            "session": null
                                         }
                                     }
                                 """,
@@ -62,9 +100,10 @@ interface SessionQueryApi {
                     ),
                 ],
             ),
+            ApiResponse(responseCode = "401", description = "비로그인"),
         ],
     )
-    fun getNextSession(): CustomResponse<NextSessionResponse>
+    fun getNextSession(memberId: MemberId): CustomResponse<NextSessionHomeResponse>
 
     @Operation(
         summary = "기수 모든 세션 조회",

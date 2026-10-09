@@ -6,7 +6,10 @@ import core.domain.session.vo.SessionId
 import java.time.Instant
 
 interface SessionPersistencePort {
-    fun findNextSessionBy(startOfToday: Instant): Session?
+    fun findNextSessionBy(
+        cohortId: Long,
+        startOfToday: Instant,
+    ): Session?
 
     fun findAllCohortSessions(cohortId: Long): List<Session>
 
