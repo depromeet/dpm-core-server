@@ -39,6 +39,17 @@ class MemberMeQueryTest {
     private val cohorts = FakeCohortPersistencePort()
     private val service = service(defaultTeamId = 0)
 
+    @Test
+    fun `반려 회원의 내 정보는 REJECTED 상태를 그대로 제공한다`() {
+        val memberId = MemberId(1)
+        given(memberPersistencePort.findById(memberId)).willReturn(
+            Member(id = memberId, name = "홍길동", email = "member@example.com", signupEmail = "member@example.com", status = MemberStatus.REJECTED),
+        )
+        val response = service.memberMe(memberId, null)
+        assertThat(response.status).isEqualTo("REJECTED")
+        assertThat(response.isActiveCohort).isFalse()
+    }
+
     private fun service(defaultTeamId: Int) =
         MemberQueryService(
             memberPersistencePort = memberPersistencePort,
