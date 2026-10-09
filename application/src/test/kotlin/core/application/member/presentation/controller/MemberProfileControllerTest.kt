@@ -53,9 +53,10 @@ class MemberProfileControllerTest {
 
     @BeforeEach
     fun setup() {
-        mvc = MockMvcBuilders.webAppContextSetup(context)
-            .addFilters<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(context.getBean("springSecurityFilterChain", Filter::class.java))
-            .build()
+        mvc =
+            MockMvcBuilders.webAppContextSetup(context)
+                .addFilters<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(context.getBean("springSecurityFilterChain", Filter::class.java))
+                .build()
         clearInvocations(profiles)
         `when`(profiles.findProfile(7)).thenReturn(profile())
         `when`(profiles.lockProfile(7)).thenReturn(profile())
@@ -82,9 +83,15 @@ class MemberProfileControllerTest {
 
     @Test
     fun `이름 파트 누락과 미배정 잘못된 이름 다른 회원 지정은 거절한다`() {
-        listOf("{}", """{"name":"홍길동"}""", """{"part":"WEB"}""", """{"name":null,"part":"WEB"}""",
-            """{"name":"Hong","part":"WEB"}""", """{"name":"홍길동","part":"UNASSIGNED"}""",
-            """{"name":"홍길동","part":"WEB","memberId":8}""").forEach { body ->
+        listOf(
+            "{}",
+            """{"name":"홍길동"}""",
+            """{"part":"WEB"}""",
+            """{"name":null,"part":"WEB"}""",
+            """{"name":"Hong","part":"WEB"}""",
+            """{"name":"홍길동","part":"UNASSIGNED"}""",
+            """{"name":"홍길동","part":"WEB","memberId":8}""",
+        ).forEach { body ->
             mvc.perform(request(body)).andExpect(status().isBadRequest)
         }
         verifyNoInteractions(profiles)
@@ -101,10 +108,11 @@ class MemberProfileControllerTest {
 
     private fun request(body: String) = authenticated(patch(PATH).contentType(MediaType.APPLICATION_JSON).content(body))
 
-    private fun authenticated(request: MockHttpServletRequestBuilder) = request.requestAttr(
-        RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
-        SecurityContextImpl(UsernamePasswordAuthenticationToken("7", null, emptyList())),
-    )
+    private fun authenticated(request: MockHttpServletRequestBuilder) =
+        request.requestAttr(
+            RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
+            SecurityContextImpl(UsernamePasswordAuthenticationToken("7", null, emptyList())),
+        )
 
     @Configuration
     @EnableWebMvc
@@ -119,9 +127,10 @@ class MemberProfileControllerTest {
         }
 
         @Bean
-        fun security(http: HttpSecurity): SecurityFilterChain = http.csrf { it.disable() }
-            .securityContext { it.securityContextRepository(RequestAttributeSecurityContextRepository()) }
-            .authorizeHttpRequests { it.anyRequest().permitAll() }.build()
+        fun security(http: HttpSecurity): SecurityFilterChain =
+            http.csrf { it.disable() }
+                .securityContext { it.securityContextRepository(RequestAttributeSecurityContextRepository()) }
+                .authorizeHttpRequests { it.anyRequest().permitAll() }.build()
     }
 
     private companion object {

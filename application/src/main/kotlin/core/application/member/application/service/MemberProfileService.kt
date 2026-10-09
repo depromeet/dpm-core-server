@@ -19,18 +19,23 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(isolation = Isolation.READ_COMMITTED)
 class MemberProfileService(private val profiles: MemberProfilePersistencePort) {
     @Transactional(readOnly = true)
-    fun get(memberId: Long): MemberProfileResponse =
-        response(available(profiles.findProfile(memberId)))
+    fun get(memberId: Long): MemberProfileResponse = response(available(profiles.findProfile(memberId)))
 
     @TrackMemberBadges
-    fun complete(memberId: Long, name: String, part: String, appleOnly: Boolean = false): MemberProfileResponse {
+    fun complete(
+        memberId: Long,
+        name: String,
+        part: String,
+        appleOnly: Boolean = false,
+    ): MemberProfileResponse {
         val normalizedName = name.trim()
         // members.name의 JPA/DB 기본 VARCHAR(255) 길이에 맞춘다. 서식 검증이며 실명 인증은 아니다.
         if (normalizedName.length !in 1..255 || !KOREAN_NAME.matches(normalizedName)) {
             throw BusinessException(MemberExceptionCode.INVALID_MEMBER_PROFILE_NAME)
         }
-        val normalizedPart = runCatching { MemberPart.valueOf(part.trim().uppercase()) }
-            .getOrElse { throw InvalidMemberPartException() }
+        val normalizedPart =
+            runCatching { MemberPart.valueOf(part.trim().uppercase()) }
+                .getOrElse { throw InvalidMemberPartException() }
         val profile = available(profiles.lockProfile(memberId))
         if (appleOnly && !profiles.hasAppleAccount(memberId)) throw AppleLoginMemberRequiredException()
         if (profile.completedAt != null) {

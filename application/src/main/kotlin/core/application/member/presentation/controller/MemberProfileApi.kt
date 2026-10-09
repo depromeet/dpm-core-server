@@ -19,7 +19,9 @@ interface MemberProfileApi {
             ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음 (MEMBER-404-01)"),
         ],
     )
-    fun get(@Parameter(hidden = true) memberId: Long): CustomResponse<MemberProfileResponse>
+    fun get(
+        @Parameter(hidden = true) memberId: Long,
+    ): CustomResponse<MemberProfileResponse>
 
     @Operation(
         summary = "본인 이름과 파트 최초 입력",

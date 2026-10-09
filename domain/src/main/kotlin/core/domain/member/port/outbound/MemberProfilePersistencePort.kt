@@ -11,7 +11,11 @@ interface MemberProfilePersistencePort {
     fun lockProfile(memberId: Long): MemberProfile?
 
     /** 잠근 회원의 프로필만 갱신한다. 완료한 프로필은 다시 변경하지 않는다. */
-    fun completeProfile(memberId: Long, name: String, part: MemberPart): Boolean
+    fun completeProfile(
+        memberId: Long,
+        name: String,
+        part: MemberPart,
+    ): Boolean
 
     fun hasAppleAccount(memberId: Long): Boolean
 }

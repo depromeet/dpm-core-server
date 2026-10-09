@@ -102,15 +102,23 @@ class MemberProfileMySqlIntegrationTest {
         val start = CountDownLatch(1)
         val pool = Executors.newFixedThreadPool(2)
         try {
-            val results = listOf("홍길동", "김길동").map { name ->
-                pool.submit(Callable { start.await(); runCatching { rc().execute { service.complete(1, name, "WEB") } } })
-            }
+            val results =
+                listOf("홍길동", "김길동").map { name ->
+                    pool.submit(
+                        Callable {
+                            start.await()
+                            runCatching { rc().execute { service.complete(1, name, "WEB") } }
+                        },
+                    )
+                }
             start.countDown()
             val completed = results.map { it.get(10, TimeUnit.SECONDS) }
             assertThat(completed.count { it.isSuccess }).isEqualTo(1)
             assertThat(completed.single { it.isFailure }.exceptionOrNull()).isInstanceOf(BusinessException::class.java)
             assertThat(profiles.findProfile(1)!!.completedAt).isNotNull()
-        } finally { pool.shutdownNow() }
+        } finally {
+            pool.shutdownNow()
+        }
     }
 
     @Test
@@ -155,12 +163,14 @@ class MemberProfileMySqlIntegrationTest {
         val relative = "db/pending/2610092100_member_profile_completion.sql"
         val file = listOf(Path.of(relative), Path.of("..", relative)).first { Files.exists(it) }
         // SET/PREPARE/EXECUTE의 세션 변수를 같은 연결에서 유지한다.
-        jdbc.execute(org.springframework.jdbc.core.ConnectionCallback { connection ->
-            Files.readString(file).lineSequence().filterNot { it.trimStart().startsWith("--") }.joinToString("\n")
-                .split(';').map(String::trim).filter(String::isNotEmpty).forEach { sql ->
-                    connection.createStatement().use { it.execute(sql) }
-                }
-        })
+        jdbc.execute(
+            org.springframework.jdbc.core.ConnectionCallback { connection ->
+                Files.readString(file).lineSequence().filterNot { it.trimStart().startsWith("--") }.joinToString("\n")
+                    .split(';').map(String::trim).filter(String::isNotEmpty).forEach { sql ->
+                        connection.createStatement().use { it.execute(sql) }
+                    }
+            },
+        )
     }
 
     private fun rc() = TransactionTemplate(tx).apply { isolationLevel = TransactionDefinition.ISOLATION_READ_COMMITTED }
