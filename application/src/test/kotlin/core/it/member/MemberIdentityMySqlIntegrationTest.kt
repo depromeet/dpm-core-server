@@ -8,6 +8,7 @@ import core.application.member.application.service.MemberCommandService
 import core.application.member.application.service.MemberIdentityLockService
 import core.application.member.application.service.MemberLoginService
 import core.application.member.application.service.MemberQueryService
+import core.application.member.application.service.MemberProfileService
 import core.application.member.application.service.auth.EmailPasswordAuthService
 import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
@@ -25,6 +26,7 @@ import core.domain.security.oauth.dto.KakaoAuthAttributes
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.persistence.member.repository.MemberMergeRepository
 import core.persistence.member.repository.MemberRepository
+import core.persistence.member.repository.MemberProfileRepository
 import core.persistence.member.repository.oauth.MemberOAuthRepository
 import core.persistence.membercredential.repository.MemberCredentialRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -66,6 +68,8 @@ class MemberIdentityMySqlIntegrationTest {
     @Autowired lateinit var oauths: MemberOAuthPersistencePort
 
     @Autowired lateinit var credentials: MemberCredentialPersistencePort
+
+    @Autowired lateinit var profiles: core.domain.member.port.outbound.MemberProfilePersistencePort
 
     @Autowired lateinit var locks: MemberIdentityLockService
 
@@ -172,7 +176,7 @@ class MemberIdentityMySqlIntegrationTest {
         jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider) values (10, 1, 'apple', 'APPLE')")
         val queries = stub<MemberQueryService>()
         `when`(queries.getMemberById(MemberId(1))).thenAnswer { members.findById(MemberId(1))!! }
-        val service = MemberCommandService(members, queries, stub(), stub(), stub(), stub(), stub(), MemberOAuthService(oauths), credentials, stub(), stub())
+        val service = MemberCommandService(members, queries, stub(), stub(), stub(), stub(), stub(), MemberOAuthService(oauths), credentials, stub(), stub(), MemberProfileService(profiles))
         val pool = Executors.newSingleThreadExecutor()
         try {
             listOf(false, true).forEach { deleted ->
@@ -213,7 +217,7 @@ class MemberIdentityMySqlIntegrationTest {
     @EnableAutoConfiguration
     @EntityScan(basePackages = ["core.entity"])
     @EnableJpaRepositories(basePackages = ["core.persistence"])
-    @Import(JooqDslConfig::class, MemberRepository::class, MemberMergeRepository::class, MemberOAuthRepository::class, MemberCredentialRepository::class, MemberIdentityLockService::class)
+    @Import(JooqDslConfig::class, MemberRepository::class, MemberProfileRepository::class, MemberMergeRepository::class, MemberOAuthRepository::class, MemberCredentialRepository::class, MemberIdentityLockService::class)
     class Config
 
     companion object {
