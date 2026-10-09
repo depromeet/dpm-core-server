@@ -140,6 +140,35 @@ class MemberIdentityMySqlIntegrationTest {
     }
 
     @Test
+    fun `기존 미배정 파트 회원도 로그인한 뒤 이름과 파트를 최초 입력한다`() {
+        jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider) values (10, 1, 'external', 'KAKAO')")
+        val issuer = stub<RefreshTokenIssueService>()
+        val identity = LoginIdentity(LoginMethod.KAKAO, 10)
+        val issued = RefreshToken(memberId = MemberId(1), tokenHash = "hash", plainToken = "refresh", issuedAt = Instant.now(), expiresAt = Instant.now().plusSeconds(60))
+        `when`(issuer.issueForLogin(MemberId(1), null, identity)).thenReturn(issued)
+        val login = MemberLoginService(members, locks, MemberOAuthService(oauths), issuer, stub(), stub())
+        val profile = MemberProfileService(profiles)
+        val attributes = KakaoAuthAttributes("external", "social@example.com", "홍길동", OAuthProvider.KAKAO)
+
+        listOf("", "UNASSIGNED", "UNKNOWN").forEach { previousPart ->
+            jdbc.update("update members set part=?, profile_completed_at=null where member_id=1", previousPart)
+
+            assertThat(rc().execute { login.handleLoginSuccess(attributes, null) }!!.refreshToken).isSameAs(issued)
+            assertThat(profile.get(1).profileCompletionRequired).isTrue()
+            assertThat(profile.get(1).part).isNull()
+            assertThat(jdbc.queryForObject("select part from members where member_id=1", String::class.java)).isEqualTo(previousPart)
+
+            rc().execute { members.save(members.findById(MemberId(1))!!) }
+            assertThat(jdbc.queryForObject("select part from members where member_id=1", String::class.java)).isNull()
+            rc().execute { profile.complete(1, "김철수", "WEB") }
+
+            assertThat(profile.get(1).name).isEqualTo("김철수")
+            assertThat(profile.get(1).part).isEqualTo("WEB")
+            assertThat(profile.get(1).profileCompletionRequired).isFalse()
+        }
+    }
+
+    @Test
     fun `고아 OAuth 복구 대상이 잠금 대기 중 삭제되면 연결을 옮기지 않는다`() {
         jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider) values (10, 999, 'external', 'KAKAO')")
         val issuer = stub<RefreshTokenIssueService>()

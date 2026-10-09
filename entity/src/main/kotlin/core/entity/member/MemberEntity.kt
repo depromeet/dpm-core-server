@@ -60,7 +60,7 @@ class MemberEntity(
             name = name,
             email = email,
             signupEmail = signupEmail,
-            part = this.part?.let { MemberPart.valueOf(it) },
+            part = this.part?.let { runCatching { MemberPart.valueOf(it) }.getOrNull() },
             status = MemberStatus.valueOf(this.status),
             createdAt = createdAt,
             updatedAt = updatedAt,
