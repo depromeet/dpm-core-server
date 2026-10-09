@@ -7,6 +7,7 @@ import org.jooq.conf.Settings
 import org.jooq.impl.DSL
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy
 import javax.sql.DataSource
 
 @Configuration
@@ -18,6 +19,6 @@ class JooqDslConfig {
                 .withRenderNameCase(RenderNameCase.LOWER)
                 .withRenderQuotedNames(org.jooq.conf.RenderQuotedNames.NEVER)
 
-        return DSL.using(dataSource, SQLDialect.MYSQL, settings)
+        return DSL.using(TransactionAwareDataSourceProxy(dataSource), SQLDialect.MYSQL, settings)
     }
 }

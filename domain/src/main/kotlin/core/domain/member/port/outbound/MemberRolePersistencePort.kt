@@ -6,6 +6,13 @@ import core.domain.member.vo.MemberRoleAssignment
 interface MemberRolePersistencePort {
     fun save(memberRole: MemberRole)
 
+    /** 현재 기수와 기수 없는 타입 역할만 교체한다. null은 미배정이며 실제 변경한 멤버 ID를 반환한다. */
+    fun replaceCurrentCohortRoles(
+        memberIds: List<Long>,
+        cohortId: Long,
+        roleId: Long?,
+    ): Set<Long>
+
     fun upsertSingleActiveRole(
         memberId: Long,
         roleId: Long,
