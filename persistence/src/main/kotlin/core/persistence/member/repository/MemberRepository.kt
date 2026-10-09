@@ -106,8 +106,8 @@ class MemberRepository(
             oauthEmail.`as`("oauth_email"),
         ).from(MEMBERS)
             .where(MEMBERS.DELETED_AT.isNull)
-            .and(MEMBERS.STATUS.`in`("ACTIVE", "INACTIVE", "PENDING"))
-            .and(isCurrentCohort.or(MEMBERS.STATUS.eq("PENDING").and(hasNoCohort)))
+            .and(MEMBERS.STATUS.`in`(MemberStatus.ACTIVE.name, MemberStatus.INACTIVE.name, MemberStatus.PENDING.name))
+            .and(isCurrentCohort.or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name).and(hasNoCohort)))
             .fetch { record ->
                 val selectedEmail = record.get("oauth_email", String::class.java)?.trim()?.takeIf { it.isNotEmpty() }
                 MemberManagementQueryModel(
