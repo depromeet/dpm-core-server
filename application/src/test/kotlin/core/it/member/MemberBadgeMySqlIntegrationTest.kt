@@ -12,6 +12,7 @@ import core.application.member.application.service.MemberDeletionService
 import core.application.member.application.service.MemberManagementCommandService
 import core.application.member.application.service.MemberManagementTargetQueryService
 import core.application.member.application.service.MemberMergeService
+import core.application.member.application.service.MemberProfileService
 import core.application.member.application.service.TrackMemberBadges
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.application.member.presentation.request.MemberManagementUpdateRequest
@@ -35,6 +36,7 @@ import core.it.attendance.AttendanceMySqlIntegrationTestApplication
 import core.persistence.member.repository.MemberAdmissionEventRepository
 import core.persistence.member.repository.MemberBadgeRepository
 import core.persistence.member.repository.MemberMergeRepository
+import core.persistence.member.repository.MemberProfileRepository
 import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
@@ -45,6 +47,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -73,6 +77,7 @@ import java.util.concurrent.TimeUnit
     MemberCohortRepository::class, core.application.member.application.service.cohort.MemberCohortService::class, MemberAdmissionEventRepository::class, MemberAdmissionService::class,
     MemberMergeRepository::class,
     MemberMergeService::class,
+    MemberProfileService::class, MemberProfileRepository::class,
     MemberDeletionService::class, MemberApprovalService::class, MemberManagementCommandService::class, BadgeFixtureWriter::class,
 )
 class MemberBadgeMySqlIntegrationTest {
@@ -89,6 +94,8 @@ class MemberBadgeMySqlIntegrationTest {
     @Autowired lateinit var approvals: MemberApprovalService
 
     @Autowired lateinit var management: MemberManagementCommandService
+
+    @Autowired lateinit var profiles: MemberProfileService
 
     @Autowired lateinit var attendance: AttendanceCommandService
 
@@ -146,6 +153,50 @@ class MemberBadgeMySqlIntegrationTest {
         assertThat(card(MemberBadgeCard.INCOMPLETE).version).isEqualTo(2)
         deletion.delete(listOf(1), 3)
         assertThat(card(MemberBadgeCard.INCOMPLETE).hasNew).isFalse()
+    }
+
+    @ParameterizedTest
+    @CsvSource("true, ''", "false, UNASSIGNED")
+    fun `배지 초기화 전 잘못된 파트의 대기 회원도 기수 유무와 무관하게 프로필을 완료한다`(
+        currentCohort: Boolean,
+        invalidPart: String,
+    ) {
+        jdbc.update("update members set name = '', part = ? where member_id = 1", invalidPart)
+        if (!currentCohort) jdbc.update("delete from member_cohorts where member_id = 1")
+
+        val response = profiles.complete(1, "김가상", "WEB")
+
+        assertThat(response.name).isEqualTo("김가상")
+        assertThat(response.part).isEqualTo("WEB")
+        assertThat(response.profileCompletionRequired).isFalse()
+        assertThat(jdbc.queryForObject("select name from members where member_id = 1", String::class.java)).isEqualTo("김가상")
+        assertThat(jdbc.queryForObject("select part from members where member_id = 1", String::class.java)).isEqualTo("WEB")
+        assertThat(jdbc.queryForObject("select profile_completed_at from members where member_id = 1", java.sql.Timestamp::class.java)).isNotNull()
+        assertThat(jdbc.queryForObject("select count(*) from member_badge_states where initialized = true", Int::class.java)).isEqualTo(3)
+        assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'PENDING' order by member_id", Long::class.java)).containsExactly(1L, 2L, 3L)
+        assertThat(badges.getBadges().cards).allMatch { !it.hasNew && it.version == 0L }
+    }
+
+    @Test
+    fun `배지 초기화 후 다른 승인 회원의 잘못된 파트가 있어도 프로필 완료와 배지 갱신을 커밋한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id = 2")
+        jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (2, 1, 19, now(6))")
+        jdbc.update("insert into member_teams (member_id, team_id) values (2, 191)")
+        badges.getBadges()
+        jdbc.update("update members set part = 'UNKNOWN' where member_id = 2")
+
+        profiles.complete(1, "김가상", "WEB")
+
+        assertThat(jdbc.queryForObject("select name from members where member_id = 1", String::class.java)).isEqualTo("김가상")
+        assertThat(jdbc.queryForObject("select part from members where member_id = 1", String::class.java)).isEqualTo("WEB")
+        assertThat(jdbc.queryForObject("select profile_completed_at from members where member_id = 1", java.sql.Timestamp::class.java)).isNotNull()
+        assertThat(jdbc.queryForObject("select part from members where member_id = 2", String::class.java)).isEqualTo("UNKNOWN")
+        assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'PENDING' order by member_id", Long::class.java)).containsExactly(1L, 3L)
+        assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'INCOMPLETE'", Long::class.java)).containsExactly(2L)
+        assertThat(card().version).isZero()
+        assertThat(card().hasNew).isFalse()
+        assertThat(card(MemberBadgeCard.INCOMPLETE).version).isEqualTo(1)
+        assertThat(card(MemberBadgeCard.INCOMPLETE).hasNew).isTrue()
     }
 
     @Test
