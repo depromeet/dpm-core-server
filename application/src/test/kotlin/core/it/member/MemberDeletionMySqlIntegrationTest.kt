@@ -133,10 +133,22 @@ class MemberDeletionMySqlIntegrationTest {
     }
 
     @Test
+    fun `본인이 포함된 삭제는 다른 회원과 연관 데이터도 변경하지 않는다`() {
+        val before = listOf(memberRow(1), memberRow(2))
+        val related = snapshot()
+        listOf(listOf(1L), listOf(2L, 1L)).forEach { ids ->
+            assertThatThrownBy { deletion.delete(ids, 1) }
+                .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+            assertThat(listOf(memberRow(1), memberRow(2))).isEqualTo(before)
+            assertThat(snapshot()).isEqualTo(related)
+        }
+    }
+
+    @Test
     fun `회원 두 필드만 바꾸고 모든 관련 데이터와 다른 참여자의 공유 기록 조회를 보존한다`() {
         val before = snapshot()
         val memberBefore = memberRow(1)
-        deletion.delete(listOf(1))
+        deletion.delete(listOf(1), 3)
         assertThat(snapshot()).isEqualTo(before)
         val after = memberRow(1)
         assertThat(after["status"]).isEqualTo("WITHDRAWN")
@@ -154,27 +166,27 @@ class MemberDeletionMySqlIntegrationTest {
             assertThat(gatherings.findByBillId(BillId(1)).single().hostUserId).isEqualTo(MemberId(1))
             assertThat(gatherings.getSubmittedParticipantEachGathering(BillId(1), MemberId(2))).hasSize(1)
         }
-        assertThatThrownBy { deletion.delete(listOf(1)) }.isInstanceOf(MemberNotFoundException::class.java)
+        assertThatThrownBy { deletion.delete(listOf(1), 3) }.isInstanceOf(MemberNotFoundException::class.java)
         assertThat(memberRow(1)).isEqualTo(after)
     }
 
     @Test
     fun `없음 삭제 탈퇴 대상을 섞으면 전체 취소하고 DB 실패도 앞선 변경을 롤백한다`() {
         val before = memberRow(1)
-        assertThatThrownBy { deletion.delete(listOf(1, 999)) }.isInstanceOf(MemberNotFoundException::class.java)
+        assertThatThrownBy { deletion.delete(listOf(1, 999), 3) }.isInstanceOf(MemberNotFoundException::class.java)
         jdbc.update("update members set status = 'WITHDRAWN' where member_id = 2")
-        assertThatThrownBy { deletion.delete(listOf(1, 2)) }.isInstanceOf(MemberNotFoundException::class.java)
+        assertThatThrownBy { deletion.delete(listOf(1, 2), 3) }.isInstanceOf(MemberNotFoundException::class.java)
         assertThat(memberRow(1)).isEqualTo(before)
         jdbc.update("update members set status = 'ACTIVE' where member_id = 2")
         jdbc.execute("create trigger member623_reject_delete before update on members for each row begin if new.member_id = 2 and new.deleted_at is not null then signal sqlstate '45000' set message_text = 'rollback test'; end if; end")
         try {
-            assertThatThrownBy { deletion.delete(listOf(2, 1)) }.isInstanceOf(RuntimeException::class.java)
+            assertThatThrownBy { deletion.delete(listOf(2, 1), 3) }.isInstanceOf(RuntimeException::class.java)
         } finally {
             jdbc.execute("drop trigger member623_reject_delete")
         }
         assertThat(memberRow(1)).isEqualTo(before)
         assertThat(memberRow(2)["deleted_at"]).isNull()
-        deletion.delete(listOf(1, 2))
+        deletion.delete(listOf(1, 2), 3)
         assertThat(memberRow(1)["deleted_at"]).isNotNull()
         assertThat(memberRow(2)["deleted_at"]).isNotNull()
     }
@@ -190,7 +202,7 @@ class MemberDeletionMySqlIntegrationTest {
                 pool.submit(
                     Callable {
                         TransactionTemplate(transactionManager).executeWithoutResult {
-                            deletion.delete(listOf(1))
+                            deletion.delete(listOf(1), 3)
                             connectionId.set(jdbc.queryForObject("select connection_id()", Long::class.java)!!)
                             changed.countDown()
                             check(release.await(10, TimeUnit.SECONDS))
@@ -216,7 +228,7 @@ class MemberDeletionMySqlIntegrationTest {
         val access = provider.generateAccessToken("1", null)
         val refresh = provider.generateRefreshToken("1", null)
         val filter = JwtAuthenticationFilter(provider, JwtTokenResolver(), ObjectMapper(), members)
-        deletion.delete(listOf(1))
+        deletion.delete(listOf(1), 3)
         listOf("accessToken" to access, "refreshToken" to refresh).forEach { (name, token) ->
             val response = MockHttpServletResponse()
             val chain = MockFilterChain()
@@ -265,7 +277,7 @@ class MemberDeletionMySqlIntegrationTest {
                 pool.submit(
                     Callable {
                         TransactionTemplate(transactionManager).executeWithoutResult {
-                            deletion.delete(listOf(1))
+                            deletion.delete(listOf(1), 3)
                             connectionId.set(jdbc.queryForObject("select connection_id()", Long::class.java)!!)
                             changed.countDown()
                             check(release.await(10, TimeUnit.SECONDS))
