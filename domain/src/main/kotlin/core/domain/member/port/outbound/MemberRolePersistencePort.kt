@@ -22,6 +22,8 @@ interface MemberRolePersistencePort {
 
     fun findActiveRoleAssignmentsByMemberId(memberId: Long): List<MemberRoleAssignment>
 
+    fun findActiveRoleAssignmentsByMemberIds(memberIds: List<Long>): Map<Long, List<MemberRoleAssignment>>
+
     fun findRoleNamesByMemberIds(memberIds: List<Long>): Map<Long, List<String>>
 
     fun softDeleteAllByMemberId(memberId: Long)
