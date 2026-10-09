@@ -315,10 +315,11 @@ interface MemberApi {
     ): CustomResponse<Void>
 
     @Operation(
-        summary = "멤버 하드 삭제 API (admin)",
-        description = "memberId를 기준으로 멤버와 연관된 데이터를 실제 DB에서 삭제합니다.",
+        summary = "멤버 영구 삭제 API (사용 중단)",
+        description = "삭제 권한 확인 후 410을 반환하며 회원과 연관 데이터를 변경하지 않습니다. DELETE /v3/members/{memberId}를 사용해주세요.",
+        deprecated = true,
     )
-    @ApiResponse(responseCode = "200", description = "멤버 하드 삭제 성공")
+    @ApiResponse(responseCode = "410", description = "MEMBER-410-01: 영구 삭제 API 사용 중단")
     fun hardDelete(
         @Parameter(description = "하드 삭제 대상 멤버 식별자", example = "1")
         memberId: MemberId,
