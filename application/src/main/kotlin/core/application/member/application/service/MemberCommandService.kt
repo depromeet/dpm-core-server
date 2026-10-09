@@ -107,7 +107,9 @@ class MemberCommandService(
         anonymizeWithdrawnMemberIdentity(withdrawnMember)
     }
 
-    fun hardDelete(@Suppress("UNUSED_PARAMETER") memberId: MemberId) {
+    fun hardDelete(
+        @Suppress("UNUSED_PARAMETER") memberId: MemberId,
+    ) {
         throw BusinessException(MemberExceptionCode.MEMBER_HARD_DELETE_RETIRED)
     }
 
