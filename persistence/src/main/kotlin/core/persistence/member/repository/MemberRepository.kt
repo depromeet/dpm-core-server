@@ -244,6 +244,7 @@ class MemberRepository(
                 createdAt = inserted.createdAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
                 updatedAt = inserted.updatedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
                 deletedAt = inserted.deletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                profileCompletedAt = inserted.profileCompletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
             )
         } else {
             memberJpaRepository.save(MemberEntity.from(member)).toDomain()

@@ -40,6 +40,9 @@ class MemberEntity(
     val updatedAt: Instant? = null,
     @Column(name = "deleted_at")
     val deletedAt: Instant? = null,
+    // 일반 회원 저장은 완료 표시를 되돌릴 수 없다. 프로필 전용 UPDATE에서만 기록한다.
+    @Column(name = "profile_completed_at", insertable = false, updatable = false)
+    val profileCompletedAt: Instant? = null,
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberRoles: MutableList<MemberRoleEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
@@ -62,6 +65,7 @@ class MemberEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
+            profileCompletedAt = profileCompletedAt,
             memberRoles = memberRoles.map { it.toDomain() }.toMutableList(),
             memberPermissions = memberPermissions.map { it.toDomain() }.toMutableList(),
             memberCohorts = memberCohorts.map { it.toDomain() }.toMutableList(),
@@ -80,6 +84,7 @@ class MemberEntity(
                 createdAt = domain.createdAt,
                 updatedAt = domain.updatedAt,
                 deletedAt = domain.deletedAt,
+                profileCompletedAt = domain.profileCompletedAt,
             )
     }
 }
