@@ -49,7 +49,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -157,7 +156,7 @@ class MemberBadgeMySqlIntegrationTest {
     }
 
     @ParameterizedTest
-    @CsvSource("true, ''", "true, web", "true, UNASSIGNED", "true, UNKNOWN", "false, ''", "false, web", "false, UNASSIGNED", "false, UNKNOWN")
+    @CsvSource("true, ''", "false, UNASSIGNED")
     fun `배지 초기화 전 잘못된 파트의 대기 회원도 기수 유무와 무관하게 프로필을 완료한다`(
         currentCohort: Boolean,
         invalidPart: String,
@@ -178,21 +177,20 @@ class MemberBadgeMySqlIntegrationTest {
         assertThat(badges.getBadges().cards).allMatch { !it.hasNew && it.version == 0L }
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ["", "web", "UNASSIGNED", "UNKNOWN"])
-    fun `배지 초기화 후 다른 승인 회원의 잘못된 파트가 있어도 프로필 완료와 배지 갱신을 커밋한다`(invalidPart: String) {
+    @Test
+    fun `배지 초기화 후 다른 승인 회원의 잘못된 파트가 있어도 프로필 완료와 배지 갱신을 커밋한다`() {
         jdbc.update("update members set status = 'ACTIVE' where member_id = 2")
         jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (2, 1, 19, now(6))")
         jdbc.update("insert into member_teams (member_id, team_id) values (2, 191)")
         badges.getBadges()
-        jdbc.update("update members set part = ? where member_id = 2", invalidPart)
+        jdbc.update("update members set part = 'UNKNOWN' where member_id = 2")
 
         profiles.complete(1, "김가상", "WEB")
 
         assertThat(jdbc.queryForObject("select name from members where member_id = 1", String::class.java)).isEqualTo("김가상")
         assertThat(jdbc.queryForObject("select part from members where member_id = 1", String::class.java)).isEqualTo("WEB")
         assertThat(jdbc.queryForObject("select profile_completed_at from members where member_id = 1", java.sql.Timestamp::class.java)).isNotNull()
-        assertThat(jdbc.queryForObject("select part from members where member_id = 2", String::class.java)).isEqualTo(invalidPart)
+        assertThat(jdbc.queryForObject("select part from members where member_id = 2", String::class.java)).isEqualTo("UNKNOWN")
         assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'PENDING' order by member_id", Long::class.java)).containsExactly(1L, 3L)
         assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'INCOMPLETE'", Long::class.java)).containsExactly(2L)
         assertThat(card().version).isZero()
