@@ -4,6 +4,7 @@ import core.application.common.exception.CustomResponse
 import core.application.common.exception.GlobalExceptionCode
 import core.application.member.application.service.MemberDeletionService
 import core.application.member.presentation.request.MemberBulkDeleteRequest
+import core.application.security.annotation.CurrentMemberId
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -23,8 +24,9 @@ class MemberDeletionController(private val service: MemberDeletionService) : Mem
     @DeleteMapping("/{memberId}")
     override fun delete(
         @PathVariable memberId: Long,
+        @CurrentMemberId actorMemberId: Long,
     ): CustomResponse<Void> {
-        service.delete(listOf(memberId))
+        service.delete(listOf(memberId), actorMemberId)
         return CustomResponse.ok()
     }
 
@@ -32,8 +34,9 @@ class MemberDeletionController(private val service: MemberDeletionService) : Mem
     @DeleteMapping("/bulk")
     override fun deleteBulk(
         @Valid @RequestBody request: MemberBulkDeleteRequest,
+        @CurrentMemberId actorMemberId: Long,
     ): CustomResponse<Void> {
-        service.delete(request.memberIds)
+        service.delete(request.memberIds, actorMemberId)
         return CustomResponse.ok()
     }
 
