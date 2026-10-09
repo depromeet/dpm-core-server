@@ -11,14 +11,18 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class MemberMergeService(
     private val members: MemberPersistencePort,
     private val merge: MemberMergePersistencePort,
     private val cohorts: CohortQueryUseCase,
     private val approval: MemberApprovalService,
 ) {
-    fun mergeAndApprove(retainedId: Long?, sourceId: Long?) {
+    @TrackMemberBadges
+    fun mergeAndApprove(
+        retainedId: Long?,
+        sourceId: Long?,
+    ) {
         if (retainedId == null || sourceId == null || retainedId <= 0 || sourceId <= 0 || retainedId == sourceId) {
             throw InvalidMemberMergeException()
         }
@@ -26,7 +30,11 @@ class MemberMergeService(
         val cohortId = cohorts.getActiveCohortId().value
         val targets = members.lockApprovalTargets(ids)
         if (targets.map { it.memberId } != ids) throw MemberNotFoundException()
-        if (targets.any { it.isDeleted || it.status != MemberStatus.PENDING || (it.cohortIds.isNotEmpty() && cohortId !in it.cohortIds) }) {
+        if (targets.any {
+                it.isDeleted || it.status != MemberStatus.PENDING ||
+                    (it.cohortIds.isNotEmpty() && cohortId !in it.cohortIds)
+            }
+        ) {
             throw InvalidMemberMergeException()
         }
         if (merge.hasPasswordCredential(ids)) throw InvalidMemberMergeException()

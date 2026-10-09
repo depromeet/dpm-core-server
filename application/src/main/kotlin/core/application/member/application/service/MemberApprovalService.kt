@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class MemberApprovalService(
     private val members: MemberPersistencePort,
     private val memberCohorts: MemberCohortPersistencePort,
@@ -28,6 +28,7 @@ class MemberApprovalService(
     private val roleQueries: RoleQueryUseCase,
     private val initializer: MemberActivationInitializer,
 ) {
+    @TrackMemberBadges
     fun approve(memberIds: List<Long?>) {
         if (memberIds.isEmpty() || memberIds.any { it == null || it <= 0 } ||
             memberIds.distinct().size != memberIds.size

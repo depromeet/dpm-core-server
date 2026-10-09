@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class MemberManagementCommandService(
     private val members: MemberPersistencePort,
     private val teams: MemberTeamPersistencePort,
@@ -26,6 +26,7 @@ class MemberManagementCommandService(
     private val cohortPersistencePort: CohortPersistencePort,
     private val roleQueryUseCase: RoleQueryUseCase,
 ) {
+    @TrackMemberBadges
     fun update(
         memberId: Long,
         request: MemberManagementUpdateRequest,
@@ -33,6 +34,7 @@ class MemberManagementCommandService(
         updateMembers(listOf(memberId), request, bulk = false)
     }
 
+    @TrackMemberBadges
     fun updateBulk(request: MemberManagementBulkUpdateRequest) {
         updateMembers(request.memberIds, request.changes, bulk = true)
     }

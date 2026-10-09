@@ -3,6 +3,7 @@ package core.application.session.application.service
 import core.application.attendance.application.properties.AttendancePolicyProperties
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.cohort.application.service.CohortQueryService
+import core.application.member.application.service.TrackMemberBadges
 import core.application.session.application.exception.InvalidSessionIdException
 import core.application.session.application.exception.PartialAttendanceTimesException
 import core.application.session.application.exception.SessionNotFoundException
@@ -32,7 +33,7 @@ import java.time.Clock
  * (잠금 순서: session -> attendance).
  */
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class SessionCommandService(
     private val sessionPersistencePort: SessionPersistencePort,
     private val eventPublisher: ApplicationEventPublisher,
@@ -44,6 +45,7 @@ class SessionCommandService(
     private val sessionFeedbackFormCommandService: SessionFeedbackFormCommandService,
     private val clock: Clock,
 ) {
+    @TrackMemberBadges
     fun createSession(command: SessionCreateCommand) {
         val latestCohortId = cohortQueryService.getLatestCohortId()
         val attendanceTimes = resolveAttendanceTimes(command)
@@ -83,6 +85,7 @@ class SessionCommandService(
     }
 
     // 오래된 이벤트 값이 이후 변경을 덮어쓰지 않도록 같은 트랜잭션에서 잠금을 유지한 채 재계산한다.
+    @TrackMemberBadges
     fun updateSession(command: SessionUpdateCommand) {
         val session =
             sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
@@ -122,6 +125,7 @@ class SessionCommandService(
     }
 
     // 세션 잠금을 잡고 함께 삭제해 진행 중인 인증/운영진 변경/자동 결석이 삭제된 기록을 되살리지 않게 한다.
+    @TrackMemberBadges
     fun softDeleteSession(sessionId: SessionId) {
         val session =
             sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)

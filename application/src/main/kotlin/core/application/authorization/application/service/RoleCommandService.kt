@@ -2,6 +2,7 @@ package core.application.authorization.application.service
 
 import core.application.authorization.presentation.request.UpdateMemberRoleRequest
 import core.application.member.application.service.MemberQueryService
+import core.application.member.application.service.TrackMemberBadges
 import core.application.member.application.service.role.MemberRoleService
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.vo.CohortId
@@ -10,11 +11,12 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class RoleCommandService(
     private val memberQueryService: MemberQueryService,
     private val memberRoleService: MemberRoleService,
 ) {
+    @TrackMemberBadges
     fun updateMemberRole(
         memberId: MemberId,
         request: UpdateMemberRoleRequest,

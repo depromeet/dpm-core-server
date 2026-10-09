@@ -1,6 +1,7 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
+import core.application.member.application.service.TrackMemberBadges
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.AttendanceClosedException
 import core.application.session.application.exception.CheckedAttendanceException
@@ -32,7 +33,7 @@ import java.time.Instant
  * 출석 행은 조건부 UPDATE 로만 바꾼다. 자동 결석만 autoAbsentAt 표지를 남기고 인증/운영진 변경/재개는 표지를 지운다.
  */
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class AttendanceCommandService(
     private val attendancePersistencePort: AttendancePersistencePort,
     private val sessionPersistencePort: SessionPersistencePort,
@@ -44,6 +45,7 @@ class AttendanceCommandService(
      * 마감 전에 접수된 요청은 자동 결석이 먼저 저장됐어도 정상 판정으로 저장한다.
      * 조건부 UPDATE 가 실패하면(다른 요청이 먼저 저장) 이미 출석 오류다.
      */
+    @TrackMemberBadges
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
         val session =
             sessionPersistencePort.findSessionByIdForShare(command.sessionId.value)
@@ -74,6 +76,7 @@ class AttendanceCommandService(
     }
 
     /** 운영진 변경. 출석 인증 시각(attendedAt)은 지운다. */
+    @TrackMemberBadges
     fun updateAttendanceStatus(command: AttendanceStatusUpdateCommand) {
         sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
             ?: throw SessionNotFoundException()
@@ -89,6 +92,7 @@ class AttendanceCommandService(
     }
 
     /** 대상 중 하나라도 출석 기록이 없으면 아무것도 바꾸지 않는다. */
+    @TrackMemberBadges
     fun updateAttendanceStatusBulk(
         sessionId: SessionId,
         attendanceStatus: AttendanceStatus,
@@ -112,7 +116,11 @@ class AttendanceCommandService(
     }
 
     /** 호출자가 세션 쓰기 잠금을 잡은 트랜잭션이어야 한다. 운영진 변경 기록은 보호하고 updatedAt 을 남기지 않는다. */
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional(
+        propagation = Propagation.MANDATORY,
+        isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED,
+    )
+    @TrackMemberBadges
     fun applySessionPolicyChange(
         session: Session,
         now: Instant,
@@ -137,6 +145,7 @@ class AttendanceCommandService(
     }
 
     /** 이벤트 값이 아니라 잠금 후 읽은 최신 세션 시각으로 맞춘다. */
+    @TrackMemberBadges
     fun reconcileAttendancesWithLatestPolicy(sessionId: SessionId): Int {
         val session = sessionPersistencePort.findSessionByIdForUpdate(sessionId.value) ?: return 0
         return applySessionPolicyChange(session, clock.instant())
@@ -146,6 +155,7 @@ class AttendanceCommandService(
      * 공유 잠금 후 최신 마감을 다시 확인해, 그 사이 마감이 연장됐거나 세션이 삭제됐으면 처리하지 않는다.
      * 기수는 호출자가 고르고(활성 기수), 현재 PENDING 인 기록만 바꾼다. 운영진이 PENDING 으로 되돌린 기록도 결석이 된다.
      */
+    @TrackMemberBadges
     fun closeExpiredAttendances(
         sessionId: SessionId,
         now: Instant,
@@ -161,6 +171,7 @@ class AttendanceCommandService(
      * 세션 생성 트랜잭션 안(BEFORE_COMMIT)에서 호출돼 세션과 함께 커밋/롤백된다.
      * 멤버가 없는 기수에서도 세션 생성이 실패하지 않도록 기록 없이 끝낸다.
      */
+    @TrackMemberBadges
     fun createAttendances(
         sessionId: SessionId,
         cohortId: CohortId,
@@ -179,6 +190,7 @@ class AttendanceCommandService(
         attendancePersistencePort.saveInBatch(attendances)
     }
 
+    @TrackMemberBadges
     fun deleteAttendancesBySessionId(
         sessionId: SessionId,
         deletedAt: Instant,
@@ -187,6 +199,7 @@ class AttendanceCommandService(
     }
 
     /** 기수 세션 중 출석 기록이 없는 세션에만 만든다. 기존 기록은 그대로 둔다. */
+    @TrackMemberBadges
     fun initializeForNewCohortMember(
         memberId: MemberId,
         cohortId: CohortId,
