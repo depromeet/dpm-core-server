@@ -2,6 +2,7 @@ package core.application.member.application.service
 
 import core.application.common.exception.BusinessException
 import core.application.common.exception.GlobalExceptionCode
+import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -13,11 +14,17 @@ import org.springframework.transaction.annotation.Transactional
 class MemberDeletionService(
     private val members: MemberPersistencePort,
 ) {
-    fun delete(memberIds: List<Long?>) {
+    fun delete(
+        memberIds: List<Long?>,
+        actorMemberId: Long,
+    ) {
         if (memberIds.isEmpty() || memberIds.any { it == null || it <= 0 } ||
             memberIds.distinct().size != memberIds.size
         ) {
             throw BusinessException(GlobalExceptionCode.INVALID_INPUT)
+        }
+        if (actorMemberId in memberIds) {
+            throw BusinessException(MemberExceptionCode.MEMBER_SELF_DELETION_NOT_ALLOWED)
         }
         val ids = memberIds.filterNotNull().sorted()
         // 승인 및 관리 수정과 같은 회원 행을 같은 순서로 잠근다.

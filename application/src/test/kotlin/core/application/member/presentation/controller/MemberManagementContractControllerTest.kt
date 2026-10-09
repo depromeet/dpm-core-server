@@ -19,6 +19,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
 import org.springdoc.core.configuration.SpringDocConfiguration
 import org.springdoc.core.properties.SpringDocConfigProperties
 import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration
@@ -199,12 +200,23 @@ class MemberManagementContractControllerTest {
 
     @Test
     fun `단건 일괄 삭제는 성공 계약과 실제 서비스 호출을 제공한다`() {
-        mvc.perform(authenticated(delete("/v3/members/1"), "delete:member"))
+        mvc.perform(authenticated(delete("/v3/members/1"), "delete:member", actorMemberId = 3))
             .andExpect(status().isOk).andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
         verify(members).softDeleteMembers(listOf(1))
-        mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":[2,1]}"""), "delete:member"))
+        mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":[2,1]}"""), "delete:member", actorMemberId = 3))
             .andExpect(status().isOk).andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
         verify(members).softDeleteMembers(listOf(1, 2))
+    }
+
+    @Test
+    fun `인증된 본인 삭제와 본인이 포함된 일괄 삭제는 모두 거절한다`() {
+        mvc.perform(authenticated(json(delete("/v3/members/1"), """{"actorMemberId":3}"""), "delete:member"))
+            .andExpect(status().isForbidden).andExpect(jsonPath("$.code").value("MEMBER-403-03"))
+        mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":[2,1]}"""), "delete:member"))
+            .andExpect(status().isForbidden).andExpect(jsonPath("$.code").value("MEMBER-403-03"))
+        mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":[2,1],"actorMemberId":3}"""), "delete:member"))
+            .andExpect(status().isBadRequest)
+        verifyNoInteractions(members)
     }
 
     @Test
@@ -215,7 +227,7 @@ class MemberManagementContractControllerTest {
         mvc.perform(authenticated(delete("/v3/members/999"), "delete:member"))
             .andExpect(status().isNotFound).andExpect(jsonPath("$.code").value("MEMBER-404-01"))
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, emptySet(), true)))
-        mvc.perform(authenticated(delete("/v3/members/1"), "delete:member")).andExpect(status().isNotFound)
+        mvc.perform(authenticated(delete("/v3/members/1"), "delete:member", actorMemberId = 3)).andExpect(status().isNotFound)
     }
 
     private fun endpoints(): List<MockHttpServletRequestBuilder> =
@@ -241,10 +253,11 @@ class MemberManagementContractControllerTest {
     private fun authenticated(
         request: MockHttpServletRequestBuilder,
         vararg authorities: String,
+        actorMemberId: Long = 1,
     ): MockHttpServletRequestBuilder =
         request.requestAttr(
             RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
-            SecurityContextImpl(UsernamePasswordAuthenticationToken("1", null, authorities.map(::SimpleGrantedAuthority))),
+            SecurityContextImpl(UsernamePasswordAuthenticationToken(actorMemberId.toString(), null, authorities.map(::SimpleGrantedAuthority))),
         )
 
     @Configuration
