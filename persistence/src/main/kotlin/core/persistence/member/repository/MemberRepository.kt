@@ -163,7 +163,7 @@ class MemberRepository(
                         } else {
                             selectedEmail ?: requireNotNull(record[MEMBERS.SIGNUP_EMAIL])
                         },
-                    part = record[MEMBERS.PART]?.let(MemberPart::valueOf),
+                    part = record[MEMBERS.PART]?.let { runCatching { MemberPart.valueOf(it) }.getOrNull() },
                     status = MemberStatus.valueOf(requireNotNull(record[MEMBERS.STATUS])),
                     cohortId = cohortId.takeIf { record.get("is_current_cohort", Boolean::class.java) == true },
                     teamNumber = record.get("team_number", Int::class.java) ?: 0,
