@@ -8,6 +8,7 @@ import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.port.outbound.query.MemberManagementQueryModel
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
@@ -60,6 +61,30 @@ class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val dsl: DSLContext,
 ) : MemberPersistencePort {
+    override fun lockApprovalTargets(memberIds: List<Long>): List<MemberApprovalTarget> {
+        if (memberIds.isEmpty()) return emptyList()
+        val lockedMembers =
+            dsl.select(MEMBERS.MEMBER_ID, MEMBERS.STATUS, MEMBERS.DELETED_AT).from(MEMBERS)
+                .where(MEMBERS.MEMBER_ID.`in`(memberIds))
+                .orderBy(MEMBERS.MEMBER_ID.asc())
+                .forUpdate()
+                .fetch()
+        val cohortIds =
+            dsl.select(MEMBER_COHORTS.MEMBER_ID, MEMBER_COHORTS.COHORT_ID).from(MEMBER_COHORTS)
+                .where(MEMBER_COHORTS.MEMBER_ID.`in`(lockedMembers.map { it[MEMBERS.MEMBER_ID] }))
+                .forUpdate()
+                .fetchGroups(MEMBER_COHORTS.MEMBER_ID, MEMBER_COHORTS.COHORT_ID)
+        return lockedMembers.map {
+            val memberId = requireNotNull(it[MEMBERS.MEMBER_ID])
+            MemberApprovalTarget(
+                memberId = memberId,
+                status = MemberStatus.valueOf(requireNotNull(it[MEMBERS.STATUS])),
+                cohortIds = cohortIds[memberId].orEmpty().filterNotNull().toSet(),
+                isDeleted = it[MEMBERS.DELETED_AT] != null,
+            )
+        }
+    }
+
     override fun findManagementMembers(cohortId: Long): List<MemberManagementQueryModel> {
         val isCurrentCohort =
             exists(
@@ -471,6 +496,17 @@ class MemberRepository(
             .join(TEAMS)
             .on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
             .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value))
+            .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
+            .limit(1)
+            .fetchOne(TEAMS.TEAM_ID)
+
+    override fun findMemberTeamIdByMemberIdAndCohortId(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ): Long? =
+        dsl.select(TEAMS.TEAM_ID).from(MEMBER_TEAMS)
+            .join(TEAMS).on(MEMBER_TEAMS.TEAM_ID.eq(TEAMS.TEAM_ID))
+            .where(MEMBER_TEAMS.MEMBER_ID.eq(memberId.value), TEAMS.COHORT_ID.eq(cohortId.value))
             .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
             .limit(1)
             .fetchOne(TEAMS.TEAM_ID)

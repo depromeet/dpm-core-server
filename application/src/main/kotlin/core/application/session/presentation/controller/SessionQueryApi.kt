@@ -199,7 +199,7 @@ interface SessionQueryApi {
                                         "id": 35,
                                         "week": 1,
                                         "name": "코어 OT & 팀빌딩",
-                                        "place": "준원's house",
+                                        "place": "스터디룸",
                                         "isOnline": false,
                                         "date": "2026-03-14T13:00:00",
                                         "attendanceStart": "2026-03-14T14:00:00",
@@ -386,7 +386,7 @@ interface SessionQueryApi {
                                         "data": {
                                             "targeted": [
                                                 {
-                                                    "name": "이정호",
+                                                    "name": "최지우",
                                                     "currentStatus": "ABSENT",
                                                     "targetStatus": "LATE",
                                                     "attendedAt": "2025-08-02T14:10:00"
@@ -394,7 +394,7 @@ interface SessionQueryApi {
                                             ],
                                             "untargeted": [
                                                 {
-                                                    "name": "이한음",
+                                                    "name": "이영희",
                                                     "status": "PRESENT",
                                                     "updatedAt": "2025-08-02T14:05:00"
                                                 }

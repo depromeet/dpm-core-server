@@ -123,7 +123,7 @@ interface AnnouncementQueryApi {
                                 "readMembers": [
                                   {
                                     "memberId": 1,
-                                    "name": "준원카카오",
+                                    "name": "박민수",
                                     "teamNumber": 1,
                                     "isAdmin": true,
                                     "part": "SERVER"
@@ -132,14 +132,14 @@ interface AnnouncementQueryApi {
                                 "unreadMembers": [
                                   {
                                     "memberId": 2,
-                                    "name": "신민철",
+                                    "name": "김철수",
                                     "teamNumber": 1,
                                     "isAdmin": false,
                                     "part": "SERVER"
                                   },
                                   {
                                     "memberId": 3,
-                                    "name": "이한음",
+                                    "name": "이영희",
                                     "teamNumber": 1,
                                     "isAdmin": false,
                                     "part": "SERVER"
@@ -180,7 +180,7 @@ interface AnnouncementQueryApi {
                                 "members": [
                                   {
                                     "memberId": 1,
-                                    "name": "준원카카오",
+                                    "name": "박민수",
                                     "teamNumber": 1,
                                     "isAdmin": true,
                                     "part": "SERVER",
