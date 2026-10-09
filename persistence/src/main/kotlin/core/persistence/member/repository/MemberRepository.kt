@@ -150,8 +150,8 @@ class MemberRepository(
             oauthEmail.`as`("oauth_email"),
         ).from(MEMBERS)
             .where(MEMBERS.DELETED_AT.isNull)
-            .and(MEMBERS.STATUS.`in`("ACTIVE", "INACTIVE", "PENDING"))
-            .and(isCurrentCohort.or(MEMBERS.STATUS.eq("PENDING").and(hasNoCohort)))
+            .and(MEMBERS.STATUS.`in`(MemberStatus.ACTIVE.name, MemberStatus.INACTIVE.name, MemberStatus.PENDING.name))
+            .and(isCurrentCohort.or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name).and(hasNoCohort)))
             .fetch { record ->
                 val selectedEmail = record.get("oauth_email", String::class.java)?.trim()?.takeIf { it.isNotEmpty() }
                 MemberManagementQueryModel(
@@ -208,9 +208,9 @@ class MemberRepository(
         var changed = MEMBERS.MEMBER_ID.`in`(changedAssociationMemberIds)
         if (updatePart) changed = changed.or(MEMBERS.PART.isDistinctFrom(part?.name))
         if (status != null) changed = changed.or(MEMBERS.STATUS.isDistinctFrom(status.name))
-        val update = dsl.update(MEMBERS).set(MEMBERS.UPDATED_AT, LocalDateTime.now(ZoneId.of("UTC")))
-        if (updatePart) update.set(MEMBERS.PART, part?.name)
-        if (status != null) update.set(MEMBERS.STATUS, status.name)
+        var update = dsl.update(MEMBERS).set(MEMBERS.UPDATED_AT, LocalDateTime.now(ZoneId.of("UTC")))
+        if (updatePart) update = update.set(MEMBERS.PART, part?.name)
+        if (status != null) update = update.set(MEMBERS.STATUS, status.name)
         update.where(MEMBERS.MEMBER_ID.`in`(memberIds), changed).execute()
     }
 
