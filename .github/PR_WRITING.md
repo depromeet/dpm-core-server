@@ -3,6 +3,9 @@
 이 저장소에서 PR·Issue를 만들 때 따르는다.  
 템플릿 원본: [PULL_REQUEST_TEMPLATE.md](./PULL_REQUEST_TEMPLATE.md), [ISSUE_TEMPLATE/](./ISSUE_TEMPLATE/)
 
+> Cursor용 `.mdc` 규칙 파일은 **이 문서(`.md`)와 같이 커밋하지 않는다.**  
+> 공유 규칙은 이 `.md`만 저장소에 둔다. `.mdc`는 로컬(`.cursor/rules/`, gitignore)에만 둔다.
+
 ## Issue
 
 - Feature면 `.github/ISSUE_TEMPLATE/feature.yml` 형식 사용
