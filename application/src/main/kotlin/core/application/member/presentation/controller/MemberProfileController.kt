@@ -18,13 +18,17 @@ import org.springframework.web.bind.annotation.RestController
 class MemberProfileController(private val profiles: MemberProfileService) : MemberProfileApi {
     @PreAuthorize("isAuthenticated()")
     @GetMapping
-    override fun get(@CurrentMemberId memberId: Long): CustomResponse<MemberProfileResponse> =
-        CustomResponse.ok(profiles.get(memberId))
+    override fun get(
+        @CurrentMemberId memberId: Long,
+    ): CustomResponse<MemberProfileResponse> = CustomResponse.ok(profiles.get(memberId))
 
     @PreAuthorize("isAuthenticated()")
     @PatchMapping
     override fun complete(
         @CurrentMemberId memberId: Long,
         @Valid @RequestBody request: MemberProfileUpdateRequest,
-    ): CustomResponse<MemberProfileResponse> = CustomResponse.ok(profiles.complete(memberId, request.name, request.part))
+    ): CustomResponse<MemberProfileResponse> =
+        CustomResponse.ok(
+            profiles.complete(memberId, request.name, request.part),
+        )
 }

@@ -18,7 +18,10 @@ class MemberProfileRepository(private val dsl: DSLContext) : MemberProfilePersis
 
     override fun lockProfile(memberId: Long): MemberProfile? = read(memberId, lock = true)
 
-    private fun read(memberId: Long, lock: Boolean): MemberProfile? {
+    private fun read(
+        memberId: Long,
+        lock: Boolean,
+    ): MemberProfile? {
         val query = dsl.selectFrom(MEMBERS).where(MEMBERS.MEMBER_ID.eq(memberId))
         val record = (if (lock) query.forUpdate() else query).fetchOne() ?: return null
         return MemberProfile(
@@ -32,7 +35,11 @@ class MemberProfileRepository(private val dsl: DSLContext) : MemberProfilePersis
         )
     }
 
-    override fun completeProfile(memberId: Long, name: String, part: MemberPart): Boolean {
+    override fun completeProfile(
+        memberId: Long,
+        name: String,
+        part: MemberPart,
+    ): Boolean {
         val now = LocalDateTime.now(ZoneOffset.UTC)
         return dsl.update(MEMBERS)
             .set(MEMBERS.NAME, name)

@@ -13,6 +13,8 @@ data class MemberProfileUpdateRequest(
     val part: String,
 ) {
     @JsonAnySetter
-    fun rejectUnknownField(field: String, value: Any?): Nothing =
-        throw IllegalArgumentException("지원하지 않는 프로필 수정 필드입니다: $field")
+    fun rejectUnknownField(
+        field: String,
+        value: Any?,
+    ): Nothing = throw IllegalArgumentException("지원하지 않는 프로필 수정 필드입니다: $field")
 }
