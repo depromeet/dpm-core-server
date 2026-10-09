@@ -23,6 +23,8 @@ import core.application.member.presentation.controller.MemberPartController
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.application.session.application.service.SessionQueryService
 import core.application.session.presentation.controller.SessionQueryController
+import core.application.sessionFeedback.application.service.SessionFeedbackFormQueryService
+import core.application.sessionFeedback.application.service.SessionFeedbackListQueryService
 import core.application.support.FakeCohortPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
@@ -80,7 +82,14 @@ class AttendanceAdminSessionControllerTest {
                 withPreAuthorize(
                     AttendanceCommandController(commandService, mock(AbsenceReasonCommandService::class.java), Clock.systemUTC()),
                 ),
-                withPreAuthorize(SessionQueryController(sessionQueryService)),
+                withPreAuthorize(
+                    SessionQueryController(
+                        sessionQueryService,
+                        mock(SessionFeedbackFormQueryService::class.java),
+                        mock(SessionFeedbackListQueryService::class.java),
+                        Clock.systemUTC(),
+                    ),
+                ),
                 withPreAuthorize(CohortController(CohortQueryService(cohorts), mock(CohortCommandService::class.java))),
                 withPreAuthorize(MemberPartController()),
             ).setControllerAdvice(GlobalExceptionHandler())

@@ -22,6 +22,8 @@ class CohortQueryService(
 
     override fun getActiveCohortValue(): String = getActiveCohort().value
 
+    override fun findActiveCohortId(): CohortId? = cohortPersistencePort.findActive()?.id
+
     override fun getLatestCohortId(): CohortId = getActiveCohortId()
 
     override fun getLatestCohortValue(): String = getActiveCohortValue()

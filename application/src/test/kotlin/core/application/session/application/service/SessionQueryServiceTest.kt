@@ -1,12 +1,20 @@
 package core.application.session.application.service
 
 import core.application.support.AttendanceTestFixture
+import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.vo.CohortId
+import core.domain.member.aggregate.Member
+import core.domain.member.aggregate.MemberCohort
+import core.domain.member.enums.MemberStatus
+import core.domain.member.vo.MemberCohortId
+import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
+import core.domain.session.enums.NextSessionHomeStatus
 import core.domain.session.enums.SessionAttendanceStatus
 import core.domain.session.vo.AttendancePolicy
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.`when`
 import java.time.Duration
 import java.time.Instant
 
@@ -14,6 +22,65 @@ class SessionQueryServiceTest {
     private val now = Instant.parse("2026-10-10T10:00:00Z")
     private val fixture = AttendanceTestFixture(now = now)
     private val cohortId = fixture.createActiveCohort()
+    private val memberId = MemberId(1L)
+
+    @Test
+    fun `다음 세션이 있으면 AVAILABLE 과 session 을 반환한다`() {
+        val session = saveSession(week = 1, date = now.plus(Duration.ofDays(1)))
+        stubMember(cohortId = cohortId, cohortValue = "18")
+
+        val result = fixture.sessionQueryService.getNextSessionHome(memberId)
+
+        assertThat(result.status).isEqualTo(NextSessionHomeStatus.AVAILABLE)
+        assertThat(result.cohortValue).isEqualTo("18")
+        assertThat(result.session?.id).isEqualTo(session.id!!.value)
+    }
+
+    @Test
+    fun `활성 기수인데 다음 세션이 없으면 NOT_REGISTERED 이다`() {
+        stubMember(cohortId = cohortId, cohortValue = "18")
+
+        val result = fixture.sessionQueryService.getNextSessionHome(memberId)
+
+        assertThat(result.status).isEqualTo(NextSessionHomeStatus.NOT_REGISTERED)
+        assertThat(result.cohortValue).isEqualTo("18")
+        assertThat(result.session).isNull()
+    }
+
+    @Test
+    fun `멤버 기수가 활성 기수가 아니면 COHORT_ENDED 이다`() {
+        val ended = fixture.cohorts.save(Cohort(value = "17")).id!!
+        stubMember(cohortId = ended, cohortValue = "17")
+
+        val result = fixture.sessionQueryService.getNextSessionHome(memberId)
+
+        assertThat(result.status).isEqualTo(NextSessionHomeStatus.COHORT_ENDED)
+        assertThat(result.cohortValue).isEqualTo("17")
+        assertThat(result.session).isNull()
+    }
+
+    @Test
+    fun `활성 기수가 없으면 COHORT_ENDED 이다`() {
+        fixture.cohorts.deactivateAll()
+        stubMember(cohortId = cohortId, cohortValue = "18")
+
+        val result = fixture.sessionQueryService.getNextSessionHome(memberId)
+
+        assertThat(result.status).isEqualTo(NextSessionHomeStatus.COHORT_ENDED)
+        assertThat(result.cohortValue).isEqualTo("18")
+        assertThat(result.session).isNull()
+    }
+
+    @Test
+    fun `다른 기수 세션은 다음 세션으로 고르지 않는다`() {
+        saveSession(week = 1, date = now.plus(Duration.ofDays(1)), cohort = CohortId(cohortId.value + 100))
+        stubMember(cohortId = cohortId, cohortValue = "18")
+
+        val result = fixture.sessionQueryService.getNextSessionHome(memberId)
+
+        assertThat(result.status).isEqualTo(NextSessionHomeStatus.NOT_REGISTERED)
+        assertThat(result.session).isNull()
+    }
 
     @Test
     fun `v1 은 기존처럼 ID 순, v3 는 주차와 무관하게 일시 다음 ID 순이고 둘 다 현재 활성 기수만 준다`() {
@@ -58,6 +125,29 @@ class SessionQueryServiceTest {
             val week = fixture.sessionQueryService.getSessionSelector().single()
             assertThat(week.attendanceStatus).describedAs("now=%s", at).isEqualTo(expected)
         }
+    }
+
+    private fun stubMember(
+        cohortId: CohortId,
+        cohortValue: String,
+    ) {
+        `when`(fixture.memberQueryUseCase.getMemberById(memberId)).thenReturn(
+            Member(
+                id = memberId,
+                name = "테스트",
+                signupEmail = "test@example.com",
+                status = MemberStatus.ACTIVE,
+                memberCohorts =
+                    listOf(
+                        MemberCohort(
+                            id = MemberCohortId(1L),
+                            memberId = memberId,
+                            cohortId = cohortId,
+                            cohortValue = cohortValue,
+                        ),
+                    ),
+            ),
+        )
     }
 
     private fun saveSession(
