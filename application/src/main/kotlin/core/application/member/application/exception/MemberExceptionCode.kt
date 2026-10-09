@@ -21,6 +21,8 @@ enum class MemberExceptionCode(
     INVALID_EMAIL_PASSWORD(HttpStatus.UNAUTHORIZED, "MEMBER-401-01", "이메일 또는 비밀번호가 올바르지 않습니다"),
     MEMBER_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MEMBER-403-01", "로그인이 제한된 회원입니다"),
     APPLE_LOGIN_MEMBER_REQUIRED(HttpStatus.FORBIDDEN, "MEMBER-403-02", "Apple 로그인 회원만 사용할 수 있습니다"),
+    MEMBER_SELF_DELETION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MEMBER-403-03", "관리자는 본인 계정을 삭제할 수 없습니다"),
+    MEMBER_HARD_DELETE_RETIRED(HttpStatus.GONE, "MEMBER-410-01", "영구 삭제 API는 더 이상 제공하지 않습니다. 멤버 관리 삭제 API를 사용해주세요"),
     INVALID_MEMBER_PART(HttpStatus.BAD_REQUEST, "MEMBER-400-05", "유효하지 않은 멤버 파트입니다"),
     MEMBER_DELETED(HttpStatus.UNAUTHORIZED, "MEMBER-401-02", "탈퇴한 회원입니다"),
     INVALID_MEMBER_MANAGEMENT_UPDATE(HttpStatus.BAD_REQUEST, "MEMBER-400-06", "멤버 수정 요청이 올바르지 않습니다"),
@@ -31,6 +33,8 @@ enum class MemberExceptionCode(
     MEMBER_REJECTION_TARGET_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-11", "현재 기수 또는 기수 없는 가입 대기자만 반려할 수 있습니다"),
     MEMBER_REAPPLICATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-12", "반려된 회원만 가입을 재신청할 수 있습니다"),
     MEMBER_ADMISSION_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-13", "가입 반려와 재신청은 전용 API를 사용해주세요"),
+    INVALID_MEMBER_MERGE(HttpStatus.BAD_REQUEST, "MEMBER-400-21", "현재 기수 또는 기수 없는 서로 다른 소셜 가입 대기 계정만 통합할 수 있습니다"),
+    MEMBER_OAUTH_CONFLICT(HttpStatus.CONFLICT, "MEMBER-409-21", "로그인 수단이 충돌하거나 소유 계정이 변경되었습니다. 다시 로그인해주세요"),
     MEMBER_MANAGEMENT_NOT_IMPLEMENTED(
         HttpStatus.NOT_IMPLEMENTED,
         "MEMBER-501-01",

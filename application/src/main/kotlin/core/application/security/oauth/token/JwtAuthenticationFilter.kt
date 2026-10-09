@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import core.application.common.exception.CustomResponse
 import core.application.common.logging.MdcLoggingFilter
 import core.application.security.oauth.exception.JwtExceptionCode
+import core.domain.member.port.outbound.MemberPersistencePort
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -18,6 +19,7 @@ class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
     private val jwtTokenResolver: JwtTokenResolver,
     private val objectMapper: ObjectMapper,
+    private val members: MemberPersistencePort,
 ) : OncePerRequestFilter() {
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
@@ -56,6 +58,12 @@ class JwtAuthenticationFilter(
             tokenCandidates.firstOrNull { jwtTokenProvider.validateToken(it) }
 
         if (authenticatedToken != null) {
+            val memberId = runCatching { jwtTokenProvider.getMemberId(authenticatedToken) }.getOrNull()
+            if (memberId == null || !members.isLoginAvailable(memberId)) {
+                SecurityContextHolder.clearContext()
+                writeUnauthorized(response, JwtExceptionCode.TOKEN_INVALID)
+                return
+            }
             val authentication = jwtTokenProvider.getAuthentication(authenticatedToken)
             SecurityContextHolder.getContext().authentication = authentication
             // 알림은 AsyncAppender 의 워커 스레드에서 조립되어 SecurityContext 를 볼 수 없다.

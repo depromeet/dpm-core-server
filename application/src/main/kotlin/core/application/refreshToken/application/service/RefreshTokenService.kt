@@ -10,6 +10,8 @@ import core.application.security.oauth.token.JwtTokenConstant.REFRESH_TOKEN_CAME
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.oauth.token.JwtTokenResolver
+import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.LoginIdentity
 import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
@@ -29,6 +31,7 @@ class RefreshTokenService(
     private val tokenInjector: JwtTokenInjector,
     private val tokenProvider: JwtTokenProvider,
     private val deviceIdResolver: DeviceIdResolver,
+    private val members: MemberPersistencePort,
 ) {
     private val logger = KotlinLogging.logger { }
 
@@ -37,7 +40,12 @@ class RefreshTokenService(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ReissueResult {
-        val (presentedToken, stored) = resolveStoredToken(request)
+        val (presentedToken, observed) = resolveStoredToken(request)
+        // 삭제와 같은 회원 잠금을 먼저 획득하고 회원 및 토큰의 최신 상태를 다시 확인한다.
+        val member = members.lockApprovalTargets(listOf(observed.memberId.value)).singleOrNull()
+        if (member == null || member.isDeleted || member.status == MemberStatus.WITHDRAWN) throw TokenInvalidException()
+        val stored = refreshTokenPersistencePort.lockByTokenHash(observed.tokenHash) ?: throw TokenInvalidException()
+        if (stored.memberId != observed.memberId) throw TokenInvalidException()
         val now = Instant.now()
 
         if (stored.isExpired(now)) {

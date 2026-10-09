@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class MemberLoginService(
     private val memberPersistencePort: MemberPersistencePort,
+    private val identityLock: MemberIdentityLockService,
     private val memberOAuthService: MemberOAuthService,
     private val refreshTokenIssueService: RefreshTokenIssueService,
     private val memberRoleService: MemberRoleService,
@@ -40,11 +41,14 @@ class MemberLoginService(
             memberOAuthService.findByProviderAndExternalId(provider, externalId)
 
         if (memberOAuth != null) {
+            identityLock.lockOAuth(memberOAuth)
             val member =
                 memberPersistencePort.findById(memberOAuth.memberId)
                     ?: recoverOrCreateMemberForOrphanedOAuth(authAttributes).also {
+                        identityLock.lockMember(requireNotNull(it.id))
                         memberOAuthService.relinkMemberOAuthProvider(it, authAttributes)
                     }
+            if (member.deletedAt != null || member.status == MemberStatus.WITHDRAWN) return LoginResult(null)
             memberOAuthService.syncEmail(authAttributes)
             return handleExistingMemberLogin(member, deviceId, LoginIdentity(loginMethod, memberOAuth.id!!.value))
         }
@@ -99,6 +103,8 @@ class MemberLoginService(
                 )
             }
 
+        identityLock.lockMember(requireNotNull(member.id))
+        if (member.deletedAt != null || member.status == MemberStatus.WITHDRAWN) return LoginResult(null)
         val savedOAuth = memberOAuthService.addMemberOAuthProvider(member, authAttributes)
         memberRoleService.ensureGuestRoleAssigned(member.id ?: throw MemberIdRequiredException())
 

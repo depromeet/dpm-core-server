@@ -7,11 +7,14 @@ import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
 import core.entity.member.MemberOAuthEntity
+import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.MEMBER_OAUTH
 import org.springframework.stereotype.Repository
 
 @Repository
 class MemberOAuthRepository(
     private val memberOAuthJpaRepository: MemberOAuthJpaRepository,
+    private val dsl: DSLContext,
 ) : MemberOAuthPersistencePort {
     override fun save(
         memberOAuth: MemberOAuth,
@@ -34,27 +37,27 @@ class MemberOAuthRepository(
         externalId: String,
         member: Member,
     ) {
-        val existing =
-            memberOAuthJpaRepository.findByProviderAndExternalId(provider.name, externalId)
-                ?: return
-
-        memberOAuthJpaRepository.save(
-            MemberOAuthEntity(
-                id = existing.id,
-                externalId = existing.externalId,
-                provider = existing.provider,
-                member = core.entity.member.MemberEntity.from(member),
-                email = existing.email,
-            ),
-        )
+        dsl.update(MEMBER_OAUTH)
+            .set(MEMBER_OAUTH.MEMBER_ID, requireNotNull(member.id).value)
+            .where(MEMBER_OAUTH.PROVIDER.eq(provider.name), MEMBER_OAUTH.EXTERNAL_ID.eq(externalId))
+            .execute()
     }
 
     override fun findByProviderAndExternalId(
         provider: OAuthProvider,
         externalId: String,
-    ): MemberOAuth? {
-        return memberOAuthJpaRepository.findByProviderAndExternalId(provider.name, externalId)?.toDomain()
-    }
+    ): MemberOAuth? =
+        dsl.selectFrom(MEMBER_OAUTH)
+            .where(MEMBER_OAUTH.PROVIDER.eq(provider.name), MEMBER_OAUTH.EXTERNAL_ID.eq(externalId))
+            .fetchOne { row ->
+                MemberOAuth(
+                    id = MemberOAuthId(requireNotNull(row.memberOauthId)),
+                    externalId = requireNotNull(row.externalId),
+                    provider = OAuthProvider.valueOf(requireNotNull(row.provider)),
+                    memberId = MemberId(requireNotNull(row.memberId)),
+                    email = row.email,
+                )
+            }
 
     override fun updateEmail(
         provider: OAuthProvider,
