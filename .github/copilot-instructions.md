@@ -1,8 +1,3 @@
-# PR / Issue 작성
-
-PR·Issue를 만들 때는 [.github/PR_WRITING.md](./PR_WRITING.md)를 따른다.
-(템플릿, API 스펙, 스크린샷 표/축소, Figma 링크 금지, Cursor 표기 금지)
-
 # 코드 리뷰 규칙
 
 ## 작성 규칙
