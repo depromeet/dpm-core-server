@@ -11,21 +11,20 @@ import io.swagger.v3.oas.annotations.tags.Tag
 @Tag(name = "Member", description = "멤버 API")
 interface MemberAdmissionApi {
     @Operation(
-        summary = "미승인 계정 통합 및 승인 (명세)",
+        summary = "미승인 계정 통합 및 승인",
         description =
             "create:member, delete:member 권한이 필요합니다. 서로 다른 두 계정 모두 현재 기수 또는 기수 없는 PENDING이어야 합니다. " +
                 "유지할 계정의 닉네임·파트를 보존하고 원본의 로그인 수단을 옮긴 뒤 현재 기수의 디퍼, 팀 미배정으로 승인합니다. " +
                 "관리 목록 이메일은 카카오를 우선합니다. 다른 회원에게 속한 로그인 수단이나 동일 provider의 서로 다른 계정은 덮어쓰지 않습니다. " +
                 "통합·원본 정리·승인을 한 트랜잭션으로 처리하며 실패하면 전체 취소합니다. 이미 처리된 계정의 재요청은 거절합니다. " +
-                "현재는 데이터 변경 없이 MEMBER-501-01을 반환합니다.",
+                "비밀번호 로그인 정보가 있는 계정은 통합할 수 없습니다. 원본 회원은 soft delete하며 연관 기록을 보존합니다.",
     )
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "통합 및 승인 완료 (구현 후 제공)", useReturnTypeSchema = true),
+        ApiResponse(responseCode = "200", description = "통합 및 승인 완료", useReturnTypeSchema = true),
         ApiResponse(responseCode = "400", description = "잘못된 요청 또는 미승인 대상 조건 불충족"),
         ApiResponse(responseCode = "403", description = "통합·승인 권한 없음"),
         ApiResponse(responseCode = "404", description = "멤버 없음"),
         ApiResponse(responseCode = "409", description = "로그인 수단 충돌"),
-        ApiResponse(responseCode = "501", description = "MEMBER-501-01: 명세만 제공, 데이터 변경 없음"),
     )
     fun mergeAndApprove(request: MemberMergeRequest): CustomResponse<Void>
 
