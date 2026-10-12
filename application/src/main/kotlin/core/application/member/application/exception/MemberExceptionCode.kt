@@ -23,6 +23,9 @@ enum class MemberExceptionCode(
     APPLE_LOGIN_MEMBER_REQUIRED(HttpStatus.FORBIDDEN, "MEMBER-403-02", "Apple 로그인 회원만 사용할 수 있습니다"),
     INVALID_MEMBER_PART(HttpStatus.BAD_REQUEST, "MEMBER-400-05", "유효하지 않은 멤버 파트입니다"),
     MEMBER_DELETED(HttpStatus.UNAUTHORIZED, "MEMBER-401-02", "탈퇴한 회원입니다"),
+    INVALID_MEMBER_MANAGEMENT_UPDATE(HttpStatus.BAD_REQUEST, "MEMBER-400-06", "멤버 수정 요청이 올바르지 않습니다"),
+    MEMBER_MANAGEMENT_TARGET_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-07", "현재 기수의 승인된 멤버만 수정할 수 있습니다"),
+    INVALID_MEMBER_MANAGEMENT_TEAM(HttpStatus.BAD_REQUEST, "MEMBER-400-08", "현재 기수에 속한 팀을 선택해주세요"),
     ;
 
     override fun getStatus(): HttpStatus = status

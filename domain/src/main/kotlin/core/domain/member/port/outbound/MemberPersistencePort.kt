@@ -4,6 +4,8 @@ import core.domain.authorization.vo.RoleId
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberPart
+import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.query.MemberManagementQueryModel
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
@@ -12,6 +14,21 @@ import core.domain.member.vo.MemberId
 interface MemberPersistencePort {
     /** 현재 기수 소속 또는 어느 기수에도 속하지 않은 PENDING. 삭제/탈퇴 회원은 제외한다. */
     fun findManagementMembers(cohortId: Long): List<MemberManagementQueryModel>
+
+    /** 현재 기수의 승인된 멤버를 ID 순서로 잠그고 수정 가능한 ID를 반환한다. 쓰기 트랜잭션 안에서 호출한다. */
+    fun lockApprovedManagementMemberIds(
+        memberIds: List<Long>,
+        cohortId: Long,
+    ): List<Long>
+
+    /** 지정한 필드만 변경한다. 연결 정보만 변경된 멤버도 updatedAt을 갱신한다. */
+    fun updateManagementFields(
+        memberIds: List<Long>,
+        updatePart: Boolean,
+        part: MemberPart?,
+        status: MemberStatus?,
+        changedAssociationMemberIds: Set<Long>,
+    )
 
     fun save(member: Member): Member
 
