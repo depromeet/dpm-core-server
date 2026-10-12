@@ -13,7 +13,6 @@ import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
 import core.application.member.presentation.response.AppleMemberProfileUpdateResponse
 import core.application.security.oauth.token.JwtTokenInjector
-import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
@@ -134,16 +133,6 @@ class MemberCommandService(
             name = savedMember.name,
             part = savedMember.part?.name,
         )
-    }
-
-    fun activate(member: Member) {
-        val memberId = requireNotNull(member.id) { "Activated member must have id" }
-        // 승인 시 기존 이력을 유지하고 새 role 만 append (예: (DEEPER, 17) 유지 + (DEEPER, 18) 추가).
-        // 판정은 CurrentCohortRoleResolver 가 활성 기수 기준으로 필터링한다.
-        memberRoleService.ensureCohortRoleAssigned(memberId, RoleType.Deeper, cohortQueryUseCase.getActiveCohortId())
-        member.activate()
-        val activatedMember = memberPersistencePort.save(member)
-        initializeMemberDataForActiveMember(activatedMember)
     }
 
     /**

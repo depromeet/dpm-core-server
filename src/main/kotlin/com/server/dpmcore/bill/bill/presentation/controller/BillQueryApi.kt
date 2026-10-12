@@ -209,17 +209,17 @@ interface BillQueryApi {
                           "data": {
                               "members": [
                               {
-                                "name": "이한음",
+                                "name": "이영희",
                                 "authority": "ORGANIZER",
                                 "splitAmount": 25000
                               },
                               {
-                                "name": "신민철",
+                                "name": "김철수",
                                 "authority": "ORGANIZER",
                                 "splitAmount": 18000
                               },
                               {
-                                "name": "정준원",
+                                "name": "박민수",
                                 "authority": "DEEPER",
                                 "splitAmount": 12000
                               }

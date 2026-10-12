@@ -80,6 +80,7 @@ class AfterPartyCommandService(
         updateAfterPartyInternal(afterParty)
     }
 
+    @Deprecated("회식은 현재 MVP에서 사용하지 않습니다. 2차 MVP 검토 전까지 기존 승인 초기화 동작을 유지합니다.")
     override fun initializeForNewCohortMember(
         memberId: MemberId,
         cohortId: CohortId,

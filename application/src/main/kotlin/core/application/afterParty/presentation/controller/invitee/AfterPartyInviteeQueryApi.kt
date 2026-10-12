@@ -31,7 +31,7 @@ interface AfterPartyInviteeQueryApi {
                               "data": [
                                 {
                                   "memberId": 1,
-                                  "name": "준원카카오",
+                                  "name": "박민수",
                                   "part": "SERVER",
                                   "teamNumber": 1,
                                   "isAdmin": true,
@@ -39,7 +39,7 @@ interface AfterPartyInviteeQueryApi {
                                 },
                                 {
                                   "memberId": 2,
-                                  "name": "신민철",
+                                  "name": "김철수",
                                   "part": "SERVER",
                                   "teamNumber": 1,
                                   "isAdmin": false,

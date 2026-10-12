@@ -2,6 +2,7 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.member.application.exception.MemberExceptionCode
+import core.application.member.application.service.MemberApprovalService
 import core.application.member.application.service.MemberCommandService
 import core.application.member.application.service.MemberNameHashTypeValidator
 import core.application.member.application.service.MemberQueryService
@@ -46,6 +47,7 @@ import org.springframework.web.bind.annotation.RestController
 class MemberController(
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
+    private val memberApprovalService: MemberApprovalService,
     private val memberNameHashTypeValidator: MemberNameHashTypeValidator,
     private val appleAuthService: AppleAuthService,
     private val emailPasswordAuthService: EmailPasswordAuthService,
@@ -152,11 +154,7 @@ class MemberController(
     override fun checkWhiteList(
         @Valid @RequestBody request: WhiteListCheckRequest,
     ): CustomResponse<Void> {
-        memberQueryService
-            .getMembersForWhitelist(request.members)
-            .forEach { member ->
-                memberCommandService.activate(member)
-            }
+        memberApprovalService.approve(request.members.distinct())
 
         return CustomResponse.ok()
     }

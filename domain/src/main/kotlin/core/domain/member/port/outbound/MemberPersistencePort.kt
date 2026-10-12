@@ -6,12 +6,16 @@ import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.port.outbound.query.MemberManagementQueryModel
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
 
 interface MemberPersistencePort {
+    /** 회원의 삭제 상태와 기수 소속을 최신 상태로 읽는다. 쓰기 트랜잭션에서 ID 순서로 잠근다. */
+    fun lockApprovalTargets(memberIds: List<Long>): List<MemberApprovalTarget>
+
     /** 현재 기수 소속 또는 어느 기수에도 속하지 않은 PENDING. 삭제/탈퇴 회원은 제외한다. */
     fun findManagementMembers(cohortId: Long): List<MemberManagementQueryModel>
 
@@ -72,6 +76,11 @@ interface MemberPersistencePort {
     fun findMemberTeamNumberByMemberIds(memberIds: List<MemberId>): Map<Long, Int>
 
     fun findMemberTeamIdByMemberId(memberId: MemberId): Long?
+
+    fun findMemberTeamIdByMemberIdAndCohortId(
+        memberId: MemberId,
+        cohortId: CohortId,
+    ): Long?
 
     fun findAll(): List<Member>
 
