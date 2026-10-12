@@ -11,6 +11,7 @@ import org.springframework.transaction.event.TransactionalEventListener
 class SessionCreateEventListener(
     private val attendanceCommandService: AttendanceCommandService,
 ) {
+    @org.springframework.core.annotation.Order(0)
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     fun handle(event: SessionCreateEvent) {
         attendanceCommandService.createAttendances(

@@ -53,6 +53,8 @@ import java.util.concurrent.atomic.AtomicLong
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class, MemberManagementCommandService::class, RoleCommandService::class, MemberRoleService::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class)
 class MemberManagementUpdateMySqlIntegrationTest {
+    @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
+
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var members: MemberPersistencePort
