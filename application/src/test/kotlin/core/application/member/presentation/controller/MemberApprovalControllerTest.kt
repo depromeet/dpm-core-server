@@ -44,6 +44,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.web.WebAppConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -76,6 +77,29 @@ class MemberApprovalControllerTest {
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
         `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet())))
+    }
+
+    @Test
+    fun `기존 영구 삭제는 삭제 권한이 있어도 410을 반환하고 데이터를 조회하거나 변경하지 않는다`() {
+        mvc.perform(
+            delete("/v1/members/1/hard-delete").requestAttr(
+                RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
+                SecurityContextImpl(UsernamePasswordAuthenticationToken("operator", null, listOf(SimpleGrantedAuthority("delete:member")))),
+            ),
+        ).andExpect(status().isGone).andExpect(jsonPath("$.code").value("MEMBER-410-01"))
+        verifyNoInteractions(members, context.getBean(MemberQueryService::class.java))
+    }
+
+    @Test
+    fun `기존 영구 삭제는 익명과 삭제 권한 없는 요청을 거절한다`() {
+        mvc.perform(delete("/v1/members/1/hard-delete")).andExpect(status().isForbidden)
+        mvc.perform(
+            delete("/v1/members/1/hard-delete").requestAttr(
+                RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
+                SecurityContextImpl(UsernamePasswordAuthenticationToken("operator", null, listOf(SimpleGrantedAuthority("create:member")))),
+            ),
+        ).andExpect(status().isForbidden)
+        verifyNoInteractions(members, context.getBean(MemberQueryService::class.java))
     }
 
     @Test

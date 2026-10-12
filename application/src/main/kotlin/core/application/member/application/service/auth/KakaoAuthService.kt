@@ -1,6 +1,7 @@
 package core.application.member.application.service.auth
 
 import core.application.member.application.exception.MemberDeletedException
+import core.application.member.application.service.MemberIdentityLockService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
@@ -23,6 +24,7 @@ class KakaoAuthService(
     private val redirectUriValidator: OAuthRedirectUriValidator,
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
+    private val identityLock: MemberIdentityLockService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenIssueService: RefreshTokenIssueService,
     private val memberRoleService: MemberRoleService,
@@ -60,6 +62,8 @@ class KakaoAuthService(
                             name = attributes.getName(),
                         )
 
+                identityLock.lockMember(requireNotNull(targetMember.id))
+                validateMemberForLogin(targetMember)
                 val savedOAuth =
                     memberOAuthPersistencePort.save(
                         core.domain.member.aggregate.MemberOAuth.of(
@@ -73,9 +77,11 @@ class KakaoAuthService(
 
                 targetMember to savedOAuth
             } else {
+                identityLock.lockOAuth(memberOAuth)
                 val targetMember =
                     memberPersistencePort.findById(memberOAuth.memberId)
                         ?: recoverOrCreateMemberForOrphanedOAuth(attributes)
+                validateMemberForLogin(targetMember)
                 memberOAuthPersistencePort.updateEmail(
                     provider = attributes.getProvider(),
                     externalId = attributes.getExternalId(),
@@ -104,6 +110,8 @@ class KakaoAuthService(
                     name = attributes.getName(),
                 )
 
+        identityLock.lockMember(requireNotNull(targetMember.id))
+        validateMemberForLogin(targetMember)
         memberOAuthPersistencePort.relinkToMember(
             provider = attributes.getProvider(),
             externalId = attributes.getExternalId(),
@@ -116,6 +124,7 @@ class KakaoAuthService(
     private fun selectLoginCandidate(members: List<Member>): Member? {
         val availableMembers = members.filter { it.deletedAt == null }
         if (availableMembers.isEmpty()) {
+            if (members.isNotEmpty()) throw MemberDeletedException()
             return null
         }
 
