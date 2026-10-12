@@ -139,20 +139,26 @@ class MemberRoleRepository(
         findActiveRoleAssignmentsByMemberId(memberId).map { it.roleName }
 
     override fun findActiveRoleAssignmentsByMemberId(memberId: Long): List<MemberRoleAssignment> =
-        dsl
-            .select(ROLES.NAME, COHORT_ID_FIELD)
+        findActiveRoleAssignmentsByMemberIds(listOf(memberId))[memberId].orEmpty()
+
+    override fun findActiveRoleAssignmentsByMemberIds(memberIds: List<Long>): Map<Long, List<MemberRoleAssignment>> {
+        if (memberIds.isEmpty()) return emptyMap()
+        return dsl
+            .select(MEMBER_ROLES.MEMBER_ID, ROLES.NAME, COHORT_ID_FIELD)
             .from(MEMBER_ROLES)
             .join(ROLES).on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
-            .where(MEMBER_ROLES.MEMBER_ID.eq(memberId).and(MEMBER_ROLES.DELETED_AT.isNull))
+            .where(MEMBER_ROLES.MEMBER_ID.`in`(memberIds).and(MEMBER_ROLES.DELETED_AT.isNull))
             .fetch()
             .mapNotNull { record ->
                 val roleName = record.get(ROLES.NAME) ?: return@mapNotNull null
                 val cohortIdValue = record.get(COHORT_ID_FIELD)
-                MemberRoleAssignment(
-                    roleName = roleName,
-                    cohortId = cohortIdValue?.let { CohortId(it) },
-                )
-            }
+                requireNotNull(record[MEMBER_ROLES.MEMBER_ID]) to
+                    MemberRoleAssignment(
+                        roleName = roleName,
+                        cohortId = cohortIdValue?.let { CohortId(it) },
+                    )
+            }.groupBy({ it.first }, { it.second })
+    }
 
     override fun findRoleNamesByMemberIds(memberIds: List<Long>): Map<Long, List<String>> {
         if (memberIds.isEmpty()) return emptyMap()
