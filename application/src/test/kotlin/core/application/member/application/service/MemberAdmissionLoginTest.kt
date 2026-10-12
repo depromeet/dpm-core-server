@@ -45,6 +45,7 @@ class MemberAdmissionLoginTest {
         EmailPasswordAuthService(
             credentials,
             members,
+            mock(MemberIdentityLockService::class.java),
             roles,
             mock(MemberRoleService::class.java),
             mock(MemberTeamService::class.java),

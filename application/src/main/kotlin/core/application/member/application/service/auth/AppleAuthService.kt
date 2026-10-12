@@ -1,6 +1,7 @@
 package core.application.member.application.service.auth
 
 import core.application.member.application.exception.MemberDeletedException
+import core.application.member.application.service.MemberIdentityLockService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
@@ -24,6 +25,7 @@ class AppleAuthService(
     private val redirectUriValidator: OAuthRedirectUriValidator,
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
+    private val identityLock: MemberIdentityLockService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenIssueService: RefreshTokenIssueService,
     private val appleIdTokenValidator: core.application.security.oauth.apple.AppleIdTokenValidator,
@@ -76,6 +78,8 @@ class AppleAuthService(
                             name = memberName,
                         )
 
+                identityLock.lockMember(requireNotNull(targetMember.id))
+                validateMemberForLogin(targetMember)
                 val savedOAuth =
                     memberOAuthPersistencePort.save(
                         MemberOAuth.of(
@@ -89,6 +93,7 @@ class AppleAuthService(
 
                 targetMember to savedOAuth
             } else {
+                identityLock.lockOAuth(memberOAuth)
                 val targetMember =
                     memberPersistencePort.findById(memberOAuth.memberId)
                         ?: recoverOrCreateMemberForOrphanedOAuth(
@@ -102,6 +107,7 @@ class AppleAuthService(
                                     email = email,
                                 ),
                         )
+                validateMemberForLogin(targetMember)
                 memberOAuthPersistencePort.updateEmail(OAuthProvider.APPLE, externalId, email)
 
                 targetMember to memberOAuth
@@ -139,6 +145,7 @@ class AppleAuthService(
     private fun selectLoginCandidate(members: List<Member>): Member? {
         val availableMembers = members.filter { it.deletedAt == null }
         if (availableMembers.isEmpty()) {
+            if (members.isNotEmpty()) throw MemberDeletedException()
             return null
         }
 
@@ -159,6 +166,8 @@ class AppleAuthService(
                     name = name,
                 )
 
+        identityLock.lockMember(requireNotNull(targetMember.id))
+        validateMemberForLogin(targetMember)
         memberOAuthPersistencePort.relinkToMember(
             provider = OAuthProvider.APPLE,
             externalId = externalId,

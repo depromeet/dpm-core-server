@@ -13,6 +13,12 @@ import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
 
 interface MemberPersistencePort {
+    /** 삭제 트랜잭션에서 이미 잠그고 검증한 회원의 상태와 삭제 시각만 변경한다. */
+    fun softDeleteMembers(memberIds: List<Long>)
+
+    /** 토큰 인증 및 재발급에서 현재 삭제/탈퇴 여부를 확인한다. */
+    fun isLoginAvailable(memberId: Long): Boolean
+
     /** 회원의 삭제 상태와 기수 소속을 최신 상태로 읽는다. 쓰기 트랜잭션에서 ID 순서로 잠근다. */
     fun lockApprovalTargets(memberIds: List<Long>): List<MemberApprovalTarget>
 

@@ -5,6 +5,7 @@ import core.application.member.application.exception.InvalidEmailPasswordExcepti
 import core.application.member.application.exception.MemberAllowedException
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.service.MemberIdentityLockService
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
@@ -34,6 +35,7 @@ import java.time.Instant
 class EmailPasswordAuthService(
     private val memberCredentialPersistencePort: MemberCredentialPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
+    private val identityLock: MemberIdentityLockService,
     private val roleQueryService: RoleQueryService,
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
@@ -166,6 +168,7 @@ class EmailPasswordAuthService(
     }
 
     private fun validateMemberForLogin(member: Member) {
+        identityLock.lockMember(requireNotNull(member.id))
         if (!member.isAllowed() && member.status !in setOf(MemberStatus.PENDING, MemberStatus.REJECTED)) {
             throw MemberAllowedException()
         }
@@ -205,6 +208,7 @@ class EmailPasswordAuthService(
         oldPassword: String?,
         newPassword: String,
     ) {
+        identityLock.lockMember(memberId)
         val existingCredential = memberCredentialPersistencePort.findByMemberId(memberId)
 
         // Verify old password if provided and credential exists
@@ -245,6 +249,7 @@ class EmailPasswordAuthService(
      */
     @Transactional
     fun removePassword(memberId: MemberId) {
+        identityLock.lockMember(memberId)
         memberCredentialPersistencePort.deleteByMemberId(memberId)
     }
 

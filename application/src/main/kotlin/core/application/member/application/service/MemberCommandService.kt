@@ -105,9 +105,10 @@ class MemberCommandService(
         anonymizeWithdrawnMemberIdentity(withdrawnMember)
     }
 
-    fun hardDelete(memberId: MemberId) {
-        memberQueryService.getMemberById(memberId)
-        memberPersistencePort.hardDeleteById(memberId)
+    fun hardDelete(
+        @Suppress("UNUSED_PARAMETER") memberId: MemberId,
+    ) {
+        throw BusinessException(MemberExceptionCode.MEMBER_HARD_DELETE_RETIRED)
     }
 
     fun updateAppleMemberProfile(
