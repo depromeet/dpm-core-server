@@ -36,6 +36,7 @@ class Member(
     val memberCohorts: List<MemberCohort> = emptyList(),
     val memberTeams: List<MemberTeam> = emptyList(),
     val memberOAuths: List<MemberOAuth> = emptyList(),
+    val profileCompletedAt: Instant? = null,
 ) {
     var email: String? = email
         private set

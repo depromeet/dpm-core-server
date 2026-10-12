@@ -163,7 +163,7 @@ class MemberRepository(
                         } else {
                             selectedEmail ?: requireNotNull(record[MEMBERS.SIGNUP_EMAIL])
                         },
-                    part = record[MEMBERS.PART]?.let(MemberPart::valueOf),
+                    part = record[MEMBERS.PART]?.let { runCatching { MemberPart.valueOf(it) }.getOrNull() },
                     status = MemberStatus.valueOf(requireNotNull(record[MEMBERS.STATUS])),
                     cohortId = cohortId.takeIf { record.get("is_current_cohort", Boolean::class.java) == true },
                     teamNumber = record.get("team_number", Int::class.java) ?: 0,
@@ -244,6 +244,7 @@ class MemberRepository(
                 createdAt = inserted.createdAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
                 updatedAt = inserted.updatedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
                 deletedAt = inserted.deletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                profileCompletedAt = inserted.profileCompletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
             )
         } else {
             memberJpaRepository.save(MemberEntity.from(member)).toDomain()
