@@ -19,8 +19,13 @@ class SessionRepository(
 ) : SessionPersistencePort {
     override fun save(session: Session): Session = sessionJpaRepository.save(SessionEntity.from(session)).toDomain()
 
-    override fun findNextSessionBy(startOfToday: Instant): Session? =
-        sessionJpaRepository.findFirstByDateAfterAndDeletedAtIsNullOrderByDateAsc(startOfToday)?.toDomain()
+    override fun findNextSessionBy(
+        cohortId: Long,
+        startOfToday: Instant,
+    ): Session? =
+        sessionJpaRepository
+            .findFirstByCohortIdAndDateGreaterThanEqualAndDeletedAtIsNullOrderByDateAsc(cohortId, startOfToday)
+            ?.toDomain()
 
     override fun findAllCohortSessions(cohortId: Long): List<Session> =
         sessionJpaRepository.findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId).map { it.toDomain() }

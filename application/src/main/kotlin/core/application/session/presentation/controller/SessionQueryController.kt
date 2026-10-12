@@ -5,7 +5,7 @@ import core.application.security.annotation.CurrentMemberId
 import core.application.session.application.service.SessionQueryService
 import core.application.session.presentation.mapper.SessionMapper
 import core.application.session.presentation.response.AttendanceTimeResponse
-import core.application.session.presentation.response.NextSessionResponse
+import core.application.session.presentation.response.NextSessionHomeResponse
 import core.application.session.presentation.response.SessionDetailForDeeperResponse
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
@@ -35,16 +35,12 @@ class SessionQueryController(
     private val sessionFeedbackListQueryService: SessionFeedbackListQueryService,
     private val clock: Clock,
 ) : SessionQueryApi {
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/v1/sessions/next")
-    override fun getNextSession(): CustomResponse<NextSessionResponse> {
-        val response =
-            sessionQueryService
-                .getNextSession()
-                ?.let { SessionMapper.toNextSessionResponse(it) }
-
-        return CustomResponse.ok(response)
-    }
+    override fun getNextSession(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<NextSessionHomeResponse> =
+        CustomResponse.ok(sessionQueryService.getNextSessionHome(memberId))
 
     @PreAuthorize("permitAll()")
     @GetMapping("/v1/sessions")

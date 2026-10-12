@@ -4,6 +4,8 @@ import core.application.attendance.application.service.AttendanceQueryService
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.session.application.exception.SessionNotFoundException
+import core.application.session.presentation.mapper.SessionMapper
+import core.application.session.presentation.response.NextSessionHomeResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
@@ -13,6 +15,7 @@ import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
+import core.domain.session.enums.NextSessionHomeStatus
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.query.SessionSelectorQueryModel
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
@@ -34,12 +37,38 @@ class SessionQueryService(
     private val memberQueryUseCase: MemberQueryUseCase,
     private val clock: Clock,
 ) {
-    fun getNextSession(): Session? {
+    fun getNextSessionHome(memberId: MemberId): NextSessionHomeResponse {
+        val member = memberQueryUseCase.getMemberById(memberId)
+        val memberCohortId = member.latestCohortId()
+        val memberCohortValue = member.latestCohortValue()
+        val activeCohortId = cohortQueryUseCase.findActiveCohortId()
+
+        if (memberCohortId == null || activeCohortId == null || memberCohortId != activeCohortId) {
+            return NextSessionHomeResponse(
+                status = NextSessionHomeStatus.COHORT_ENDED,
+                cohortValue = memberCohortValue,
+                session = null,
+            )
+        }
+
         val koreaZone = ZoneId.of("Asia/Seoul")
         val today = LocalDate.ofInstant(clock.instant(), koreaZone)
         val startOfToday = today.atStartOfDay(koreaZone).toInstant()
+        val nextSession = sessionPersistencePort.findNextSessionBy(memberCohortId.value, startOfToday)
 
-        return sessionPersistencePort.findNextSessionBy(startOfToday)
+        return if (nextSession != null) {
+            NextSessionHomeResponse(
+                status = NextSessionHomeStatus.AVAILABLE,
+                cohortValue = memberCohortValue,
+                session = SessionMapper.toNextSessionResponse(nextSession),
+            )
+        } else {
+            NextSessionHomeResponse(
+                status = NextSessionHomeStatus.NOT_REGISTERED,
+                cohortValue = memberCohortValue,
+                session = null,
+            )
+        }
     }
 
     fun getAllCurrentCohortSessions(): List<Session> {
