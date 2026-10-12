@@ -133,6 +133,43 @@ class MemberRepository(
 
     override fun findBySignupEmail(email: String): Member? = memberJpaRepository.findBySignupEmail(email)?.toDomain()
 
+    override fun lockApprovedManagementMemberIds(
+        memberIds: List<Long>,
+        cohortId: Long,
+    ): List<Long> {
+        if (memberIds.isEmpty()) return emptyList()
+        return dsl.select(MEMBERS.MEMBER_ID).from(MEMBERS)
+            .where(
+                MEMBERS.MEMBER_ID.`in`(memberIds),
+                MEMBERS.STATUS.`in`("ACTIVE", "INACTIVE"),
+                MEMBERS.DELETED_AT.isNull,
+                exists(
+                    selectOne().from(MEMBER_COHORTS)
+                        .where(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID), MEMBER_COHORTS.COHORT_ID.eq(cohortId)),
+                ),
+            )
+            .orderBy(MEMBERS.MEMBER_ID.asc())
+            .forUpdate()
+            .fetch(MEMBERS.MEMBER_ID).filterNotNull()
+    }
+
+    override fun updateManagementFields(
+        memberIds: List<Long>,
+        updatePart: Boolean,
+        part: MemberPart?,
+        status: MemberStatus?,
+        changedAssociationMemberIds: Set<Long>,
+    ) {
+        if (memberIds.isEmpty()) return
+        var changed = MEMBERS.MEMBER_ID.`in`(changedAssociationMemberIds)
+        if (updatePart) changed = changed.or(MEMBERS.PART.isDistinctFrom(part?.name))
+        if (status != null) changed = changed.or(MEMBERS.STATUS.isDistinctFrom(status.name))
+        var update = dsl.update(MEMBERS).set(MEMBERS.UPDATED_AT, LocalDateTime.now(ZoneId.of("UTC")))
+        if (updatePart) update = update.set(MEMBERS.PART, part?.name)
+        if (status != null) update = update.set(MEMBERS.STATUS, status.name)
+        update.where(MEMBERS.MEMBER_ID.`in`(memberIds), changed).execute()
+    }
+
     override fun findAllBySignupEmail(email: String): List<Member> =
         memberJpaRepository.findAllBySignupEmail(email).map { it.toDomain() }
 

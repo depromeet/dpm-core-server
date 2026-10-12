@@ -1,7 +1,9 @@
 package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.member.presentation.request.MemberManagementBulkUpdateRequest
 import core.application.member.presentation.request.MemberManagementRequest
+import core.application.member.presentation.request.MemberManagementUpdateRequest
 import core.application.member.presentation.response.MemberManagementResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -18,4 +20,23 @@ interface MemberManagementApi {
                 "중복 의심은 탭·검색·필터 적용 전 관리 대상 중 닉네임과 파트가 같은 다른 회원이 있으면 true입니다.",
     )
     fun getOverview(request: MemberManagementRequest): CustomResponse<MemberManagementResponse>
+
+    @Operation(
+        summary = "승인된 멤버 정보 수정",
+        description =
+            "현재 기수의 ACTIVE/INACTIVE 멤버만 수정합니다. 지정한 컬럼을 한 트랜잭션에서 변경하며 생략/null은 유지합니다. " +
+                "타입 변경은 update:member와 update:authorization 권한이 모두 필요합니다. 닉네임과 수료 상태는 수정하지 않습니다.",
+    )
+    fun updateMember(
+        memberId: Long,
+        request: MemberManagementUpdateRequest,
+    ): CustomResponse<Void>
+
+    @Operation(
+        summary = "승인된 멤버 정보 컬럼별 일괄 수정",
+        description =
+            "changes에 한 컬럼만 지정합니다. 하나라도 수정할 수 없는 대상이거나 처리에 실패하면 전체 취소합니다. " +
+                "팀·타입은 현재 기수만 변경하고 과거 기수 이력을 보존합니다. 기수 없는 레거시 타입은 현재 기수 타입으로 교체합니다.",
+    )
+    fun updateMembers(request: MemberManagementBulkUpdateRequest): CustomResponse<Void>
 }
