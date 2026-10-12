@@ -326,7 +326,9 @@ interface MemberApi {
 
     @Operation(
         summary = "멤버 데이터 주입 및 승인 API (dev)",
-        description = "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다.",
+        description =
+            "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다. " +
+                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다.",
         requestBody =
             RequestBody(
                 content = [
@@ -404,7 +406,9 @@ interface MemberApi {
 
     @Operation(
         summary = "멤버 상태 변경 API (dev)",
-        description = "멤버의 상태를 변경합니다. 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE)",
+        description =
+            "멤버의 상태를 변경합니다. 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE) " +
+                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다.",
         requestBody =
             RequestBody(
                 content = [

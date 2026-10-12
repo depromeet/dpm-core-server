@@ -1,7 +1,9 @@
 package core.application.member.application.service
 
+import core.application.common.exception.BusinessException
 import core.application.member.application.exception.AppleLoginMemberRequiredException
 import core.application.member.application.exception.InvalidMemberPartException
+import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
 import core.application.member.application.service.cohort.MemberCohortService
@@ -58,6 +60,7 @@ class MemberCommandService(
      * @since 2025.08.02
      */
     fun initMemberDataAndApprove(request: InitMemberDataRequest) {
+        guardLegacyAdmissionChange(request.members.map { it.memberId.value }, request.members.map { it.status })
         request.members.forEach {
             val updatedMember =
                 memberPersistencePort.save(
@@ -111,6 +114,12 @@ class MemberCommandService(
         memberId: MemberId,
         request: AppleMemberProfileUpdateRequest,
     ): AppleMemberProfileUpdateResponse {
+        val target =
+            memberPersistencePort.lockApprovalTargets(listOf(memberId.value)).singleOrNull()
+                ?: throw MemberNotFoundException()
+        if (target.isDeleted || target.status == MemberStatus.WITHDRAWN) {
+            throw core.application.member.application.exception.MemberDeletedException()
+        }
         val member =
             memberQueryService.getMemberById(memberId)
 
@@ -146,6 +155,7 @@ class MemberCommandService(
      * @since 2026.01.09
      */
     fun updateMemberStatus(request: UpdateMemberStatusRequest) {
+        guardLegacyAdmissionChange(listOf(request.memberId.value), listOf(request.memberStatus))
         val existMember = memberQueryService.getMemberById(request.memberId)
 
         if (existMember.status != request.memberStatus) {
@@ -158,6 +168,16 @@ class MemberCommandService(
             initializeMemberDataForActiveMember(updatedMember)
         } else {
             throw MemberStatusAlreadyUpdatedException()
+        }
+    }
+
+    private fun guardLegacyAdmissionChange(
+        memberIds: List<Long>,
+        statuses: List<MemberStatus>,
+    ) {
+        val targets = memberPersistencePort.lockApprovalTargets(memberIds.distinct().sorted())
+        if (MemberStatus.REJECTED in statuses || targets.any { it.status == MemberStatus.REJECTED }) {
+            throw BusinessException(MemberExceptionCode.MEMBER_ADMISSION_CHANGE_NOT_ALLOWED)
         }
     }
 

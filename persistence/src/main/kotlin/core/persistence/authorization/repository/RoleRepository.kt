@@ -6,7 +6,6 @@ import core.domain.member.vo.MemberId
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_OAUTH
-import org.jooq.dsl.tables.references.MEMBER_PERMISSIONS
 import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.PERMISSIONS
 import org.jooq.dsl.tables.references.ROLES
@@ -60,7 +59,10 @@ class RoleRepository(
             .on(ROLE_PERMISSIONS.ROLE_ID.eq(MEMBER_ROLES.ROLE_ID))
             .join(ROLES)
             .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
+            .join(MEMBERS)
+            .on(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
             .where(MEMBER_ROLES.MEMBER_ID.eq(memberId.value))
+            .and(MEMBERS.STATUS.notIn("PENDING", "REJECTED"))
             .and(MEMBER_ROLES.DELETED_AT.isNull)
             .and(ROLE_PERMISSIONS.REVOKED_AT.isNull)
             .and(ROLES.NAME.`in`(roleNames))
