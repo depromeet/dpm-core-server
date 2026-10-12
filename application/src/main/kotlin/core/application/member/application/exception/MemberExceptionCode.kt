@@ -37,6 +37,8 @@ enum class MemberExceptionCode(
     MEMBER_OAUTH_CONFLICT(HttpStatus.CONFLICT, "MEMBER-409-21", "로그인 수단이 충돌하거나 소유 계정이 변경되었습니다. 다시 로그인해주세요"),
     INVALID_MEMBER_BADGE_VERSION(HttpStatus.BAD_REQUEST, "MEMBER-400-31", "NEW 확인 버전이 올바르지 않습니다"),
     MEMBER_BADGE_COHORT_CHANGED(HttpStatus.CONFLICT, "MEMBER-409-31", "관리 기수가 변경되었습니다. 다시 조회해주세요"),
+    INVALID_MEMBER_PROFILE_NAME(HttpStatus.BAD_REQUEST, "MEMBER-400-41", "이름은 255자 이내의 완성형 한글과 단어 사이 공백으로 입력해주세요"),
+    MEMBER_PROFILE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "MEMBER-409-41", "이미 프로필 입력을 완료했습니다"),
     ;
 
     override fun getStatus(): HttpStatus = status

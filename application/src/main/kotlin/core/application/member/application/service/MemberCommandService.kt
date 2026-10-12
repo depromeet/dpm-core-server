@@ -1,8 +1,6 @@
 package core.application.member.application.service
 
 import core.application.common.exception.BusinessException
-import core.application.member.application.exception.AppleLoginMemberRequiredException
-import core.application.member.application.exception.InvalidMemberPartException
 import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberStatusAlreadyUpdatedException
@@ -18,9 +16,7 @@ import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
-import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
-import core.domain.member.enums.OAuthProvider
 import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -47,6 +43,7 @@ class MemberCommandService(
     private val memberCredentialPersistencePort: MemberCredentialPersistencePort,
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val applicationEventPublisher: ApplicationEventPublisher,
+    private val memberProfileService: MemberProfileService,
 ) {
     private val logger = KotlinLogging.logger { }
 
@@ -118,33 +115,11 @@ class MemberCommandService(
         memberId: MemberId,
         request: AppleMemberProfileUpdateRequest,
     ): AppleMemberProfileUpdateResponse {
-        val target =
-            memberPersistencePort.lockApprovalTargets(listOf(memberId.value)).singleOrNull()
-                ?: throw MemberNotFoundException()
-        if (target.isDeleted || target.status == MemberStatus.WITHDRAWN) {
-            throw core.application.member.application.exception.MemberDeletedException()
-        }
-        val member =
-            memberQueryService.getMemberById(memberId)
-
-        if (memberOAuthService.findMemberIdsByProvider(OAuthProvider.APPLE).none { it == memberId }) {
-            throw AppleLoginMemberRequiredException()
-        }
-
-        member.updateName(request.name.trim())
-        val normalizedPart = request.part.trim().uppercase()
-        if (normalizedPart != "UNASSIGNED") {
-            val memberPart =
-                runCatching { MemberPart.valueOf(normalizedPart) }
-                    .getOrElse { throw InvalidMemberPartException() }
-            member.updatePart(memberPart)
-        }
-
-        val savedMember = memberPersistencePort.save(member)
+        val profile = memberProfileService.complete(memberId.value, request.name, request.part, appleOnly = true)
         return AppleMemberProfileUpdateResponse(
-            memberId = requireNotNull(savedMember.id).value,
-            name = savedMember.name,
-            part = savedMember.part?.name,
+            memberId = memberId.value,
+            name = profile.name,
+            part = profile.part,
         )
     }
 

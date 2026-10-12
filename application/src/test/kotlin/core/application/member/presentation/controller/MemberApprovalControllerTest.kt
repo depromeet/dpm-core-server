@@ -222,6 +222,7 @@ class MemberApprovalControllerTest {
                 mock(core.application.member.application.service.oauth.MemberOAuthService::class.java),
                 mock(core.domain.membercredential.port.outbound.MemberCredentialPersistencePort::class.java),
                 cohorts(), mock(org.springframework.context.ApplicationEventPublisher::class.java),
+                mock(core.application.member.application.service.MemberProfileService::class.java),
             )
 
         @Bean fun nameValidator(): MemberNameHashTypeValidator = mock(MemberNameHashTypeValidator::class.java)

@@ -82,8 +82,12 @@ interface MemberApi {
     ): CustomResponse<MemberNameHashValidationResponse>
 
     @Operation(
-        summary = "Apple 로그인 멤버 프로필 수정 API",
-        description = "현재 로그인한 Apple 회원의 name과 part를 수정합니다.",
+        summary = "Apple 로그인 멤버 최초 프로필 입력 API",
+        description =
+            "현재 회원의 Apple 연결을 확인하고 공통 프로필 입력 규칙을 적용합니다. " +
+                "이름은 앞뒤 공백 제거 후 255자 이내의 완성형 한글과 단어 사이 공백, 파트는 실제 파트 값만 허용합니다. " +
+                "UNASSIGNED는 허용하지 않습니다. 완료 후 같은 값은 유지하고 다른 값은 409입니다. " +
+                "신규 클라이언트는 GET/PATCH /v3/members/me/profile을 사용합니다.",
         requestBody =
             RequestBody(
                 content = [
