@@ -47,7 +47,7 @@ data class MemberDetailsResponse(
     )
     val isAdmin: Boolean,
     @field:Schema(
-        description = "멤버 상태",
+        description = "멤버 상태. REJECTED는 가입 반려 상태이며 본인 재신청으로 PENDING이 됩니다.",
         example = "ACTIVE",
         requiredMode = Schema.RequiredMode.REQUIRED,
     )

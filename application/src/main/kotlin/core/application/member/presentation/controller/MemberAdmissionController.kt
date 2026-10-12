@@ -3,6 +3,7 @@ package core.application.member.presentation.controller
 import core.application.common.exception.CustomResponse
 import core.application.common.exception.GlobalExceptionCode
 import core.application.member.application.exception.MemberManagementNotImplementedException
+import core.application.member.application.service.MemberAdmissionService
 import core.application.member.presentation.request.MemberMergeRequest
 import core.application.security.annotation.CurrentMemberId
 import jakarta.validation.Valid
@@ -19,7 +20,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestController
 @RequestMapping("/v3/members")
-class MemberAdmissionController : MemberAdmissionApi {
+class MemberAdmissionController(
+    private val service: MemberAdmissionService,
+) : MemberAdmissionApi {
     @PreAuthorize("hasAuthority('create:member') and hasAuthority('delete:member')")
     @PostMapping("/merge")
     override fun mergeAndApprove(
@@ -30,13 +33,19 @@ class MemberAdmissionController : MemberAdmissionApi {
     @PostMapping("/{memberId}/rejection")
     override fun reject(
         @PathVariable memberId: Long,
-    ): CustomResponse<Void> = throw MemberManagementNotImplementedException()
+    ): CustomResponse<Void> {
+        service.reject(memberId)
+        return CustomResponse.ok()
+    }
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/me/reapplication")
     override fun reapply(
         @CurrentMemberId memberId: Long,
-    ): CustomResponse<Void> = throw MemberManagementNotImplementedException()
+    ): CustomResponse<Void> {
+        service.reapply(memberId)
+        return CustomResponse.ok()
+    }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

@@ -11,6 +11,7 @@ import core.application.refreshToken.application.service.RefreshTokenIssueServic
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.LoginMethod
+import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
@@ -56,26 +57,10 @@ class EmailPasswordAuthService(
 
         val (member, loginCredential) =
             if (credential == null) {
-                // 신규 회원 가입 (Signup) 또는 기존 회원 연동
-                val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
-                if (existingMembers.isEmpty()) {
-                    return signupNewMember(email, password, deviceId)
+                if (memberPersistencePort.findAllBySignupEmail(email).isNotEmpty()) {
+                    throw InvalidEmailPasswordException()
                 }
-
-                val existingMember = selectLoginCandidate(existingMembers)
-                validateMemberForLogin(existingMember)
-
-                val encodedPassword = passwordEncoder.encode(password)
-                val savedCredential =
-                    memberCredentialPersistencePort.save(
-                        MemberCredential.create(
-                            memberId = existingMember.id!!,
-                            email = email,
-                            encodedPassword = encodedPassword,
-                        ),
-                    )
-
-                existingMember to savedCredential
+                return signupNewMember(email, password, deviceId)
             } else {
                 // 2. Verify password
                 if (!passwordEncoder.matches(password, credential.password)) {
@@ -181,7 +166,7 @@ class EmailPasswordAuthService(
     }
 
     private fun validateMemberForLogin(member: Member) {
-        if (!member.isAllowed()) {
+        if (!member.isAllowed() && member.status !in setOf(MemberStatus.PENDING, MemberStatus.REJECTED)) {
             throw MemberAllowedException()
         }
 

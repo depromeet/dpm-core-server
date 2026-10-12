@@ -28,6 +28,9 @@ enum class MemberExceptionCode(
     INVALID_MEMBER_MANAGEMENT_TEAM(HttpStatus.BAD_REQUEST, "MEMBER-400-08", "현재 기수에 속한 팀을 선택해주세요"),
     INVALID_MEMBER_APPROVAL(HttpStatus.BAD_REQUEST, "MEMBER-400-09", "가입 승인 요청이 올바르지 않습니다"),
     MEMBER_APPROVAL_TARGET_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-10", "현재 기수 또는 기수 없는 가입 대기자만 승인할 수 있습니다"),
+    MEMBER_REJECTION_TARGET_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-11", "현재 기수 또는 기수 없는 가입 대기자만 반려할 수 있습니다"),
+    MEMBER_REAPPLICATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-12", "반려된 회원만 가입을 재신청할 수 있습니다"),
+    MEMBER_ADMISSION_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-13", "가입 반려와 재신청은 전용 API를 사용해주세요"),
     MEMBER_MANAGEMENT_NOT_IMPLEMENTED(
         HttpStatus.NOT_IMPLEMENTED,
         "MEMBER-501-01",

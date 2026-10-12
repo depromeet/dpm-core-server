@@ -136,6 +136,40 @@ class MemberApprovalControllerTest {
         verify(members).lockApprovalTargets(listOf(1))
     }
 
+    @Test
+    fun `기존 상태 변경과 데이터 주입은 반려 회원을 승인하거나 재신청시킬 수 없다`() {
+        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.REJECTED, emptySet())))
+        listOf("ACTIVE", "PENDING").forEach { target ->
+            listOf(
+                "/v1/members/status" to """{"memberId":1,"memberStatus":"$target"}""",
+                "/v1/members/init" to """{"members":[{"memberId":1,"memberPart":"SERVER","teamId":1,"status":"$target"}]}""",
+            ).forEach { (path, body) ->
+                mvc.perform(legacyRequest(path, body))
+                    .andExpect(status().isBadRequest).andExpect(jsonPath("$.code").value("MEMBER-400-13"))
+            }
+        }
+    }
+
+    @Test
+    fun `기존 상태 변경과 데이터 주입으로 반려 이력 없는 REJECTED를 만들 수 없다`() {
+        listOf(
+            "/v1/members/status" to """{"memberId":1,"memberStatus":"REJECTED"}""",
+            "/v1/members/init" to """{"members":[{"memberId":1,"memberPart":"SERVER","teamId":1,"status":"REJECTED"}]}""",
+        ).forEach { (path, body) ->
+            mvc.perform(legacyRequest(path, body))
+                .andExpect(status().isBadRequest).andExpect(jsonPath("$.code").value("MEMBER-400-13"))
+        }
+    }
+
+    private fun legacyRequest(
+        path: String,
+        body: String,
+    ): MockHttpServletRequestBuilder =
+        patch(path).contentType(MediaType.APPLICATION_JSON).content(body).requestAttr(
+            RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
+            SecurityContextImpl(UsernamePasswordAuthenticationToken("operator", null, listOf(SimpleGrantedAuthority("update:member")))),
+        )
+
     private fun request(
         body: String,
         authority: String = "create:member",
@@ -153,7 +187,18 @@ class MemberApprovalControllerTest {
     class Config {
         @Bean fun memberQueries(): MemberQueryService = mock(MemberQueryService::class.java)
 
-        @Bean fun memberCommands(): MemberCommandService = mock(MemberCommandService::class.java)
+        @Bean
+        fun memberCommands(): MemberCommandService =
+            MemberCommandService(
+                members(), memberQueries(),
+                mock(core.application.member.application.service.team.MemberTeamService::class.java),
+                mock(core.application.member.application.service.cohort.MemberCohortService::class.java),
+                tokenInjector(), mock(core.domain.refreshToken.port.inbound.RefreshTokenInvalidator::class.java),
+                mock(core.application.member.application.service.role.MemberRoleService::class.java),
+                mock(core.application.member.application.service.oauth.MemberOAuthService::class.java),
+                mock(core.domain.membercredential.port.outbound.MemberCredentialPersistencePort::class.java),
+                cohorts(), mock(org.springframework.context.ApplicationEventPublisher::class.java),
+            )
 
         @Bean fun nameValidator(): MemberNameHashTypeValidator = mock(MemberNameHashTypeValidator::class.java)
 
