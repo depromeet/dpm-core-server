@@ -32,17 +32,17 @@ interface GatheringApi {
                           "data": {
                               "members": [
                               {
-                                "name": "이한음",
+                                "name": "이영희",
                                 "authority": "ORGANIZER",
                                 "isJoined": true
                               },
                               {
-                                "name": "신민철",
+                                "name": "김철수",
                                 "authority": "ORGANIZER",
                                 "isJoined": false
                               },
                               {
-                                "name": "정준원",
+                                "name": "박민수",
                                 "authority": "DEEPER",
                                 "part": "SERVER",
                                 "isJoined": true

@@ -154,8 +154,8 @@ class AttendanceAdminSessionControllerTest {
             SessionRosterResponse(
                 members =
                     listOf(
-                        SessionRosterMemberResponse(1, "신민철", 1, false, "SERVER", "PRESENT", LocalDateTime.parse("2025-08-02T13:55:12"), false, null),
-                        SessionRosterMemberResponse(2, "이정호", null, true, "WEB", "EXCUSED_ABSENT", null, true, "병원 진료"),
+                        SessionRosterMemberResponse(1, "김철수", 1, false, "SERVER", "PRESENT", LocalDateTime.parse("2025-08-02T13:55:12"), false, null),
+                        SessionRosterMemberResponse(2, "최지우", null, true, "WEB", "EXCUSED_ABSENT", null, true, "병원 진료"),
                     ),
                 myTeamNumber = null,
             ),
@@ -191,7 +191,7 @@ class AttendanceAdminSessionControllerTest {
         mockMvc
             .perform(
                 get("/v3/members/attendances")
-                    .param("name", "신민철")
+                    .param("name", "김철수")
                     .param("statuses", "ABSENT")
                     .param("onlyMyTeam", "true")
                     .param("page", "2")
@@ -207,8 +207,8 @@ class AttendanceAdminSessionControllerTest {
             MemberAttendancesResponse(
                 members =
                     listOf(
-                        MemberAttendanceResponse(1, "신민철", TeamNumber(1), false, "SERVER", "AT_RISK"),
-                        MemberAttendanceResponse(2, "이정호", TeamNumber(0), true, null, "NORMAL"),
+                        MemberAttendanceResponse(1, "김철수", TeamNumber(1), false, "SERVER", "AT_RISK"),
+                        MemberAttendanceResponse(2, "최지우", TeamNumber(0), true, null, "NORMAL"),
                     ),
                 myTeamNumber = null,
                 totalElements = 5,
@@ -259,7 +259,7 @@ class AttendanceAdminSessionControllerTest {
         loginAs(1L, "read:attendance")
         given(queryService.getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(1)))).willReturn(
             DetailMemberAttendancesResponse(
-                member = DetailMemberInfo(1, "신민철", TeamNumber(0), false, null, "NORMAL"),
+                member = DetailMemberInfo(1, "김철수", TeamNumber(0), false, null, "NORMAL"),
                 attendance = MemberDetailAttendanceCountInfo(0, 0, 0, 0),
                 sessions =
                     listOf(
