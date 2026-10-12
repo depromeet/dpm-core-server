@@ -35,7 +35,7 @@ class MemberManagementQueryServiceTest {
     private val attendance = mock(AttendancePersistencePort::class.java)
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles)
-    private val service = MemberManagementQueryService(members, roles, attendance, cohorts, resolver, AttendanceGraduationEvaluator())
+    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator()), cohorts)
     private val updatedAt = Instant.parse("2026-10-06T02:00:00Z")
     private val source =
         listOf(

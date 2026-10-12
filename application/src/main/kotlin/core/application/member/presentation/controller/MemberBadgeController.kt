@@ -2,7 +2,7 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.common.exception.GlobalExceptionCode
-import core.application.member.application.exception.MemberManagementNotImplementedException
+import core.application.member.application.service.MemberBadgeService
 import core.application.member.presentation.request.MemberBadgeAcknowledgeRequest
 import core.application.member.presentation.response.MemberBadgeCard
 import core.application.member.presentation.response.MemberBadgeResponse
@@ -22,17 +22,20 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestController
 @RequestMapping("/v3/members/badges")
-class MemberBadgeController : MemberBadgeApi {
+class MemberBadgeController(private val service: MemberBadgeService) : MemberBadgeApi {
     @PreAuthorize("hasAuthority('read:member')")
     @GetMapping
-    override fun getBadges(): CustomResponse<MemberBadgesResponse> = throw MemberManagementNotImplementedException()
+    override fun getBadges(): CustomResponse<MemberBadgesResponse> = CustomResponse.ok(service.getBadges())
 
     @PreAuthorize("hasAuthority('read:member')")
     @PostMapping("/{card}/acknowledgement")
     override fun acknowledge(
         @PathVariable card: MemberBadgeCard,
         @Valid @RequestBody request: MemberBadgeAcknowledgeRequest,
-    ): CustomResponse<MemberBadgeResponse> = throw MemberManagementNotImplementedException()
+    ): CustomResponse<MemberBadgeResponse> =
+        CustomResponse.ok(
+            service.acknowledge(card, requireNotNull(request.cohortId), requireNotNull(request.version)),
+        )
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

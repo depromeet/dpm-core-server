@@ -44,8 +44,10 @@ import java.time.Instant
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(MemberRepository::class, MemberRoleRepository::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class, MemberManagementQueryService::class, AttendanceGraduationEvaluator::class)
+@Import(MemberRepository::class, MemberRoleRepository::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class, MemberManagementQueryService::class, core.application.member.application.service.MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class)
 class MemberManagementMySqlIntegrationTest {
+    @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
+
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var cohorts: CohortPersistencePort

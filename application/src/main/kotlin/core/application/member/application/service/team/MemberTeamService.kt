@@ -1,5 +1,6 @@
 package core.application.member.application.service.team
 
+import core.application.member.application.service.TrackMemberBadges
 import core.domain.member.aggregate.MemberTeam
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberTeamPersistencePort
@@ -21,6 +22,7 @@ class MemberTeamService(
      * @author LeeHanEum
      * @since 2025.08.02
      */
+    @TrackMemberBadges
     fun addMemberToTeam(
         memberId: MemberId,
         teamId: TeamId,
@@ -28,6 +30,7 @@ class MemberTeamService(
         memberTeamPersistencePort.save(MemberTeam.of(memberId, teamId))
     }
 
+    @TrackMemberBadges
     fun ensureMemberTeamInitialized(memberId: MemberId) {
         if (defaultTeamId <= 0) {
             return
@@ -51,6 +54,7 @@ class MemberTeamService(
      * @author LeeHanEum
      * @since 2025.09.02
      */
+    @TrackMemberBadges
     fun deleteMemberFromTeam(memberId: MemberId) {
         memberTeamPersistencePort.deleteByMemberId(memberId.value)
     }

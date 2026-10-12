@@ -27,7 +27,8 @@ class MemberLoginService(
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
 ) : HandleMemberLoginUseCase {
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    @TrackMemberBadges
     override fun handleLoginSuccess(
         authAttributes: OAuthAttributes,
         deviceId: String?,

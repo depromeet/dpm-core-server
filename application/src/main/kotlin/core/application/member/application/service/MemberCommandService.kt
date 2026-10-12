@@ -34,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 @Service
-@Transactional
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class MemberCommandService(
     private val memberPersistencePort: MemberPersistencePort,
     private val memberQueryService: MemberQueryService,
@@ -59,6 +59,7 @@ class MemberCommandService(
      * @author LeeHanEum
      * @since 2025.08.02
      */
+    @TrackMemberBadges
     fun initMemberDataAndApprove(request: InitMemberDataRequest) {
         guardLegacyAdmissionChange(request.members.map { it.memberId.value }, request.members.map { it.status })
         request.members.forEach {
@@ -83,6 +84,7 @@ class MemberCommandService(
      * @author LeeHanEum
      * @since 2025.09.01
      */
+    @TrackMemberBadges
     fun withdraw(
         memberId: MemberId,
         response: HttpServletResponse,
@@ -111,6 +113,7 @@ class MemberCommandService(
         throw BusinessException(MemberExceptionCode.MEMBER_HARD_DELETE_RETIRED)
     }
 
+    @TrackMemberBadges
     fun updateAppleMemberProfile(
         memberId: MemberId,
         request: AppleMemberProfileUpdateRequest,
@@ -155,6 +158,7 @@ class MemberCommandService(
      * @author junwon
      * @since 2026.01.09
      */
+    @TrackMemberBadges
     fun updateMemberStatus(request: UpdateMemberStatusRequest) {
         guardLegacyAdmissionChange(listOf(request.memberId.value), listOf(request.memberStatus))
         val existMember = memberQueryService.getMemberById(request.memberId)
@@ -182,6 +186,7 @@ class MemberCommandService(
         }
     }
 
+    @TrackMemberBadges
     fun initializeForNewCohortMember(
         memberId: MemberId,
         cohortId: CohortId,

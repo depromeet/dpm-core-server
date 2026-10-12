@@ -1,5 +1,0 @@
-package core.application.member.application.exception
-
-import core.application.common.exception.BusinessException
-
-class MemberManagementNotImplementedException : BusinessException(MemberExceptionCode.MEMBER_MANAGEMENT_NOT_IMPLEMENTED)

@@ -6,6 +6,7 @@ import core.application.member.application.exception.MemberAllowedException
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.service.MemberIdentityLockService
+import core.application.member.application.service.TrackMemberBadges
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
@@ -48,7 +49,8 @@ class EmailPasswordAuthService(
      *
      * MemberCredential이 없는 경우 신규 회원을 생성합니다.
      */
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    @TrackMemberBadges
     fun login(
         email: String,
         password: String,

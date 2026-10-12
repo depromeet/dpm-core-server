@@ -1,6 +1,7 @@
 package core.it.attendance
 
 import core.application.attendance.application.service.AttendanceCommandService
+import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.application.support.MutableClock
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
@@ -60,6 +61,8 @@ class AttendanceOverviewMySqlIntegrationTest {
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
 
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
+
+    @MockitoBean lateinit var feedbackForms: SessionFeedbackFormCommandService
 
     private val firstSessionStart = Instant.parse("2026-09-05T05:00:00Z")
 
