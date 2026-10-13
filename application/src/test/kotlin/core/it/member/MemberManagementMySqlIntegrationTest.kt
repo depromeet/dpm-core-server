@@ -188,6 +188,46 @@ class MemberManagementMySqlIntegrationTest {
         }
     }
 
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    fun `기존 멤버 목록과 출석 목록의 관리자 표시는 역할과 조회 기수를 따른다`() {
+        val old = cohorts.save(Cohort(value = "63501")).id!!
+        val current = cohorts.save(Cohort(value = "63502")).id!!
+        val roleNames = listOf("CORE", "ORGANIZER", "MASTER", "DEEPER", "GUEST")
+        val roleIds = roleNames.mapIndexed { index, role ->
+            val existing = jdbc.queryForList("select role_id from roles where name = ?", Long::class.java, role)
+            existing.firstOrNull() ?: (63500L + index).also { id ->
+                jdbc.update("insert into roles (role_id, name) values (?, ?)", id, role)
+            }
+        }
+        val cases = listOf(
+            Triple(roleIds[0], current.value, true), // CORE
+            Triple(roleIds[1], current.value, true), // ORGANIZER
+            Triple(roleIds[2], null, true), // MASTER
+            Triple(roleIds[3], current.value, false), // DEEPER
+            Triple(roleIds[4], null, false), // GUEST
+            Triple(roleIds[0], old.value, false), // 이전 기수 CORE
+            Triple(roleIds[1], old.value, false), // 이전 기수 ORGANIZER
+            Triple(roleIds[0], null, true), // 기수 없는 기존 역할
+            Triple(roleIds[1], null, true),
+            Triple(roleIds[0], current.value, false), // 삭제된 역할
+        )
+        val expected = cases.mapIndexed { index, (roleId, cohortId, admin) ->
+            val id = 63500L + index
+            jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at) values (?, '홍길동', ?, 'SERVER', 'ACTIVE', now(6))", id, "member$id@example.com")
+            joinCohort(id, current.value)
+            addRole(id, roleId, cohortId, deleted = index == 9)
+            id to admin
+        }.toMap()
+        val overview = members.findAllOrderedByHighestCohortAndStatus(true, current.value)
+        assertThat(overview.filter { it.memberId in expected }.associate { it.memberId to it.isAdmin }).isEqualTo(expected)
+        val attendance = attendances.findMemberAttendances(current.value, emptyList())
+        assertThat(attendance.associate { it.id to it.isAdmin }).isEqualTo(expected)
+        expected.forEach { (id, admin) ->
+            assertThat(attendances.findDetailMemberAttendance(id, current.value)?.isAdmin).isEqualTo(admin)
+        }
+    }
+
     private fun oauth(
         id: Long,
         memberId: Long,
