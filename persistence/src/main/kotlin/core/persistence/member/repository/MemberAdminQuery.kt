@@ -8,7 +8,10 @@ import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.selectOne
 
 /** 조회 대상 기수의 관리자 표시. 실제 API 접근 권한은 별도로 검사한다. */
-internal fun memberAdminField(memberId: Field<Long?>, cohortId: Field<Long?>): Field<Boolean> =
+internal fun memberAdminField(
+    memberId: Field<Long?>,
+    cohortId: Field<Long?>,
+): Field<Boolean> =
     exists(
         selectOne()
             .from(MEMBER_ROLES)
