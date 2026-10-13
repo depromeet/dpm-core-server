@@ -388,17 +388,7 @@ class MemberRepository(
         val latestCohortIdField = COHORTS.COHORT_ID.`as`("cohort_id")
         val latestTeamNumberField = TEAMS.NUMBER.`as`("team_number")
 
-        val isAdminField =
-            exists(
-                selectOne()
-                    .from(MEMBER_ROLES)
-                    .join(ROLES)
-                    .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
-                    .where(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-                    .and(MEMBER_ROLES.DELETED_AT.isNull)
-                    .and(ROLES.NAME.eq(RoleType.Organizer.code))
-                    .and(org.jooq.impl.DSL.field(org.jooq.impl.DSL.name("member_roles", "cohort_id"), Long::class.java).eq(latestCohortIdField)),
-            ).`as`("is_admin")
+        val isAdminField = memberAdminField(MEMBERS.MEMBER_ID, COHORTS.COHORT_ID)
 
         val statusPriority =
             `when`(MEMBERS.STATUS.eq("PENDING"), 0)

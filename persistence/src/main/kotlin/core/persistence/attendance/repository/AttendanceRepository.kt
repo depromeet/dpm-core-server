@@ -14,6 +14,7 @@ import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.team.vo.TeamNumber
 import core.entity.attendance.AttendanceEntity
+import core.persistence.member.repository.memberAdminField
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -27,9 +28,7 @@ import org.jooq.dsl.tables.references.COHORTS
 import org.jooq.dsl.tables.references.IMAGES
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_COHORTS
-import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.MEMBER_TEAMS
-import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.SESSIONS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL.exists
@@ -72,7 +71,7 @@ class AttendanceRepository(
         sessionId: Long,
         cohortId: Long,
     ): List<SessionRosterQueryModel> {
-        val isAdminField = isAdminField()
+        val isAdminField = memberAdminField(MEMBERS.MEMBER_ID, COHORTS.COHORT_ID)
         val teamNumber = teamNumberInCohort(MEMBERS.MEMBER_ID, SESSIONS.COHORT_ID)
         val teamNumberField = teamNumber.`as`(TEAM_NUMBER)
         val absenceReasonField =
@@ -227,7 +226,7 @@ class AttendanceRepository(
         teamNumbers: List<Int> = emptyList(),
         memberId: Long? = null,
     ): List<MemberAttendanceQueryModel> {
-        val isAdminField = isAdminField()
+        val isAdminField = memberAdminField(MEMBERS.MEMBER_ID, COHORTS.COHORT_ID)
         val teamNumber = teamNumberInCohort(MEMBERS.MEMBER_ID, COHORTS.COHORT_ID)
         val teamNumberField = teamNumber.`as`(TEAM_NUMBER)
         val totalSessionCountField = totalSessionCountOf(COHORTS.COHORT_ID)
@@ -271,7 +270,7 @@ class AttendanceRepository(
     override fun findDetailAttendanceBySession(
         query: GetDetailAttendanceBySessionQuery,
     ): SessionDetailAttendanceQueryModel? {
-        val isAdminField = isAdminField()
+        val isAdminField = memberAdminField(MEMBERS.MEMBER_ID, COHORTS.COHORT_ID)
         val teamNumberField = teamNumberInCohort(MEMBERS.MEMBER_ID, SESSIONS.COHORT_ID).`as`(TEAM_NUMBER)
         val totalSessionCountField = totalSessionCountOf(SESSIONS.COHORT_ID)
         val attendedAtField = visibleAttendedAt()
@@ -573,17 +572,6 @@ class AttendanceRepository(
                 .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc())
                 .limit(1),
         )
-
-    private fun isAdminField() =
-        exists(
-            selectOne()
-                .from(MEMBER_ROLES)
-                .join(ROLES)
-                .on(MEMBER_ROLES.ROLE_ID.eq(ROLES.ROLE_ID))
-                .where(MEMBER_ROLES.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
-                .and(MEMBER_ROLES.DELETED_AT.isNull)
-                .and(ROLES.NAME.eq(COHORTS.VALUE.concat(inline("기 운영진")))),
-        ).`as`("is_admin")
 
     companion object {
         private const val LATE_COUNT = "late_count"
