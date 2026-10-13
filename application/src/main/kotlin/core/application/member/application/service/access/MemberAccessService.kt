@@ -11,11 +11,13 @@ import org.springframework.transaction.annotation.Transactional
 class MemberAccessService(
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) {
-    fun isAdmin(memberId: MemberId): Boolean = getRoleType(memberId) == RoleType.Organizer
+    fun isAdmin(memberId: MemberId): Boolean = getRoleType(memberId) in ADMIN_ROLES
 
-    fun getRoleType(memberId: MemberId): RoleType =
-        currentCohortRoleResolver.findPrimaryRoleTypeForMember(memberId)
+    fun getRoleType(memberId: MemberId): RoleType = currentCohortRoleResolver.findPrimaryRoleTypeForMember(memberId)
 
-    fun getIsAdminByMemberIds(memberIds: List<MemberId>): Map<MemberId, Boolean> =
-        memberIds.associateWith { memberId -> getRoleType(memberId) == RoleType.Organizer }
+    fun getIsAdminByMemberIds(memberIds: List<MemberId>): Map<MemberId, Boolean> = memberIds.associateWith(::isAdmin)
+
+    companion object {
+        private val ADMIN_ROLES = setOf(RoleType.Core, RoleType.Organizer, RoleType.Master)
+    }
 }
