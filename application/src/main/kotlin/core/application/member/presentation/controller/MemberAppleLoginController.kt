@@ -92,6 +92,7 @@ class MemberAppleLoginController(
         val tokens =
             appleAuthService.login(
                 authorizationCode = body.authorizationCode,
+                redirectUri = body.redirectUri,
                 fullName = body.fullName,
                 familyName = body.familyName,
                 givenName = body.givenName,

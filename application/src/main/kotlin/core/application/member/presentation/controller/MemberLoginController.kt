@@ -48,6 +48,8 @@ class MemberLoginController(
 
     data class AppleLoginRequest(
         val authorizationCode: String,
+        // 인가 요청 때 쓴 redirect_uri. 없으면 서버 설정값으로 교환한다.
+        val redirectUri: String? = null,
         val fullName: String? = null,
         val familyName: String? = null,
         val givenName: String? = null,
