@@ -44,6 +44,9 @@ class CohortQueryService(
     fun getCohort(cohortId: CohortId): Cohort =
         cohortPersistencePort.findById(cohortId) ?: throw CohortNotFoundException()
 
+    fun getCohortByValue(value: String): Cohort =
+        cohortPersistencePort.findByValue(value.trimEnd('기')) ?: throw CohortNotFoundException()
+
     fun getPreviousNumericCohortValue(targetValue: String): String? {
         val target = toNumericCohortValue(targetValue) ?: return null
         return cohortPersistencePort.findAll()
