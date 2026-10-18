@@ -5,9 +5,11 @@ import core.domain.announcement.enums.SubmitType
 import core.domain.announcement.port.outbound.AssignmentPersistencePort
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.announcement.vo.AssignmentId
+import core.domain.cohort.vo.CohortId
 import core.entity.announcement.AssignmentEntity
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.ANNOUNCEMENT_ASSIGNMENTS
+import org.jooq.dsl.tables.references.ANNOUNCEMENTS
 import org.jooq.dsl.tables.references.ASSIGNMENTS
 import org.springframework.stereotype.Repository
 import java.time.Instant
@@ -22,6 +24,53 @@ class AssignmentRepository(
         assignmentJpaRepository.save(AssignmentEntity.from(assignment)).toDomain()
 
     override fun findAll(): List<Assignment> = assignmentJpaRepository.findAll().map { it.toDomain() }
+
+    override fun findByCohortId(cohortId: CohortId): List<Assignment> =
+        dsl
+            .select(
+                ASSIGNMENTS.ASSIGNMENT_ID,
+                ASSIGNMENTS.SUBMIT_TYPE,
+                ASSIGNMENTS.START_AT,
+                ASSIGNMENTS.DUE_AT,
+                ASSIGNMENTS.SUBMIT_LINK,
+                ASSIGNMENTS.CREATED_AT,
+                ASSIGNMENTS.UPDATED_AT,
+                ASSIGNMENTS.DELETED_AT,
+            ).from(ASSIGNMENTS)
+            .join(ANNOUNCEMENT_ASSIGNMENTS)
+            .on(ASSIGNMENTS.ASSIGNMENT_ID.eq(ANNOUNCEMENT_ASSIGNMENTS.ASSIGNMENT_ID))
+            .join(ANNOUNCEMENTS)
+            .on(ANNOUNCEMENT_ASSIGNMENTS.ANNOUNCEMENT_ID.eq(ANNOUNCEMENTS.ANNOUNCEMENT_ID))
+            .where(ANNOUNCEMENTS.COHORT_ID.eq(cohortId.value))
+            .and(ASSIGNMENTS.DELETED_AT.isNull())
+            .and(ANNOUNCEMENTS.DELETED_AT.isNull())
+            .fetch { record ->
+                Assignment(
+                    id = AssignmentId(record[ASSIGNMENTS.ASSIGNMENT_ID]!!),
+                    submitType = SubmitType.fromValue(record[ASSIGNMENTS.SUBMIT_TYPE]!!),
+                    startAt =
+                        record[ASSIGNMENTS.START_AT]!!
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toInstant(),
+                    dueAt =
+                        record[ASSIGNMENTS.DUE_AT]!!
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toInstant(),
+                    submitLink = record[ASSIGNMENTS.SUBMIT_LINK],
+                    createdAt =
+                        record[ASSIGNMENTS.CREATED_AT]!!
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toInstant(),
+                    updatedAt =
+                        record[ASSIGNMENTS.UPDATED_AT]!!
+                            .atZone(ZoneId.of("Asia/Seoul"))
+                            .toInstant(),
+                    deletedAt =
+                        record[ASSIGNMENTS.DELETED_AT]
+                            ?.atZone(ZoneId.of("Asia/Seoul"))
+                            ?.toInstant(),
+                )
+            }
 
     override fun findByDueAtBetween(
         start: Instant,

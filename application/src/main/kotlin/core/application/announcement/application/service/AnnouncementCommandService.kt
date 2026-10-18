@@ -245,7 +245,7 @@ class AnnouncementCommandService(
 
         assignmentSubmissionCommandUseCase.initializeForNewCohortMember(
             memberId = memberId,
-            assignments = assignmentQueryUseCase.getAllAssignments(),
+            assignments = assignmentQueryUseCase.getAssignmentsByCohortId(cohortId),
             cohortId = cohortId,
         )
     }

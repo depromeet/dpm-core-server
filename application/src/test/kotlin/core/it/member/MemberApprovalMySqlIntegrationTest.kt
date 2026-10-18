@@ -176,7 +176,7 @@ class MemberApprovalMySqlIntegrationTest {
         `when`(announcementQueryUseCase.findByCohortId(CohortId(19))).thenReturn(
             listOf(Announcement(AnnouncementId(1), AnnouncementType.GENERAL, "notice", null, MemberId(4), CohortId(19))),
         )
-        `when`(assignmentQueryUseCase.getAllAssignments()).thenReturn(
+        `when`(assignmentQueryUseCase.getAssignmentsByCohortId(CohortId(19))).thenReturn(
             listOf(Assignment(AssignmentId(1), SubmitType.INDIVIDUAL, null, null, null)),
         )
         val at = Instant.parse("2026-10-01T00:00:00Z")
