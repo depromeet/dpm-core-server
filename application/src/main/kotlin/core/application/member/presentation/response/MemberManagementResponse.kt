@@ -1,6 +1,7 @@
 package core.application.member.presentation.response
 
 import core.domain.attendance.enums.AttendanceGraduationStatus
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
@@ -59,5 +60,7 @@ data class MemberManagementResponse(
         val duplicateSuspected: Boolean,
         @field:Schema(description = "저장된 기본정보 변경/생성 시각", nullable = true)
         val updatedAt: Instant?,
+        @field:Schema(description = "대표 로그인 수단. 카카오 → 애플 → 이메일 계정 순. 최근 로그인 수단이 아니며, 연결 정보가 없으면 null", nullable = true)
+        val loginMethod: LoginMethod? = null,
     )
 }

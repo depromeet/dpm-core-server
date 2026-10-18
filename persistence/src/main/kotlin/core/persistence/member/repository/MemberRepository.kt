@@ -5,6 +5,7 @@ import core.domain.authorization.vo.RoleType
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -121,10 +122,22 @@ class MemberRepository(
                     .where(MEMBER_TEAMS.MEMBER_ID.eq(MEMBERS.MEMBER_ID), TEAMS.COHORT_ID.eq(cohortId))
                     .orderBy(MEMBER_TEAMS.MEMBER_TEAM_ID.desc()).limit(1),
             )
-        val hasKakao =
+        val hasCredential =
             exists(
-                selectOne().from(MEMBER_OAUTH)
-                    .where(MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID), MEMBER_OAUTH.PROVIDER.eq("KAKAO")),
+                selectOne().from(MEMBER_CREDENTIALS)
+                    .where(MEMBER_CREDENTIALS.MEMBER_ID.eq(MEMBERS.MEMBER_ID)),
+            )
+        val oauthProvider =
+            field(
+                DSL.select(MEMBER_OAUTH.PROVIDER).from(MEMBER_OAUTH)
+                    .where(
+                        MEMBER_OAUTH.MEMBER_ID.eq(MEMBERS.MEMBER_ID),
+                        MEMBER_OAUTH.PROVIDER.`in`("KAKAO", "APPLE"),
+                    )
+                    .orderBy(
+                        `when`(MEMBER_OAUTH.PROVIDER.eq("KAKAO"), 0).otherwise(1),
+                        MEMBER_OAUTH.MEMBER_OAUTH_ID.desc(),
+                    ).limit(1),
             )
         // 같은 제공자의 연결이 여러 개면 가장 최근 ID를 사용한다. 조인하지 않아 회원 행이 늘지 않는다.
         val oauthEmail =
@@ -146,7 +159,8 @@ class MemberRepository(
                 "is_current_cohort",
             ),
             teamNumber.`as`("team_number"),
-            hasKakao.`as`("has_kakao"),
+            oauthProvider.`as`("oauth_provider"),
+            hasCredential.`as`("has_credential"),
             oauthEmail.`as`("oauth_email"),
         ).from(MEMBERS)
             .where(MEMBERS.DELETED_AT.isNull)
@@ -154,15 +168,19 @@ class MemberRepository(
             .and(isCurrentCohort.or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name).and(hasNoCohort)))
             .fetch { record ->
                 val selectedEmail = record.get("oauth_email", String::class.java)?.trim()?.takeIf { it.isNotEmpty() }
+                val loginMethod =
+                    LoginMethod.fromOrNull(record.get("oauth_provider", String::class.java))
+                        ?: LoginMethod.EMAIL.takeIf { record.get("has_credential", Boolean::class.java) == true }
                 MemberManagementQueryModel(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
                     name = requireNotNull(record[MEMBERS.NAME]),
                     email =
-                        if (record.get("has_kakao", Boolean::class.java) == true) {
+                        if (loginMethod == LoginMethod.KAKAO) {
                             selectedEmail
                         } else {
                             selectedEmail ?: requireNotNull(record[MEMBERS.SIGNUP_EMAIL])
                         },
+                    loginMethod = loginMethod,
                     part = record[MEMBERS.PART]?.let { runCatching { MemberPart.valueOf(it) }.getOrNull() },
                     status = MemberStatus.valueOf(requireNotNull(record[MEMBERS.STATUS])),
                     cohortId = cohortId.takeIf { record.get("is_current_cohort", Boolean::class.java) == true },
