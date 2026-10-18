@@ -341,7 +341,9 @@ class MemberApprovalMySqlIntegrationTest {
     @Test
     fun `19기 신규 회원 초대는 기수 번호가 아닌 실제 기수 ID로 조회한다`() {
         jdbc.update("update cohorts set cohort_id = 42 where cohort_id = 19")
-        jdbc.update("update after_party_invite_tags set cohort_id = 42 where cohort_id = 19")
+        listOf("member_cohorts", "member_roles", "teams", "sessions", "after_party_invite_tags").forEach {
+            jdbc.update("update $it set cohort_id = 42 where cohort_id = 19")
+        }
 
         service.approve(listOf(1))
 
