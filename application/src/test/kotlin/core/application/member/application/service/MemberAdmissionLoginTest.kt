@@ -13,12 +13,12 @@ import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.LoginMethod
+import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberAdmissionEventPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.port.outbound.MemberProfilePersistencePort
 import core.domain.member.port.outbound.MemberProfile
-import core.domain.member.enums.MemberPart
+import core.domain.member.port.outbound.MemberProfilePersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId

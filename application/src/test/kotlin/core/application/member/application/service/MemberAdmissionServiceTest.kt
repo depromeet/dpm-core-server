@@ -8,13 +8,12 @@ import core.application.member.application.service.cohort.MemberCohortService
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberAdmissionEventType
+import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberAdmissionEventPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.port.outbound.MemberProfilePersistencePort
 import core.domain.member.port.outbound.MemberProfile
-import core.domain.member.enums.MemberPart
-import java.time.Instant
+import core.domain.member.port.outbound.MemberProfilePersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.MemberId
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -24,6 +23,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
+import java.time.Instant
 
 class MemberAdmissionServiceTest {
     private val members = mock(MemberPersistencePort::class.java)

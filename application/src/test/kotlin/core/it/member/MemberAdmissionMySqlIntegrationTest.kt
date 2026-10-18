@@ -4,8 +4,8 @@ import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.common.exception.BusinessException
 import core.application.member.application.service.MemberActivationInitializer
 import core.application.member.application.service.MemberAdmissionService
-import core.application.member.application.service.MemberProfileService
 import core.application.member.application.service.MemberApprovalService
+import core.application.member.application.service.MemberProfileService
 import core.application.member.application.service.cohort.MemberCohortService
 import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.domain.authorization.port.inbound.RoleQueryUseCase
@@ -16,8 +16,8 @@ import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.it.attendance.AttendanceMySqlIntegrationTestApplication
 import core.persistence.authorization.repository.RoleRepository
 import core.persistence.member.repository.MemberAdmissionEventRepository
-import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.MemberProfileRepository
+import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
@@ -245,8 +245,10 @@ class MemberAdmissionMySqlIntegrationTest {
         jdbc.update("update members set status = 'ACTIVE', profile_completed_at = '2026-10-01 01:00:00' where member_id = 3")
         jdbc.update("insert into member_admission_events (member_id, event_type, created_at) values (1, 'REJECTED', '2026-10-01 02:00:00'), (2, 'REJECTED', '2026-10-01 00:00:00'), (3, 'REJECTED', '2026-10-01 02:00:00')")
         val relative = "db/pending/2610180100_rejected_member_profile_completion.sql"
-        val root = generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
-            .first { java.nio.file.Files.exists(it.resolve(relative)) }
+        val root =
+            generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
+                .first { java.nio.file.Files.exists(it.resolve(relative)) }
+
         fun applySql() {
             jdbc.dataSource!!.connection.use { connection ->
                 org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(
