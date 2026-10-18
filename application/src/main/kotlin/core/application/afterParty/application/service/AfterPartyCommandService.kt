@@ -135,22 +135,12 @@ class AfterPartyCommandService(
 
         val afterParties: List<AfterParty> =
             afterPartyPersistencePort
-                .findAll()
-                .filter { !now.isAfter(it.closedAt) }
+                .findOpenByInviteTag(cohortId, AuthorityId(memberAuthorityId), now)
         val member: Member = memberQueryUseCase.getMemberById(memberId)
         var createdInviteeCount = 0
 
         afterParties.forEach { afterParty ->
             val afterPartyId = afterParty.id ?: throw AfterPartyNotFoundException()
-            val inviteTags = afterPartyInviteTagPersistencePort.findByAfterPartyId(afterPartyId)
-            val shouldInvite =
-                inviteTags.any { inviteTag ->
-                    inviteTag.cohortId == cohortId && inviteTag.authorityId.value == memberAuthorityId
-                }
-
-            if (!shouldInvite) {
-                return@forEach
-            }
             if (afterPartyInviteePersistencePort.findByMemberIdAndAfterPartyId(memberId, afterPartyId) != null) {
                 return@forEach
             }

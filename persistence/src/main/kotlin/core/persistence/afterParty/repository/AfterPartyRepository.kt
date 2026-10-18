@@ -9,6 +9,7 @@ import core.domain.member.aggregate.Member
 import core.entity.afterParty.AfterPartyEntity
 import core.entity.member.MemberEntity
 import org.springframework.stereotype.Repository
+import java.time.Instant
 
 @Repository
 class AfterPartyRepository(
@@ -40,6 +41,15 @@ class AfterPartyRepository(
     override fun findAll(): List<AfterParty> =
         afterPartyJpaRepository
             .findAllBy()
+            .map { it.toDomain() }
+
+    override fun findOpenByInviteTag(
+        cohortId: CohortId,
+        authorityId: AuthorityId,
+        now: Instant,
+    ): List<AfterParty> =
+        afterPartyJpaRepository
+            .findOpenByInviteTag(cohortId.value, authorityId.value, now)
             .map { it.toDomain() }
 
     override fun findByInviteTagFilters(

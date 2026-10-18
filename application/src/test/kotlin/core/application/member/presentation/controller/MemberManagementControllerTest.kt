@@ -13,6 +13,7 @@ import core.application.member.presentation.response.MemberManagementResponse
 import core.application.member.presentation.response.MemberOverviewResponse
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberStatus
 import io.swagger.v3.core.converter.ModelConverters
 import jakarta.servlet.Filter
@@ -77,7 +78,7 @@ class MemberManagementControllerTest {
 
     @Test
     fun `조회 권한이 있으면 닉네임 표시 이메일과 중복 여부를 기존 응답 형식으로 반환한다`() {
-        val member = MemberManagementResponse.MemberSummary(1, 19, "휘", "kakao@example.com", "SERVER", "DEEPER", 1, MemberStatus.ACTIVE, false, null, true, null)
+        val member = MemberManagementResponse.MemberSummary(1, 19, "홍길동", "kakao@example.com", "SERVER", "DEEPER", 1, MemberStatus.ACTIVE, false, null, true, null, LoginMethod.KAKAO)
         val missingEmail = member.copy(memberId = 2, name = "별명", email = null, duplicateSuspected = false)
         val response = MemberManagementResponse(19, MemberManagementResponse.Summary(2, 2, 0, 0, 0, 0, 0), 2, 1, 20, null, listOf(member, missingEmail))
         `when`(service.getOverview(MemberManagementRequest())).thenReturn(response)
@@ -86,7 +87,8 @@ class MemberManagementControllerTest {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
                 .andExpect(jsonPath("$.data.totalElements").value(2))
-                .andExpect(jsonPath("$.data.members[0].name").value("휘"))
+                .andExpect(jsonPath("$.data.members[0].name").value("홍길동"))
+                .andExpect(jsonPath("$.data.members[0].loginMethod").value("KAKAO"))
                 .andExpect(jsonPath("$.data.members[0].email").value("kakao@example.com"))
                 .andExpect(jsonPath("$.data.members[0].duplicateSuspected").value(true))
                 .andExpect(jsonPath("$.data.members[1].duplicateSuspected").value(false))
@@ -103,9 +105,11 @@ class MemberManagementControllerTest {
         assertThat(current).containsKeys("MemberManagementSummary", "MemberManagementTotals")
         assertThat(current).doesNotContainKey("MemberSummary")
         val properties = current["MemberManagementSummary"]!!.properties
-        assertThat(properties).containsKeys("name", "email", "duplicateSuspected").doesNotContainKey("signupEmail")
+        assertThat(properties).containsKeys("name", "email", "duplicateSuspected", "loginMethod").doesNotContainKey("signupEmail")
         assertThat(properties["name"]!!.description).isEqualTo("닉네임")
         assertThat(properties["email"]!!.nullable).isTrue()
+        assertThat(properties["loginMethod"]!!.nullable).isTrue()
+        assertThat(properties["loginMethod"]!!.enum).containsExactlyInAnyOrder("KAKAO", "APPLE", "EMAIL")
         assertThat(properties["duplicateSuspected"]!!.nullable == true).isFalse()
         assertThat(legacy["MemberSummary"]!!.properties).doesNotContainKeys("email", "signupEmail", "duplicateSuspected")
         val requestProperties = ModelConverters.getInstance().readAll(MemberManagementRequest::class.java)["MemberManagementRequest"]!!.properties

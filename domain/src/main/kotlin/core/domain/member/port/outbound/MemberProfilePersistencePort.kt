@@ -17,6 +17,9 @@ interface MemberProfilePersistencePort {
         part: MemberPart,
     ): Boolean
 
+    /** 반려 처리 중 잠근 회원의 완료 표시만 해제하고 기존 입력 값은 보존한다. */
+    fun resetCompletion(memberId: Long)
+
     fun hasAppleAccount(memberId: Long): Boolean
 }
 

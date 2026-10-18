@@ -135,9 +135,11 @@ class MemberBadgeMySqlIntegrationTest {
         assertThat(card().version).isEqualTo(1)
         badges.acknowledge(MemberBadgeCard.PENDING, 19, 1)
         admission.reject(1)
+        profiles.complete(1, "홍길동", "SERVER")
         admission.reapply(1)
         assertThat(card().version).isEqualTo(2)
         assertThat(card().hasNew).isTrue()
+        profiles.complete(1, "홍길동", "SERVER")
         admission.reapply(1)
         assertThat(card().version).isEqualTo(2)
     }
@@ -237,9 +239,11 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `확인 중 새 진입이 기다려도 이전 버전 확인이 새 NEW를 지우지 않는다`() {
         admission.reject(1)
+        profiles.complete(1, "홍길동", "SERVER")
         admission.reapply(1)
         val oldVersion = card().version
         admission.reject(2)
+        profiles.complete(2, "홍길동", "SERVER")
         val locked = CountDownLatch(1)
         val release = CountDownLatch(1)
         val pool = Executors.newFixedThreadPool(2)

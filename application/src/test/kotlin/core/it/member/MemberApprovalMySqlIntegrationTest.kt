@@ -325,6 +325,46 @@ class MemberApprovalMySqlIntegrationTest {
         }
     }
 
+    @Test
+    fun `승인 시 대상이 아닌 회식은 작성자가 없어도 읽지 않고 정상 초대는 유지한다`() {
+        jdbc.update("insert into after_party (after_party_id, title, category, scheduled_at, closed_at, is_approved, member_id, created_at, updated_at, can_edit_after_approval) values (2, 'closed', 'AFTER_PARTY', '2020-01-01', '2020-01-01', false, 999, now(6), now(6), false), (3, 'other cohort', 'AFTER_PARTY', '2099-01-01', '2099-01-01', false, 999, now(6), now(6), false), (4, 'other role', 'AFTER_PARTY', '2099-01-01', '2099-01-01', false, 999, now(6), now(6), false)")
+        jdbc.update("insert into after_party_invite_tags (after_party_id, cohort_id, authority_id, tag_name, created_at) values (2, 19, 1, '19기 디퍼', now(6)), (3, 18, 1, '18기 디퍼', now(6)), (4, 19, 2, '19기 운영진', now(6)), (1, 19, 1, 'duplicate', now(6))")
+
+        service.approve(listOf(1))
+        service.approve(listOf(1))
+
+        assertInitialized(1)
+        assertThat(jdbc.queryForObject("select count(*) from after_party", Int::class.java)).isEqualTo(4)
+        assertThat(jdbc.queryForObject("select after_party_id from after_party_invitees where member_id = 1", Long::class.java)).isEqualTo(1)
+    }
+
+    @Test
+    fun `19기 신규 회원 초대는 기수 번호가 아닌 실제 기수 ID로 조회한다`() {
+        jdbc.update("update cohorts set cohort_id = 42 where cohort_id = 19")
+        listOf("member_cohorts", "member_roles", "teams", "sessions", "after_party_invite_tags").forEach {
+            jdbc.update("update $it set cohort_id = 42 where cohort_id = 19")
+        }
+
+        service.approve(listOf(1))
+
+        assertThat(jdbc.queryForObject("select cohort_id from member_cohorts where member_id = 1", Long::class.java)).isEqualTo(42)
+        assertThat(count("after_party_invitees", 1)).isEqualTo(1)
+        assertThat(jdbc.queryForObject("select count(*) from member_roles where member_id = 1 and cohort_id = 42 and role_id = 1 and deleted_at is null", Int::class.java)).isEqualTo(1)
+    }
+
+    @Test
+    fun `초대 대상인 미마감 회식의 작성자가 없으면 승인을 롤백한다`() {
+        jdbc.update("update after_party set member_id = 999 where after_party_id = 1")
+
+        assertThatThrownBy { service.approve(listOf(1)) }.isInstanceOf(RuntimeException::class.java)
+
+        assertThat(jdbc.queryForObject("select status from members where member_id = 1", String::class.java)).isEqualTo("PENDING")
+        assertThat(count("member_cohorts", 1)).isZero()
+        listOf("attendances", "announcement_reads", "assignment_submissions", "after_party_invitees").forEach {
+            assertThat(count(it, 1)).isZero()
+        }
+    }
+
     private fun assertInitialized(memberId: Long) {
         listOf("attendances", "announcement_reads", "assignment_submissions", "after_party_invitees").forEach {
             assertThat(count(it, memberId)).describedAs("$it memberId=$memberId").isEqualTo(1)
