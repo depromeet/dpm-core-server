@@ -8,9 +8,12 @@ import core.application.member.application.service.cohort.MemberCohortService
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberAdmissionEventType
+import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberAdmissionEventPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.port.outbound.MemberProfile
+import core.domain.member.port.outbound.MemberProfilePersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.MemberId
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -20,13 +23,15 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
+import java.time.Instant
 
 class MemberAdmissionServiceTest {
     private val members = mock(MemberPersistencePort::class.java)
     private val events = mock(MemberAdmissionEventPersistencePort::class.java)
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val memberCohorts = mock(MemberCohortService::class.java)
-    private val service = MemberAdmissionService(members, events, cohorts, memberCohorts)
+    private val profiles = mock(MemberProfilePersistencePort::class.java)
+    private val service = MemberAdmissionService(members, events, cohorts, memberCohorts, profiles)
 
     @Test
     fun `잘못된 ID는 잠금 조회 전에 거절한다`() {
@@ -53,6 +58,7 @@ class MemberAdmissionServiceTest {
             val id = index + 1L
             `when`(members.lockApprovalTargets(listOf(id))).thenReturn(listOf(MemberApprovalTarget(id, MemberStatus.PENDING, cohortIds)))
             service.reject(id)
+            verify(profiles).resetCompletion(id)
             verify(events).record(id, MemberAdmissionEventType.REJECTED)
             verify(members).updateManagementFields(listOf(id), false, null, MemberStatus.REJECTED, emptySet())
         }
@@ -78,6 +84,7 @@ class MemberAdmissionServiceTest {
     fun `반려 회원 재신청만 기록하고 이미 대기면 변경하지 않는다`() {
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(20))
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.REJECTED, emptySet())))
+        completedProfile()
         service.reapply(1)
         verify(events).record(1, MemberAdmissionEventType.REAPPLIED)
         verify(members).updateManagementFields(listOf(1), false, null, MemberStatus.PENDING, emptySet())
@@ -92,6 +99,7 @@ class MemberAdmissionServiceTest {
     @Test
     fun `기수가 없으면 재신청 이력과 소속과 상태를 변경하지 않는다`() {
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.REJECTED, setOf(19))))
+        completedProfile()
         `when`(cohorts.getActiveCohortId()).thenThrow(CohortNotFoundException())
         assertThatThrownBy { service.reapply(1) }.isInstanceOf(CohortNotFoundException::class.java)
         verify(members).lockApprovalTargets(listOf(1))
@@ -115,5 +123,21 @@ class MemberAdmissionServiceTest {
             assertThatThrownBy { service.reapply(1) }.isInstanceOf(BusinessException::class.java)
         }
         verifyNoInteractions(events)
+    }
+
+    @Test
+    fun `반려 후 프로필을 완료하지 않으면 재신청 이력과 소속을 변경하지 않는다`() {
+        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.REJECTED, emptySet())))
+        `when`(profiles.findProfile(1)).thenReturn(MemberProfile(1, "홍길동", MemberPart.WEB, MemberStatus.REJECTED, null, null))
+        assertThatThrownBy { service.reapply(1) }
+            .isInstanceOfSatisfying(BusinessException::class.java) {
+                org.assertj.core.api.Assertions.assertThat(it.getCode())
+                    .isEqualTo(core.application.member.application.exception.MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
+            }
+        verifyNoInteractions(events, cohorts, memberCohorts)
+    }
+
+    private fun completedProfile() {
+        `when`(profiles.findProfile(1)).thenReturn(MemberProfile(1, "홍길동", MemberPart.WEB, MemberStatus.REJECTED, null, Instant.now()))
     }
 }

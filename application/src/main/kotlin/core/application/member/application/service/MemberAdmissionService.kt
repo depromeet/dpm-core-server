@@ -10,6 +10,7 @@ import core.domain.member.enums.MemberAdmissionEventType
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberAdmissionEventPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.port.outbound.MemberProfilePersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -22,6 +23,7 @@ class MemberAdmissionService(
     private val events: MemberAdmissionEventPersistencePort,
     private val cohorts: CohortQueryUseCase,
     private val memberCohorts: MemberCohortService,
+    private val profiles: MemberProfilePersistencePort,
 ) {
     @TrackMemberBadges
     fun reject(memberId: Long) {
@@ -32,6 +34,7 @@ class MemberAdmissionService(
         ) {
             throw BusinessException(MemberExceptionCode.MEMBER_REJECTION_TARGET_NOT_ALLOWED)
         }
+        profiles.resetCompletion(memberId)
         events.record(memberId, MemberAdmissionEventType.REJECTED)
         members.updateManagementFields(listOf(memberId), false, null, MemberStatus.REJECTED, emptySet())
     }
@@ -42,6 +45,10 @@ class MemberAdmissionService(
         if (target.status == MemberStatus.PENDING) return
         if (target.status != MemberStatus.REJECTED) {
             throw BusinessException(MemberExceptionCode.MEMBER_REAPPLICATION_NOT_ALLOWED)
+        }
+        val profile = profiles.findProfile(memberId) ?: throw MemberNotFoundException()
+        if (profile.completedAt == null) {
+            throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
         }
         val cohortId = cohorts.getActiveCohortId()
         memberCohorts.addMemberToCohort(MemberId(memberId), cohortId)

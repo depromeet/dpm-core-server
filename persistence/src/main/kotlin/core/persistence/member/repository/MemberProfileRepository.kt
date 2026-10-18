@@ -50,6 +50,13 @@ class MemberProfileRepository(private val dsl: DSLContext) : MemberProfilePersis
             .execute() == 1
     }
 
+    override fun resetCompletion(memberId: Long) {
+        dsl.update(MEMBERS)
+            .setNull(MEMBERS.PROFILE_COMPLETED_AT)
+            .where(MEMBERS.MEMBER_ID.eq(memberId))
+            .execute()
+    }
+
     override fun hasAppleAccount(memberId: Long): Boolean =
         dsl.fetchExists(
             dsl.selectOne().from(MEMBER_OAUTH)

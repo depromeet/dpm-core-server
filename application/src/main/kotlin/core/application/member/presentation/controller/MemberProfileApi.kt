@@ -11,7 +11,12 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Tag(name = "Member Profile", description = "본인 이름과 파트 최초 입력")
 interface MemberProfileApi {
-    @Operation(summary = "본인 프로필 입력 상태 조회", description = "파트가 미배정이어도 최초 입력을 완료했다면 다시 입력을 요구하지 않습니다.")
+    @Operation(
+        summary = "본인 프로필 입력 상태 조회",
+        description =
+            "파트가 미배정이어도 최초 입력을 완료했다면 다시 입력을 요구하지 않습니다. " +
+                "가입이 반려되면 기존 값을 보존한 채 재입력을 요구합니다.",
+    )
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "200", description = "조회 성공 (CustomResponse<MemberProfileResponse>)"),
@@ -25,7 +30,9 @@ interface MemberProfileApi {
 
     @Operation(
         summary = "본인 이름과 파트 최초 입력",
-        description = "완료 후 동일 값은 유지하며 다른 값으로 변경하면 409를 반환합니다. 가입 대기와 승인 상태 모두 입력할 수 있습니다.",
+        description =
+            "완료 후 동일 값은 유지하며 다른 값으로 변경하면 409를 반환합니다. 가입 대기와 승인 상태 모두 최초 입력할 수 있으며, " +
+                "반려 후에는 이름·파트를 다시 입력한 뒤 재신청해야 합니다.",
     )
     @ApiResponses(
         value = [

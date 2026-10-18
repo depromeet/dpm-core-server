@@ -1,5 +1,6 @@
 package core.domain.member.port.outbound.query
 
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import java.time.Instant
@@ -14,4 +15,5 @@ data class MemberManagementQueryModel(
     val cohortId: Long?,
     val teamNumber: Int,
     val updatedAt: Instant?,
+    val loginMethod: LoginMethod? = null,
 )

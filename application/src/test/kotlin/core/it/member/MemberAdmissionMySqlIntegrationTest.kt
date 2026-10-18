@@ -5,6 +5,7 @@ import core.application.common.exception.BusinessException
 import core.application.member.application.service.MemberActivationInitializer
 import core.application.member.application.service.MemberAdmissionService
 import core.application.member.application.service.MemberApprovalService
+import core.application.member.application.service.MemberProfileService
 import core.application.member.application.service.cohort.MemberCohortService
 import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.domain.authorization.port.inbound.RoleQueryUseCase
@@ -15,6 +16,7 @@ import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.it.attendance.AttendanceMySqlIntegrationTestApplication
 import core.persistence.authorization.repository.RoleRepository
 import core.persistence.member.repository.MemberAdmissionEventRepository
+import core.persistence.member.repository.MemberProfileRepository
 import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
@@ -49,6 +51,8 @@ import java.util.concurrent.atomic.AtomicLong
     MemberRepository::class,
     MemberAdmissionEventRepository::class,
     MemberAdmissionService::class,
+    MemberProfileService::class,
+    MemberProfileRepository::class,
     MemberApprovalService::class,
     MemberRoleRepository::class,
     MemberTeamRepository::class,
@@ -60,6 +64,8 @@ class MemberAdmissionMySqlIntegrationTest {
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var service: MemberAdmissionService
+
+    @Autowired lateinit var profiles: MemberProfileService
 
     @Autowired lateinit var approvals: MemberApprovalService
 
@@ -100,8 +106,10 @@ class MemberAdmissionMySqlIntegrationTest {
         assertThat(members.findManagementMembers(19)).isEmpty()
         assertThatThrownBy { service.reject(2) }.isInstanceOf(BusinessException::class.java)
         assertThatThrownBy { service.reject(3) }.isInstanceOf(BusinessException::class.java)
+        profiles.complete(1, "홍길동", "SERVER")
         service.reapply(1)
         val updated = jdbc.queryForObject("select updated_at from members where member_id = 1", java.sql.Timestamp::class.java)
+        profiles.complete(1, "홍길동", "SERVER")
         service.reapply(1)
         assertThat(jdbc.queryForObject("select updated_at from members where member_id = 1", java.sql.Timestamp::class.java)).isEqualTo(updated)
         assertThat(events(1)).containsExactly("REJECTED", "REAPPLIED")
@@ -115,6 +123,7 @@ class MemberAdmissionMySqlIntegrationTest {
         jdbc.update("update cohorts set is_active = false")
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (20, '20', true, 0, 0)")
         listOf(1L, 2L).forEach {
+            profiles.complete(it, "홍길동", "SERVER")
             service.reapply(it)
             assertThat(status(it)).isEqualTo("PENDING")
             assertThat(events(it)).containsExactly("REJECTED", "REAPPLIED")
@@ -124,6 +133,7 @@ class MemberAdmissionMySqlIntegrationTest {
         assertThat(members.findManagementMembers(20).map { it.memberId }).containsExactlyInAnyOrder(1, 2)
         jdbc.update("update cohorts set is_active = false")
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (21, '21', true, 0, 0)")
+        profiles.complete(2, "홍길동", "SERVER")
         service.reapply(2)
         assertThat(events(2)).containsExactly("REJECTED", "REAPPLIED")
         assertThat(jdbc.queryForList("select cohort_id from member_cohorts where member_id = 2 order by cohort_id", Long::class.java)).containsExactly(19, 20)
@@ -133,11 +143,13 @@ class MemberAdmissionMySqlIntegrationTest {
     fun `활성 표시가 없으면 기존 승인과 동일하게 최신 기수를 사용하고 기수가 전혀 없으면 거절한다`() {
         service.reject(1)
         jdbc.update("update cohorts set is_active = false")
+        profiles.complete(1, "홍길동", "SERVER")
         service.reapply(1)
         assertThat(jdbc.queryForList("select cohort_id from member_cohorts where member_id = 1", Long::class.java)).containsExactly(19)
         service.reject(1)
         jdbc.execute("delete from member_cohorts")
         jdbc.execute("delete from cohorts")
+        profiles.complete(1, "홍길동", "SERVER")
         assertThatThrownBy { service.reapply(1) }.isInstanceOf(CohortNotFoundException::class.java)
         assertThat(status(1)).isEqualTo("REJECTED")
         assertThat(events(1)).containsExactly("REJECTED", "REAPPLIED", "REJECTED")
@@ -154,6 +166,7 @@ class MemberAdmissionMySqlIntegrationTest {
             jdbc.execute("drop trigger member622_reject_update")
         }
         service.reject(1)
+        profiles.complete(1, "홍길동", "SERVER")
         jdbc.execute("create trigger member622_reject_update before update on members for each row signal sqlstate '45000' set message_text = 'admission rollback test'")
         try {
             assertThatThrownBy { service.reapply(1) }.isInstanceOf(RuntimeException::class.java)
@@ -178,6 +191,7 @@ class MemberAdmissionMySqlIntegrationTest {
     @Test
     fun `동시 재신청은 이력을 한 번만 기록한다`() {
         service.reject(1)
+        profiles.complete(1, "홍길동", "SERVER")
         race({ service.reapply(1) }, { service.reapply(1) }, secondSucceeds = true)
         assertThat(events(1)).containsExactly("REJECTED", "REAPPLIED")
         assertThat(status(1)).isEqualTo("PENDING")
@@ -192,12 +206,67 @@ class MemberAdmissionMySqlIntegrationTest {
         assertThat(roles.findAllPermissionsByMemberIdAndRoleNames(MemberId(2), names)).isEmpty()
         service.reject(2)
         assertThat(roles.findAllPermissionsByMemberIdAndRoleNames(MemberId(2), names)).isEmpty()
+        profiles.complete(2, "홍길동", "SERVER")
         service.reapply(2)
         assertThat(roles.findAllPermissionsByMemberIdAndRoleNames(MemberId(2), names)).isEmpty()
         listOf("ACTIVE", "INACTIVE").forEach {
             jdbc.update("update members set status = ? where member_id = 2", it)
             assertThat(roles.findAllPermissionsByMemberIdAndRoleNames(MemberId(2), names)).containsExactly("create:member")
         }
+    }
+
+    @Test
+    fun `반려 시 기존 입력을 보존하고 재입력 후에만 반복 재신청할 수 있다`() {
+        profiles.complete(1, "홍길동", "SERVER")
+        repeat(2) {
+            service.reject(1)
+            val rejected = profiles.get(1)
+            assertThat(rejected.name).isEqualTo(if (it == 0) "홍길동" else "김철수")
+            assertThat(rejected.part).isEqualTo(if (it == 0) "SERVER" else "WEB")
+            assertThat(rejected.profileCompletionRequired).isTrue()
+            assertThatThrownBy { service.reapply(1) }.isInstanceOf(BusinessException::class.java)
+            assertThat(status(1)).isEqualTo("REJECTED")
+            profiles.complete(1, "김철수", "WEB")
+            service.reapply(1)
+            val completed = jdbc.queryForObject("select profile_completed_at from members where member_id = 1", java.sql.Timestamp::class.java)
+            service.reapply(1)
+            assertThat(profiles.get(1).profileCompletionRequired).isFalse()
+            assertThat(jdbc.queryForObject("select profile_completed_at from members where member_id = 1", java.sql.Timestamp::class.java)).isEqualTo(completed)
+        }
+        assertThat(events(1)).containsExactly("REJECTED", "REAPPLIED", "REJECTED", "REAPPLIED")
+        approvals.approve(listOf(1))
+        assertThatThrownBy { profiles.complete(1, "홍길동", "SERVER") }.isInstanceOf(BusinessException::class.java)
+        assertThat(profiles.get(1).name).isEqualTo("김철수")
+    }
+
+    @Test
+    fun `기존 반려 프로필 보정은 반려 전 완료만 초기화하고 재실행해도 재입력을 보존한다`() {
+        jdbc.update("update members set status = 'REJECTED', part = 'SERVER', profile_completed_at = '2026-10-01 01:00:00' where member_id in (1, 2)")
+        jdbc.update("update members set status = 'ACTIVE', profile_completed_at = '2026-10-01 01:00:00' where member_id = 3")
+        jdbc.update("insert into member_admission_events (member_id, event_type, created_at) values (1, 'REJECTED', '2026-10-01 02:00:00'), (2, 'REJECTED', '2026-10-01 00:00:00'), (3, 'REJECTED', '2026-10-01 02:00:00')")
+        val relative = "db/pending/2610180100_rejected_member_profile_completion.sql"
+        val root =
+            generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
+                .first { java.nio.file.Files.exists(it.resolve(relative)) }
+
+        fun applySql() {
+            jdbc.dataSource!!.connection.use { connection ->
+                org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(
+                    connection,
+                    org.springframework.core.io.FileSystemResource(root.resolve(relative)),
+                )
+            }
+        }
+        applySql()
+        assertThat(profiles.get(1).profileCompletionRequired).isTrue()
+        assertThat(profiles.get(1).name).isEqualTo("홍길동")
+        assertThat(profiles.get(1).part).isEqualTo("SERVER")
+        assertThat(profiles.get(2).profileCompletionRequired).isFalse()
+        assertThat(profiles.get(3).profileCompletionRequired).isFalse()
+        profiles.complete(1, "김철수", "WEB")
+        applySql()
+        assertThat(profiles.get(1).profileCompletionRequired).isFalse()
+        assertThat(profiles.get(1).name).isEqualTo("김철수")
     }
 
     private fun race(

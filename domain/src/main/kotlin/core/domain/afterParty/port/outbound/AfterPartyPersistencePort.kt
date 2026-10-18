@@ -5,6 +5,7 @@ import core.domain.afterParty.vo.AfterPartyId
 import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import java.time.Instant
 
 interface AfterPartyPersistencePort {
     fun save(
@@ -17,6 +18,12 @@ interface AfterPartyPersistencePort {
     fun findById(afterPartyId: AfterPartyId): AfterParty?
 
     fun findAll(): List<AfterParty>
+
+    fun findOpenByInviteTag(
+        cohortId: CohortId,
+        authorityId: AuthorityId,
+        now: Instant,
+    ): List<AfterParty>
 
     fun findByInviteTagFilters(
         cohortId: CohortId?,
