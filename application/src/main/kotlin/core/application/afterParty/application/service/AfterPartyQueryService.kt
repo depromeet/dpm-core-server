@@ -42,16 +42,12 @@ class AfterPartyQueryService(
         inviteTagCohortId: CohortId? = null,
         inviteTagAuthorityId: AuthorityId? = null,
     ): List<AfterPartyListResponse> {
+        val cohortId = inviteTagCohortId ?: cohortQueryService.getActiveCohortId()
         val afterParties: List<AfterParty> =
-            if (inviteTagCohortId == null && inviteTagAuthorityId == null) {
-                afterPartyPersistencePort.findAll()
-            } else {
-                val cohortId = inviteTagCohortId?.let { it }
-                afterPartyPersistencePort.findByInviteTagFilters(
-                    cohortId = cohortId,
-                    authorityId = inviteTagAuthorityId,
-                )
-            }
+            afterPartyPersistencePort.findByInviteTagFilters(
+                cohortId = cohortId,
+                authorityId = inviteTagAuthorityId,
+            )
 
         return afterParties
             .map { afterParty ->
