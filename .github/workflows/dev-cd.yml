@@ -46,14 +46,13 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       SPRING_PROFILES_ACTIVE: dev
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      IMAGE_TAG: dev-${{ github.sha }}
       OCI_OBJECT_STORAGE_BUCKET: ${{ vars.DEV_OCI_OBJECT_STORAGE_BUCKET }}
       OCI_REGION: ${{ vars.DEV_OCI_REGION }}
       OCI_OBJECT_STORAGE_NAMESPACE: ${{ vars.DEV_OCI_OBJECT_STORAGE_NAMESPACE }}
       OCI_AUTH_MODE: instance-principal
+      DEPLOY_COMMIT: ${{ github.sha }}
+      APP_DIR: /opt/dpm/dev
+      HEALTH_URL: http://127.0.0.1:8081/actuator/health
     steps:
       - name: "OCI 설정값을 검증한다."
         run: |
@@ -69,25 +68,22 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: 'gradle'
 
-      - name: "Docker buildx를 설정한다."
-        uses: docker/setup-buildx-action@v3
+      - name: "bootJar를 빌드한다."
+        run: ./gradlew :application:bootJar --configuration-cache --build-cache
 
-      - name: "Dockerhub 로그인"
-        uses: docker/login-action@v3
+      - name: "JAR를 서버로 전송한다."
+        uses: appleboy/scp-action@v0.1.7
         with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
-
-      - name: "Jib을 사용하여 Docker 이미지를 빌드 후 Dockerhub에 푸시한다."
-        run: |
-          ./gradlew jib \
-            -Djib.to.auth.username=${{ secrets.DOCKER_USERNAME }} \
-            -Djib.to.auth.password=${{ secrets.DOCKER_PASSWORD }} \
-            -Djib.to.image=${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            -Djib.to.tags=${{ env.IMAGE_TAG }}
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USERNAME }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          source: "application/build/libs/dpm-core-server.jar"
+          target: "/tmp/dpm-deploy-dev"
+          strip_components: 3
+          overwrite: true
+          rm: true
 
       - name: "서버에 배포한다."
         uses: appleboy/ssh-action@master
@@ -95,95 +91,62 @@ jobs:
           host: ${{ secrets.DEV_SERVER_HOST }}
           username: ${{ secrets.DEV_SERVER_USERNAME }}
           key: ${{ secrets.DEV_SERVER_SSH_KEY }}
-          envs: OCI_OBJECT_STORAGE_BUCKET,OCI_REGION,OCI_OBJECT_STORAGE_NAMESPACE,OCI_AUTH_MODE
+          command_timeout: 10m
+          envs: OCI_OBJECT_STORAGE_BUCKET,OCI_REGION,OCI_OBJECT_STORAGE_NAMESPACE,OCI_AUTH_MODE,DEPLOY_COMMIT,APP_DIR,HEALTH_URL
           script: |
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            cd ~
+            set -e
 
             for v in "$OCI_OBJECT_STORAGE_BUCKET" "$OCI_REGION" "$OCI_OBJECT_STORAGE_NAMESPACE" "$OCI_AUTH_MODE"; do
               case "$v" in ''|*[!A-Za-z0-9._-]*) echo "OCI 설정값이 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
             done
 
-            # ~/.env 의 OCI 키만 교체한다 (다른 키·권한 유지, mv 로 원자적 교체)
+            JAR_SRC=/tmp/dpm-deploy-dev/dpm-core-server.jar
+            test -f "$JAR_SRC" || { echo "업로드된 JAR가 없다: $JAR_SRC"; ls -la /tmp/dpm-deploy-dev || true; exit 1; }
+            test -d "$APP_DIR" || { echo "$APP_DIR 가 없다"; exit 1; }
+
+            # /opt/dpm/dev/.env 의 OCI 키만 교체한다 (다른 키·권한 유지)
             (
               set -e
               umask 077
-              tmp=$(mktemp ./.env.oci.XXXXXX)
+              env_file="$APP_DIR/.env"
+              tmp=$(mktemp "$APP_DIR/.env.oci.XXXXXX")
               trap 'rm -f "$tmp"' EXIT
-              if [ -f .env ]; then
-                cp -p .env "$tmp"
-                { grep -vE '^(export[[:space:]]+)?OCI_(OBJECT_STORAGE_BUCKET|REGION|OBJECT_STORAGE_NAMESPACE|AUTH_MODE)=' .env || [ $? -eq 1 ]; } > "$tmp"
+              if [ -f "$env_file" ]; then
+                { grep -vE '^(export[[:space:]]+)?OCI_(OBJECT_STORAGE_BUCKET|REGION|OBJECT_STORAGE_NAMESPACE|AUTH_MODE)=' "$env_file" || [ $? -eq 1 ]; } > "$tmp"
               fi
               printf '%s=%s\n' \
                 OCI_OBJECT_STORAGE_BUCKET "$OCI_OBJECT_STORAGE_BUCKET" \
                 OCI_REGION "$OCI_REGION" \
                 OCI_OBJECT_STORAGE_NAMESPACE "$OCI_OBJECT_STORAGE_NAMESPACE" \
                 OCI_AUTH_MODE "$OCI_AUTH_MODE" >> "$tmp"
-              mv -f "$tmp" .env
+              chown dpm:dpm "$tmp"
+              chmod 600 "$tmp"
+              mv -f "$tmp" "$env_file"
               trap - EXIT
             )
-            [ $? -eq 0 ] || { echo "~/.env 의 OCI 설정 갱신에 실패했다"; exit 1; }
 
-            export OCI_OBJECT_STORAGE_BUCKET OCI_REGION OCI_OBJECT_STORAGE_NAMESPACE OCI_AUTH_MODE
-            chmod +x deploy.sh
-            ./deploy.sh ${{ env.IMAGE_TAG }} || exit 1
+            systemctl stop dpm@dev
+            install -o dpm -g dpm -m 644 "$JAR_SRC" "$APP_DIR/app.jar"
+            printf '%s\n' "${DEPLOY_COMMIT:0:8}" > "$APP_DIR/DEPLOYED_COMMIT"
+            chown dpm:dpm "$APP_DIR/DEPLOYED_COMMIT"
+            rm -rf /tmp/dpm-deploy-dev
+            systemctl start dpm@dev
 
-            # 새 이미지 컨테이너의 OCI env 를 확인한다. Swarm 서비스면 --env-add 로 맞춘다
-            (
-              set -e
-              TAG="${{ env.IMAGE_TAG }}"
-              oci_env_ok() {
-                got=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$1" | grep -E '^OCI_(OBJECT_STORAGE_BUCKET|REGION|OBJECT_STORAGE_NAMESPACE|AUTH_MODE)=' | sort)
-                want=$(printf '%s\n' "OCI_AUTH_MODE=$OCI_AUTH_MODE" "OCI_OBJECT_STORAGE_BUCKET=$OCI_OBJECT_STORAGE_BUCKET" "OCI_OBJECT_STORAGE_NAMESPACE=$OCI_OBJECT_STORAGE_NAMESPACE" "OCI_REGION=$OCI_REGION" | sort)
-                [ "$got" = "$want" ]
-              }
-              tag_containers() {
-                docker ps --filter status=running --format '{{.ID}} {{.Image}}' \
-                  | awk -v t=":$TAG" '{ i = $2; sub(/@sha256:.*/, "", i); if (length(i) > length(t) && substr(i, length(i) - length(t) + 1) == t) print $1 }'
-              }
-              all_ok() {
-                [ -n "$1" ] || return 1
-                for id in $1; do oci_env_ok "$id" || return 1; done
-              }
-
-              ids=""
-              for i in $(seq 1 18); do
-                ids=$(tag_containers)
-                [ -n "$ids" ] && break
-                sleep 5
-              done
-              [ -n "$ids" ] || { echo "$TAG 이미지로 실행 중인 컨테이너를 찾지 못했다"; exit 1; }
-
-              svcs=$(for id in $ids; do docker inspect --format '{{index .Config.Labels "com.docker.swarm.service.name"}}' "$id"; done | sort -u)
-              [ "$(printf '%s\n' "$svcs" | wc -l)" -eq 1 ] || { echo "$TAG 컨테이너가 여러 서비스에 걸쳐 있어 대상을 정할 수 없다"; exit 1; }
-
-              if all_ok "$ids"; then
-                echo "> OCI env 확인 완료"
+            echo "> dpm@dev 기동 대기"
+            for i in $(seq 1 36); do
+              if systemctl is-active --quiet dpm@dev \
+                && curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+                echo "> health check OK"
+                systemctl status dpm@dev --no-pager -l | head -20
                 exit 0
               fi
+              sleep 5
+            done
 
-              if [ -z "$svcs" ]; then
-                echo "dev 컨테이너가 Swarm 서비스가 아니라 OCI env 를 바꿀 수 없다. deploy.sh 가 ~/.env 를 --env-file 로 넘기도록 수정해야 한다"
-                exit 1
-              fi
-
-              echo "> $svcs 서비스에 OCI env 를 추가한다"
-              docker service update --quiet --detach=false \
-                --env-add "OCI_OBJECT_STORAGE_BUCKET=$OCI_OBJECT_STORAGE_BUCKET" \
-                --env-add "OCI_REGION=$OCI_REGION" \
-                --env-add "OCI_OBJECT_STORAGE_NAMESPACE=$OCI_OBJECT_STORAGE_NAMESPACE" \
-                --env-add "OCI_AUTH_MODE=$OCI_AUTH_MODE" \
-                "$svcs"
-
-              for i in $(seq 1 18); do
-                ids=$(docker ps -q --filter status=running --filter "label=com.docker.swarm.service.name=$svcs")
-                all_ok "$ids" && { echo "> OCI env 확인 완료"; exit 0; }
-                sleep 5
-              done
-              echo "$svcs 서비스를 갱신했지만 실행 중인 컨테이너의 OCI env 가 기대값과 다르다"
-              exit 1
-            )
-            [ $? -eq 0 ] || exit 1
+            echo "dpm@dev health check 실패"
+            systemctl status dpm@dev --no-pager -l | head -40 || true
+            journalctl -u dpm@dev -n 80 --no-pager || true
+            exit 1
 
       - name: "Discord로 Development 배포 실패를 알린다."
         if: failure()
