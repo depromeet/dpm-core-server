@@ -12,6 +12,7 @@ import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
@@ -112,6 +113,7 @@ class MemberManagementMySqlIntegrationTest {
 
         val rows = members.findManagementMembers(current.value)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L)
+        assertThat(rows.map { it.loginMethod }).containsOnlyNulls()
         assertThat(rows.single { it.memberId == 1L }.teamNumber).isEqualTo(3)
         assertThat(rows.single { it.memberId == 1L }.updatedAt).isEqualTo(at)
         assertThat(rows.single { it.memberId == 3L }.cohortId).isNull()
@@ -147,6 +149,9 @@ class MemberManagementMySqlIntegrationTest {
             jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at) values (?, ?, ?, 'SERVER', 'ACTIVE', '2026-10-01 00:00:00')", id, "member$id", "member$id@example.com")
             joinCohort(id, cohortId)
         }
+        listOf(1L, 2L, 3L).forEach { id ->
+            jdbc.update("insert into member_credentials (member_id, email, password, created_at) values (?, ?, 'test-hash', now(6))", id, "member$id@example.com")
+        }
         oauth(1001, 1, "KAKAO", "kakao1@example.com")
         oauth(1002, 1, "APPLE", "apple1@example.com") // 애플 연결이 나중에 생겨도 카카오 우선.
         oauth(1003, 2, "APPLE", "old-apple2@example.com")
@@ -171,10 +176,14 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(rows.associate { it.memberId to it.email }).containsExactlyInAnyOrderEntriesOf(
             mapOf(1L to "kakao1@example.com", 2L to "apple2@example.com", 3L to "member3@example.com", 7L to null, 8L to null, 9L to "member9@example.com", 10L to "member10@example.com", 11L to "kakao11@example.com"),
         )
+        assertThat(rows.associate { it.memberId to it.loginMethod }).containsExactlyInAnyOrderEntriesOf(
+            mapOf(1L to LoginMethod.KAKAO, 2L to LoginMethod.APPLE, 3L to LoginMethod.EMAIL, 7L to LoginMethod.KAKAO, 8L to LoginMethod.KAKAO, 9L to LoginMethod.APPLE, 10L to LoginMethod.APPLE, 11L to LoginMethod.KAKAO),
+        )
         rows.forEach { row ->
             assertThat(jdbc.queryForObject("select signup_email from members where member_id = ?", String::class.java, row.memberId)).isEqualTo("member${row.memberId}@example.com")
         }
         val response = service.getOverview(MemberManagementRequest(excludeStaff = false))
+        assertThat(response.members.single { it.memberId == 1L }.loginMethod).isEqualTo(LoginMethod.KAKAO)
         assertThat(response.totalElements).isEqualTo(7)
         assertThat(response.summary.totalMemberCount).isEqualTo(7)
         assertThat(response.members.filter { it.duplicateSuspected }.map { it.memberId }).containsExactly(1L)

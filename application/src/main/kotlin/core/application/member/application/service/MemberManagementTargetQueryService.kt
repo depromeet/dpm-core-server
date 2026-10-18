@@ -42,6 +42,7 @@ class MemberManagementTargetQueryService(
                 cohortId = member.cohortId,
                 name = member.name,
                 email = member.email,
+                loginMethod = member.loginMethod,
                 part = member.part?.name ?: UNASSIGNED,
                 memberType = type,
                 teamNumber = member.teamNumber,
