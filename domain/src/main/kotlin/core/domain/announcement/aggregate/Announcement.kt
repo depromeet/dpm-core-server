@@ -2,6 +2,7 @@ package core.domain.announcement.aggregate
 
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import java.time.Instant
 
@@ -11,6 +12,7 @@ class Announcement(
     title: String,
     content: String?,
     val authorId: MemberId,
+    val cohortId: CohortId,
     val createdAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
@@ -50,6 +52,7 @@ class Announcement(
             title: String,
             content: String?,
             authorId: MemberId,
+            cohortId: CohortId,
         ): Announcement {
             val now = Instant.now()
 
@@ -58,6 +61,7 @@ class Announcement(
                 title = title,
                 content = content,
                 authorId = authorId,
+                cohortId = cohortId,
                 createdAt = now,
                 updatedAt = now,
             )

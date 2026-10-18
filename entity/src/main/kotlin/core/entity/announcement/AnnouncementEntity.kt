@@ -3,6 +3,7 @@ package core.entity.announcement
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.enums.AnnouncementType
 import core.domain.announcement.vo.AnnouncementId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -29,6 +30,8 @@ class AnnouncementEntity(
     val content: String?,
     @Column(name = "author_id", nullable = false)
     val authorId: Long,
+    @Column(name = "cohort_id", nullable = false)
+    val cohortId: Long,
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant,
     @Column(name = "updated_at", nullable = false)
@@ -44,6 +47,7 @@ class AnnouncementEntity(
                 title = announcement.title,
                 content = announcement.content,
                 authorId = announcement.authorId.value,
+                cohortId = announcement.cohortId.value,
                 createdAt = announcement.createdAt ?: Instant.now(),
                 updatedAt = announcement.updatedAt ?: Instant.now(),
                 deletedAt = announcement.deletedAt,
@@ -57,6 +61,7 @@ class AnnouncementEntity(
             title = title,
             content = content,
             authorId = MemberId(authorId),
+            cohortId = CohortId(cohortId),
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
