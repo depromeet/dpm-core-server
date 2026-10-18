@@ -235,7 +235,7 @@ class MemberManagementUpdateMySqlIntegrationTest {
     @Test
     fun `v3에서 CORE로 변경한 회원도 기존 역할 API에서 다른 타입으로 교체한다`() {
         service.update(1, MemberManagementUpdateRequest(memberType = "CORE"))
-        legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("DEEPER", 19))
+        legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("DEEPER", "19"))
         assertThat(activeRoles(1)).containsExactlyInAnyOrder("1:19", "2:18", "4:null", "5:null")
     }
 
@@ -243,7 +243,7 @@ class MemberManagementUpdateMySqlIntegrationTest {
     fun `기존 역할 API는 v3 변경의 잠금을 기다린 뒤 최신 타입 한 개를 교체한다`() {
         runOrderedRoleChanges(
             first = { service.update(1, MemberManagementUpdateRequest(memberType = "CORE")) },
-            second = { legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("DEEPER", 19)) },
+            second = { legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("DEEPER", "19")) },
         )
         assertThat(activeRoles(1)).containsExactlyInAnyOrder("1:19", "2:18", "4:null", "5:null")
     }
@@ -251,7 +251,7 @@ class MemberManagementUpdateMySqlIntegrationTest {
     @Test
     fun `v3 수정도 기존 역할 API 트랜잭션 이후 최신 타입으로 교체한다`() {
         runOrderedRoleChanges(
-            first = { legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("ORGANIZER", 19)) },
+            first = { legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("ORGANIZER", "19")) },
             second = { service.update(1, MemberManagementUpdateRequest(memberType = "DEEPER")) },
         )
         assertThat(activeRoles(1)).containsExactlyInAnyOrder("1:19", "2:18", "4:null", "5:null")
