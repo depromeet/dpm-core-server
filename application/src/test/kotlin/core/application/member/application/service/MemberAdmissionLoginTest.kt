@@ -16,6 +16,9 @@ import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberAdmissionEventPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.port.outbound.MemberProfilePersistencePort
+import core.domain.member.port.outbound.MemberProfile
+import core.domain.member.enums.MemberPart
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
@@ -59,7 +62,9 @@ class MemberAdmissionLoginTest {
         val member = fixture(MemberStatus.REJECTED)
         val cohorts = mock(CohortQueryUseCase::class.java)
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(20))
-        val admission = MemberAdmissionService(members, events, cohorts, mock(MemberCohortService::class.java))
+        val profiles = mock(MemberProfilePersistencePort::class.java)
+        `when`(profiles.findProfile(1)).thenReturn(MemberProfile(1, "홍길동", MemberPart.WEB, MemberStatus.REJECTED, null, Instant.now()))
+        val admission = MemberAdmissionService(members, events, cohorts, mock(MemberCohortService::class.java), profiles)
         `when`(members.lockApprovalTargets(listOf(1))).thenAnswer { listOf(MemberApprovalTarget(1, member.status, emptySet())) }
         doAnswer {
             member.updateStatus(MemberStatus.PENDING)
