@@ -173,8 +173,8 @@ class MemberApprovalMySqlIntegrationTest {
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER'), (2, 'ORGANIZER'), (3, 'GUEST')")
         jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (1, 3, null, now(6)), (2, 2, 19, now(6)), (4, 2, 19, now(6)), (5, 2, 19, now(6))")
         `when`(roleQueryUseCase.findIdByName("DEEPER")).thenReturn(1)
-        `when`(announcementQueryUseCase.getAll()).thenReturn(
-            listOf(Announcement(AnnouncementId(1), AnnouncementType.GENERAL, "notice", null, MemberId(4))),
+        `when`(announcementQueryUseCase.findByCohortId(CohortId(19))).thenReturn(
+            listOf(Announcement(AnnouncementId(1), AnnouncementType.GENERAL, "notice", null, MemberId(4), CohortId(19))),
         )
         `when`(assignmentQueryUseCase.getAllAssignments()).thenReturn(
             listOf(Assignment(AssignmentId(1), SubmitType.INDIVIDUAL, null, null, null)),

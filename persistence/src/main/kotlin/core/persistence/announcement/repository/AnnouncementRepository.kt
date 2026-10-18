@@ -7,6 +7,7 @@ import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.announcement.vo.AssignmentId
+import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import core.entity.announcement.AnnouncementEntity
 import org.jooq.DSLContext
@@ -27,9 +28,10 @@ class AnnouncementRepository(
     override fun save(announcement: Announcement): Announcement =
         announcementJpaRepository.save(AnnouncementEntity.from(announcement)).toDomain()
 
-    override fun findAll(): List<Announcement> = announcementJpaRepository.findAll().map { it.toDomain() }
+    override fun findByCohortId(cohortId: CohortId): List<Announcement> =
+        announcementJpaRepository.findAllByCohortId(cohortId.value).map { it.toDomain() }
 
-    override fun findAnnouncementListItems(): List<AnnouncementListItemQueryModel> =
+    override fun findAnnouncementListItems(cohortId: CohortId): List<AnnouncementListItemQueryModel> =
         dsl
             .select(
                 ANNOUNCEMENTS.ANNOUNCEMENT_ID,
@@ -49,6 +51,7 @@ class AnnouncementRepository(
             .leftJoin(ANNOUNCEMENT_READS)
             .on(ANNOUNCEMENTS.ANNOUNCEMENT_ID.eq(ANNOUNCEMENT_READS.ANNOUNCEMENT_ID))
             .where(ANNOUNCEMENTS.DELETED_AT.isNull())
+            .and(ANNOUNCEMENTS.COHORT_ID.eq(cohortId.value))
             .groupBy(
                 ANNOUNCEMENTS.ANNOUNCEMENT_ID,
                 ANNOUNCEMENTS.TITLE,
@@ -89,6 +92,7 @@ class AnnouncementRepository(
                 ANNOUNCEMENTS.TITLE,
                 ANNOUNCEMENTS.CONTENT,
                 ANNOUNCEMENTS.AUTHOR_ID,
+                ANNOUNCEMENTS.COHORT_ID,
                 ANNOUNCEMENTS.CREATED_AT,
                 ANNOUNCEMENTS.UPDATED_AT,
                 ANNOUNCEMENTS.DELETED_AT,
@@ -104,6 +108,7 @@ class AnnouncementRepository(
                     title = record[ANNOUNCEMENTS.TITLE]!!,
                     content = record[ANNOUNCEMENTS.CONTENT],
                     authorId = MemberId(record[ANNOUNCEMENTS.AUTHOR_ID]!!),
+                    cohortId = CohortId(record[ANNOUNCEMENTS.COHORT_ID]!!),
                     createdAt =
                         record[ANNOUNCEMENTS.CREATED_AT]!!
                             .atZone(ZoneId.of("Asia/Seoul"))
