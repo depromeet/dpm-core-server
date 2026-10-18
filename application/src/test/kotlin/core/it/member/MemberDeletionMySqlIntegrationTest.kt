@@ -120,7 +120,7 @@ class MemberDeletionMySqlIntegrationTest {
         jdbc.update("insert into member_credentials (member_id, email, password, created_at) values (1, 'signup1@example.com', 'test-hash', now(6))")
         jdbc.update("insert into refresh_tokens (member_id, token_hash, issued_at, expires_at) values (1, 'test-hash', now(6), '2099-01-01')")
         jdbc.update("insert into attendances (session_id, member_id, status, attended_at) values (1, 1, 'PRESENT', now(6))")
-        jdbc.update("insert into announcements (announcement_id, announcement_type, title, content, author_id, created_at, updated_at) values (1, 0, '공지', '보존할 본문', 1, now(6), now(6))")
+        jdbc.update("insert into announcements (announcement_id, announcement_type, title, content, author_id, cohort_id, created_at, updated_at) values (1, 0, '공지', '보존할 본문', 1, 19, now(6), now(6))")
         jdbc.update("insert into announcement_reads (announcement_id, member_id, read_at) values (1, 1, now(6)), (1, 2, now(6))")
         jdbc.update("insert into assignments (assignment_id, submit_type, created_at, updated_at) values (1, 0, now(6), now(6))")
         jdbc.update("insert into assignment_submissions (assignment_id, member_id, team_id, submit_type, submit_status, score, created_at, updated_at) values (1, 1, 191, 0, 0, 10, now(6), now(6))")
@@ -161,7 +161,7 @@ class MemberDeletionMySqlIntegrationTest {
         TransactionTemplate(transactionManager).executeWithoutResult {
             assertThat(members.findById(MemberId(1))!!.name).isEqualTo("홍길동")
             assertThat(announcements.findAnnouncementById(AnnouncementId(1))!!.content).isEqualTo("보존할 본문")
-            assertThat(announcements.findAnnouncementListItems()).hasSize(1)
+            assertThat(announcements.findAnnouncementListItems(CohortId(19))).hasSize(1)
             assertThat(bills.findById(BillId(1))!!.hostUserId).isEqualTo(MemberId(1))
             assertThat(gatherings.findByBillId(BillId(1)).single().hostUserId).isEqualTo(MemberId(1))
             assertThat(gatherings.getSubmittedParticipantEachGathering(BillId(1), MemberId(2))).hasSize(1)
