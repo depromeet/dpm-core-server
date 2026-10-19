@@ -73,12 +73,14 @@ jobs:
       - name: "bootJar를 빌드한다."
         run: ./gradlew :application:bootJar --configuration-cache --build-cache
 
+      # iwinv 단일 호스트에 prod/dev 공존. PROD_SERVER_* 는 이전 서버 키로 남아 인증 실패하므로
+      # 갱신된 DEV_SERVER_* SSH 시크릿을 사용한다. (앱 env 는 아래 PROD_* secrets 유지)
       - name: "JAR를 서버로 전송한다."
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.PROD_SERVER_USERNAME }}
-          key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USERNAME }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
           source: "application/build/libs/dpm-core-server.jar"
           target: "/tmp/dpm-deploy-prod"
           strip_components: 3
@@ -88,9 +90,9 @@ jobs:
       - name: "서버에 배포한다."
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.PROD_SERVER_HOST }}
-          username: ${{ secrets.PROD_SERVER_USERNAME }}
-          key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USERNAME }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
           command_timeout: 10m
           envs: OCI_OBJECT_STORAGE_BUCKET,OCI_REGION,OCI_OBJECT_STORAGE_NAMESPACE,OCI_AUTH_MODE,DEPLOY_COMMIT,APP_DIR,HEALTH_URL
           script: |
