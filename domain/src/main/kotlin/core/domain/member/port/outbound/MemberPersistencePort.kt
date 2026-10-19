@@ -96,5 +96,10 @@ interface MemberPersistencePort {
         signupEmail: String,
     )
 
-    fun hardDeleteById(memberId: MemberId)
+    /**
+     * 회원과 그 회원을 참조하는 모든 행을 영구 삭제한다.
+     *
+     * @return 함께 삭제된 이미지의 버킷 객체 키. 버킷 정리는 호출자가 커밋 후에 한다.
+     */
+    fun hardDeleteById(memberId: MemberId): List<String>
 }
