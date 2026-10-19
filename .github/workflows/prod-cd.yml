@@ -105,46 +105,27 @@ jobs:
             JAR_SRC=/tmp/dpm-deploy-prod/dpm-core-server.jar
             test -f "$JAR_SRC" || { echo "업로드된 JAR가 없다: $JAR_SRC"; ls -la /tmp/dpm-deploy-prod || true; exit 1; }
             test -d "$APP_DIR" || { echo "$APP_DIR 가 없다"; exit 1; }
+            test -f "$APP_DIR/.env" || { echo "$APP_DIR/.env 가 없다 (서버 상주 env 필요)"; exit 1; }
 
-            # GitHub Secrets가 prod 환경변수 원본 → /opt/dpm/prod/.env 재생성
-            umask 077
-            tmp=$(mktemp "$APP_DIR/.env.XXXXXX")
-            {
-              echo "COHORT_VALUE=${{ secrets.PROD_COHORT_VALUE }}"
-              echo "SPRING_PROFILES_ACTIVE=prod"
-              echo "PROD_DB_HOST=${{ secrets.PROD_DB_HOST }}"
-              echo "PROD_DB_PORT=${{ secrets.PROD_DB_PORT }}"
-              echo "PROD_DB_SCHEMA=${{ secrets.PROD_DB_SCHEMA }}"
-              echo "PROD_DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}"
-              echo "PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}"
-              echo "KAKAO_CLIENT_ID=${{ secrets.PROD_KAKAO_CLIENT_ID }}"
-              echo "KAKAO_CLIENT_SECRET=${{ secrets.PROD_KAKAO_CLIENT_SECRET }}"
-              echo "KAKAO_REDIRECT_URI=${{ secrets.PROD_KAKAO_REDIRECT_URI }}"
-              echo "JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}"
-              echo "ACCESS_TOKEN_EXPIRATION_TIME=${{ secrets.PROD_ACCESS_TOKEN_EXPIRATION_TIME }}"
-              echo "REFRESH_TOKEN_EXPIRATION_TIME=${{ secrets.PROD_REFRESH_TOKEN_EXPIRATION_TIME }}"
-              echo "COOKIE_DOMAIN=${{ secrets.PROD_COOKIE_DOMAIN }}"
-              echo "COOKIE_HTTP_ONLY=${{ secrets.PROD_COOKIE_HTTP_ONLY }}"
-              echo "COOKIE_SECURE=true"
-              echo "REDIRECT_URL=${{ secrets.PROD_REDIRECT_URL }}"
-              echo "ADMIN_REDIRECT_URL=${{ secrets.PROD_ADMIN_REDIRECT_URL }}"
-              echo "RESTRICTED_REDIRECT_URL=${{ secrets.PROD_RESTRICTED_REDIRECT_URL }}"
-              echo "PROD_APPLE_REDIRECT_URI=${{ secrets.PROD_APPLE_REDIRECT_URI }}"
-              echo "PROD_APPLE_REDIRECT_URL=${{ secrets.PROD_APPLE_REDIRECT_URL }}"
-              echo "PROD_APPLE_PRIVATE_KEY=${{ secrets.PROD_APPLE_PRIVATE_KEY }}"
-              echo "PROD_APPLE_TEAM_ID=${{ secrets.PROD_APPLE_TEAM_ID }}"
-              echo "PROD_APPLE_KEY_ID=${{ secrets.PROD_APPLE_KEY_ID }}"
-              echo "PROD_APPLE_CLIENT_ID=${{ secrets.PROD_APPLE_CLIENT_ID }}"
-              echo "SECURITY_LOGGING_LEVEL=${{ secrets.SECURITY_LOGGING_LEVEL }}"
-              echo "PROD_DISCORD_WEBHOOK_URL=${{ secrets.PROD_DISCORD_WEBHOOK_URL }}"
-              echo "OCI_OBJECT_STORAGE_BUCKET=$OCI_OBJECT_STORAGE_BUCKET"
-              echo "OCI_REGION=$OCI_REGION"
-              echo "OCI_OBJECT_STORAGE_NAMESPACE=$OCI_OBJECT_STORAGE_NAMESPACE"
-              echo "OCI_AUTH_MODE=$OCI_AUTH_MODE"
-            } > "$tmp"
-            chown dpm:dpm "$tmp"
-            chmod 600 "$tmp"
-            mv -f "$tmp" "$APP_DIR/.env"
+            # iwinv 이전 후 DB는 로컬 dpm-mysql(dpm_prod). GitHub PROD_DB_* 는 구 RDS(core_prod)라
+            # .env 전체를 덮어쓰면 기동 실패한다. Dev와 같이 OCI 키만 갱신한다.
+            (
+              set -e
+              umask 077
+              env_file="$APP_DIR/.env"
+              tmp=$(mktemp "$APP_DIR/.env.oci.XXXXXX")
+              trap 'rm -f "$tmp"' EXIT
+              { grep -vE '^(export[[:space:]]+)?OCI_(OBJECT_STORAGE_BUCKET|REGION|OBJECT_STORAGE_NAMESPACE|AUTH_MODE)=' "$env_file" || [ $? -eq 1 ]; } > "$tmp"
+              printf '%s=%s\n' \
+                OCI_OBJECT_STORAGE_BUCKET "$OCI_OBJECT_STORAGE_BUCKET" \
+                OCI_REGION "$OCI_REGION" \
+                OCI_OBJECT_STORAGE_NAMESPACE "$OCI_OBJECT_STORAGE_NAMESPACE" \
+                OCI_AUTH_MODE "$OCI_AUTH_MODE" >> "$tmp"
+              chown dpm:dpm "$tmp"
+              chmod 600 "$tmp"
+              mv -f "$tmp" "$env_file"
+              trap - EXIT
+            )
 
             systemctl stop dpm@prod
             install -o dpm -g dpm -m 644 "$JAR_SRC" "$APP_DIR/app.jar"
@@ -158,9 +139,10 @@ jobs:
               if systemctl is-active --quiet dpm@prod \
                 && curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
                 echo "> health check OK"
-                systemctl status dpm@prod --no-pager -l | head -20
+                systemctl status dpm@prod --no-pager -l | head -20 || true
                 exit 0
               fi
+              echo "  waiting... ($i/36)"
               sleep 5
             done
 
