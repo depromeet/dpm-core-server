@@ -17,6 +17,8 @@ import core.domain.member.vo.MemberId
 import core.domain.team.vo.TeamNumber
 import core.entity.member.MemberEntity
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.ABSENCE_REASONS
+import org.jooq.dsl.tables.references.ABSENCE_REASON_IMAGES
 import org.jooq.dsl.tables.references.AFTER_PARTY
 import org.jooq.dsl.tables.references.AFTER_PARTY_INVITEES
 import org.jooq.dsl.tables.references.AFTER_PARTY_INVITE_TAGS
@@ -32,7 +34,10 @@ import org.jooq.dsl.tables.references.GATHERINGS
 import org.jooq.dsl.tables.references.GATHERING_MEMBERS
 import org.jooq.dsl.tables.references.GATHERING_RECEIPTS
 import org.jooq.dsl.tables.references.GATHERING_RECEIPT_PHOTOS
+import org.jooq.dsl.tables.references.IMAGES
+import org.jooq.dsl.tables.references.IMAGE_UPLOADS
 import org.jooq.dsl.tables.references.MEMBERS
+import org.jooq.dsl.tables.references.MEMBER_ADMISSION_EVENTS
 import org.jooq.dsl.tables.references.MEMBER_COHORTS
 import org.jooq.dsl.tables.references.MEMBER_CREDENTIALS
 import org.jooq.dsl.tables.references.MEMBER_OAUTH
@@ -43,6 +48,8 @@ import org.jooq.dsl.tables.references.NOTIFICATION_TOKENS
 import org.jooq.dsl.tables.references.REFRESH_TOKENS
 import org.jooq.dsl.tables.references.ROLES
 import org.jooq.dsl.tables.references.SENT_ANNOUNCEMENT_NOTIFICATIONS
+import org.jooq.dsl.tables.references.SESSION_FEEDBACKS
+import org.jooq.dsl.tables.references.SESSION_FEEDBACK_ASPECTS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.`when`
@@ -553,8 +560,43 @@ class MemberRepository(
             .execute()
     }
 
-    override fun hardDeleteById(memberId: MemberId) {
+    override fun hardDeleteById(memberId: MemberId): List<String> {
         val value = memberId.value
+        val absenceReasonIds =
+            dsl
+                .select(ABSENCE_REASONS.ABSENCE_REASON_ID)
+                .from(ABSENCE_REASONS)
+                .where(ABSENCE_REASONS.MEMBER_ID.eq(value))
+                .fetch(ABSENCE_REASONS.ABSENCE_REASON_ID)
+                .filterNotNull()
+        // 본인이 올린 이미지와 본인 불참 사유에 첨부된 이미지
+        val imageCondition =
+            if (absenceReasonIds.isEmpty()) {
+                IMAGES.OWNER_MEMBER_ID.eq(value)
+            } else {
+                IMAGES.OWNER_MEMBER_ID.eq(value).or(
+                    IMAGES.IMAGE_ID.`in`(
+                        DSL.select(ABSENCE_REASON_IMAGES.IMAGE_ID)
+                            .from(ABSENCE_REASON_IMAGES)
+                            .where(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID.`in`(absenceReasonIds)),
+                    ),
+                )
+            }
+        val images =
+            dsl
+                .select(IMAGES.IMAGE_ID, IMAGES.OBJECT_KEY)
+                .from(IMAGES)
+                .where(imageCondition)
+                .fetch()
+        val imageIds = images.mapNotNull { it[IMAGES.IMAGE_ID] }
+        val imageObjectKeys = images.mapNotNull { it[IMAGES.OBJECT_KEY] }
+        val sessionFeedbackIds =
+            dsl
+                .select(SESSION_FEEDBACKS.SESSION_FEEDBACK_ID)
+                .from(SESSION_FEEDBACKS)
+                .where(SESSION_FEEDBACKS.MEMBER_ID.eq(value))
+                .fetch(SESSION_FEEDBACKS.SESSION_FEEDBACK_ID)
+                .filterNotNull()
         val authoredAnnouncementIds =
             dsl
                 .select(ANNOUNCEMENTS.ANNOUNCEMENT_ID)
@@ -669,6 +711,27 @@ class MemberRepository(
         dsl.deleteFrom(ATTENDANCES)
             .where(ATTENDANCES.MEMBER_ID.eq(value))
             .execute()
+        if (absenceReasonIds.isNotEmpty()) {
+            dsl.deleteFrom(ABSENCE_REASON_IMAGES)
+                .where(ABSENCE_REASON_IMAGES.ABSENCE_REASON_ID.`in`(absenceReasonIds))
+                .execute()
+        }
+        if (imageIds.isNotEmpty()) {
+            dsl.deleteFrom(ABSENCE_REASON_IMAGES)
+                .where(ABSENCE_REASON_IMAGES.IMAGE_ID.`in`(imageIds))
+                .execute()
+        }
+        dsl.deleteFrom(ABSENCE_REASONS)
+            .where(ABSENCE_REASONS.MEMBER_ID.eq(value))
+            .execute()
+        if (sessionFeedbackIds.isNotEmpty()) {
+            dsl.deleteFrom(SESSION_FEEDBACK_ASPECTS)
+                .where(SESSION_FEEDBACK_ASPECTS.SESSION_FEEDBACK_ID.`in`(sessionFeedbackIds))
+                .execute()
+        }
+        dsl.deleteFrom(SESSION_FEEDBACKS)
+            .where(SESSION_FEEDBACKS.MEMBER_ID.eq(value))
+            .execute()
 
         if (gatheringIdsToDelete.isNotEmpty()) {
             dsl.deleteFrom(GATHERING_MEMBERS)
@@ -697,8 +760,23 @@ class MemberRepository(
                 .execute()
         }
 
+        dsl.deleteFrom(IMAGE_UPLOADS)
+            .where(IMAGE_UPLOADS.OWNER_MEMBER_ID.eq(value))
+            .execute()
+        if (imageIds.isNotEmpty()) {
+            dsl.deleteFrom(IMAGE_UPLOADS)
+                .where(IMAGE_UPLOADS.IMAGE_ID.`in`(imageIds))
+                .execute()
+            dsl.deleteFrom(IMAGES)
+                .where(IMAGES.IMAGE_ID.`in`(imageIds))
+                .execute()
+        }
+
         dsl.deleteFrom(NOTIFICATION_TOKENS)
             .where(NOTIFICATION_TOKENS.MEMBER_ID.eq(value))
+            .execute()
+        dsl.deleteFrom(MEMBER_ADMISSION_EVENTS)
+            .where(MEMBER_ADMISSION_EVENTS.MEMBER_ID.eq(value))
             .execute()
         dsl.deleteFrom(MEMBER_CREDENTIALS)
             .where(MEMBER_CREDENTIALS.MEMBER_ID.eq(value))
@@ -724,6 +802,7 @@ class MemberRepository(
         dsl.deleteFrom(MEMBERS)
             .where(MEMBERS.MEMBER_ID.eq(value))
             .execute()
+        return imageObjectKeys
     }
 
     override fun findAll(): List<Member> = memberJpaRepository.findAllByDeletedAtIsNull().map { it.toDomain() }
