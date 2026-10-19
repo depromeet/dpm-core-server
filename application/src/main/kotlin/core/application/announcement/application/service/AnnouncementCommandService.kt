@@ -70,12 +70,14 @@ class AnnouncementCommandService(
 //            scheduledAt: Instant?
 
 //        announcement 작성
+        val activeCohortId: CohortId = cohortQueryUseCase.getActiveCohortId()
         val announcement =
             Announcement.create(
                 announcementType = announcementType,
                 title = title,
                 content = content,
                 authorId = authorId,
+                cohortId = activeCohortId,
             )
         val savedAnnouncement: Announcement = announcementPersistencePort.save(announcement)
 
@@ -120,15 +122,12 @@ class AnnouncementCommandService(
         }
 
         val memberIds: List<MemberId> =
-            memberQueryUseCase.getMemberIdsByCohortId(
-                cohortQueryUseCase.getLatestCohortId(),
-            )
+            memberQueryUseCase.getMemberIdsByCohortId(activeCohortId)
         announcementReadCommandUseCase.initializeForMembers(
             announcementId = savedAnnouncement.id ?: throw AnnouncementNotFoundException(),
             memberIds = memberIds,
         )
 
-//        TODO : 공지 작성 시점에 기수 별로 공지가 나눠져 있지 않은 상태라서, 일단은 최신 기수에 속한 멤버들에게만 읽음 이력을 초기화. 추후에 공지를 기수 별로 나누거나, 공지 읽음 이력을 기수 별로 나눌 때, 해당 부분도 같이 수정 필요
 //        TODO : 게시물 예약 작성 기능
         if (shouldSendNotification) {
             eventPublisher.publishEvent(
@@ -136,7 +135,7 @@ class AnnouncementCommandService(
                     announcementId = savedAnnouncement.id ?: throw AnnouncementNotFoundException(),
                     announcementType = announcementType,
                     title = title,
-                    cohortId = cohortQueryUseCase.getLatestCohortId(),
+                    cohortId = activeCohortId,
                 ),
             )
         }
@@ -236,8 +235,7 @@ class AnnouncementCommandService(
         memberId: MemberId,
         cohortId: CohortId,
     ) {
-        // TODO : 해당 기수의 공지 읽음 이력, 과제 제출 현황에 추가. 지금은 공지/과제가 기수 별로 나눠져 있지 않은 상태라서, 공지 읽음 이력도 기수 별로 나눠야 할듯
-        val announcements: List<Announcement> = announcementQueryUseCase.getAll()
+        val announcements: List<Announcement> = announcementQueryUseCase.findByCohortId(cohortId)
         val announcementIds: List<AnnouncementId> = announcements.map { it.id ?: throw AnnouncementNotFoundException() }
 
         announcementReadCommandUseCase.initializeForNewCohortMember(
@@ -247,7 +245,8 @@ class AnnouncementCommandService(
 
         assignmentSubmissionCommandUseCase.initializeForNewCohortMember(
             memberId = memberId,
-            assignments = assignmentQueryUseCase.getAllAssignments(),
+            assignments = assignmentQueryUseCase.getAssignmentsByCohortId(cohortId),
+            cohortId = cohortId,
         )
     }
 

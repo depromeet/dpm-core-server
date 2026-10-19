@@ -9,6 +9,7 @@ enum class GlobalExceptionCode(
 ) : ExceptionCode {
     SUCCESS(HttpStatus.OK, "GLOBAL-200-01", "요청에 성공했습니다"),
     CREATED(HttpStatus.CREATED, "GLOBAL-201-01", "요청에 성공하여 리소스가 생성되었습니다."),
+    ACCEPTED(HttpStatus.ACCEPTED, "GLOBAL-202-01", "요청을 처리하고 있습니다. 잠시 후 다시 확인해주세요."),
     NO_CONTENT(HttpStatus.NO_CONTENT, "GLOBAL-204-01", "요청에 성공했지만 반환할 데이터가 없습니다."),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "GLOBAL-400-01", "올바른 입력 형식이 아닙니다."),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "GLOBAL-405-01", "허용되지 않은 HTTP 메서드입니다."),

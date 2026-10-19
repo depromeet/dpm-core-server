@@ -19,14 +19,33 @@ class SessionRepository(
 ) : SessionPersistencePort {
     override fun save(session: Session): Session = sessionJpaRepository.save(SessionEntity.from(session)).toDomain()
 
-    override fun findNextSessionBy(startOfToday: Instant): Session? =
-        sessionJpaRepository.findFirstByDateAfterAndDeletedAtIsNullOrderByDateAsc(startOfToday)?.toDomain()
+    override fun findNextSessionBy(
+        cohortId: Long,
+        startOfToday: Instant,
+    ): Session? =
+        sessionJpaRepository
+            .findFirstByCohortIdAndDateGreaterThanEqualAndDeletedAtIsNullOrderByDateAsc(cohortId, startOfToday)
+            ?.toDomain()
 
     override fun findAllCohortSessions(cohortId: Long): List<Session> =
         sessionJpaRepository.findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId).map { it.toDomain() }
 
     override fun findSessionById(sessionId: Long): Session? =
         sessionJpaRepository.findByIdAndDeletedAtIsNull(sessionId)?.toDomain()
+
+    override fun findSessionByIdForUpdate(sessionId: Long): Session? =
+        sessionJpaRepository.findByIdForUpdate(sessionId)?.toDomain()
+
+    override fun findSessionByIdForShare(sessionId: Long): Session? =
+        sessionJpaRepository.findByIdForShare(sessionId)?.toDomain()
+
+    override fun findSessionIdsToAutoClose(
+        cohortId: CohortId,
+        absentStartTo: Instant,
+    ): List<SessionId> =
+        sessionJpaRepository
+            .findIdsToAutoClose(cohortId.value, absentStartTo)
+            .map { SessionId(it) }
 
     override fun findSessionsWithAttendanceStartTimeBetween(
         cohortId: CohortId,

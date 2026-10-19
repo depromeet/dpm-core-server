@@ -1,5 +1,6 @@
 package core.application.member.application.service.cohort
 
+import core.application.member.application.service.TrackMemberBadges
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberCohort
@@ -20,12 +21,14 @@ class MemberCohortService(
      * @author LeeHanEum
      * @since 2025.08.02
      */
+    @TrackMemberBadges
     fun addMemberToCohort(memberId: MemberId) {
         memberCohortPersistencePort.save(
             MemberCohort.of(memberId, cohortQueryUseCase.getLatestCohortId()),
         )
     }
 
+    @TrackMemberBadges
     fun addMemberToCohort(
         memberId: MemberId,
         cohortId: CohortId,
@@ -41,6 +44,7 @@ class MemberCohortService(
      * @author LeeHanEum
      * @since 2025.09.01
      */
+    @TrackMemberBadges
     fun deleteMemberFromCohort(memberId: MemberId) {
         memberCohortPersistencePort.deleteByMemberId(memberId.value)
     }

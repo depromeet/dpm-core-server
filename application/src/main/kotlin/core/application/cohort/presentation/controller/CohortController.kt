@@ -5,6 +5,7 @@ import core.application.cohort.application.service.CohortQueryService
 import core.application.cohort.presentation.request.CohortUpsertRequest
 import core.application.cohort.presentation.response.CohortListResponse
 import core.application.cohort.presentation.response.CohortNumberResponse
+import core.application.cohort.presentation.response.CohortTeamsResponse
 import core.application.common.exception.CustomResponse
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.vo.CohortId
@@ -36,6 +37,11 @@ class CohortController(
         CustomResponse.ok(
             CohortListResponse.from(cohortQueryService.getAllCohorts()),
         )
+
+    @PreAuthorize("hasAuthority('update:attendance')")
+    @GetMapping("/v3/cohorts/current/teams")
+    override fun getCurrentCohortTeams(): CustomResponse<CohortTeamsResponse> =
+        CustomResponse.ok(CohortTeamsResponse.from(cohortQueryService.getActiveCohortTeams()))
 
     @PreAuthorize("hasAuthority('create:cohort')")
     @PostMapping("/v1/cohorts")

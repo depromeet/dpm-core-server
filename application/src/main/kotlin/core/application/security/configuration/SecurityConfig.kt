@@ -140,6 +140,7 @@ class SecurityConfig(
                 "/v1/reissue",
                 "/v1/**",
                 "/v2/**",
+                "/v3/**",
                 // OAuth2 endpoints
                 "/oauth2/**",
                 "oauth2/**",

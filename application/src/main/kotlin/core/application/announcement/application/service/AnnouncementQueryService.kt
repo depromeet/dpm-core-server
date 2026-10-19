@@ -27,6 +27,8 @@ import core.domain.announcement.port.outbound.AnnouncementPersistencePort
 import core.domain.announcement.port.outbound.query.AnnouncementListItemQueryModel
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.announcement.vo.AssignmentId
+import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -44,10 +46,14 @@ class AnnouncementQueryService(
     val assignmentQueryUseCase: AssignmentQueryUseCase,
     val memberQueryUseCase: MemberQueryUseCase,
     val memberAccessService: MemberAccessService,
+    val cohortQueryUseCase: CohortQueryUseCase,
 ) : AnnouncementQueryUseCase {
     fun getAllAnnouncements(): AnnouncementListResponse {
+        val activeCohortId: CohortId = cohortQueryUseCase.getActiveCohortId()
         val announcementListItemQueryModels: List<AnnouncementListItemQueryModel> =
-            announcementPersistencePort.findAnnouncementListItems().sortedByDescending { it.createdAt }
+            announcementPersistencePort
+                .findAnnouncementListItems(activeCohortId)
+                .sortedByDescending { it.createdAt }
 
         return AnnouncementListResponse.from(announcementListItemQueryModels)
     }
@@ -58,7 +64,8 @@ class AnnouncementQueryService(
     override fun findAnnouncementByAssignmentId(assignmentId: AssignmentId): Announcement? =
         announcementPersistencePort.findByAssignmentId(assignmentId)
 
-    override fun getAll(): List<Announcement> = announcementPersistencePort.findAll()
+    override fun findByCohortId(cohortId: CohortId): List<Announcement> =
+        announcementPersistencePort.findByCohortId(cohortId)
 
     override fun findUnreadByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead> =
         announcementReadQueryUseCase.findUnreadByAnnouncementId(

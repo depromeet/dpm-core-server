@@ -8,7 +8,7 @@ data class BillSummaryListByMemberResponse(
     data class BillSummaryByMemberResponse(
         @field:Schema(
             description = "멤버 이름",
-            example = "정준원",
+            example = "박민수",
             requiredMode = Schema.RequiredMode.REQUIRED,
         )
         val name: String,

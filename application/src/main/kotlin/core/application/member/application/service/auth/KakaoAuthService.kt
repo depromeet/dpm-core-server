@@ -1,6 +1,8 @@
 package core.application.member.application.service.auth
 
 import core.application.member.application.exception.MemberDeletedException
+import core.application.member.application.service.MemberIdentityLockService
+import core.application.member.application.service.TrackMemberBadges
 import core.application.member.application.service.role.MemberRoleService
 import core.application.member.application.service.team.MemberTeamService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
@@ -8,8 +10,10 @@ import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.redirect.OAuthRedirectUriValidator
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.LoginMethod
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.vo.LoginIdentity
 import core.domain.security.oauth.dto.OAuthAttributes
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
@@ -21,12 +25,14 @@ class KakaoAuthService(
     private val redirectUriValidator: OAuthRedirectUriValidator,
     private val memberOAuthPersistencePort: MemberOAuthPersistencePort,
     private val memberPersistencePort: MemberPersistencePort,
+    private val identityLock: MemberIdentityLockService,
     private val jwtTokenProvider: JwtTokenProvider,
     private val refreshTokenIssueService: RefreshTokenIssueService,
     private val memberRoleService: MemberRoleService,
     private val memberTeamService: MemberTeamService,
 ) {
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    @TrackMemberBadges
     fun login(
         authorizationCode: String,
         redirectUri: String? = null,
@@ -48,7 +54,7 @@ class KakaoAuthService(
                 externalId = attributes.getExternalId(),
             )
 
-        val member =
+        val (member, linkedOAuth) =
             if (memberOAuth == null) {
                 val existingMembers = memberPersistencePort.findAllBySignupEmail(attributes.getEmail())
                 val targetMember =
@@ -58,27 +64,42 @@ class KakaoAuthService(
                             name = attributes.getName(),
                         )
 
-                memberOAuthPersistencePort.save(
-                    core.domain.member.aggregate.MemberOAuth.of(
-                        externalId = attributes.getExternalId(),
-                        provider = attributes.getProvider(),
-                        memberId = targetMember.id!!,
-                    ),
-                    targetMember,
+                identityLock.lockMember(requireNotNull(targetMember.id))
+                validateMemberForLogin(targetMember)
+                val savedOAuth =
+                    memberOAuthPersistencePort.save(
+                        core.domain.member.aggregate.MemberOAuth.of(
+                            externalId = attributes.getExternalId(),
+                            provider = attributes.getProvider(),
+                            memberId = targetMember.id!!,
+                            email = attributes.getEmail(),
+                        ),
+                        targetMember,
+                    )
+
+                targetMember to savedOAuth
+            } else {
+                identityLock.lockOAuth(memberOAuth)
+                val targetMember =
+                    memberPersistencePort.findById(memberOAuth.memberId)
+                        ?: recoverOrCreateMemberForOrphanedOAuth(attributes)
+                validateMemberForLogin(targetMember)
+                memberOAuthPersistencePort.updateEmail(
+                    provider = attributes.getProvider(),
+                    externalId = attributes.getExternalId(),
+                    email = attributes.getEmail(),
                 )
 
-                targetMember
-            } else {
-                memberPersistencePort.findById(memberOAuth.memberId)
-                    ?: recoverOrCreateMemberForOrphanedOAuth(attributes)
+                targetMember to memberOAuth
             }
 
         validateMemberForLogin(member)
         memberRoleService.ensureGuestRoleAssigned(member.id!!)
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
-        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString())
-        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId)
+        val loginIdentity = LoginIdentity(LoginMethod.from(attributes.getProvider()), linkedOAuth.id!!.value)
+        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), loginIdentity)
+        val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, loginIdentity)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
@@ -91,6 +112,8 @@ class KakaoAuthService(
                     name = attributes.getName(),
                 )
 
+        identityLock.lockMember(requireNotNull(targetMember.id))
+        validateMemberForLogin(targetMember)
         memberOAuthPersistencePort.relinkToMember(
             provider = attributes.getProvider(),
             externalId = attributes.getExternalId(),
@@ -103,6 +126,7 @@ class KakaoAuthService(
     private fun selectLoginCandidate(members: List<Member>): Member? {
         val availableMembers = members.filter { it.deletedAt == null }
         if (availableMembers.isEmpty()) {
+            if (members.isNotEmpty()) throw MemberDeletedException()
             return null
         }
 

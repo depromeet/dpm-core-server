@@ -3,6 +3,7 @@ package core.domain.cohort.aggregate
 import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberCohortId
 import core.domain.team.vo.TeamId
+import java.time.Instant
 
 /**
  * 기수(Cohort)를 표현하는 도메인 모델입니다.
@@ -22,6 +23,8 @@ import core.domain.team.vo.TeamId
 class Cohort(
     val id: CohortId? = null,
     val value: String,
+    val isActive: Boolean = false,
+    val activatedAt: Instant? = null,
     val createdAt: Long? = null,
     val updatedAt: Long? = null,
     val teamIds: List<TeamId> = emptyList(),

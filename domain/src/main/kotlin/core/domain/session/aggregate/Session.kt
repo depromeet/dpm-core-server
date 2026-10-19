@@ -3,12 +3,13 @@ package core.domain.session.aggregate
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.vo.AttendanceResult
 import core.domain.cohort.vo.CohortId
+import core.domain.session.enums.SessionAttendanceStatus
 import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.port.inbound.command.SessionUpdateCommand
 import core.domain.session.vo.AttendancePolicy
+import core.domain.session.vo.SessionAttendanceTimes
 import core.domain.session.vo.SessionId
 import java.time.Instant
-import java.time.ZoneId
 import kotlin.random.Random
 
 /**
@@ -51,10 +52,22 @@ class Session(
 
     fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
+    /** 마감 시각 정각부터 마감이다. */
+    fun isAttendanceClosedAt(now: Instant): Boolean = !now.isBefore(attendancePolicy.absentStart)
+
+    /** 출석 시작 시각 정각부터 진행 중, 마감 시각 정각부터 마감이다. */
+    fun attendanceStatusAt(now: Instant): SessionAttendanceStatus =
+        when {
+            isAttendanceClosedAt(now) -> SessionAttendanceStatus.CLOSED
+            now.isBefore(attendancePolicy.attendanceStart) -> SessionAttendanceStatus.NOT_STARTED
+            else -> SessionAttendanceStatus.IN_PROGRESS
+        }
+
     /**
      * 현재 시각을 기준으로 출석 상태를 결정하고 해당 상태를 sealed class 의 형태로 반환합니다.
      *
      * 디프만 출석 도메인 정책에 의거, 출석 시작 전 상태는 저장하지 않습니다.
+     * 경계 시각은 다음 구간에 포함됩니다(지각 시작 정각은 LATE, 마감 정각부터 Closed).
      *
      * @param now 현재 시각
      * @author LeeHanEum
@@ -66,7 +79,7 @@ class Session(
             now.isBefore(attendancePolicy.attendanceStart) -> AttendanceResult.TooEarly
             now.isBefore(attendancePolicy.lateStart) -> AttendanceResult.Success(AttendanceStatus.PRESENT)
             now.isBefore(attendancePolicy.absentStart) -> AttendanceResult.Success(AttendanceStatus.LATE)
-            else -> AttendanceResult.Success(AttendanceStatus.ABSENT)
+            else -> AttendanceResult.Closed
         }
 
     override fun equals(other: Any?): Boolean {
@@ -82,19 +95,10 @@ class Session(
         return result
     }
 
-    fun updateAttendanceStartTime(newStartTime: Instant) {
-        this.attendancePolicy =
-            attendancePolicy.copy(
-                attendanceStart = newStartTime,
-            )
-    }
-
-    fun isSameDateAsSession(target: Instant): Boolean {
-        val zone = ZoneId.of("Asia/Seoul")
-        return this.date.atZone(zone).toLocalDate() == target.atZone(zone).toLocalDate()
-    }
-
     fun updateSession(command: SessionUpdateCommand) {
+        require(SessionAttendanceTimes.isOrdered(command.attendanceStart, command.lateStart, command.absentStart)) {
+            "출석 시각은 attendanceStart < lateStart < absentStart 순서여야 합니다."
+        }
         this.date = command.date
         this.week = command.week
         this.place = command.place ?: this.place
@@ -114,9 +118,11 @@ class Session(
     }
 
     companion object {
+        /** [attendanceTimes] 는 기본값/입력값으로 확정된 시각이다. 커맨드의 nullable 시각은 쓰지 않는다. */
         fun create(
             command: SessionCreateCommand,
             cohortId: CohortId,
+            attendanceTimes: SessionAttendanceTimes,
         ): Session {
             fun generateAttendanceCode(): String = Random.nextInt(1000, 10000).toString()
 
@@ -129,9 +135,9 @@ class Session(
                 isOnline = command.isOnline ?: true,
                 attendancePolicy =
                     AttendancePolicy(
-                        attendanceStart = command.attendanceStart,
-                        lateStart = command.lateStart,
-                        absentStart = command.absentStart,
+                        attendanceStart = attendanceTimes.attendanceStart,
+                        lateStart = attendanceTimes.lateStart,
+                        absentStart = attendanceTimes.absentStart,
                         attendanceCode = generateAttendanceCode(),
                     ),
             )

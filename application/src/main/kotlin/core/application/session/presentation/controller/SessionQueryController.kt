@@ -5,65 +5,78 @@ import core.application.security.annotation.CurrentMemberId
 import core.application.session.application.service.SessionQueryService
 import core.application.session.presentation.mapper.SessionMapper
 import core.application.session.presentation.response.AttendanceTimeResponse
-import core.application.session.presentation.response.NextSessionResponse
+import core.application.session.presentation.response.NextSessionHomeResponse
 import core.application.session.presentation.response.SessionDetailForDeeperResponse
 import core.application.session.presentation.response.SessionDetailResponse
 import core.application.session.presentation.response.SessionListResponse
 import core.application.session.presentation.response.SessionPolicyUpdateTargetResponse
+import core.application.session.presentation.response.SessionSelectorResponse
 import core.application.session.presentation.response.SessionWeeksResponse
+import core.application.sessionFeedback.application.service.SessionFeedbackFormQueryService
+import core.application.sessionFeedback.application.service.SessionFeedbackListQueryService
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.vo.SessionId
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.authentication.AnonymousAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.Clock
 import java.time.LocalDateTime
 
 @RestController
-@RequestMapping("/v1/sessions")
 class SessionQueryController(
     private val sessionQueryService: SessionQueryService,
+    private val sessionFeedbackFormQueryService: SessionFeedbackFormQueryService,
+    private val sessionFeedbackListQueryService: SessionFeedbackListQueryService,
+    private val clock: Clock,
 ) : SessionQueryApi {
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/v1/sessions/next")
+    override fun getNextSession(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<NextSessionHomeResponse> =
+        CustomResponse.ok(sessionQueryService.getNextSessionHome(memberId))
+
     @PreAuthorize("permitAll()")
-    @GetMapping("/next")
-    override fun getNextSession(): CustomResponse<NextSessionResponse> {
-        val response =
-            sessionQueryService
-                .getNextSession()
-                ?.let { SessionMapper.toNextSessionResponse(it) }
+    @GetMapping("/v1/sessions")
+    override fun getAllSessions(): CustomResponse<SessionListResponse> {
+        val sessions = sessionQueryService.getAllCurrentCohortSessions()
+        val feedbackBySessionId = sessionFeedbackListQueryService.buildFor(sessions, currentMemberIdOrNull())
+        val response = SessionMapper.toSessionListResponse(sessions, feedbackBySessionId)
 
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("permitAll()")
-    @GetMapping
-    override fun getAllSessions(): CustomResponse<SessionListResponse> {
-        val response =
-            sessionQueryService
-                .getAllCurrentCohortSessions()
-                .let { SessionMapper.toSessionListResponse(it) }
-
-        return CustomResponse.ok(response)
+    private fun currentMemberIdOrNull(): MemberId? {
+        val authentication: Authentication? = SecurityContextHolder.getContext().authentication
+        if (authentication == null ||
+            authentication is AnonymousAuthenticationToken ||
+            authentication.name == "anonymousUser"
+        ) {
+            return null
+        }
+        return runCatching { MemberId(authentication.name.toLong()) }.getOrNull()
     }
 
     @PreAuthorize("hasAuthority('create:session')")
-    @GetMapping("/{sessionId}")
+    @GetMapping("/v1/sessions/{sessionId}")
     override fun getSessionById(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<SessionDetailResponse> {
-        val response =
-            sessionQueryService
-                .getSessionById(sessionId)
-                .let { SessionMapper.toSessionDetailResponse(it) }
+        val session = sessionQueryService.getSessionById(sessionId)
+        val feedbackForm = sessionFeedbackFormQueryService.findBySessionId(sessionId)
+        val response = SessionMapper.toSessionDetailResponse(session, feedbackForm, clock)
 
         return CustomResponse.ok(response)
     }
 
     @PreAuthorize("hasAuthority('read:session')")
-    @GetMapping("/{sessionId}/me")
+    @GetMapping("/v1/sessions/{sessionId}/me")
     override fun getSessionByIdForDeeper(
         @PathVariable(name = "sessionId") sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -82,7 +95,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('update:session')")
-    @GetMapping("/{sessionId}/attendance-time")
+    @GetMapping("/v1/sessions/{sessionId}/attendance-time")
     override fun getAttendanceTime(
         @PathVariable(name = "sessionId") sessionId: SessionId,
     ): CustomResponse<AttendanceTimeResponse> {
@@ -95,7 +108,7 @@ class SessionQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:session')")
-    @GetMapping("/weeks")
+    @GetMapping("/v1/sessions/weeks")
     override fun getSessionWeeks(): CustomResponse<SessionWeeksResponse> {
         val response =
             sessionQueryService
@@ -105,8 +118,13 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
+    @PreAuthorize("hasAuthority('read:session')")
+    @GetMapping("/v3/sessions/weeks")
+    override fun getSessionSelector(): CustomResponse<SessionSelectorResponse> =
+        CustomResponse.ok(SessionMapper.toSessionSelectorResponse(sessionQueryService.getSessionSelector()))
+
     @PreAuthorize("hasAuthority('update:session')")
-    @GetMapping("/{sessionId}/update-policy")
+    @GetMapping("/v1/sessions/{sessionId}/update-policy")
     override fun queryTargetAttendancesByPolicyChange(
         @PathVariable("sessionId") sessionId: SessionId,
         @RequestParam(value = "attendanceStart", required = true) attendanceStart: LocalDateTime,

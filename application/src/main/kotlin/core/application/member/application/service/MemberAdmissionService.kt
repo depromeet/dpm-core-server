@@ -1,0 +1,65 @@
+package core.application.member.application.service
+
+import core.application.common.exception.BusinessException
+import core.application.member.application.exception.MemberDeletedException
+import core.application.member.application.exception.MemberExceptionCode
+import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.service.cohort.MemberCohortService
+import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.member.enums.MemberAdmissionEventType
+import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberAdmissionEventPersistencePort
+import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.port.outbound.MemberProfilePersistencePort
+import core.domain.member.port.outbound.query.MemberApprovalTarget
+import core.domain.member.vo.MemberId
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+@Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+class MemberAdmissionService(
+    private val members: MemberPersistencePort,
+    private val events: MemberAdmissionEventPersistencePort,
+    private val cohorts: CohortQueryUseCase,
+    private val memberCohorts: MemberCohortService,
+    private val profiles: MemberProfilePersistencePort,
+) {
+    @TrackMemberBadges
+    fun reject(memberId: Long) {
+        val target = lockTarget(memberId)
+        val cohortId = cohorts.getActiveCohortId().value
+        if (target.status != MemberStatus.PENDING ||
+            (target.cohortIds.isNotEmpty() && cohortId !in target.cohortIds)
+        ) {
+            throw BusinessException(MemberExceptionCode.MEMBER_REJECTION_TARGET_NOT_ALLOWED)
+        }
+        profiles.resetCompletion(memberId)
+        events.record(memberId, MemberAdmissionEventType.REJECTED)
+        members.updateManagementFields(listOf(memberId), false, null, MemberStatus.REJECTED, emptySet())
+    }
+
+    @TrackMemberBadges
+    fun reapply(memberId: Long) {
+        val target = lockTarget(memberId)
+        if (target.status == MemberStatus.PENDING) return
+        if (target.status != MemberStatus.REJECTED) {
+            throw BusinessException(MemberExceptionCode.MEMBER_REAPPLICATION_NOT_ALLOWED)
+        }
+        val profile = profiles.findProfile(memberId) ?: throw MemberNotFoundException()
+        if (profile.completedAt == null) {
+            throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
+        }
+        val cohortId = cohorts.getActiveCohortId()
+        memberCohorts.addMemberToCohort(MemberId(memberId), cohortId)
+        events.record(memberId, MemberAdmissionEventType.REAPPLIED)
+        members.updateManagementFields(listOf(memberId), false, null, MemberStatus.PENDING, emptySet())
+    }
+
+    private fun lockTarget(memberId: Long): MemberApprovalTarget {
+        if (memberId <= 0) throw BusinessException(MemberExceptionCode.INVALID_MEMBER_ID)
+        val target = members.lockApprovalTargets(listOf(memberId)).singleOrNull() ?: throw MemberNotFoundException()
+        if (target.isDeleted) throw MemberDeletedException()
+        return target
+    }
+}

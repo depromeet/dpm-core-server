@@ -8,11 +8,9 @@ import core.application.attendance.presentation.response.MemberAttendancesRespon
 import core.application.attendance.presentation.response.MyAbsenceReasonResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionAbsenceReasonsResponse
-import core.application.attendance.presentation.response.SessionAttendancesResponse
+import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
-import core.domain.attendance.enums.AttendanceStatus
-import core.domain.attendance.port.inbound.query.GetAttendancesBySessionWeekQuery
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
@@ -30,56 +28,25 @@ class AttendanceQueryController(
     private val attendanceQueryService: AttendanceQueryService,
     private val absenceReasonQueryService: AbsenceReasonQueryService,
 ) : AttendanceQueryApi {
-    @PreAuthorize("hasAuthority('create:attendance')")
-    @GetMapping("/v1/sessions/{sessionId}/attendances")
-    override fun getAttendancesBySessionId(
+    @PreAuthorize("hasAuthority('update:attendance')")
+    @GetMapping("/v3/sessions/{sessionId}/attendances")
+    override fun getSessionRoster(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
-        @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
-        @RequestParam(name = "teams", required = false) teams: List<Int>?,
-        @RequestParam(name = "name", required = false) name: String?,
-        @RequestParam(name = "onlyMyTeam", required = false) onlyMyTeam: Boolean?,
-        @RequestParam(name = "page", required = false, defaultValue = "1") page: Int,
-        @RequestParam(name = "size", required = false, defaultValue = "20") size: Int,
-    ): CustomResponse<SessionAttendancesResponse> {
-        val response =
-            attendanceQueryService.getAttendancesBySession(
-                GetAttendancesBySessionWeekQuery(
-                    sessionId = sessionId,
-                    memberId = memberId,
-                    statuses = statuses,
-                    teams = teams,
-                    name = name,
-                    onlyMyTeam = onlyMyTeam,
-                    page = page,
-                    size = size,
-                ),
-            )
-
-        return CustomResponse.ok(response)
-    }
+    ): CustomResponse<SessionRosterResponse> =
+        CustomResponse.ok(attendanceQueryService.getSessionRoster(sessionId, memberId))
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @GetMapping("/v1/members/attendances")
+    @GetMapping("/v3/members/attendances")
     override fun getMemberAttendances(
         @CurrentMemberId memberId: MemberId,
-        @RequestParam(name = "statuses", required = false) statuses: List<AttendanceStatus>?,
         @RequestParam(name = "teams", required = false) teams: List<Int>?,
-        @RequestParam(name = "name", required = false) name: String?,
-        @RequestParam(name = "onlyMyTeam", required = false) onlyMyTeam: Boolean?,
-        @RequestParam(name = "page", required = false, defaultValue = "1") page: Int,
-        @RequestParam(name = "size", required = false, defaultValue = "20") size: Int,
     ): CustomResponse<MemberAttendancesResponse> {
         val response =
             attendanceQueryService.getMemberAttendances(
                 GetMemberAttendancesQuery(
                     memberId = memberId,
-                    statuses = statuses,
                     teams = teams,
-                    name = name,
-                    onlyMyTeam = onlyMyTeam,
-                    page = page,
-                    size = size,
                 ),
             )
 
@@ -87,7 +54,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @GetMapping("/v1/sessions/{sessionId}/attendances/{memberId}")
+    @GetMapping("/v3/sessions/{sessionId}/attendances/{memberId}")
     override fun getAttendanceBySessionIdAndMemberId(
         @PathVariable sessionId: SessionId,
         @PathVariable memberId: MemberId,
@@ -104,7 +71,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:attendance')")
-    @GetMapping("/v1/sessions/{sessionId}/attendances/me")
+    @GetMapping("/v3/sessions/{sessionId}/attendances/me")
     override fun getMyAttendanceBySessionId(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -121,7 +88,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('update:member')")
-    @GetMapping("/v1/members/{memberId}/attendances")
+    @GetMapping("/v3/members/{memberId}/attendances")
     override fun getDetailMemberAttendances(
         @PathVariable memberId: MemberId,
     ): CustomResponse<DetailMemberAttendancesResponse> {
@@ -136,7 +103,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('read:attendance')")
-    @GetMapping("/v1/members/me/attendances")
+    @GetMapping("/v3/members/me/attendances")
     override fun getMyDetailAttendances(
         @CurrentMemberId memberId: MemberId,
     ): CustomResponse<DetailMemberAttendancesResponse> {
@@ -151,7 +118,7 @@ class AttendanceQueryController(
     }
 
     @PreAuthorize("hasAuthority('create:attendance')")
-    @GetMapping("/v2/sessions/{sessionId}/absence-reasons/me")
+    @GetMapping("/v3/sessions/{sessionId}/absence-reasons/me")
     override fun getMyAbsenceReason(
         @PathVariable sessionId: SessionId,
         @CurrentMemberId memberId: MemberId,
@@ -159,7 +126,7 @@ class AttendanceQueryController(
         CustomResponse.ok(absenceReasonQueryService.getMyAbsenceReason(sessionId, memberId))
 
     @PreAuthorize("hasAuthority('update:attendance')")
-    @GetMapping("/v2/sessions/{sessionId}/absence-reasons")
+    @GetMapping("/v3/sessions/{sessionId}/absence-reasons")
     override fun getSessionAbsenceReasons(
         @PathVariable sessionId: SessionId,
     ): CustomResponse<SessionAbsenceReasonsResponse> =
