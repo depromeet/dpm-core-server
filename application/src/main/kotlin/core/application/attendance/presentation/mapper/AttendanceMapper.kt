@@ -7,27 +7,31 @@ import core.application.attendance.presentation.response.DetailMemberAttendances
 import core.application.attendance.presentation.response.DetailMemberInfo
 import core.application.attendance.presentation.response.MemberAttendanceResponse
 import core.application.attendance.presentation.response.MemberAttendancesResponse
+import core.application.attendance.presentation.response.MemberDetailAbsenceReasonImageInfo
+import core.application.attendance.presentation.response.MemberDetailAbsenceReasonInfo
 import core.application.attendance.presentation.response.MemberDetailAttendanceCountInfo
 import core.application.attendance.presentation.response.MemberDetailSessionInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.MyDetailAttendanceInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceSessionInfo
-import core.application.attendance.presentation.response.MyTeamFilterResponse
-import core.application.attendance.presentation.response.SessionAttendancesResponse
+import core.application.attendance.presentation.response.SessionRosterMemberResponse
+import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
+import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberSessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
-import core.domain.attendance.port.outbound.query.SessionAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
-import core.domain.team.vo.TeamNumber
 import java.time.Instant
 
 object AttendanceMapper {
+    private const val ONLINE_PLACE = "온라인"
+
     fun toAttendanceResponse(
         attendanceStatus: AttendanceStatus,
         attendedAt: Instant,
@@ -37,41 +41,51 @@ object AttendanceMapper {
             attendedAt = instantToLocalDateTime(attendedAt),
         )
 
-    fun toSessionAttendancesResponse(
-        members: List<SessionAttendanceQueryModel>,
-        onlyMyTeam: Boolean,
-        myTeamNumber: TeamNumber?,
-        hasNext: Boolean,
-        totalElements: Int,
-    ): SessionAttendancesResponse =
-        SessionAttendancesResponse(
+    /** 운영진이 바꾼 기록(updatedAt 있음)은 attendedAt 을 null 로 준다. 운영진 변경이 인증 시각을 지우기 전의 기록도 같다. */
+    fun toSessionRosterResponse(
+        members: List<SessionRosterQueryModel>,
+        myTeamNumber: Int?,
+    ): SessionRosterResponse =
+        SessionRosterResponse(
             members =
                 members.map { member ->
-                    MemberAttendanceResponse(
-                        id = member.id,
+                    val isManuallyUpdated = member.updatedAt != null
+                    SessionRosterMemberResponse(
+                        id = member.memberId,
                         name = member.name,
                         teamNumber = member.teamNumber,
                         isAdmin = member.isAdmin,
                         part = member.part,
                         attendanceStatus = member.attendanceStatus,
+                        attendedAt = if (isManuallyUpdated) null else instantToLocalDateTime(member.attendedAt),
+                        isManuallyUpdated = isManuallyUpdated,
+                        absenceReason = member.absenceReason,
                     )
                 },
-            filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
-            hasNext = hasNext,
-            totalElements = totalElements,
+            myTeamNumber = myTeamNumber,
+        )
+
+    fun toMemberAttendanceResponse(
+        member: MemberAttendanceQueryModel,
+        evaluation: String,
+    ): MemberAttendanceResponse =
+        MemberAttendanceResponse(
+            id = member.id,
+            name = member.name,
+            teamNumber = member.teamNumber,
+            isAdmin = member.isAdmin,
+            part = member.part,
+            attendanceStatus = evaluation,
         )
 
     fun toMemberAttendancesResponse(
         members: List<MemberAttendanceResponse>,
-        onlyMyTeam: Boolean,
-        myTeamNumber: TeamNumber?,
-        hasNext: Boolean,
+        myTeamNumber: Int?,
         totalElements: Int,
     ): MemberAttendancesResponse =
         MemberAttendancesResponse(
             members = members,
-            filter = MyTeamFilterResponse(myTeamNumber, onlyMyTeam),
-            hasNext = hasNext,
+            myTeamNumber = myTeamNumber,
             totalElements = totalElements,
         )
 
@@ -83,7 +97,7 @@ object AttendanceMapper {
         AttendanceStatusUpdateCommand(
             sessionId = sessionId,
             memberId = memberId,
-            attendanceStatus = AttendanceStatus.valueOf(request.attendanceStatus),
+            attendanceStatus = request.attendanceStatus,
         )
 
     fun toDetailAttendanceBySessionResponse(
@@ -132,11 +146,10 @@ object AttendanceMapper {
                 ),
             attendance =
                 MemberDetailAttendanceCountInfo(
-                    presentCount = memberAttendanceModel.presentCount,
-                    lateCount = memberAttendanceModel.lateCount,
-                    excusedAbsentCount = memberAttendanceModel.excusedAbsentCount,
-                    absentCount = memberAttendanceModel.onlineAbsentCount + memberAttendanceModel.offlineAbsentCount,
-                    earlyLeaveCount = memberAttendanceModel.earlyLeaveCount,
+                    presentCount = memberAttendanceModel.summary.presentCount,
+                    lateCount = memberAttendanceModel.summary.lateCount,
+                    excusedAbsentCount = memberAttendanceModel.summary.excusedAbsentCount,
+                    absentCount = memberAttendanceModel.summary.absentCount,
                 ),
             sessions =
                 sessionAttendancesModel.map { session ->
@@ -146,6 +159,22 @@ object AttendanceMapper {
                         eventName = session.sessionEventName,
                         date = instantToLocalDateTime(session.sessionDate),
                         attendanceStatus = session.sessionAttendanceStatus,
+                        attendedAt = session.attendedAt?.let { instantToLocalDateTime(it) },
+                        isOnline = session.sessionIsOnline,
+                        place = if (session.sessionIsOnline) ONLINE_PLACE else session.sessionPlace,
+                        absenceReason =
+                            session.absenceReason?.let {
+                                MemberDetailAbsenceReasonInfo(
+                                    id = it.id,
+                                    contents = it.contents,
+                                    status = it.status,
+                                    imageIds = it.images.map { image -> image.imageId },
+                                    images =
+                                        it.images.map { image ->
+                                            MemberDetailAbsenceReasonImageInfo(image.imageId, image.fileName)
+                                        },
+                                )
+                            },
                     )
                 },
         )

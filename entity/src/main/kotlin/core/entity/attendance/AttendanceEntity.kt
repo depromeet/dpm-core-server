@@ -10,11 +10,15 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "attendances")
+@Table(
+    name = "attendances",
+    indexes = [Index(name = "idx_attendances_session_member", columnList = "session_id, member_id")],
+)
 class AttendanceEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,6 +36,9 @@ class AttendanceEntity(
     val updatedAt: Instant? = null,
     @Column(name = "deleted_at", nullable = true)
     val deletedAt: Instant? = null,
+    /** 자동 결석 처리 시각(자동 결석 출처 표지). 기능 도입 전 기록과 그 외 상태는 null. */
+    @Column(name = "auto_absent_at", nullable = true)
+    val autoAbsentAt: Instant? = null,
 ) {
     fun toDomain(): Attendance =
         Attendance(
@@ -42,6 +49,7 @@ class AttendanceEntity(
             attendedAt = this.attendedAt,
             updatedAt = this.updatedAt,
             deletedAt = this.deletedAt,
+            autoAbsentAt = this.autoAbsentAt,
         )
 
     companion object {
@@ -54,6 +62,7 @@ class AttendanceEntity(
                 attendedAt = domainModel.attendedAt,
                 updatedAt = domainModel.updatedAt,
                 deletedAt = domainModel.deletedAt,
+                autoAbsentAt = domainModel.autoAbsentAt,
             )
     }
 }

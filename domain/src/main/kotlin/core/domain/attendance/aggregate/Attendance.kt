@@ -20,8 +20,13 @@ class Attendance(
     attendedAt: Instant? = null,
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
+    autoAbsentAt: Instant? = null,
 ) {
     var status: AttendanceStatus = status
+        private set
+
+    /** 자동 결석 출처 표지. 자동 결석에서만 기록하고 인증/운영진 변경/재개 시 지운다. 기능 도입 전 기록은 null. */
+    var autoAbsentAt: Instant? = autoAbsentAt
         private set
 
     var attendedAt: Instant? = attendedAt
@@ -36,6 +41,28 @@ class Attendance(
     /** 출석 상태가 PENDING가 아니고, 출석 시각이 존재하는지 여부를 확인합니다.*/
     fun isAttended(): Boolean = status != AttendanceStatus.PENDING && attendedAt != null
 
+    /** updatedAt 은 운영진 변경에서만 기록한다. 과거 데이터의 updatedAt 도 운영진 변경으로 보고 보호한다. */
+    fun isAlreadyUpdated(): Boolean = updatedAt != null
+
+    /**
+     * 자동 결석 출처는 [autoAbsentAt] 표지로만 판단한다. 표지 없는 기존 결석은 자동 결석으로 추정하지 않는다.
+     * 운영진이 PENDING 으로 되돌린 뒤 자동 결석된 기록(updatedAt 있음)은 운영진 기록으로 보고 인증 덮어쓰기·재개 대상에서 뺀다.
+     */
+    fun isAutomaticallyAbsent(): Boolean =
+        status == AttendanceStatus.ABSENT && autoAbsentAt != null && attendedAt == null && updatedAt == null
+
+    /**
+     * 미인증 또는 자동 결석만 인증으로 기록할 수 있다. 자동 결석은 마감 전에 접수된 인증이 늦게 저장될 때를 위해 허용한다.
+     * 운영진이 정한 기록은 덮어쓰지 않는다.
+     */
+    fun canRecordAttendance(): Boolean =
+        updatedAt == null &&
+            attendedAt == null &&
+            (status == AttendanceStatus.PENDING || isAutomaticallyAbsent())
+
+    /** 자동 결석 대상 여부. 현재 PENDING 상태만 본다(운영진이 PENDING 으로 되돌린 기록도 대상). */
+    fun isAutoAbsenceTarget(): Boolean = status == AttendanceStatus.PENDING
+
     /**
      * 출석 기록을 생성합니다.
      *
@@ -49,28 +76,18 @@ class Attendance(
     ) {
         this.status = status
         this.attendedAt = attendedAt
+        this.autoAbsentAt = null
     }
 
-    /**
-     * 출석 정책에 따라 상태를 업데이트합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
-     */
-    fun updateStatusByAttendancePolicy(
-        lateStart: Instant,
-        absentStart: Instant,
+    /** 운영진 변경 표지(updatedAt)를 기록하고 출석 인증 시각과 자동 결석 표지를 지운다. 운영진이 정한 상태는 인증 시각과 무관하다. */
+    fun updateStatus(
+        newStatus: AttendanceStatus,
+        updatedAt: Instant = Instant.now(),
     ) {
-        if (isAlreadyUpdated()) return
-
-        val newStatus = calculateStatusByPolicy(lateStart, absentStart) ?: return
-        if (status != newStatus) updateStatus(newStatus)
-    }
-
-    fun updateStatus(newStatus: AttendanceStatus) {
         this.status = newStatus
-        this.updatedAt = Instant.now()
+        this.attendedAt = null
+        this.updatedAt = updatedAt
+        this.autoAbsentAt = null
     }
 
     fun delete(deletedAt: Instant?) {
@@ -78,57 +95,43 @@ class Attendance(
     }
 
     /**
-     * 새로운 정책 적용 시 상태 변경 여부 확인 합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
+     * 출석 시각 변경 후의 새 상태(바뀌지 않으면 null). 미리보기와 실제 반영이 이 규칙 하나를 쓴다.
+     * 인증 기록은 인증 시각으로 다시 판정하고, 자동 결석은 마감이 연장돼 [now] 가 새 마감 전이면 PENDING 으로 되돌린다.
+     * 운영진 변경 기록과 미인증은 그대로 둔다.
      */
-    fun isStatusChangedByPolicy(
+    fun recalculateStatusByPolicy(
         lateStart: Instant,
         absentStart: Instant,
-    ): Boolean {
-        val newStatus = calculateStatusByPolicy(lateStart, absentStart) ?: return false
-        return this.status != newStatus
-    }
-
-    /**
-     * 정책 적용 시 예상 상태 계산 합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
-     */
-    fun simulateStatusChange(
-        lateStart: Instant,
-        absentStart: Instant,
-    ): AttendanceStatus {
-        return calculateStatusByPolicy(lateStart, absentStart) ?: this.status
-    }
-
-    /** 운영진에 의해 이미 상태가 변경되었는지 여부를 확인합니다. */
-    fun isAlreadyUpdated(): Boolean = updatedAt != null
-
-    /**
-     * 새로운 출석 정책에 따라 출석 상태를 계산합니다.
-     *
-     * @param lateStart 지각 시작 시각
-     * @param absentStart 결석 시작 시각
-     *
-     * @return AttendanceStatus 새로운 출석 상태 (nullable)
-     *
-     */
-    private fun calculateStatusByPolicy(
-        lateStart: Instant,
-        absentStart: Instant,
+        now: Instant,
     ): AttendanceStatus? {
-        val attendedAt = this.attendedAt ?: return null
+        if (isAlreadyUpdated()) return null
 
-        return when {
-            attendedAt.isBefore(lateStart) -> AttendanceStatus.PRESENT
-            attendedAt.isBefore(absentStart) -> AttendanceStatus.LATE
-            else -> AttendanceStatus.ABSENT
-        }
+        val attendedAt = this.attendedAt
+        val newStatus =
+            when {
+                attendedAt != null && status in RECALCULABLE_ATTENDED_STATUSES ->
+                    when {
+                        attendedAt.isBefore(lateStart) -> AttendanceStatus.PRESENT
+                        attendedAt.isBefore(absentStart) -> AttendanceStatus.LATE
+                        else -> AttendanceStatus.ABSENT
+                    }
+                isAutomaticallyAbsent() && now.isBefore(absentStart) -> AttendanceStatus.PENDING
+                else -> null
+            }
+
+        return newStatus?.takeIf { it != status }
+    }
+
+    /** 정책 재계산은 updatedAt 을 남기지 않고 자동 결석 표지를 지운다. */
+    fun applyPolicyStatus(newStatus: AttendanceStatus) {
+        this.status = newStatus
+        this.autoAbsentAt = null
+    }
+
+    /** updatedAt 은 남기지 않고 자동 결석 표지만 기록한다. */
+    fun markAutoAbsent(at: Instant) {
+        this.status = AttendanceStatus.ABSENT
+        this.autoAbsentAt = at
     }
 
     override fun equals(other: Any?): Boolean {
@@ -147,6 +150,9 @@ class Attendance(
     override fun toString(): String = "Attendance(id=$id, sessionId=$sessionId, memberId=$memberId, status=$status)"
 
     companion object {
+        private val RECALCULABLE_ATTENDED_STATUSES =
+            setOf(AttendanceStatus.PRESENT, AttendanceStatus.LATE, AttendanceStatus.ABSENT)
+
         fun create(command: AttendanceCreateCommand): Attendance =
             Attendance(
                 sessionId = command.sessionId,

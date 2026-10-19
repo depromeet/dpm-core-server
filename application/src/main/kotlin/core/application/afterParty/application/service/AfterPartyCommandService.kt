@@ -80,6 +80,7 @@ class AfterPartyCommandService(
         updateAfterPartyInternal(afterParty)
     }
 
+    @Deprecated("회식은 현재 MVP에서 사용하지 않습니다. 2차 MVP 검토 전까지 기존 승인 초기화 동작을 유지합니다.")
     override fun initializeForNewCohortMember(
         memberId: MemberId,
         cohortId: CohortId,
@@ -129,31 +130,17 @@ class AfterPartyCommandService(
         cohortId: CohortId,
     ): Int {
         val now = Instant.now()
-        val memberRoleType =
-            memberAccessService.getRoleType(
-                memberId = memberId,
-                cohortValue = cohortQueryService.getCohort(cohortId).value,
-            )
+        val memberRoleType = memberAccessService.getRoleType(memberId = memberId)
         val memberAuthorityId = legacyAuthorityIdForInviteTag(memberRoleType) ?: return 0
 
         val afterParties: List<AfterParty> =
             afterPartyPersistencePort
-                .findAll()
-                .filter { !now.isAfter(it.closedAt) }
+                .findOpenByInviteTag(cohortId, AuthorityId(memberAuthorityId), now)
         val member: Member = memberQueryUseCase.getMemberById(memberId)
         var createdInviteeCount = 0
 
         afterParties.forEach { afterParty ->
             val afterPartyId = afterParty.id ?: throw AfterPartyNotFoundException()
-            val inviteTags = afterPartyInviteTagPersistencePort.findByAfterPartyId(afterPartyId)
-            val shouldInvite =
-                inviteTags.any { inviteTag ->
-                    inviteTag.cohortId == cohortId && inviteTag.authorityId.value == memberAuthorityId
-                }
-
-            if (!shouldInvite) {
-                return@forEach
-            }
             if (afterPartyInviteePersistencePort.findByMemberIdAndAfterPartyId(memberId, afterPartyId) != null) {
                 return@forEach
             }
@@ -300,7 +287,7 @@ class AfterPartyCommandService(
                 when (roleType) {
                     RoleType.Deeper -> DEEPER_AUTHORITY_ID
                     RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
-                    RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
+                    RoleType.Master, RoleType.Core, RoleType.Guest -> throw InviteTagNameNotFoundException(tagName)
                 },
             )
 
@@ -332,13 +319,21 @@ class AfterPartyCommandService(
         roleType: RoleType,
     ): String {
         val latestCohort = cohortQueryService.getCohort(CohortId(cohortId))
-        return "${latestCohort.value}기 ${roleType.aliases.first()}"
+        return "${latestCohort.value}기 ${roleLabel(roleType)}"
+    }
+
+    private fun roleLabel(roleType: RoleType): String = when (roleType) {
+        RoleType.Organizer -> "운영진"
+        RoleType.Deeper -> "디퍼"
+        RoleType.Core -> "코어"
+        RoleType.Master -> "마스터"
+        RoleType.Guest -> "게스트"
     }
 
     private fun legacyAuthorityIdForInviteTag(roleType: RoleType): Long? =
         when (roleType) {
             RoleType.Deeper -> DEEPER_AUTHORITY_ID
             RoleType.Organizer -> ORGANIZER_AUTHORITY_ID
-            RoleType.Core, RoleType.Guest -> null
+            RoleType.Master, RoleType.Core, RoleType.Guest -> null
         }
 }

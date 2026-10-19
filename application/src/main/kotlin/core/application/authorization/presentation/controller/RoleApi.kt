@@ -48,7 +48,7 @@ interface RoleApi {
     @ApiResponse(responseCode = "200", description = "멤버 역할 변경 성공")
     @Operation(
         summary = "멤버 기수별 역할 변경 API",
-        description = "isAdmin=true면 해당 기수 운영진, false면 해당 기수 디퍼로 변경합니다.",
+        description = "지정한 기수에 대해 멤버의 역할(CORE/ORGANIZER/DEEPER)을 교체합니다.",
     )
     fun updateMemberRole(
         @Parameter(description = "역할 변경 대상 멤버 식별자", example = "1")

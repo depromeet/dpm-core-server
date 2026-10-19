@@ -26,7 +26,9 @@ data class DetailAttendancesBySessionResponse(
 
     data class DetailAttendance(
         val status: String,
+        /** 실제 출석 인증 시각(Asia/Seoul). 인증하지 않았거나 운영진이 상태를 바꿨으면 null */
         val attendedAt: LocalDateTime?,
+        /** 운영진 변경 시각(Asia/Seoul). 없으면 null */
         val updatedAt: LocalDateTime?,
     )
 }

@@ -2,6 +2,7 @@ package core.application.security.oauth.repository
 
 import core.application.security.oauth.redirect.OAuthCallbackRedirectService
 import core.application.security.oauth.repository.mapper.AuthorizationRequestCookieValueMapper
+import core.application.security.properties.SecurityProperties
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -16,6 +17,7 @@ private const val REQUEST_COOKIE_MAX_AGE = 180
 class HttpCookieOAuth2AuthorizationRequestRepository(
     private val authorizationRequestCookieValueMapper: AuthorizationRequestCookieValueMapper,
     private val oAuthCallbackRedirectService: OAuthCallbackRedirectService,
+    private val securityProperties: SecurityProperties,
 ) : AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
     override fun loadAuthorizationRequest(request: HttpServletRequest): OAuth2AuthorizationRequest? =
         getAuthorizationRequestCookie(request)
@@ -52,22 +54,23 @@ class HttpCookieOAuth2AuthorizationRequestRepository(
         response: HttpServletResponse,
         value: String,
     ) {
-        val cookieValue =
-            "$REQUEST_COOKIE_NAME=$value; " +
-                "Path=/; " +
-                "HttpOnly; " +
-                "Secure; " +
-                "SameSite=None; " +
-                "Max-Age=$REQUEST_COOKIE_MAX_AGE"
-
-        response.addHeader("Set-Cookie", cookieValue)
+        response.addHeader("Set-Cookie", buildCookieHeader(value = value, maxAge = REQUEST_COOKIE_MAX_AGE))
     }
 
     private fun deleteCookie(response: HttpServletResponse) {
-        val cookieValue =
-            "$REQUEST_COOKIE_NAME=; Path=/; Max-Age=0; Secure; SameSite=None"
+        response.addHeader("Set-Cookie", buildCookieHeader(value = "", maxAge = 0))
+    }
 
-        response.addHeader("Set-Cookie", cookieValue)
+    private fun buildCookieHeader(
+        value: String,
+        maxAge: Int,
+    ): String {
+        val secure = securityProperties.cookie.secure
+        // SameSite=None requires Secure; use Lax on local HTTP so browsers keep the cookie.
+        val sameSite = if (secure) "None" else "Lax"
+        val secureAttr = if (secure) "; Secure" else ""
+
+        return "$REQUEST_COOKIE_NAME=$value; Path=/; HttpOnly$secureAttr; SameSite=$sameSite; Max-Age=$maxAge"
     }
 
     private fun getAuthorizationRequestCookie(request: HttpServletRequest): Cookie? =

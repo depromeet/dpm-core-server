@@ -29,6 +29,7 @@ class CorsRegistryConfig(
         source.registerCorsConfiguration("/logout", configuration)
         source.registerCorsConfiguration("/v1/**", configuration)
         source.registerCorsConfiguration("/v2/**", configuration)
+        source.registerCorsConfiguration("/v3/**", configuration)
         source.registerCorsConfiguration("/oauth2/**", configuration)
         return source
     }

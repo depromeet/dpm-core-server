@@ -3,9 +3,11 @@ package core.application.common.exception
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.databind.exc.InvalidNullException
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
+import core.application.image.application.exception.ImageVerificationBusyException
 import core.application.security.oauth.exception.InvalidAccessTokenException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.authorization.AuthorizationDeniedException
@@ -78,6 +80,17 @@ class GlobalExceptionHandler {
     ): CustomResponse<Void> {
         logger.error { "Exception: ${exception.javaClass.simpleName} - ${exception.message}" }
         return CustomResponse.error(GlobalExceptionCode.METHOD_NOT_ALLOWED)
+    }
+
+    // 처리 중 경합(429)은 재시도 시점을 함께 알려준다.
+    @ExceptionHandler(ImageVerificationBusyException::class)
+    fun handleImageVerificationBusyException(
+        exception: ImageVerificationBusyException,
+        response: HttpServletResponse,
+    ): CustomResponse<Void> {
+        response.status = exception.getCode().getStatus().value()
+        response.setHeader(HttpHeaders.RETRY_AFTER, ImageVerificationBusyException.RETRY_AFTER_SECONDS.toString())
+        return CustomResponse.error(exception.getCode())
     }
 
     @ExceptionHandler(Exception::class)

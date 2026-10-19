@@ -4,6 +4,7 @@ import core.application.cohort.application.exception.CohortNotFoundException
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,48 +14,56 @@ import org.springframework.transaction.annotation.Transactional
 class CohortQueryService(
     private val cohortPersistencePort: CohortPersistencePort,
 ) : CohortQueryUseCase {
-    fun getLatestCohort(): Cohort =
-        cohortPersistencePort
-            .findAll()
-            .maxByOrNull { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
-            ?.takeIf { isNumericCohortValue(it.value) }
-            ?: throw CohortNotFoundException()
+    fun getActiveCohort(): Cohort = findCurrentCohortOrNull() ?: throw CohortNotFoundException()
 
-    override fun getLatestCohortId(): CohortId =
-        getLatestCohort().id
-            ?: throw CohortNotFoundException()
+    /** An installation without a numeric or active cohort is a normal pre-initialization state. */
+    fun findCurrentCohortOrNull(): Cohort? = cohortPersistencePort.findActive() ?: getLatestCohortByMaxValue()
 
-    override fun getLatestCohortValue(): String = getLatestCohort().value
+    fun getLatestCohort(): Cohort = getActiveCohort()
+
+    override fun getActiveCohortId(): CohortId = getActiveCohort().id ?: throw CohortNotFoundException()
+
+    override fun getActiveCohortValue(): String = getActiveCohort().value
+
+    override fun findActiveCohortId(): CohortId? = cohortPersistencePort.findActive()?.id
+
+    override fun getLatestCohortId(): CohortId = getActiveCohortId()
+
+    override fun getLatestCohortValue(): String = getActiveCohortValue()
+
+    /** 현재 활성 기수에 만들어진 모든 팀(멤버가 없는 팀 포함). 팀 번호, ID 오름차순 */
+    fun getActiveCohortTeams(): List<CohortTeamQueryModel> =
+        cohortPersistencePort.findTeamsByCohortId(getActiveCohortId())
 
     fun getAllCohorts(): List<Cohort> =
-        cohortPersistencePort
-            .findAll()
-            .sortedWith(
-                compareByDescending<Cohort> { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
-                    .thenByDescending { it.createdAt ?: 0L },
-            )
+        cohortPersistencePort.findAll().sortedWith(
+            compareByDescending<Cohort> { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
+                .thenByDescending { it.createdAt ?: 0L },
+        )
 
     fun getCohort(cohortId: CohortId): Cohort =
-        cohortPersistencePort.findById(cohortId)
-            ?: throw CohortNotFoundException()
+        cohortPersistencePort.findById(cohortId) ?: throw CohortNotFoundException()
+
+    fun getCohortByValue(value: String): Cohort =
+        cohortPersistencePort.findByValue(value) ?: throw CohortNotFoundException()
 
     fun getPreviousNumericCohortValue(targetValue: String): String? {
         val target = toNumericCohortValue(targetValue) ?: return null
-        return cohortPersistencePort
-            .findAll()
+        return cohortPersistencePort.findAll()
             .mapNotNull { cohort -> toNumericCohortValue(cohort.value)?.let { it to cohort.value } }
             .filter { (numericValue, _) -> numericValue < target }
-            .maxByOrNull { (numericValue, _) -> numericValue }
-            ?.second
+            .maxByOrNull { (numericValue, _) -> numericValue }?.second
     }
 
     fun isNumericCohortValue(value: String): Boolean = NUMERIC_COHORT_REGEX.matches(value.trim())
 
+    private fun getLatestCohortByMaxValue(): Cohort? =
+        cohortPersistencePort.findAll()
+            .maxByOrNull { toNumericCohortValue(it.value) ?: Int.MIN_VALUE }
+            ?.takeIf { isNumericCohortValue(it.value) }
+
     private fun toNumericCohortValue(value: String): Int? =
-        value
-            .trim()
-            .takeIf { NUMERIC_COHORT_REGEX.matches(it) }
-            ?.toIntOrNull()
+        value.trim().takeIf { NUMERIC_COHORT_REGEX.matches(it) }?.toIntOrNull()
 
     companion object {
         private val NUMERIC_COHORT_REGEX = Regex("\\d+")

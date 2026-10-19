@@ -80,6 +80,11 @@ enum class NotificationMessageType(
         bodyTemplate = "{name}님이 {week}주차 결석 사유서를 제출했어요.",
         description = "디퍼가 결석 사유서 제출 시 운영진 알림",
     ),
+    SESSION_FEEDBACK_OPENED(
+        title = "세션 피드백이 시작됐어요.",
+        bodyTemplate = "{title} 세션은 어떠셨나요? 피드백을 남겨주세요!",
+        description = "세션 피드백 수집 시작 시 출석·지각자에게 발송",
+    ),
     ;
 
     fun format(variables: Map<String, Any>): String {

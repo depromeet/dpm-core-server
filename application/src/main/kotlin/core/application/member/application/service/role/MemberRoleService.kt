@@ -1,11 +1,12 @@
 package core.application.member.application.service.role
 
 import core.application.cohort.application.service.CohortQueryService
+import core.application.member.application.service.TrackMemberBadges
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleId
 import core.domain.authorization.vo.RoleType
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberRole
-import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import org.springframework.stereotype.Service
@@ -16,83 +17,71 @@ class MemberRoleService(
     private val memberRolePersistencePort: MemberRolePersistencePort,
     private val roleQueryUseCase: RoleQueryUseCase,
     private val cohortQueryService: CohortQueryService,
-    private val memberQueryUseCase: MemberQueryUseCase,
     private val currentCohortRoleResolver: CurrentCohortRoleResolver,
 ) {
-    /**
-     * 멤버 식별자로 해당 멤버가 소유한 권한 이름 목록을 조회함.
-     *
-     * @author LeeHanEum
-     * @since 2025.12.27
-     */
     fun getRoleNamesByMemberId(memberId: MemberId): List<String> =
-        memberRolePersistencePort
-            .findRoleNamesByMemberId(memberId.value)
+        memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
 
-    /**
-     * 멤버 탈퇴 시에, 멤버가 소유한 모든 권한을 Soft Delete 처리하여, 권한을 회수함.
-     *
-     *
-     * @author LeeHanEum
-     * @since 2025.12.27
-     */
+    @TrackMemberBadges
     fun revokeAllRoles(memberId: MemberId) = memberRolePersistencePort.softDeleteAllByMemberId(memberId.value)
 
-    /**
-     * 멤버 식별자로 해당 멤버의 최우선 권한 타입을 조회합니다.
-     *
-     * 권한 타입의 위계는 CORE > ORGANIZER > DEEPER > GUEST 순입니다.
-     *
-     * @author LeeHanEum
-     * @since 2025.12.27
-     */
-    fun resolvePrimaryRoleType(memberId: MemberId): RoleType {
-        val roles =
-            memberRolePersistencePort
-                .findRoleNamesByMemberId(memberId.value)
+    fun resolvePrimaryRoleType(memberId: MemberId): RoleType =
+        currentCohortRoleResolver.findPrimaryRoleTypeForMember(memberId)
 
-        val latestCohortValue = memberQueryUseCase.getMemberById(memberId).latestCohortValue().orEmpty()
-        return currentCohortRoleResolver.findPrimaryRoleType(
-            roleNames = roles,
-            latestCohortValue = latestCohortValue,
+    @TrackMemberBadges
+    fun assignGuestRole(memberId: MemberId) {
+        val guestRoleId = roleQueryUseCase.findIdByName(RoleType.Guest.code)
+        memberRolePersistencePort.save(
+            MemberRole(memberId = memberId, roleId = RoleId(guestRoleId), grantedAt = Instant.now()),
         )
     }
 
-    fun assignGuestRole(memberId: MemberId) {
-        val guestRoleId = roleQueryUseCase.findIdByName(RoleType.Guest.code)
-        val memberRole =
-            MemberRole(
-                memberId = memberId,
-                roleId = RoleId(guestRoleId),
-                grantedAt = Instant.now(),
-            )
-        memberRolePersistencePort.save(memberRole)
-    }
-
+    @TrackMemberBadges
     fun assignRole(
         memberId: MemberId,
         roleType: RoleType,
+        cohortId: CohortId? = null,
     ) {
         val roleId = roleQueryUseCase.findIdByName(roleType.code)
-        val memberRole =
+        memberRolePersistencePort.save(
             MemberRole(
                 memberId = memberId,
                 roleId = RoleId(roleId),
+                cohortId = cohortId,
                 grantedAt = Instant.now(),
-            )
-        memberRolePersistencePort.save(memberRole)
+            ),
+        )
     }
 
+    @TrackMemberBadges
     fun ensureRoleAssigned(
         memberId: MemberId,
         roleType: RoleType,
     ) {
         val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
-        if (roles.none { it == roleType.code }) {
-            assignRole(memberId, roleType)
-        }
+        if (roles.none { it == roleType.code }) assignRole(memberId, roleType)
     }
 
+    /**
+     * (roleType, cohortId) 조합의 활성 role 이 없으면 새로 append 한다.
+     * 기존 다른 기수 role 은 soft delete 하지 않고 이력으로 유지한다.
+     * 예: 17기 디퍼로 활동 이력 있는 회원이 18기 승인 시 → (DEEPER, 17), (DEEPER, 18) 둘 다 존재.
+     * 판정은 CurrentCohortRoleResolver 가 활성 기수 기준으로 필터링한다.
+     */
+    @TrackMemberBadges
+    fun ensureCohortRoleAssigned(
+        memberId: MemberId,
+        roleType: RoleType,
+        cohortId: CohortId,
+    ) {
+        val alreadyAssigned =
+            memberRolePersistencePort
+                .findActiveRoleAssignmentsByMemberId(memberId.value)
+                .any { it.roleName == roleType.code && it.cohortId?.value == cohortId.value }
+        if (!alreadyAssigned) assignRole(memberId, roleType, cohortId)
+    }
+
+    @TrackMemberBadges
     fun revokeRole(
         memberId: MemberId,
         roleType: RoleType,
@@ -101,47 +90,32 @@ class MemberRoleService(
         memberRolePersistencePort.softDeleteByMemberIdAndRoleId(memberId.value, roleId)
     }
 
+    @TrackMemberBadges
     fun ensureGuestRoleAssigned(memberId: MemberId) {
-        val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
-        if (roles.isEmpty()) {
-            assignGuestRole(memberId)
-        }
+        if (memberRolePersistencePort.findRoleNamesByMemberId(memberId.value).isEmpty()) assignGuestRole(memberId)
     }
 
-    fun ensureRoleAssignedByName(
+    @TrackMemberBadges
+    fun replaceWithSingleRoleByType(
         memberId: MemberId,
-        roleName: String,
+        roleType: RoleType,
+        cohortId: CohortId? = null,
     ) {
-        val roles = memberRolePersistencePort.findRoleNamesByMemberId(memberId.value)
-        if (roles.none { it == roleName }) {
-            val roleId = roleQueryUseCase.findIdByName(roleName)
-            memberRolePersistencePort.save(
-                MemberRole.of(
-                    memberId = memberId,
-                    roleId = RoleId(roleId),
-                ),
-            )
-        }
-    }
-
-    fun replaceWithSingleRoleByName(
-        memberId: MemberId,
-        roleName: String,
-    ) {
-        val roleId = roleQueryUseCase.findIdByName(roleName)
-        memberRolePersistencePort.upsertSingleActiveRole(memberId.value, roleId)
-    }
-
-    fun replaceCohortRoleByName(
-        memberId: MemberId,
-        roleName: String,
-        cohortRolePrefix: String,
-    ) {
-        val roleId = roleQueryUseCase.findIdByName(roleName)
-        memberRolePersistencePort.upsertCohortRole(
+        val roleId = roleQueryUseCase.findIdByName(roleType.code)
+        memberRolePersistencePort.upsertSingleActiveRole(
             memberId = memberId.value,
             roleId = roleId,
-            cohortRolePrefix = cohortRolePrefix,
+            cohortId = cohortId?.value,
         )
+    }
+
+    @TrackMemberBadges
+    fun replaceCohortRole(
+        memberId: MemberId,
+        roleType: RoleType,
+        cohortId: CohortId,
+    ) {
+        val roleId = roleQueryUseCase.findIdByName(roleType.code)
+        memberRolePersistencePort.replaceCohortRole(memberId.value, roleId, cohortId.value)
     }
 }

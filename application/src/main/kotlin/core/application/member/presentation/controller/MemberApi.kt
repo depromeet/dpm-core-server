@@ -2,7 +2,6 @@ package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
 import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
-import core.application.member.presentation.request.ConvertDeeperToOrganizerRequest
 import core.application.member.presentation.request.InitMemberDataRequest
 import core.application.member.presentation.request.MemberNameHashValidationRequest
 import core.application.member.presentation.request.UpdateMemberStatusRequest
@@ -12,8 +11,10 @@ import core.application.member.presentation.response.AppleMemberProfileUpdateRes
 import core.application.member.presentation.response.MemberDetailsResponse
 import core.application.member.presentation.response.MemberNameHashValidationResponse
 import core.application.member.presentation.response.MemberOverviewResponse
+import core.application.security.annotation.CurrentLoginIdentity
 import core.application.security.annotation.CurrentMemberId
 import core.domain.cohort.vo.CohortId
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -81,8 +82,12 @@ interface MemberApi {
     ): CustomResponse<MemberNameHashValidationResponse>
 
     @Operation(
-        summary = "Apple 로그인 멤버 프로필 수정 API",
-        description = "현재 로그인한 Apple 회원의 name과 part를 수정합니다.",
+        summary = "Apple 로그인 멤버 최초 프로필 입력 API",
+        description =
+            "현재 회원의 Apple 연결을 확인하고 공통 프로필 입력 규칙을 적용합니다. " +
+                "이름은 앞뒤 공백 제거 후 255자 이내의 완성형 한글과 단어 사이 공백, 파트는 실제 파트 값만 허용합니다. " +
+                "UNASSIGNED는 허용하지 않습니다. 완료 후 같은 값은 유지하고 다른 값은 409입니다. " +
+                "신규 클라이언트는 GET/PATCH /v3/members/me/profile을 사용합니다.",
         requestBody =
             RequestBody(
                 content = [
@@ -196,7 +201,14 @@ interface MemberApi {
                                     "cohort": "17",
                                     "teamNumber": 3,
                                     "isAdmin": false,
-                                    "status": "ACTIVE"
+                                    "status": "ACTIVE",
+                                    "loginMethod": "KAKAO",
+                                    "isActiveCohort": true,
+                                    "presentCount": 8,
+                                    "lateCount": 1,
+                                    "excusedAbsentCount": 1,
+                                    "absentCount": 0,
+                                    "attendanceStatus": "NORMAL"
                                 }
                             }
                         """,
@@ -205,9 +217,18 @@ interface MemberApi {
             ),
         ],
     )
-    @Operation(summary = "로그인 한 멤버 조회 API", description = "현재 로그인한 멤버의 기본 정보를 조회 합니다.")
+    @Operation(
+        summary = "로그인 한 멤버 조회 API",
+        description =
+            "현재 로그인한 멤버의 기본 정보를 조회 합니다. " +
+                "cohort, teamNumber, 출석 집계(presentCount/lateCount/excusedAbsentCount/absentCount), " +
+                "attendanceStatus 는 마지막 소속 기수 기준입니다. isActiveCohort 는 그 기수가 현재 활성 기수인지 여부입니다. " +
+                "attendanceStatus 는 현재 기수면 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE), 이전 기수면 COMPLETED, " +
+                "소속 기수가 없으면 null 이며 멤버 상태(status)와 별개입니다.",
+    )
     fun me(
         @CurrentMemberId memberId: MemberId,
+        @CurrentLoginIdentity loginIdentity: LoginIdentity?,
     ): CustomResponse<MemberDetailsResponse>
 
     @ApiResponse(
@@ -298,10 +319,11 @@ interface MemberApi {
     ): CustomResponse<Void>
 
     @Operation(
-        summary = "멤버 하드 삭제 API (admin)",
-        description = "memberId를 기준으로 멤버와 연관된 데이터를 실제 DB에서 삭제합니다.",
+        summary = "멤버 영구 삭제 API (사용 중단)",
+        description = "삭제 권한 확인 후 410을 반환하며 회원과 연관 데이터를 변경하지 않습니다. DELETE /v3/members/{memberId}를 사용해주세요.",
+        deprecated = true,
     )
-    @ApiResponse(responseCode = "200", description = "멤버 하드 삭제 성공")
+    @ApiResponse(responseCode = "410", description = "MEMBER-410-01: 영구 삭제 API 사용 중단")
     fun hardDelete(
         @Parameter(description = "하드 삭제 대상 멤버 식별자", example = "1")
         memberId: MemberId,
@@ -309,7 +331,9 @@ interface MemberApi {
 
     @Operation(
         summary = "멤버 데이터 주입 및 승인 API (dev)",
-        description = "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다.",
+        description =
+            "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다. " +
+                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다.",
         requestBody =
             RequestBody(
                 content = [
@@ -387,7 +411,9 @@ interface MemberApi {
 
     @Operation(
         summary = "멤버 상태 변경 API (dev)",
-        description = "멤버의 상태를 변경합니다. 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE)",
+        description =
+            "멤버의 상태를 변경합니다. 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE) " +
+                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다.",
         requestBody =
             RequestBody(
                 content = [
@@ -421,20 +447,6 @@ interface MemberApi {
     )
     fun updateMemberStatus(request: UpdateMemberStatusRequest): CustomResponse<Void>
 
-    @Operation(
-        summary = "DEEPER를 ORGANIZER로 변환 API (dev)",
-        description = "지정한 멤버의 권한을 DEEPER에서 ORGANIZER로 변환합니다.",
-    )
-    @ApiResponse(responseCode = "200", description = "권한 변환 성공")
-    fun convertDeeperToOrganizer(request: ConvertDeeperToOrganizerRequest): CustomResponse<Void>
-
-    @Operation(
-        summary = "신규 기수 참여 회원 init API (dev)",
-        description =
-            "신규 기수 참여 회원에 대해 초기화 합니다.\n" +
-                "해당 기수 출석부, 공지/과제, 회식 참여 등에 해당 멤버를 추가합니다.",
-    )
-    @ApiResponse(responseCode = "200", description = "신규 기수 참여 회원 init 성공")
     fun initMemberCohort(
         memberId: MemberId,
         cohortId: CohortId,

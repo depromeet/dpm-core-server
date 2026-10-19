@@ -1,5 +1,7 @@
 package core.application.session.presentation.response
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import core.application.sessionFeedback.presentation.response.SessionFeedbackSettingsResponse
 import java.time.LocalDateTime
 
 data class SessionDetailResponse(
@@ -13,4 +15,6 @@ data class SessionDetailResponse(
     val lateStart: LocalDateTime,
     val absentStart: LocalDateTime,
     val attendanceCode: String,
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    val feedback: SessionFeedbackSettingsResponse? = null,
 )

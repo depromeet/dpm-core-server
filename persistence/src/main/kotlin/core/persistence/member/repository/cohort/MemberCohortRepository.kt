@@ -41,4 +41,13 @@ class MemberCohortRepository(
         )
 
     override fun deleteByMemberId(memberId: Long) = memberCohortJpaRepository.deleteByMemberId(memberId)
+
+    override fun findCohortIdsByMemberId(memberId: Long): List<Long> =
+        dsl
+            .select(MEMBER_COHORTS.COHORT_ID)
+            .from(MEMBER_COHORTS)
+            .where(MEMBER_COHORTS.MEMBER_ID.eq(memberId))
+            .fetch(MEMBER_COHORTS.COHORT_ID)
+            .filterNotNull()
 }
+

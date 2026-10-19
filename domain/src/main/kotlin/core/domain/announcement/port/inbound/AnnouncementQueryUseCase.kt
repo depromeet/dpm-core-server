@@ -5,13 +5,14 @@ import core.domain.announcement.aggregate.AnnouncementRead
 import core.domain.announcement.aggregate.AssignmentSubmission
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.announcement.vo.AssignmentId
+import core.domain.cohort.vo.CohortId
 
 interface AnnouncementQueryUseCase {
     fun getAnnouncementById(announcementId: AnnouncementId): Announcement
 
     fun findAnnouncementByAssignmentId(assignmentId: AssignmentId): Announcement?
 
-    fun getAll(): List<Announcement>
+    fun findByCohortId(cohortId: CohortId): List<Announcement>
 
     fun findUnreadByAnnouncementId(announcementId: AnnouncementId): List<AnnouncementRead>
 
