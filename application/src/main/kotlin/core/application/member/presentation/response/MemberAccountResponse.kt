@@ -13,7 +13,11 @@ data class ConnectedMemberAccount(
     val accountId: Long,
     @field:Schema(description = "로그인 방식. EMAIL 항목에는 연결·해제 버튼을 제공하지 않음", example = "KAKAO")
     val loginMethod: LoginMethod,
-    @field:Schema(description = "해당 연결의 이메일. 제공자가 이메일을 전달하지 않으면 null", example = "member@example.com", nullable = true)
+    @field:Schema(
+        description = "해당 연결의 이메일. 제공자가 이메일을 전달하지 않으면 null",
+        example = "member@example.com",
+        types = ["string", "null"],
+    )
     val email: String?,
     @field:Schema(description = "조회 시점의 해제 가능 여부. 마지막 로그인 수단 또는 EMAIL이면 false", example = "true")
     val unlinkAllowed: Boolean,
