@@ -207,10 +207,13 @@ class MemberController(
         return tokens
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/v1/members/password")
     @Operation(
         summary = "Set Email Password",
-        description = "Set or update email password for a member. OAuth-only users can use this to enable email login.",
+        description =
+            "Update an existing email password using the current password. Adding an " +
+                "email login account is not supported.",
     )
     @ApiResponses(
         value = [
@@ -221,7 +224,7 @@ class MemberController(
         ],
     )
     fun setPassword(
-        memberId: MemberId,
+        @CurrentMemberId memberId: Long,
         @Valid @RequestBody request: SetPasswordRequest,
     ): CustomResponse<Void> {
         // Validate passwords match
@@ -230,7 +233,7 @@ class MemberController(
         }
 
         emailPasswordAuthService.setPassword(
-            memberId = memberId,
+            memberId = MemberId(memberId),
             oldPassword = request.oldPassword,
             newPassword = request.newPassword,
         )

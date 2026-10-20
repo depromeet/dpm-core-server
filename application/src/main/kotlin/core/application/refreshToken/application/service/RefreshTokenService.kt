@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
@@ -32,10 +33,11 @@ class RefreshTokenService(
     private val tokenProvider: JwtTokenProvider,
     private val deviceIdResolver: DeviceIdResolver,
     private val members: MemberPersistencePort,
+    private val identities: core.application.security.oauth.token.LoginIdentityValidator,
 ) {
     private val logger = KotlinLogging.logger { }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     fun reissue(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -44,6 +46,13 @@ class RefreshTokenService(
         // 삭제와 같은 회원 잠금을 먼저 획득하고 회원 및 토큰의 최신 상태를 다시 확인한다.
         val member = members.lockApprovalTargets(listOf(observed.memberId.value)).singleOrNull()
         if (member == null || member.isDeleted || member.status == MemberStatus.WITHDRAWN) throw TokenInvalidException()
+        if (!identities.isValid(
+                observed.memberId.value,
+                tokenProvider.getLoginIdentity(presentedToken),
+            )
+        ) {
+            throw TokenInvalidException()
+        }
         val stored = refreshTokenPersistencePort.lockByTokenHash(observed.tokenHash) ?: throw TokenInvalidException()
         if (stored.memberId != observed.memberId) throw TokenInvalidException()
         val now = Instant.now()

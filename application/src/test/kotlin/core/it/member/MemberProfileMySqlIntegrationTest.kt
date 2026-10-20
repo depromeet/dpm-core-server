@@ -130,28 +130,30 @@ class MemberProfileMySqlIntegrationTest {
 
     @Test
     fun `SQL은 기존 정상 회원만 완료하고 재실행시 신규 회원은 완료하지 않는다`() {
+        val sql = migrationFile()
         jdbc.update("update members set name='홍길동' where member_id=1")
         jdbc.update("insert into members (member_id,name,signup_email,part,status,created_at) values (2,'nickname','invalid@example.com','WEB','ACTIVE',now(6)),(3,'김길동','missing@example.com',null,'PENDING',now(6)),(4,'','blank@example.com','SERVER','ACTIVE',now(6))")
         val before = jdbc.queryForList("select member_id,name,part,status from members order by member_id")
         jdbc.execute("alter table members drop column profile_completed_at")
-        migrate()
+        migrate(sql)
         assertThat(profiles.findProfile(1)!!.completedAt).isNotNull()
         listOf(2L, 3L, 4L).forEach { assertThat(profiles.findProfile(it)!!.completedAt).isNull() }
         assertThat(jdbc.queryForList("select member_id,name,part,status from members order by member_id")).isEqualTo(before)
         jdbc.update("insert into members (member_id,name,signup_email,part,status,created_at) values (5,'박길동','new@example.com','WEB','PENDING',now(6))")
-        migrate()
+        migrate(sql)
         assertThat(profiles.findProfile(5)!!.completedAt).isNull()
         assertThat(sentinelCount()).isZero()
     }
 
     @Test
     fun `SQL은 컬럼 추가와 기본값 변경 직후 중단도 복구한다`() {
+        val sql = migrationFile()
         listOf(false, true).forEach { defaultChanged ->
             jdbc.update("update members set name='홍길동',part='WEB' where member_id=1")
             jdbc.execute("alter table members drop column profile_completed_at")
             jdbc.execute("alter table members add column profile_completed_at datetime(6) null default '1970-01-02 00:00:00.000000'")
             if (defaultChanged) jdbc.execute("alter table members alter column profile_completed_at set default null")
-            migrate()
+            migrate(sql)
             assertThat(profiles.findProfile(1)!!.completedAt).isNotNull()
             assertThat(sentinelCount()).isZero()
         }
@@ -159,9 +161,16 @@ class MemberProfileMySqlIntegrationTest {
 
     private fun sentinelCount() = jdbc.queryForObject("select count(*) from members where profile_completed_at='1970-01-02 00:00:00.000000'", Long::class.java)!!
 
-    private fun migrate() {
-        val relative = "db/pending/2610092100_member_profile_completion.sql"
-        val file = listOf(Path.of(relative), Path.of("..", relative)).first { Files.exists(it) }
+    private fun migrationFile(): Path {
+        val root = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+            .first { Files.isDirectory(it.resolve("db")) }
+        return Files.walk(root.resolve("db")).use { paths ->
+            paths.filter { it.fileName.toString() == "2610092100_member_profile_completion.sql" }
+                .findFirst().orElseThrow()
+        }
+    }
+
+    private fun migrate(file: Path) {
         // SET/PREPARE/EXECUTE의 세션 변수를 같은 연결에서 유지한다.
         jdbc.execute(
             org.springframework.jdbc.core.ConnectionCallback { connection ->
