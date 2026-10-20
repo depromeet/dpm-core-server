@@ -344,10 +344,15 @@ class MemberBadgeMySqlIntegrationTest {
 
     @Test
     fun `수동 SQL은 재실행 가능하고 Hibernate 엔티티 스키마 검증을 통과한다`() {
+        val root =
+            generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
+                .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
+        val sql = java.nio.file.Files.walk(root.resolve("db")).use { paths ->
+            paths.filter { it.fileName.toString() == "2610091830_member_badges.sql" }
+                .findFirst().orElseThrow()
+        }
         jdbc.execute("drop table member_badge_memberships")
         jdbc.execute("drop table member_badge_states")
-        val directory = listOf(java.nio.file.Path.of("db/pending"), java.nio.file.Path.of("../db/pending")).first { java.nio.file.Files.isDirectory(it) }
-        val sql = java.nio.file.Files.list(directory).use { paths -> paths.filter { it.fileName.toString().endsWith("_member_badges.sql") }.findFirst().orElseThrow() }
         repeat(2) {
             jdbc.dataSource!!.connection.use { connection ->
                 org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection, org.springframework.core.io.FileSystemResource(sql))
