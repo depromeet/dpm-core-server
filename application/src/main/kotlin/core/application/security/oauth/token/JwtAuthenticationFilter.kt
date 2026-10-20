@@ -32,11 +32,12 @@ class JwtAuthenticationFilter(
                 "/api/v1/auth/kakao/native",
             )
 
-        private val PUBLIC_LOGIN_PATHS = setOf(
-            "/v1/members/login/auth/apple",
-            "/login/email", "/login/auth/apple", "/login/auth/kakao", "/login/auth/kakao/tokens",
-            "/login/kakao", "/login/apple", "/login/oauth/authorization/kakao", "/login/oauth/authorization/apple",
-        )
+        private val PUBLIC_LOGIN_PATHS =
+            setOf(
+                "/v1/members/login/auth/apple",
+                "/login/email", "/login/auth/apple", "/login/auth/kakao", "/login/auth/kakao/tokens",
+                "/login/kakao", "/login/apple", "/login/oauth/authorization/kakao", "/login/oauth/authorization/apple",
+            )
 
         // 인증이 필요 없는 문서 경로라 토큰을 읽지 않는다.
         private val EXCLUDED_PATH_PREFIXES =
@@ -103,7 +104,8 @@ class JwtAuthenticationFilter(
     private fun isUsable(token: String): Boolean {
         if (!jwtTokenProvider.validateToken(token)) return false
         val memberId = runCatching { jwtTokenProvider.getMemberId(token) }.getOrNull() ?: return false
-        return members.isLoginAvailable(memberId) && identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(token))
+        return members.isLoginAvailable(memberId) &&
+            identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(token))
     }
 
     /** 필터에서 던진 예외는 GlobalExceptionHandler 가 잡지 못해 500 이 되므로 직접 401 로 응답한다. */

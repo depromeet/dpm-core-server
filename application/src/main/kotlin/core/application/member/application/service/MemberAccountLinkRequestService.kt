@@ -71,7 +71,9 @@ class MemberAccountLinkRequestService(
         state: String,
     ): OAuthLinkRequest {
         val hash = TokenHasher.sha256Hex(state)
-        val request = accounts.lockLinkRequest(hash) ?: throw MemberAccountException(MemberExceptionCode.MEMBER_ACCOUNT_LINK_INVALID)
+        val request =
+            accounts.lockLinkRequest(hash)
+                ?: throw MemberAccountException(MemberExceptionCode.MEMBER_ACCOUNT_LINK_INVALID)
         if (request.memberId != memberId || request.provider != provider || !request.expiresAt.isAfter(Instant.now())) {
             throw MemberAccountException(MemberExceptionCode.MEMBER_ACCOUNT_LINK_INVALID)
         }

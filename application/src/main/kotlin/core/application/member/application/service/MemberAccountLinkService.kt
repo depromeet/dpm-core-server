@@ -34,10 +34,16 @@ class MemberAccountLinkService(
                     OAuthProvider.APPLE -> {
                         val tokens = apple.getTokens(authorizationCode, request.redirectUri)
                         val claims = appleValidator.verify(tokens.id_token)
-                        if (claims["nonce"] != request.stateHash || claims.subject.isNullOrBlank()) throw IllegalArgumentException()
+                        if (claims["nonce"] != request.stateHash || claims.subject.isNullOrBlank()) {
+                            throw IllegalArgumentException()
+                        }
                         AppleAuthAttributes.of(claims)
                     }
-                    OAuthProvider.KAKAO -> OAuthAttributes.of("KAKAO", kakao.getLinkUserAttributes(authorizationCode, request.redirectUri, request.codeVerifier)) ?: throw IllegalArgumentException()
+                    OAuthProvider.KAKAO ->
+                        OAuthAttributes.of(
+                            "KAKAO",
+                            kakao.getLinkUserAttributes(authorizationCode, request.redirectUri, request.codeVerifier),
+                        ) ?: throw IllegalArgumentException()
                 }
             } catch (_: Exception) {
                 // Do not expose provider responses containing authorization codes or tokens.
