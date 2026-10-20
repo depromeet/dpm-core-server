@@ -23,8 +23,8 @@ import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import java.time.Instant
@@ -109,9 +109,9 @@ class RefreshTokenServiceTest {
         assertThat(provider.getLoginIdentity(result.refreshToken)).isEqualTo(APPLE_LOGIN)
     }
 
-    /** 배포 전에 발급된 토큰에는 클레임이 없다. 추측하지 않고 null 로 이어간다. */
+    /** 로그인 수단을 판별할 수 없는 이전 세션은 재로그인한다. */
     @Test
-    fun `로그인 계정이 없는 이전 토큰으로 재발급하면 로그인 계정은 null 이다`() {
+    fun `로그인 계정이 없는 이전 토큰은 재발급을 거절한다`() {
         val provider = createProvider()
         val storedToken = provider.generateRefreshToken(memberId.toString(), null)
         val port = FakeRefreshTokenPersistencePort(stored(storedToken))
@@ -119,10 +119,7 @@ class RefreshTokenServiceTest {
 
         val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", storedToken)) }
 
-        val result = service.reissue(request, MockHttpServletResponse())
-
-        assertThat(provider.getLoginIdentity(result.accessToken)).isNull()
-        assertThat(provider.getLoginIdentity(result.refreshToken)).isNull()
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
     }
 
     @Test
@@ -190,6 +187,11 @@ class RefreshTokenServiceTest {
             tokenInjector = JwtTokenInjector(TEST_TOKEN_PROPERTIES, securityProperties),
             tokenProvider = provider,
             deviceIdResolver = DeviceIdResolver(securityProperties),
+            identities =
+                mock(core.application.security.oauth.token.LoginIdentityValidator::class.java).also {
+                    `when`(it.isValid(memberId.value, KAKAO_LOGIN)).thenReturn(true)
+                    `when`(it.isValid(memberId.value, APPLE_LOGIN)).thenReturn(true)
+                },
             members =
                 mock(MemberPersistencePort::class.java).also {
                     `when`(it.lockApprovalTargets(listOf(memberId.value))).thenReturn(listOf(MemberApprovalTarget(memberId.value, MemberStatus.ACTIVE, emptySet(), !loginAvailable)))

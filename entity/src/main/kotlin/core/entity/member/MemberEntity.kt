@@ -25,9 +25,9 @@ class MemberEntity(
     val id: Long,
     @Column(nullable = false)
     val name: String,
-    @Column(unique = true)
+    @Column
     val email: String? = null,
-    @Column(name = "signup_email", nullable = false, unique = true)
+    @Column(name = "signup_email", nullable = false)
     val signupEmail: String,
     @Column
     val part: String? = null,

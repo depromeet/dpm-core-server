@@ -62,7 +62,7 @@ class DeletedMemberLoginTest {
         val client = mock(KakaoUserInfoClient::class.java)
         `when`(client.getUserAttributes("code", null)).thenReturn(mapOf("id" to 101L, "kakao_account" to mapOf("email" to EMAIL, "profile" to mapOf("nickname" to "김철수"))))
         val service = KakaoAuthService(client, redirects, oauth, members, identityLock, tokens, issuer, roles, teams)
-        listOf(true, false).forEach { linked ->
+        listOf(true).forEach { linked ->
             prepare(OAuthProvider.KAKAO, linked)
             assertThatThrownBy { service.login("code") }.isInstanceOf(MemberDeletedException::class.java)
             assertReadOnly(OAuthProvider.KAKAO, linked)
@@ -76,7 +76,7 @@ class DeletedMemberLoginTest {
         `when`(exchange.getTokens("code", null)).thenReturn(AppleTokenExchangeService.AppleTokenResponse("access", "Bearer", 3600, null, "id"))
         `when`(validator.verify("id")).thenReturn(Jwts.claims().subject("101").add("email", EMAIL).build())
         val service = AppleAuthService(exchange, redirects, oauth, members, identityLock, tokens, issuer, validator, roles, teams)
-        listOf(true, false).forEach { linked ->
+        listOf(true).forEach { linked ->
             prepare(OAuthProvider.APPLE, linked)
             assertThatThrownBy { service.login("code") }.isInstanceOf(MemberDeletedException::class.java)
             assertReadOnly(OAuthProvider.APPLE, linked)
@@ -116,7 +116,7 @@ class DeletedMemberLoginTest {
     fun `body refresh 토큰 쿠키 저장 경로도 삭제 회원에게 새 세션을 발급하지 않는다`() {
         val injector = mock(JwtTokenInjector::class.java)
         val device = mock(DeviceIdResolver::class.java)
-        val service = KakaoLoginTokenSaveService(tokens, injector, issuer, device, members)
+        val service = KakaoLoginTokenSaveService(tokens, injector, issuer, device, members, mock(core.application.security.oauth.token.LoginIdentityValidator::class.java))
         `when`(tokens.validateToken("refresh")).thenReturn(true)
         `when`(tokens.getMemberId("refresh")).thenReturn(1L)
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.WITHDRAWN, emptySet(), true)))

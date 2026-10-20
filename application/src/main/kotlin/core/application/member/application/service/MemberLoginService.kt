@@ -14,7 +14,6 @@ import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.security.oauth.dto.LoginResult
 import core.domain.security.oauth.dto.OAuthAttributes
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -93,16 +92,7 @@ class MemberLoginService(
         deviceId: String?,
         loginMethod: LoginMethod,
     ): LoginResult {
-        val existingMembers = memberPersistencePort.findAllBySignupEmail(authAttributes.getEmail())
-        val member =
-            if (existingMembers.isNotEmpty()) {
-                selectLoginCandidate(existingMembers)
-            } else {
-                createOrFindMemberBySignupEmail(
-                    email = authAttributes.getEmail(),
-                    name = authAttributes.getName(),
-                )
-            }
+        val member = createNewMember(authAttributes.getEmail(), authAttributes.getName())
 
         identityLock.lockMember(requireNotNull(member.id))
         if (member.deletedAt != null || member.status == MemberStatus.WITHDRAWN) return LoginResult(null)
@@ -112,37 +102,11 @@ class MemberLoginService(
         return handleExistingMemberLogin(member, deviceId, LoginIdentity(loginMethod, savedOAuth.id!!.value))
     }
 
-    private fun selectLoginCandidate(members: List<Member>): Member {
-        val availableMembers = members.filter { it.deletedAt == null }
-        val activeCandidates = availableMembers.filter { it.isAllowed() }
-        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else availableMembers
-        return eligible.maxByOrNull { it.id?.value ?: 0L } ?: throw MemberIdRequiredException()
-    }
+    private fun recoverOrCreateMemberForOrphanedOAuth(authAttributes: OAuthAttributes): Member =
+        createNewMember(authAttributes.getEmail(), authAttributes.getName())
 
-    private fun recoverOrCreateMemberForOrphanedOAuth(authAttributes: OAuthAttributes): Member {
-        val existingMembers = memberPersistencePort.findAllBySignupEmail(authAttributes.getEmail())
-        return if (existingMembers.isNotEmpty()) {
-            selectLoginCandidate(existingMembers)
-        } else {
-            createOrFindMemberBySignupEmail(
-                email = authAttributes.getEmail(),
-                name = authAttributes.getName(),
-            )
-        }
-    }
-
-    private fun createOrFindMemberBySignupEmail(
+    private fun createNewMember(
         email: String,
         name: String,
-    ): Member =
-        try {
-            memberPersistencePort.save(
-                Member.createPending(
-                    email,
-                    name,
-                ),
-            )
-        } catch (_: DataIntegrityViolationException) {
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
-        }
+    ): Member = memberPersistencePort.save(Member.createPending(email, name))
 }

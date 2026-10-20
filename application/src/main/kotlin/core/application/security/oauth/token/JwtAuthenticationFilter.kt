@@ -20,6 +20,7 @@ class JwtAuthenticationFilter(
     private val jwtTokenResolver: JwtTokenResolver,
     private val objectMapper: ObjectMapper,
     private val members: MemberPersistencePort,
+    private val identities: LoginIdentityValidator,
 ) : OncePerRequestFilter() {
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
@@ -59,7 +60,7 @@ class JwtAuthenticationFilter(
 
         if (authenticatedToken != null) {
             val memberId = runCatching { jwtTokenProvider.getMemberId(authenticatedToken) }.getOrNull()
-            if (memberId == null || !members.isLoginAvailable(memberId)) {
+            if (memberId == null || !members.isLoginAvailable(memberId) || !identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(authenticatedToken))) {
                 SecurityContextHolder.clearContext()
                 writeUnauthorized(response, JwtExceptionCode.TOKEN_INVALID)
                 return
