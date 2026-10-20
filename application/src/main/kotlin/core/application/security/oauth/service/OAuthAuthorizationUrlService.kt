@@ -53,7 +53,7 @@ class OAuthAuthorizationUrlService(
         val result = buildAuthorizationUrl(provider, redirectUri, state)
         val builder = UriComponentsBuilder.fromUriString(result.authorizationUrl)
         if (provider.equals("APPLE", ignoreCase = true)) {
-            builder.queryParam("nonce", nonce).queryParam("response_mode", "form_post")
+            builder.queryParam("nonce", nonce).replaceQueryParam("response_mode", "form_post")
         } else {
             builder.queryParam(
                 "prompt",
