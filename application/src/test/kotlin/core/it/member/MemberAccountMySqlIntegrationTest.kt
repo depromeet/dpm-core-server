@@ -1,5 +1,22 @@
 package core.it.member
 
+import core.application.refreshToken.application.service.RefreshTokenService
+import core.application.refreshToken.application.service.RefreshTokenIssueService
+import core.application.refreshToken.application.exception.TokenInvalidException
+import core.application.security.oauth.token.JwtTokenProvider
+import core.application.security.oauth.token.JwtTokenResolver
+import core.application.security.oauth.token.JwtTokenInjector
+import core.application.security.oauth.token.DeviceIdResolver
+import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+import core.domain.refreshToken.aggregate.RefreshToken
+import core.domain.member.port.outbound.MemberPersistencePort
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.reset
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockHttpServletResponse
+import jakarta.servlet.http.Cookie
+import org.springframework.transaction.support.TransactionTemplate
 import core.application.common.configuration.JooqDslConfig
 import core.application.member.application.exception.MemberAccountException
 import core.application.member.application.exception.MemberOAuthConflictException
@@ -67,11 +84,16 @@ class MemberAccountMySqlIntegrationTest {
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var tx: PlatformTransactionManager
+    @Autowired lateinit var refresh: RefreshTokenService
+    @Autowired lateinit var tokenStore: RefreshTokenPersistencePort
+    @Autowired lateinit var tokenProvider: JwtTokenProvider
+    @Autowired lateinit var issuer: RefreshTokenIssueService
     private val kakao = LoginIdentity(LoginMethod.KAKAO, 10)
     private val apple = LoginIdentity(LoginMethod.APPLE, 11)
 
     @BeforeEach
     fun fixture() {
+        reset(tokenStore, tokenProvider, issuer)
         jdbc.execute("alter table member_oauth modify external_id varchar(255) character set utf8mb4 collate utf8mb4_bin not null")
         listOf("member_oauth_link_requests", "member_credentials", "member_oauth", "member_cohorts", "members").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into members(member_id,name,signup_email,status,created_at) values(1,'홍길동','same@example.com','PENDING',now(6)),(2,'김철수','same@example.com','PENDING',now(6))")
@@ -207,12 +229,60 @@ class MemberAccountMySqlIntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from member_oauth_link_requests", Int::class.java)).isZero()
     }
 
+    @Test
+    fun `해제가 회원 잠금을 선점하면 앞서 토큰을 읽은 재발급도 해제 결과를 확인한다`() {
+        val observed = CountDownLatch(1)
+        val unlinked = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val hash = core.application.refreshToken.application.support.TokenHasher.sha256Hex("refresh")
+        `when`(tokenProvider.validateToken("refresh")).thenReturn(true)
+        `when`(tokenProvider.getLoginIdentity("refresh")).thenReturn(kakao)
+        `when`(tokenStore.findByTokenHash(hash)).thenAnswer {
+            // This consistent read establishes the snapshot before waiting on the member lock.
+            assertThat(jdbc.queryForObject("select count(*) from member_oauth where member_oauth_id=10", Int::class.java)).isEqualTo(1)
+            observed.countDown()
+            RefreshToken(1, MemberId(1), hash, null, Instant.now(), Instant.now().plusSeconds(3600))
+        }
+        `when`(tokenStore.lockByTokenHash(hash)).thenReturn(
+            RefreshToken(1, MemberId(1), hash, null, Instant.now(), Instant.now().plusSeconds(3600)),
+        )
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val first = pool.submit(Callable {
+                TransactionTemplate(tx).executeWithoutResult {
+                    service.unlink(1, apple, 10)
+                    unlinked.countDown()
+                    check(release.await(10, TimeUnit.SECONDS))
+                }
+            })
+            check(unlinked.await(10, TimeUnit.SECONDS))
+            val second = pool.submit(Callable {
+                runCatching { refresh.reissue(MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", "refresh")) }, MockHttpServletResponse()) }
+            })
+            check(observed.await(10, TimeUnit.SECONDS))
+            release.countDown()
+            first.get(10, TimeUnit.SECONDS)
+            assertThat(second.get(10, TimeUnit.SECONDS).exceptionOrNull()).isInstanceOf(TokenInvalidException::class.java)
+            verifyNoInteractions(issuer)
+        } finally {
+            release.countDown()
+            pool.shutdownNow()
+        }
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @EntityScan(basePackages = ["core.entity"])
     @EnableJpaRepositories(basePackages = ["core.persistence"])
     @Import(JooqDslConfig::class, MemberRepository::class, MemberMergeRepository::class, MemberOAuthRepository::class, MemberCredentialRepository::class, MemberAccountRepository::class, MemberIdentityLockService::class, LoginIdentityValidator::class, MemberAccountService::class, MemberAccountLinkRequestService::class)
     class Config {
+        @Bean fun tokenStore(): RefreshTokenPersistencePort = mock(RefreshTokenPersistencePort::class.java)
+        @Bean fun tokenProvider(): JwtTokenProvider = mock(JwtTokenProvider::class.java)
+        @Bean fun issuer(): RefreshTokenIssueService = mock(RefreshTokenIssueService::class.java)
+        @Bean
+        fun refresh(store: RefreshTokenPersistencePort, provider: JwtTokenProvider, issuer: RefreshTokenIssueService, members: MemberPersistencePort, identities: LoginIdentityValidator): RefreshTokenService =
+            RefreshTokenService(store, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider, mock(DeviceIdResolver::class.java), members, identities)
+
         @Bean fun redirects(): OAuthRedirectUriValidator = mock(OAuthRedirectUriValidator::class.java)
 
         @Bean fun urls(): OAuthAuthorizationUrlService = mock(OAuthAuthorizationUrlService::class.java)

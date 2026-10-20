@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
@@ -36,7 +37,7 @@ class RefreshTokenService(
 ) {
     private val logger = KotlinLogging.logger { }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     fun reissue(
         request: HttpServletRequest,
         response: HttpServletResponse,
