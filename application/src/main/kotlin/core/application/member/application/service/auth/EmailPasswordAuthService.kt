@@ -187,7 +187,9 @@ class EmailPasswordAuthService(
         val existingCredential = memberCredentialPersistencePort.findByMemberId(memberId)
 
         // 이메일 추가 연결은 별도 본인 확인을 제공하기 전까지 허용하지 않는다.
-        if (existingCredential == null || oldPassword == null || !passwordEncoder.matches(oldPassword, existingCredential.password)) {
+        if (existingCredential == null || oldPassword == null ||
+            !passwordEncoder.matches(oldPassword, existingCredential.password)
+        ) {
             throw InvalidEmailPasswordException()
         }
         memberCredentialPersistencePort.updatePassword(

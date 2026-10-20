@@ -34,8 +34,14 @@ class MemberAccountService(
         val email = credentials.findByMemberId(MemberId(memberId))?.takeIf { it.password.isNotBlank() }
         val canUnlink = social.size + (if (email == null) 0 else 1) > 1
         return MemberAccountResponse(
-            social.map { ConnectedMemberAccount(requireNotNull(it.id).value, LoginMethod.from(it.provider), it.email, canUnlink) } +
-                listOfNotNull(email?.let { ConnectedMemberAccount(requireNotNull(it.id).value, LoginMethod.EMAIL, it.email, false) }),
+            social.map {
+                ConnectedMemberAccount(requireNotNull(it.id).value, LoginMethod.from(it.provider), it.email, canUnlink)
+            } +
+                listOfNotNull(
+                    email?.let {
+                        ConnectedMemberAccount(requireNotNull(it.id).value, LoginMethod.EMAIL, it.email, false)
+                    },
+                ),
         )
     }
 

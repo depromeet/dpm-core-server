@@ -1,39 +1,32 @@
 package core.it.member
 
-import core.application.refreshToken.application.service.RefreshTokenService
-import core.application.refreshToken.application.service.RefreshTokenIssueService
-import core.application.refreshToken.application.exception.TokenInvalidException
-import core.application.security.oauth.token.JwtTokenProvider
-import core.application.security.oauth.token.JwtTokenResolver
-import core.application.security.oauth.token.JwtTokenInjector
-import core.application.security.oauth.token.DeviceIdResolver
-import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
-import core.domain.refreshToken.aggregate.RefreshToken
-import core.domain.member.port.outbound.MemberPersistencePort
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.Mockito.reset
-import org.springframework.mock.web.MockHttpServletRequest
-import org.springframework.mock.web.MockHttpServletResponse
-import jakarta.servlet.http.Cookie
-import org.springframework.transaction.support.TransactionTemplate
 import core.application.common.configuration.JooqDslConfig
 import core.application.member.application.exception.MemberAccountException
 import core.application.member.application.exception.MemberOAuthConflictException
 import core.application.member.application.service.MemberAccountLinkRequestService
 import core.application.member.application.service.MemberAccountService
 import core.application.member.application.service.MemberIdentityLockService
+import core.application.refreshToken.application.exception.TokenInvalidException
+import core.application.refreshToken.application.service.RefreshTokenIssueService
+import core.application.refreshToken.application.service.RefreshTokenService
 import core.application.security.oauth.redirect.OAuthRedirectUriValidator
 import core.application.security.oauth.service.OAuthAuthorizationUrlService
+import core.application.security.oauth.token.DeviceIdResolver
+import core.application.security.oauth.token.JwtTokenInjector
+import core.application.security.oauth.token.JwtTokenProvider
+import core.application.security.oauth.token.JwtTokenResolver
 import core.application.security.oauth.token.LoginIdentityValidator
 import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberAccountPersistencePort
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
+import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.OAuthLinkRequest
 import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
+import core.domain.refreshToken.aggregate.RefreshToken
+import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import core.domain.security.oauth.dto.KakaoAuthAttributes
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.persistence.member.repository.MemberAccountRepository
@@ -41,6 +34,7 @@ import core.persistence.member.repository.MemberMergeRepository
 import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.oauth.MemberOAuthRepository
 import core.persistence.membercredential.repository.MemberCredentialRepository
+import jakarta.servlet.http.Cookie
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeAll
@@ -49,6 +43,9 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.reset
+import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -58,9 +55,12 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
@@ -84,9 +84,13 @@ class MemberAccountMySqlIntegrationTest {
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var tx: PlatformTransactionManager
+
     @Autowired lateinit var refresh: RefreshTokenService
+
     @Autowired lateinit var tokenStore: RefreshTokenPersistencePort
+
     @Autowired lateinit var tokenProvider: JwtTokenProvider
+
     @Autowired lateinit var issuer: RefreshTokenIssueService
     private val kakao = LoginIdentity(LoginMethod.KAKAO, 10)
     private val apple = LoginIdentity(LoginMethod.APPLE, 11)
@@ -248,17 +252,23 @@ class MemberAccountMySqlIntegrationTest {
         )
         val pool = Executors.newFixedThreadPool(2)
         try {
-            val first = pool.submit(Callable {
-                TransactionTemplate(tx).executeWithoutResult {
-                    service.unlink(1, apple, 10)
-                    unlinked.countDown()
-                    check(release.await(10, TimeUnit.SECONDS))
-                }
-            })
+            val first =
+                pool.submit(
+                    Callable {
+                        TransactionTemplate(tx).executeWithoutResult {
+                            service.unlink(1, apple, 10)
+                            unlinked.countDown()
+                            check(release.await(10, TimeUnit.SECONDS))
+                        }
+                    },
+                )
             check(unlinked.await(10, TimeUnit.SECONDS))
-            val second = pool.submit(Callable {
-                runCatching { refresh.reissue(MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", "refresh")) }, MockHttpServletResponse()) }
-            })
+            val second =
+                pool.submit(
+                    Callable {
+                        runCatching { refresh.reissue(MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", "refresh")) }, MockHttpServletResponse()) }
+                    },
+                )
             check(observed.await(10, TimeUnit.SECONDS))
             release.countDown()
             first.get(10, TimeUnit.SECONDS)
@@ -277,11 +287,19 @@ class MemberAccountMySqlIntegrationTest {
     @Import(JooqDslConfig::class, MemberRepository::class, MemberMergeRepository::class, MemberOAuthRepository::class, MemberCredentialRepository::class, MemberAccountRepository::class, MemberIdentityLockService::class, LoginIdentityValidator::class, MemberAccountService::class, MemberAccountLinkRequestService::class)
     class Config {
         @Bean fun tokenStore(): RefreshTokenPersistencePort = mock(RefreshTokenPersistencePort::class.java)
+
         @Bean fun tokenProvider(): JwtTokenProvider = mock(JwtTokenProvider::class.java)
+
         @Bean fun issuer(): RefreshTokenIssueService = mock(RefreshTokenIssueService::class.java)
+
         @Bean
-        fun refresh(store: RefreshTokenPersistencePort, provider: JwtTokenProvider, issuer: RefreshTokenIssueService, members: MemberPersistencePort, identities: LoginIdentityValidator): RefreshTokenService =
-            RefreshTokenService(store, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider, mock(DeviceIdResolver::class.java), members, identities)
+        fun refresh(
+            store: RefreshTokenPersistencePort,
+            provider: JwtTokenProvider,
+            issuer: RefreshTokenIssueService,
+            members: MemberPersistencePort,
+            identities: LoginIdentityValidator,
+        ): RefreshTokenService = RefreshTokenService(store, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider, mock(DeviceIdResolver::class.java), members, identities)
 
         @Bean fun redirects(): OAuthRedirectUriValidator = mock(OAuthRedirectUriValidator::class.java)
 

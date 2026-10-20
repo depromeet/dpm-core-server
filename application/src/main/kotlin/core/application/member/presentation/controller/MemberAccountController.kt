@@ -44,7 +44,9 @@ class MemberAccountController(
     @PostMapping("/{provider}/authorization")
     @Operation(
         summary = "소셜 계정 연결 시작",
-        description = "KAKAO/APPLE 인증 URL을 발급합니다. 로그인한 회원에게 귀속된 state는 5분간 한 번 사용할 수 있습니다. 인증 완료 후 콜백으로 받은 code와 state를 연결 완료 API에 제출합니다.",
+        description =
+            "KAKAO/APPLE 인증 URL을 발급합니다. 로그인한 회원에게 귀속된 state는 5분간 한 번 사용할 수 있습니다. 인증 완료 후 " +
+                "콜백으로 받은 code와 state를 연결 완료 API에 제출합니다.",
     )
     fun start(
         @CurrentMemberId memberId: Long,
@@ -57,7 +59,9 @@ class MemberAccountController(
     @PostMapping("/{provider}")
     @Operation(
         summary = "소셜 계정 연결 완료",
-        description = "연결 시작 API의 state와 제공자 인증 코드를 제출합니다. 이미 다른 회원에게 연결된 계정은 409로 거절하며 회원을 통합하지 않습니다. 같은 계정을 다시 연결해도 중복 저장하지 않습니다. 실패/만료 시 인증부터 다시 시작해주세요.",
+        description =
+            "연결 시작 API의 state와 제공자 인증 코드를 제출합니다. 이미 다른 회원에게 연결된 계정은 409로 거절하며 회원을 통합하지 " +
+                "않습니다. 같은 계정을 다시 연결해도 중복 저장하지 않습니다. 실패/만료 시 인증부터 다시 시작해주세요.",
     )
     fun link(
         @CurrentMemberId memberId: Long,
@@ -70,7 +74,10 @@ class MemberAccountController(
     @DeleteMapping("/social/{accountId}")
     @Operation(
         summary = "소셜 계정 연결 해제",
-        description = "조회 응답의 소셜 accountId로 해제합니다. 마지막 로그인 수단은 409이며 이메일 해제는 지원하지 않습니다. 해당 수단의 기존 로그인 토큰은 즉시 사용할 수 없고, 해제한 계정으로 로그인하면 신규 가입 절차로 이동합니다. 제공자 서비스의 동의 철회와는 별개입니다.",
+        description =
+            "조회 응답의 소셜 accountId로 해제합니다. 마지막 로그인 수단은 409이며 이메일 해제는 지원하지 않습니다. 해당 수단의 기존 " +
+                "로그인 토큰은 즉시 사용할 수 없고, 해제한 계정으로 로그인하면 신규 가입 절차로 이동합니다. 제공자 서비스의 동의 철회와는 " +
+                "별개입니다.",
     )
     fun unlink(
         @CurrentMemberId memberId: Long,

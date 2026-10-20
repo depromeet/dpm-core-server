@@ -211,7 +211,9 @@ class MemberController(
     @PatchMapping("/v1/members/password")
     @Operation(
         summary = "Set Email Password",
-        description = "Update an existing email password using the current password. Adding an email login account is not supported.",
+        description =
+            "Update an existing email password using the current password. Adding an " +
+                "email login account is not supported.",
     )
     @ApiResponses(
         value = [
