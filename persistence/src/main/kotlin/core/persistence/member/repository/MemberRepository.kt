@@ -52,14 +52,13 @@ import org.jooq.dsl.tables.references.SESSION_FEEDBACKS
 import org.jooq.dsl.tables.references.SESSION_FEEDBACK_ASPECTS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
-import org.jooq.impl.DSL.`when`
 import org.jooq.impl.DSL.exists
 import org.jooq.impl.DSL.field
-import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.max
 import org.jooq.impl.DSL.name
 import org.jooq.impl.DSL.noCondition
 import org.jooq.impl.DSL.selectOne
+import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -200,7 +199,7 @@ class MemberRepository(
             }
     }
 
-    override fun findBySignupEmail(email: String): Member? = memberJpaRepository.findBySignupEmail(email)?.toDomain()
+    override fun findBySignupEmail(email: String): Member? = findAllBySignupEmail(email).singleOrNull()
 
     override fun lockApprovedManagementMemberIds(
         memberIds: List<Long>,
@@ -363,7 +362,12 @@ class MemberRepository(
             .and(MEMBERS.DELETED_AT.isNull)
             .and(MEMBER_ROLES.DELETED_AT.isNull)
             .and(ROLES.NAME.eq(roleName))
-            .and(org.jooq.impl.DSL.field(org.jooq.impl.DSL.name("member_roles", "cohort_id"), Long::class.java).eq(cohortId.value))
+            .and(
+                org.jooq.impl.DSL.field(
+                    org.jooq.impl.DSL.name("member_roles", "cohort_id"),
+                    Long::class.java,
+                ).eq(cohortId.value),
+            )
             .fetch(MEMBERS.MEMBER_ID)
             .filterNotNull()
             .map { MemberId(it) }
@@ -876,7 +880,6 @@ class MemberRepository(
 
     private fun latestMemberTeamsFieldMemberId(table: org.jooq.Table<*> = latestMemberTeams()) =
         table.field(MEMBER_TEAMS.MEMBER_ID)!!
-
 
     companion object {
         private const val LEGACY_DEEPER_AUTHORITY_ID = 1L

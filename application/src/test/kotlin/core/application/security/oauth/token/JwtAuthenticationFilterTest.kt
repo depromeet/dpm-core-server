@@ -7,8 +7,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.springframework.mock.web.MockFilterChain
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
@@ -18,7 +18,8 @@ import org.springframework.security.core.context.SecurityContextHolder
 class JwtAuthenticationFilterTest {
     private val jwtTokenProvider = mock(JwtTokenProvider::class.java)
     private val members = mock(MemberPersistencePort::class.java)
-    private val filter = JwtAuthenticationFilter(jwtTokenProvider, JwtTokenResolver(), ObjectMapper(), members)
+    private val identities = mock(LoginIdentityValidator::class.java)
+    private val filter = JwtAuthenticationFilter(jwtTokenProvider, JwtTokenResolver(), ObjectMapper(), members, identities)
 
     @AfterEach
     fun tearDown() {
@@ -71,6 +72,9 @@ class JwtAuthenticationFilterTest {
         `when`(jwtTokenProvider.getAuthentication("valid")).thenReturn(authentication)
         `when`(jwtTokenProvider.getMemberId("valid")).thenReturn(1L)
         `when`(members.isLoginAvailable(1L)).thenReturn(true)
+        val identity = core.domain.member.vo.LoginIdentity(core.domain.member.enums.LoginMethod.KAKAO, 10)
+        `when`(jwtTokenProvider.getLoginIdentity("valid")).thenReturn(identity)
+        `when`(identities.isValid(1L, identity)).thenReturn(true)
         val request = request().apply { setCookies(Cookie("accessToken", "valid")) }
         val chain = MockFilterChain()
 
@@ -110,6 +114,20 @@ class JwtAuthenticationFilterTest {
             assertThat(response.contentAsString).contains("JWT-401-1")
             assertThat(chain.request).isNull()
             assertThat(SecurityContextHolder.getContext().authentication).isNull()
+        }
+    }
+
+    @Test
+    fun `유효한 서명이어도 해제된 로그인 수단은 access와 refresh 모두 거절한다`() {
+        `when`(jwtTokenProvider.validateToken("unlinked")).thenReturn(true)
+        `when`(jwtTokenProvider.getMemberId("unlinked")).thenReturn(1L)
+        `when`(members.isLoginAvailable(1L)).thenReturn(true)
+        listOf("accessToken", "refreshToken").forEach { cookie ->
+            val response = MockHttpServletResponse()
+            val chain = MockFilterChain()
+            filter.doFilter(request().apply { setCookies(Cookie(cookie, "unlinked")) }, response, chain)
+            assertThat(response.status).isEqualTo(401)
+            assertThat(chain.request).isNull()
         }
     }
 

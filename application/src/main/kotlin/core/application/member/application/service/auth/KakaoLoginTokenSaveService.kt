@@ -5,9 +5,9 @@ import core.application.refreshToken.application.service.RefreshTokenIssueServic
 import core.application.security.oauth.token.DeviceIdResolver
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
-import core.domain.member.vo.MemberId
-import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.vo.MemberId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -21,6 +21,7 @@ class KakaoLoginTokenSaveService(
     private val refreshTokenIssueService: RefreshTokenIssueService,
     private val deviceIdResolver: DeviceIdResolver,
     private val members: MemberPersistencePort,
+    private val identities: core.application.security.oauth.token.LoginIdentityValidator,
 ) {
     private val logger = KotlinLogging.logger { }
 
@@ -46,6 +47,7 @@ class KakaoLoginTokenSaveService(
         val member = members.lockApprovalTargets(listOf(memberId.value)).singleOrNull()
         if (member == null || member.isDeleted || member.status == MemberStatus.WITHDRAWN) throw TokenInvalidException()
         val loginIdentity = jwtTokenProvider.getLoginIdentity(refreshToken)
+        if (!identities.isValid(memberId.value, loginIdentity)) throw TokenInvalidException()
         val deviceId = deviceIdResolver.resolve(request, response)
         val issued = refreshTokenIssueService.issueForLogin(memberId, deviceId, loginIdentity)
 

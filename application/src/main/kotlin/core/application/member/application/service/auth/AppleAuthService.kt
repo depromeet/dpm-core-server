@@ -16,7 +16,6 @@ import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.LoginIdentity
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -60,8 +59,6 @@ class AppleAuthService(
 
         val (member, linkedOAuth) =
             if (memberOAuth == null) {
-                val existingMembers = memberPersistencePort.findAllBySignupEmail(email)
-                val existingMember = selectLoginCandidate(existingMembers)
                 val resolvedFullName =
                     fullName?.trim()?.takeIf { it.isNotBlank() }
                         ?: (claims["name"] as? String)?.trim()?.takeIf { it.isNotBlank() }
@@ -74,24 +71,27 @@ class AppleAuthService(
                     )
 
                 val targetMember =
-                    existingMember
-                        ?: createOrFindMemberBySignupEmail(
-                            email = email,
-                            name = memberName,
-                        )
+                    createNewMember(
+                        email = email,
+                        name = memberName,
+                    )
 
                 identityLock.lockMember(requireNotNull(targetMember.id))
                 validateMemberForLogin(targetMember)
                 val savedOAuth =
-                    memberOAuthPersistencePort.save(
-                        MemberOAuth.of(
-                            externalId = externalId,
-                            provider = OAuthProvider.APPLE,
-                            memberId = targetMember.id!!,
-                            email = email,
-                        ),
-                        targetMember,
-                    )
+                    try {
+                        memberOAuthPersistencePort.save(
+                            MemberOAuth.of(
+                                externalId = externalId,
+                                provider = OAuthProvider.APPLE,
+                                memberId = targetMember.id!!,
+                                email = email,
+                            ),
+                            targetMember,
+                        )
+                    } catch (_: org.springframework.dao.DataIntegrityViolationException) {
+                        throw core.application.member.application.exception.MemberOAuthConflictException()
+                    }
 
                 targetMember to savedOAuth
             } else {
@@ -144,29 +144,12 @@ class AppleAuthService(
             ?: email.substringBefore("@").ifBlank { "Apple User" }
     }
 
-    private fun selectLoginCandidate(members: List<Member>): Member? {
-        val availableMembers = members.filter { it.deletedAt == null }
-        if (availableMembers.isEmpty()) {
-            if (members.isNotEmpty()) throw MemberDeletedException()
-            return null
-        }
-
-        val activeCandidates = availableMembers.filter { it.isAllowed() }
-        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else availableMembers
-        return eligible.maxByOrNull { it.id?.value ?: 0L }
-    }
-
     private fun recoverOrCreateMemberForOrphanedOAuth(
         externalId: String,
         email: String,
         name: String,
     ): Member {
-        val targetMember =
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
-                ?: createOrFindMemberBySignupEmail(
-                    email = email,
-                    name = name,
-                )
+        val targetMember = createNewMember(email, name)
 
         identityLock.lockMember(requireNotNull(targetMember.id))
         validateMemberForLogin(targetMember)
@@ -179,21 +162,10 @@ class AppleAuthService(
         return targetMember
     }
 
-    private fun createOrFindMemberBySignupEmail(
+    private fun createNewMember(
         email: String,
         name: String,
-    ): Member =
-        try {
-            memberPersistencePort.save(
-                Member.createPending(
-                    email = email,
-                    name = name,
-                ),
-            )
-        } catch (_: DataIntegrityViolationException) {
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
-                ?: throw IllegalStateException("Member creation conflicted but no existing member found")
-        }
+    ): Member = memberPersistencePort.save(Member.createPending(email, name))
 
     private fun validateMemberForLogin(member: Member) {
         if (member.deletedAt != null || member.status == core.domain.member.enums.MemberStatus.WITHDRAWN) {
