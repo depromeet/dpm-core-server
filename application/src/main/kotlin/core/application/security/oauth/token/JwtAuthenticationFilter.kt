@@ -33,6 +33,7 @@ class JwtAuthenticationFilter(
             )
 
         private val PUBLIC_LOGIN_PATHS = setOf(
+            "/v1/members/login/auth/apple",
             "/login/email", "/login/auth/apple", "/login/auth/kakao", "/login/auth/kakao/tokens",
             "/login/kakao", "/login/apple", "/login/oauth/authorization/kakao", "/login/oauth/authorization/apple",
         )

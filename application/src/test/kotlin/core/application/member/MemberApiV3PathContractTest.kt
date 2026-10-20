@@ -7,7 +7,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestMapping
 
-/** 마이페이지 조회(me)만 /v3 로 옮기고, 나머지 경로와 메서드 권한은 그대로인지 확인한다. */
+/** 마이페이지 v3 경로와 기존 API 경로, 비밀번호 변경의 본인 인증 계약을 확인한다. */
 class MemberApiV3PathContractTest {
     private fun endpoints(controller: Class<*>): Set<String> {
         val prefix =
@@ -28,7 +28,7 @@ class MemberApiV3PathContractTest {
     }
 
     @Test
-    fun `멤버 API 는 me 만 v3 이고 나머지 경로와 권한은 그대로다`() {
+    fun `멤버 API 경로와 비밀번호 변경의 인증 요구사항을 유지한다`() {
         assertThat(endpoints(MemberController::class.java))
             .containsExactlyInAnyOrder(
                 "POST /v1/members/name/hash-type/validation permitAll()",
@@ -43,7 +43,7 @@ class MemberApiV3PathContractTest {
                 "PATCH /v1/members/status hasAuthority('update:member')",
                 "POST /v1/members/authority/cohort/init/{cohortId}/{memberId} hasAuthority('update:member')",
                 "POST /v1/members/login/auth/apple (none)",
-                "PATCH /v1/members/password (none)",
+                "PATCH /v1/members/password isAuthenticated()",
             )
     }
 }
