@@ -76,13 +76,7 @@ class EmailPasswordAuthService(
                 if (existingMember != null) {
                     existingMember to credential
                 } else {
-                    val membersByEmail = memberPersistencePort.findAllBySignupEmail(email)
-                    if (membersByEmail.isEmpty()) {
-                        throw MemberNotFoundException()
-                    }
-                    val memberByEmail = selectLoginCandidate(membersByEmail)
-                    validateMemberForLogin(memberByEmail)
-                    memberByEmail to relinkCredentialToMember(credential, memberByEmail)
+                    throw MemberNotFoundException()
                 }
             }
 
@@ -180,27 +174,6 @@ class EmailPasswordAuthService(
         }
     }
 
-    private fun relinkCredentialToMember(
-        credential: MemberCredential,
-        member: Member,
-    ): MemberCredential {
-        memberCredentialPersistencePort.deleteByMemberId(credential.memberId)
-        return memberCredentialPersistencePort.save(
-            MemberCredential.create(
-                memberId = member.id!!,
-                email = credential.email,
-                encodedPassword = credential.password,
-            ),
-        )
-    }
-
-    private fun selectLoginCandidate(members: List<Member>): Member {
-        val availableMembers = members.filter { it.deletedAt == null }
-        val activeCandidates = availableMembers.filter { it.isAllowed() }
-        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else availableMembers
-        return eligible.maxByOrNull { it.id?.value ?: 0L } ?: throw MemberNotFoundException()
-    }
-
     /**
      * 회원에게 비밀번호를 설정합니다.
      */
@@ -213,46 +186,26 @@ class EmailPasswordAuthService(
         identityLock.lockMember(memberId)
         val existingCredential = memberCredentialPersistencePort.findByMemberId(memberId)
 
-        // Verify old password if provided and credential exists
-        if (oldPassword != null && existingCredential != null) {
-            if (!passwordEncoder.matches(oldPassword, existingCredential.password)) {
-                throw InvalidEmailPasswordException()
-            }
+        // 이메일 추가 연결은 별도 본인 확인을 제공하기 전까지 허용하지 않는다.
+        if (existingCredential == null || oldPassword == null ||
+            !passwordEncoder.matches(oldPassword, existingCredential.password)
+        ) {
+            throw InvalidEmailPasswordException()
         }
-
-        val encodedPassword = passwordEncoder.encode(newPassword)
-
-        if (existingCredential != null) {
-            // Update existing credential
-            memberCredentialPersistencePort.updatePassword(
-                existingCredential.id!!,
-                encodedPassword,
-                Instant.now(),
-            )
-        } else {
-            // Find member to get email
-            val member =
-                memberPersistencePort.findById(memberId)
-                    ?: throw MemberNotFoundException()
-
-            // Create new credential
-            val newCredential =
-                MemberCredential.create(
-                    memberId = memberId,
-                    email = member.signupEmail,
-                    encodedPassword = encodedPassword,
-                )
-            memberCredentialPersistencePort.save(newCredential)
-        }
+        memberCredentialPersistencePort.updatePassword(
+            existingCredential.id!!,
+            passwordEncoder.encode(newPassword),
+            Instant.now(),
+        )
     }
 
     /**
-     * 회원의 비밀번호 자격 증명을 삭제합니다 (비밀번호 로그인 해제).
+     * 이메일 로그인 해제는 별도 정책 확정 전까지 제공하지 않습니다.
      */
     @Transactional
     fun removePassword(memberId: MemberId) {
         identityLock.lockMember(memberId)
-        memberCredentialPersistencePort.deleteByMemberId(memberId)
+        throw InvalidEmailPasswordException()
     }
 
     /**
