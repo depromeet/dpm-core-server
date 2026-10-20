@@ -32,6 +32,11 @@ class JwtAuthenticationFilter(
                 "/api/v1/auth/kakao/native",
             )
 
+        private val PUBLIC_LOGIN_PATHS = setOf(
+            "/login/email", "/login/auth/apple", "/login/auth/kakao", "/login/auth/kakao/tokens",
+            "/login/kakao", "/login/apple", "/login/oauth/authorization/kakao", "/login/oauth/authorization/apple",
+        )
+
         // 인증이 필요 없는 문서 경로라 토큰을 읽지 않는다.
         private val EXCLUDED_PATH_PREFIXES =
             listOf(
@@ -56,15 +61,15 @@ class JwtAuthenticationFilter(
             }.distinct()
 
         val authenticatedToken =
-            tokenCandidates.firstOrNull { jwtTokenProvider.validateToken(it) }
+            tokenCandidates.firstOrNull { isUsable(it) }
 
+        // An explicit credential cannot silently fall back to a different cookie identity.
+        if (bearerToken != null && authenticatedToken != bearerToken) {
+            SecurityContextHolder.clearContext()
+            writeUnauthorized(response, JwtExceptionCode.TOKEN_INVALID)
+            return
+        }
         if (authenticatedToken != null) {
-            val memberId = runCatching { jwtTokenProvider.getMemberId(authenticatedToken) }.getOrNull()
-            if (memberId == null || !members.isLoginAvailable(memberId) || !identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(authenticatedToken))) {
-                SecurityContextHolder.clearContext()
-                writeUnauthorized(response, JwtExceptionCode.TOKEN_INVALID)
-                return
-            }
             val authentication = jwtTokenProvider.getAuthentication(authenticatedToken)
             SecurityContextHolder.getContext().authentication = authentication
             // 알림은 AsyncAppender 의 워커 스레드에서 조립되어 SecurityContext 를 볼 수 없다.
@@ -80,11 +85,24 @@ class JwtAuthenticationFilter(
             writeUnauthorized(response, JwtExceptionCode.TOKEN_INVALID)
             return
         }
+        if (authenticatedToken == null && tokenCandidates.any { jwtTokenProvider.validateToken(it) }) {
+            SecurityContextHolder.clearContext()
+            if (request.requestURI !in PUBLIC_LOGIN_PATHS) {
+                writeUnauthorized(response, JwtExceptionCode.TOKEN_INVALID)
+                return
+            }
+        }
         // 쿠키 토큰만 유효하지 않은 경우(만료, 다른 환경에서 발급 등)는 무시하고 비로그인 요청으로 진행한다.
         // 쿠키는 Domain=depromeet.com 으로 prod·dev 간에 공유되므로, 여기서 막으면 공개 경로까지 실패한다.
         // 인증이 필요한 경로는 이후 AuthenticationEntryPoint 가 401 로 응답한다.
 
         filterChain.doFilter(request, response)
+    }
+
+    private fun isUsable(token: String): Boolean {
+        if (!jwtTokenProvider.validateToken(token)) return false
+        val memberId = runCatching { jwtTokenProvider.getMemberId(token) }.getOrNull() ?: return false
+        return members.isLoginAvailable(memberId) && identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(token))
     }
 
     /** 필터에서 던진 예외는 GlobalExceptionHandler 가 잡지 못해 500 이 되므로 직접 401 로 응답한다. */
