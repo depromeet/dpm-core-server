@@ -136,7 +136,7 @@ class JwtAuthenticationFilterTest {
         `when`(jwtTokenProvider.validateToken("stale")).thenReturn(true)
         `when`(jwtTokenProvider.getMemberId("stale")).thenReturn(1L)
         `when`(members.isLoginAvailable(1)).thenReturn(true)
-        listOf("/login/email", "/login/auth/apple", "/login/kakao").forEach { path ->
+        listOf("/login/email", "/login/auth/apple", "/v1/members/login/auth/apple", "/login/kakao").forEach { path ->
             val chain = MockFilterChain()
             filter.doFilter(MockHttpServletRequest("POST", path).apply { setCookies(Cookie("accessToken", "stale")) }, MockHttpServletResponse(), chain)
             assertThat(chain.request).isNotNull()
