@@ -7,8 +7,8 @@ import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.service.MemberCommandService
 import core.application.member.application.service.MemberIdentityLockService
 import core.application.member.application.service.MemberLoginService
-import core.application.member.application.service.MemberQueryService
 import core.application.member.application.service.MemberProfileService
+import core.application.member.application.service.MemberQueryService
 import core.application.member.application.service.auth.EmailPasswordAuthService
 import core.application.member.application.service.oauth.MemberOAuthService
 import core.application.member.presentation.request.AppleMemberProfileUpdateRequest
@@ -25,8 +25,8 @@ import core.domain.refreshToken.aggregate.RefreshToken
 import core.domain.security.oauth.dto.KakaoAuthAttributes
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.persistence.member.repository.MemberMergeRepository
-import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.MemberProfileRepository
+import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.oauth.MemberOAuthRepository
 import core.persistence.membercredential.repository.MemberCredentialRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -125,18 +125,30 @@ class MemberIdentityMySqlIntegrationTest {
     }
 
     @Test
-    fun `고아 OAuth 로그인은 잠금 검증 후 기존 회원으로 복구하고 삭제 회원은 복구하지 않는다`() {
+    fun `고아 OAuth 로그인은 같은 이메일 회원에게 자동 연결하지 않는다`() {
         jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider) values (10, 999, 'external', 'KAKAO')")
-        val issuer = stub<RefreshTokenIssueService>()
-        val identity = LoginIdentity(LoginMethod.KAKAO, 10)
-        `when`(issuer.issueForLogin(MemberId(1), null, identity)).thenReturn(RefreshToken(memberId = MemberId(1), tokenHash = "hash", plainToken = "refresh", issuedAt = Instant.now(), expiresAt = Instant.now().plusSeconds(60)))
-        val service = MemberLoginService(members, locks, MemberOAuthService(oauths), issuer, stub(), stub())
+        val service = MemberLoginService(members, locks, MemberOAuthService(oauths), stub(), stub(), stub())
         val attributes = KakaoAuthAttributes("external", "social@example.com", "홍길동", OAuthProvider.KAKAO)
         rc().execute { service.handleLoginSuccess(attributes, null) }
-        assertThat(jdbc.queryForObject("select member_id from member_oauth where member_oauth_id = 10", Long::class.java)).isEqualTo(1)
-        jdbc.update("update members set status = 'WITHDRAWN', deleted_at = now(6) where member_id = 1")
+        val owner = jdbc.queryForObject("select member_id from member_oauth where member_oauth_id = 10", Long::class.java)!!
+        assertThat(owner).isNotEqualTo(1L).isNotEqualTo(999L)
+        assertThat(jdbc.queryForObject("select status from members where member_id = ?", String::class.java, owner)).isEqualTo("PENDING")
+        assertThat(jdbc.queryForObject("select count(*) from members", Int::class.java)).isEqualTo(2)
+        jdbc.update("update members set status = 'WITHDRAWN', deleted_at = now(6) where member_id = ?", owner)
         assertThatThrownBy { rc().execute { service.handleLoginSuccess(attributes, null) } }.isInstanceOf(MemberDeletedException::class.java)
-        assertThat(jdbc.queryForObject("select count(*) from members", Int::class.java)).isEqualTo(1)
+    }
+
+    @Test
+    fun `미연결 소셜 로그인은 이메일이 같아도 새 대기 회원을 만든다`() {
+        val service = MemberLoginService(members, locks, MemberOAuthService(oauths), stub(), stub(), stub())
+        val attributes = KakaoAuthAttributes("fresh", "social@example.com", "홍길동", OAuthProvider.KAKAO)
+        rc().execute { service.handleLoginSuccess(attributes, null) }
+        val owner = oauths.findByProviderAndExternalId(OAuthProvider.KAKAO, "fresh")!!.memberId
+        assertThat(owner).isNotEqualTo(MemberId(1))
+        assertThat(rc().execute { members.findById(owner)!!.status }).isEqualTo(core.domain.member.enums.MemberStatus.PENDING)
+        assertThat(jdbc.queryForObject("select count(*) from members where signup_email='social@example.com'", Int::class.java)).isEqualTo(2)
+        rc().execute { service.handleLoginSuccess(attributes, null) }
+        assertThat(jdbc.queryForObject("select count(*) from members", Int::class.java)).isEqualTo(2)
     }
 
     @Test
@@ -165,38 +177,6 @@ class MemberIdentityMySqlIntegrationTest {
             assertThat(profile.get(1).name).isEqualTo("김철수")
             assertThat(profile.get(1).part).isEqualTo("WEB")
             assertThat(profile.get(1).profileCompletionRequired).isFalse()
-        }
-    }
-
-    @Test
-    fun `고아 OAuth 복구 대상이 잠금 대기 중 삭제되면 연결을 옮기지 않는다`() {
-        jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider) values (10, 999, 'external', 'KAKAO')")
-        val issuer = stub<RefreshTokenIssueService>()
-        val service = MemberLoginService(members, locks, MemberOAuthService(oauths), issuer, stub(), stub())
-        val attributes = KakaoAuthAttributes("external", "social@example.com", "홍길동", OAuthProvider.KAKAO)
-        val started = CountDownLatch(1)
-        val pool = Executors.newSingleThreadExecutor()
-        try {
-            lateinit var future: java.util.concurrent.Future<Result<Any>>
-            rc().executeWithoutResult {
-                locks.lockMember(MemberId(1))
-                jdbc.update("update members set status = 'WITHDRAWN', deleted_at = now(6) where member_id = 1")
-                future =
-                    pool.submit(
-                        Callable {
-                            started.countDown()
-                            runCatching { rc().execute { service.handleLoginSuccess(attributes, null) } as Any }
-                        },
-                    )
-                assertThat(started.await(5, TimeUnit.SECONDS)).isTrue()
-                Thread.sleep(150)
-                assertThat(future.isDone).isFalse()
-            }
-            assertThat(future.get(10, TimeUnit.SECONDS).exceptionOrNull()).isInstanceOf(MemberDeletedException::class.java)
-            assertThat(jdbc.queryForObject("select member_id from member_oauth where member_oauth_id = 10", Long::class.java)).isEqualTo(999)
-            verifyNoInteractions(issuer)
-        } finally {
-            pool.shutdownNow()
         }
     }
 

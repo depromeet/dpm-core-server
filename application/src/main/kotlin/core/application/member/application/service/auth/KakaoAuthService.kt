@@ -15,7 +15,6 @@ import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.LoginIdentity
 import core.domain.security.oauth.dto.OAuthAttributes
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -56,26 +55,24 @@ class KakaoAuthService(
 
         val (member, linkedOAuth) =
             if (memberOAuth == null) {
-                val existingMembers = memberPersistencePort.findAllBySignupEmail(attributes.getEmail())
-                val targetMember =
-                    selectLoginCandidate(existingMembers)
-                        ?: createOrFindMemberBySignupEmail(
-                            email = attributes.getEmail(),
-                            name = attributes.getName(),
-                        )
+                val targetMember = createNewMember(attributes.getEmail(), attributes.getName())
 
                 identityLock.lockMember(requireNotNull(targetMember.id))
                 validateMemberForLogin(targetMember)
                 val savedOAuth =
-                    memberOAuthPersistencePort.save(
-                        core.domain.member.aggregate.MemberOAuth.of(
-                            externalId = attributes.getExternalId(),
-                            provider = attributes.getProvider(),
-                            memberId = targetMember.id!!,
-                            email = attributes.getEmail(),
-                        ),
-                        targetMember,
-                    )
+                    try {
+                        memberOAuthPersistencePort.save(
+                            core.domain.member.aggregate.MemberOAuth.of(
+                                externalId = attributes.getExternalId(),
+                                provider = attributes.getProvider(),
+                                memberId = targetMember.id!!,
+                                email = attributes.getEmail(),
+                            ),
+                            targetMember,
+                        )
+                    } catch (_: org.springframework.dao.DataIntegrityViolationException) {
+                        throw core.application.member.application.exception.MemberOAuthConflictException()
+                    }
 
                 targetMember to savedOAuth
             } else {
@@ -105,12 +102,7 @@ class KakaoAuthService(
     }
 
     private fun recoverOrCreateMemberForOrphanedOAuth(attributes: OAuthAttributes): Member {
-        val targetMember =
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(attributes.getEmail()))
-                ?: createOrFindMemberBySignupEmail(
-                    email = attributes.getEmail(),
-                    name = attributes.getName(),
-                )
+        val targetMember = createNewMember(attributes.getEmail(), attributes.getName())
 
         identityLock.lockMember(requireNotNull(targetMember.id))
         validateMemberForLogin(targetMember)
@@ -123,33 +115,10 @@ class KakaoAuthService(
         return targetMember
     }
 
-    private fun selectLoginCandidate(members: List<Member>): Member? {
-        val availableMembers = members.filter { it.deletedAt == null }
-        if (availableMembers.isEmpty()) {
-            if (members.isNotEmpty()) throw MemberDeletedException()
-            return null
-        }
-
-        val activeCandidates = availableMembers.filter { it.isAllowed() }
-        val eligible = if (activeCandidates.isNotEmpty()) activeCandidates else availableMembers
-        return eligible.maxByOrNull { it.id?.value ?: 0L }
-    }
-
-    private fun createOrFindMemberBySignupEmail(
+    private fun createNewMember(
         email: String,
         name: String,
-    ): Member =
-        try {
-            memberPersistencePort.save(
-                Member.createPending(
-                    email = email,
-                    name = name,
-                ),
-            )
-        } catch (_: DataIntegrityViolationException) {
-            selectLoginCandidate(memberPersistencePort.findAllBySignupEmail(email))
-                ?: throw IllegalStateException("Member creation conflicted but no existing member found")
-        }
+    ): Member = memberPersistencePort.save(Member.createPending(email, name))
 
     private fun validateMemberForLogin(member: Member) {
         if (member.deletedAt != null || member.status == core.domain.member.enums.MemberStatus.WITHDRAWN) {

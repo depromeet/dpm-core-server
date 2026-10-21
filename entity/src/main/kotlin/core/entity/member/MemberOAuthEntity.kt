@@ -16,15 +16,28 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 
 @Entity
-@Table(name = "member_oauth")
+@Table(
+    name = "member_oauth",
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_member_oauth_provider_external",
+            columnNames = ["provider", "external_id"],
+        ),
+    ],
+)
 class MemberOAuthEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_oauth_id", nullable = false, updatable = false)
     val id: Long,
-    @Column(name = "external_id", nullable = false, updatable = false, unique = true)
+    @Column(
+        name = "external_id",
+        nullable = false,
+        updatable = false,
+    )
     val externalId: String,
     @Column(nullable = false)
     val provider: String,

@@ -51,15 +51,19 @@ class MemberOAuthService(
         member: Member,
         authAttribute: OAuthAttributes,
     ): MemberOAuth =
-        memberOAuthPersistencePort.save(
-            MemberOAuth.of(
-                authAttribute.getExternalId(),
-                authAttribute.getProvider(),
-                member.id!!,
-                authAttribute.getEmail(),
-            ),
-            member,
-        )
+        try {
+            memberOAuthPersistencePort.save(
+                MemberOAuth.of(
+                    authAttribute.getExternalId(),
+                    authAttribute.getProvider(),
+                    member.id!!,
+                    authAttribute.getEmail(),
+                ),
+                member,
+            )
+        } catch (_: org.springframework.dao.DataIntegrityViolationException) {
+            throw core.application.member.application.exception.MemberOAuthConflictException()
+        }
 
     fun deleteAllByMemberId(memberId: MemberId) = memberOAuthPersistencePort.deleteAllByMemberId(memberId)
 }
