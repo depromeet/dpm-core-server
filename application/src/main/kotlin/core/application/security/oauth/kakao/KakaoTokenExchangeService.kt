@@ -32,6 +32,26 @@ class KakaoTokenExchangeService(
         return getUserAttributesByAccessToken(tokenResponse.accessToken)
     }
 
+    fun getLinkUserAttributes(
+        authorizationCode: String,
+        redirectUri: String,
+        codeVerifier: String,
+    ): Map<String, Any> {
+        val registration =
+            clientRegistrationRepository.findByRegistrationId(KAKAO_REGISTRATION_ID)
+                ?: throw IllegalStateException("Kakao OAuth registration is missing")
+        val token =
+            exchangeToken(
+                authorizationCode,
+                redirectUri,
+                registration.clientId,
+                registration.clientSecret,
+                registration.providerDetails.tokenUri,
+                codeVerifier,
+            )
+        return getUserAttributesByAccessToken(token.accessToken)
+    }
+
     override fun getServiceUserIdByAccessToken(accessToken: String): Long {
         val userInfo = getUserAttributesByAccessToken(accessToken)
         val id = userInfo["id"] ?: throw IllegalStateException("Failed to retrieve Kakao user id")
@@ -60,6 +80,7 @@ class KakaoTokenExchangeService(
         clientId: String,
         clientSecret: String?,
         tokenUri: String,
+        codeVerifier: String? = null,
     ): KakaoTokenResponse {
         val formData =
             LinkedMultiValueMap<String, String>().apply {
@@ -70,6 +91,7 @@ class KakaoTokenExchangeService(
                 }
                 add("redirect_uri", redirectUri)
                 add("code", authorizationCode)
+                codeVerifier?.let { add("code_verifier", it) }
             }
 
         return restClient.post()

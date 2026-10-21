@@ -244,16 +244,19 @@ class MemberAdmissionMySqlIntegrationTest {
         jdbc.update("update members set status = 'REJECTED', part = 'SERVER', profile_completed_at = '2026-10-01 01:00:00' where member_id in (1, 2)")
         jdbc.update("update members set status = 'ACTIVE', profile_completed_at = '2026-10-01 01:00:00' where member_id = 3")
         jdbc.update("insert into member_admission_events (member_id, event_type, created_at) values (1, 'REJECTED', '2026-10-01 02:00:00'), (2, 'REJECTED', '2026-10-01 00:00:00'), (3, 'REJECTED', '2026-10-01 02:00:00')")
-        val relative = "db/pending/2610180100_rejected_member_profile_completion.sql"
         val root =
             generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
-                .first { java.nio.file.Files.exists(it.resolve(relative)) }
+                .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
+        val sql = java.nio.file.Files.walk(root.resolve("db")).use { paths ->
+            paths.filter { it.fileName.toString() == "2610180100_rejected_member_profile_completion.sql" }
+                .findFirst().orElseThrow()
+        }
 
         fun applySql() {
             jdbc.dataSource!!.connection.use { connection ->
                 org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(
                     connection,
-                    org.springframework.core.io.FileSystemResource(root.resolve(relative)),
+                    org.springframework.core.io.FileSystemResource(sql),
                 )
             }
         }

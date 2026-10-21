@@ -43,6 +43,26 @@ class OAuthAuthorizationUrlService(
         )
     }
 
+    fun buildLinkAuthorizationUrl(
+        provider: String,
+        redirectUri: String,
+        state: String,
+        nonce: String,
+        codeChallenge: String,
+    ): OAuthAuthorizationUrl {
+        val result = buildAuthorizationUrl(provider, redirectUri, state)
+        val builder = UriComponentsBuilder.fromUriString(result.authorizationUrl)
+        if (provider.equals("APPLE", ignoreCase = true)) {
+            builder.queryParam("nonce", nonce).replaceQueryParam("response_mode", "form_post")
+        } else {
+            builder.queryParam(
+                "prompt",
+                "login",
+            ).queryParam("code_challenge", codeChallenge).queryParam("code_challenge_method", "S256")
+        }
+        return result.copy(authorizationUrl = builder.build(true).toUriString())
+    }
+
     private fun generateState(): String {
         val bytes = ByteArray(32)
         secureRandom.nextBytes(bytes)
