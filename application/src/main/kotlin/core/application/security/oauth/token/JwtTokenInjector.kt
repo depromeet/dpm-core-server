@@ -53,6 +53,19 @@ class JwtTokenInjector(
         )
     }
 
+    fun invalidateAccessToken(response: HttpServletResponse) {
+        response.addHeader(
+            SET_COOKIE_HEADER,
+            buildCookie(
+                name = ACCESS_TOKEN_CAMEL_CASE,
+                value = "",
+                maxAgeSeconds = 0,
+                secure = securityProperties.cookie.secure,
+                sameSite = SAME_SITE_LAX,
+            ),
+        )
+    }
+
     fun invalidateRefreshToken(response: HttpServletResponse) {
         val secure = securityProperties.cookie.secure
         response.addHeader(
