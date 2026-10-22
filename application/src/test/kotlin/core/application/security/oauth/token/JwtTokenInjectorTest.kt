@@ -4,6 +4,8 @@ import core.application.security.properties.SecurityProperties
 import core.application.security.properties.TokenProperties
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.mock.web.MockHttpServletResponse
 
 class JwtTokenInjectorTest {
@@ -48,7 +50,36 @@ class JwtTokenInjectorTest {
         assertThat(cookieHeader).contains("Max-Age=0")
     }
 
-    private fun createInjector(cookieDomain: String): JwtTokenInjector =
+    @ParameterizedTest
+    @CsvSource(".example.com,true", ".example.com,false", "localhost,true", "localhost,false", "'',true", "'',false")
+    fun `invalidate access token expires the issued cookie with matching attributes`(
+        cookieDomain: String,
+        secure: Boolean,
+    ) {
+        val injector = createInjector(cookieDomain, secure)
+        val issued = MockHttpServletResponse()
+        val expired = MockHttpServletResponse()
+
+        injector.injectAccessToken("access-token", issued)
+        injector.invalidateAccessToken(expired)
+
+        val issuedCookie = requireNotNull(issued.getCookie("accessToken"))
+        val expiredCookie = requireNotNull(expired.getCookie("accessToken"))
+        assertThat(expiredCookie.value).isEmpty()
+        assertThat(expiredCookie.maxAge).isZero()
+        assertThat(expiredCookie.domain).isEqualTo(issuedCookie.domain)
+        assertThat(expiredCookie.domain).isEqualTo(if (cookieDomain == ".example.com") "example.com" else null)
+        assertThat(expiredCookie.path).isEqualTo(issuedCookie.path).isEqualTo("/")
+        assertThat(expiredCookie.secure).isEqualTo(issuedCookie.secure).isEqualTo(secure)
+        assertThat(expiredCookie.isHttpOnly).isEqualTo(issuedCookie.isHttpOnly).isTrue()
+        assertThat(expiredCookie.getAttribute("SameSite")).isEqualTo(issuedCookie.getAttribute("SameSite")).isEqualTo("Lax")
+        assertThat(expired.getHeader("Set-Cookie")).contains("Max-Age=0", "Expires=")
+    }
+
+    private fun createInjector(
+        cookieDomain: String,
+        secure: Boolean = true,
+    ): JwtTokenInjector =
         JwtTokenInjector(
             tokenProperties =
                 TokenProperties(
@@ -66,7 +97,7 @@ class JwtTokenInjectorTest {
                         SecurityProperties.Cookie(
                             domain = cookieDomain,
                             httpOnly = true,
-                            secure = true,
+                            secure = secure,
                         ),
                 ),
         )

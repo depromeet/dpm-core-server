@@ -36,7 +36,7 @@ class CustomLogoutSuccessHandler(
     }
 
     /**
-     * 로그아웃 성공 시 호출된다. 클라이언트의 Refresh Token 쿠키를 무효화하고,
+     * 로그아웃 성공 시 호출된다. 클라이언트의 Access Token과 Refresh Token 쿠키를 무효화하고,
      * 요청이 제시한 리프레시 토큰에 해당하는 **현재 기기의 세션만** 서버에서 삭제한다.
      *
      * 리프레시 토큰을 식별할 수 없으면 기존 동작(전 기기 로그아웃)으로 폴백한다.
@@ -50,6 +50,7 @@ class CustomLogoutSuccessHandler(
         response: HttpServletResponse,
         authentication: Authentication?,
     ) {
+        tokenInjector.invalidateAccessToken(response)
         tokenInjector.invalidateRefreshToken(response)
 
         if (destroyCurrentDeviceSession(request)) {
