@@ -102,6 +102,16 @@ attendance:
 member:
   default-team-id: ${DEFAULT_TEAM_ID:0}
 image:
+  # 이미지 저장소 선택: oci(기본) | r2
+  provider: ${IMAGE_STORAGE_PROVIDER:oci}
+  # Cloudflare R2 (provider=r2 일 때만 쓴다). 값이 비어도 기동은 되고 이미지 API 만 503 이 된다.
+  r2:
+    account-id: ${R2_ACCOUNT_ID:}
+    access-key-id: ${R2_ACCESS_KEY_ID:}
+    secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+    bucket: ${R2_BUCKET:}
+    # 비우면 https://{account-id}.r2.cloudflarestorage.com
+    endpoint: ${R2_ENDPOINT:}
   # OCI Object Storage (비공개 버킷). 값이 비어도 기동은 되고 이미지 API 만 503 이 된다.
   storage:
     auth-mode: ${OCI_AUTH_MODE:instance-principal}

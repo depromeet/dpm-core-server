@@ -23,6 +23,13 @@ dependencies {
     implementation(platform(libs.oci.sdk.bom))
     implementation(libs.oci.sdk.objectstorage)
     implementation(libs.oci.sdk.common.httpclient.jersey3)
+    implementation(platform(libs.aws.sdk.bom))
+    implementation(libs.aws.sdk.s3) {
+        // HTTP 클라이언트는 url-connection-client 하나만 쓴다.
+        exclude(group = "software.amazon.awssdk", module = "apache-client")
+        exclude(group = "software.amazon.awssdk", module = "netty-nio-client")
+    }
+    implementation(libs.aws.sdk.url.connection.client)
 
     runtimeOnly(libs.mysql.connector)
 
