@@ -50,6 +50,12 @@ jobs:
       OCI_REGION: ${{ vars.PROD_OCI_REGION }}
       OCI_OBJECT_STORAGE_NAMESPACE: ${{ vars.PROD_OCI_OBJECT_STORAGE_NAMESPACE }}
       OCI_AUTH_MODE: instance-principal
+      # 이미지 저장소. PROD_IMAGE_STORAGE_PROVIDER=r2 일 때만 R2 키를 서버 .env 에 반영한다.
+      IMAGE_STORAGE_PROVIDER: ${{ vars.PROD_IMAGE_STORAGE_PROVIDER }}
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ vars.PROD_R2_BUCKET }}
+      R2_ACCESS_KEY_ID: ${{ secrets.PROD_R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.PROD_R2_SECRET_ACCESS_KEY }}
       DEPLOY_COMMIT: ${{ github.sha }}
       APP_DIR: /opt/dpm/prod
       HEALTH_URL: http://127.0.0.1:8080/actuator/health
@@ -58,6 +64,13 @@ jobs:
         run: |
           for v in "$OCI_OBJECT_STORAGE_BUCKET" "$OCI_REGION" "$OCI_OBJECT_STORAGE_NAMESPACE" "$OCI_AUTH_MODE"; do
             case "$v" in ''|*[!A-Za-z0-9._-]*) echo "OCI 저장소 변수(PROD_OCI_*)가 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
+          done
+
+      - name: "R2 설정값을 검증한다."
+        if: env.IMAGE_STORAGE_PROVIDER == 'r2'
+        run: |
+          for v in "$R2_ACCOUNT_ID" "$R2_BUCKET" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY"; do
+            case "$v" in ''|*[!A-Za-z0-9._-]*) echo "R2 저장소 값(R2_ACCOUNT_ID, PROD_R2_*)이 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
           done
 
       - name: "레포지토리를 체크아웃한다."
@@ -94,7 +107,7 @@ jobs:
           username: ${{ secrets.DEV_SERVER_USERNAME }}
           key: ${{ secrets.DEV_SERVER_SSH_KEY }}
           command_timeout: 10m
-          envs: OCI_OBJECT_STORAGE_BUCKET,OCI_REGION,OCI_OBJECT_STORAGE_NAMESPACE,OCI_AUTH_MODE,DEPLOY_COMMIT,APP_DIR,HEALTH_URL
+          envs: OCI_OBJECT_STORAGE_BUCKET,OCI_REGION,OCI_OBJECT_STORAGE_NAMESPACE,OCI_AUTH_MODE,IMAGE_STORAGE_PROVIDER,R2_ACCOUNT_ID,R2_BUCKET,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,DEPLOY_COMMIT,APP_DIR,HEALTH_URL
           script: |
             set -e
 
@@ -126,6 +139,31 @@ jobs:
               mv -f "$tmp" "$env_file"
               trap - EXIT
             )
+
+            # PROD_IMAGE_STORAGE_PROVIDER=r2 일 때만 저장소 선택과 R2 키를 GitHub 값으로 교체한다. 비어 있으면 .env 의 기존 값을 그대로 둔다.
+            if [ "$IMAGE_STORAGE_PROVIDER" = "r2" ]; then
+              for v in "$R2_ACCOUNT_ID" "$R2_BUCKET" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY"; do
+                case "$v" in ''|*[!A-Za-z0-9._-]*) echo "R2 설정값이 비어 있거나 허용되지 않은 문자를 포함한다"; exit 1;; esac
+              done
+              (
+                set -e
+                umask 077
+                env_file="$APP_DIR/.env"
+                tmp=$(mktemp "$APP_DIR/.env.r2.XXXXXX")
+                trap 'rm -f "$tmp"' EXIT
+                { grep -vE '^(export[[:space:]]+)?(IMAGE_STORAGE_PROVIDER|R2_(ACCOUNT_ID|BUCKET|ACCESS_KEY_ID|SECRET_ACCESS_KEY))=' "$env_file" || [ $? -eq 1 ]; } > "$tmp"
+                printf '%s=%s\n' \
+                  IMAGE_STORAGE_PROVIDER r2 \
+                  R2_ACCOUNT_ID "$R2_ACCOUNT_ID" \
+                  R2_BUCKET "$R2_BUCKET" \
+                  R2_ACCESS_KEY_ID "$R2_ACCESS_KEY_ID" \
+                  R2_SECRET_ACCESS_KEY "$R2_SECRET_ACCESS_KEY" >> "$tmp"
+                chown dpm:dpm "$tmp"
+                chmod 600 "$tmp"
+                mv -f "$tmp" "$env_file"
+                trap - EXIT
+              )
+            fi
 
             systemctl stop dpm@prod
             install -o dpm -g dpm -m 644 "$JAR_SRC" "$APP_DIR/app.jar"
