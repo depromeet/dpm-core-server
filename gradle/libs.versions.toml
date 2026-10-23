@@ -31,6 +31,8 @@ mysql = "8.0.33"
 
 # OCI SDK
 oci_sdk = "3.97.1"
+# AWS SDK (Cloudflare R2, S3 호환)
+aws_sdk = "2.57.3"
 
 
 [plugins]
@@ -87,6 +89,11 @@ mysql_connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql
 oci_sdk_bom = { module = "com.oracle.oci.sdk:oci-java-sdk-bom", version.ref = "oci_sdk" }
 oci_sdk_objectstorage = { module = "com.oracle.oci.sdk:oci-java-sdk-objectstorage" }
 oci_sdk_common_httpclient_jersey3 = { module = "com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3" }
+
+# AWS SDK (Cloudflare R2 는 S3 호환 API 로 쓴다)
+aws_sdk_bom = { module = "software.amazon.awssdk:bom", version.ref = "aws_sdk" }
+aws_sdk_s3 = { module = "software.amazon.awssdk:s3" }
+aws_sdk_url_connection_client = { module = "software.amazon.awssdk:url-connection-client" }
 
 # Junit
 kotlin_test_junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
