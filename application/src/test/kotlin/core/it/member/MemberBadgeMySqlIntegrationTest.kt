@@ -138,7 +138,7 @@ class MemberBadgeMySqlIntegrationTest {
 
     @Test
     fun `중복 의심 회원도 개별 승인과 반려가 가능하다`() {
-        assertThat(managementTargets.findAll(19).filter { it.memberId in listOf(1L, 2L) }).allMatch { it.duplicateSuspected }
+        assertThat(managementTargets.findAll(19).filter { it.memberId in listOf(1L, 2L) }).hasSize(2).allMatch { it.duplicateSuspected }
         approvals.approve(listOf(1))
         admission.reject(2)
         assertThat(jdbc.queryForObject("select status from members where member_id = 1", String::class.java)).isEqualTo("ACTIVE")
@@ -337,7 +337,7 @@ class MemberBadgeMySqlIntegrationTest {
         val first = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         attendance.updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(first), MemberId(1), AttendanceStatus.ABSENT))
         assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(1)
-        repeat(4) { sessions.createSession(command.copy(week = it + 2)) }
+        repeat(4) { sessions.createSession(command.copy(date = command.date.plusSeconds((it + 1) * 86400L), week = it + 2)) }
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
         val last = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         sessions.softDeleteSession(SessionId(last))
@@ -351,14 +351,19 @@ class MemberBadgeMySqlIntegrationTest {
         MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
         val start = Instant.parse("2026-11-01T03:00:00Z")
-        repeat(10) { sessions.createSession(SessionCreateCommand(start, it + 1, "온라인", "테스트 세션", true, start, start.plusSeconds(600), start.plusSeconds(1200))) }
+        repeat(10) {
+            val sessionStart = start.plusSeconds(it * 86400L)
+            sessions.createSession(SessionCreateCommand(sessionStart, it + 1, "온라인", "테스트 세션", true, sessionStart, sessionStart.plusSeconds(600), sessionStart.plusSeconds(1200)))
+        }
         val ids = jdbc.queryForList("select session_id from sessions order by session_id limit 3", Long::class.java)
-        ids.forEach { attendance.closeExpiredAttendances(SessionId(it), start.plusSeconds(1201)) }
+        ids.forEachIndexed { index, id ->
+            attendance.closeExpiredAttendances(SessionId(id), start.plusSeconds(index * 86400L + 1201))
+        }
         assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(3)
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isTrue()
         val code = jdbc.queryForObject("select attendance_code from sessions where session_id = ?", String::class.java, ids.last())!!
         (1L..3L).forEach { memberId ->
-            attendance.attendSession(AttendanceRecordCommand(SessionId(ids.last()), MemberId(memberId), start.plusSeconds(1), code))
+            attendance.attendSession(AttendanceRecordCommand(SessionId(ids.last()), MemberId(memberId), start.plusSeconds(2 * 86400L + 1), code))
         }
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
     }

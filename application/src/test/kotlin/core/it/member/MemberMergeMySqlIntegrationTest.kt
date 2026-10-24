@@ -75,8 +75,8 @@ class MemberMergeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
-        core.it.member.MemberActivityFixtures.clear(jdbc)
-        listOf("member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_credentials", "member_oauth", "member_roles", "member_teams", "member_cohorts", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
+        MemberActivityFixtures.clear(jdbc)
+        listOf("attendances", "member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_credentials", "member_oauth", "member_roles", "member_teams", "member_cohorts", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER'), (2, 'GUEST')")
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (1, 1, 19, 0, 0)")
@@ -121,8 +121,10 @@ class MemberMergeMySqlIntegrationTest {
         jdbc.update("update member_roles set role_id = 1 where member_id = 1")
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (18, '18', false, 0, 0)")
         jdbc.update("insert into member_cohorts (member_id, cohort_id) values (1, 18)")
+        jdbc.update("insert into attendances (session_id, member_id, status, attended_at, updated_at) values (19, 1, 'PRESENT', now(6), now(6))")
+        MemberActivityFixtures.seed(jdbc)
         val before =
-            listOf("members", "member_cohorts", "member_roles", "member_teams").associateWith {
+            listOf("members", "member_cohorts", "member_roles", "member_teams", "attendances").associateWith {
                 jdbc.queryForList("select * from $it where member_id = 1")
             }
 

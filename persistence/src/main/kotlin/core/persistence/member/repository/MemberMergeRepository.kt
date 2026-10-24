@@ -46,10 +46,18 @@ class MemberMergeRepository(private val dsl: DSLContext) : MemberMergePersistenc
             .where(MEMBERS.MEMBER_ID.eq(memberId)).execute()
     }
 
-    override fun recordMerge(actorId: Long, retainedId: Long, sourceId: Long) {
+    override fun recordMerge(
+        actorId: Long,
+        retainedId: Long,
+        sourceId: Long,
+    ) {
         dsl.execute(
-            "INSERT INTO member_merge_events (actor_member_id, retained_member_id, source_member_id, created_at) VALUES (?, ?, ?, ?)",
-            actorId, retainedId, sourceId, Timestamp.from(Instant.now()),
+            "INSERT INTO member_merge_events (actor_member_id, retained_member_id, source_member_id, created_at) " +
+                "VALUES (?, ?, ?, ?)",
+            actorId,
+            retainedId,
+            sourceId,
+            Timestamp.from(Instant.now()),
         )
     }
 }

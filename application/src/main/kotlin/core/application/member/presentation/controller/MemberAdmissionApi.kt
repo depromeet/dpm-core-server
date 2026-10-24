@@ -20,7 +20,9 @@ interface MemberAdmissionApi {
                 "같은 provider의 서로 다른 계정과 비밀번호 로그인 정보가 있는 계정은 통합할 수 없습니다. " +
                 "처리자·대상·시점을 기록하며 모든 변경을 한 트랜잭션으로 처리합니다. 실패하면 전체 취소하고 이미 처리된 대상은 거절합니다. " +
                 "중복 의심은 병합을 강제하지 않습니다. 다른 사람이라면 일반 승인 API, 승인 불가라면 반려 API를 사용합니다. " +
-                "확인 화면의 후보는 GET /v3/members/overview에서 approvalStatus=APPROVED/PENDING을 각각 조회합니다. 운영진·코어도 포함하려면 excludeStaff=false를 사용하고 search와 페이지를 확인해 name, cohortId, email을 표시합니다. " +
+                "확인 화면의 후보는 GET /v3/members/overview에서 approvalStatus=APPROVED/PENDING을 각각 조회합니다. " +
+                "운영진·코어도 포함하려면 excludeStaff=false를 사용하고 search와 페이지를 확인합니다. 이름·이메일은 name, email을 " +
+                "표시하고 기수는 GET /v1/cohorts의 cohortId와 cohortNumber를 매핑합니다. cohortId 자체는 기수 번호가 아닙니다. " +
                 "이름·파트 일치만으로 자동 병합하지 말고 동일인 여부와 남길 회원을 확인해야 합니다.",
     )
     @ApiResponses(
