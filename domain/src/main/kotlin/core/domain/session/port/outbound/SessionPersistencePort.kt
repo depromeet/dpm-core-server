@@ -23,6 +23,17 @@ interface SessionPersistencePort {
 
     fun save(session: Session): Session
 
+    /**
+     * 기수·날짜 구간([rangeStartInclusive], [rangeEndExclusive])에 삭제되지 않은 세션이 있는지.
+     * [excludeSessionId]가 있으면 그 세션은 제외한다(수정 시 자기 자신).
+     */
+    fun existsByCohortIdAndDateRange(
+        cohortId: Long,
+        rangeStartInclusive: Instant,
+        rangeEndExclusive: Instant,
+        excludeSessionId: Long? = null,
+    ): Boolean
+
     fun findSessionsWithAttendanceStartTimeBetween(
         cohortId: CohortId,
         startTime: Instant,

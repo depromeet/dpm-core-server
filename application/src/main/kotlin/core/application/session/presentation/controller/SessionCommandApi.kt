@@ -21,6 +21,7 @@ interface SessionCommandApi {
             "세션 기본 정보와 출결 시간을 설정합니다. attendanceStart/lateStart/absentStart 를 모두 생략하면 " +
                 "서버 기본값(기본: 시작 10분 전 출석 시작, 15분 후 지각, 30분 후 마감)을 date 기준으로 계산해 저장하고, " +
                 "모두 입력하면 그대로 사용합니다(순서 오류 SESSION-400-08, 일부만 입력 SESSION-400-09). " +
+                "같은 기수에 Asia/Seoul 기준 같은 달력일 세션이 이미 있으면 SESSION-409-01. " +
                 "feedbackEnabled=true 이면 feedbackStartAt 필수(현재 이후). 종료 시각은 startAt+72h 로 저장.",
         requestBody =
             RequestBody(
@@ -82,6 +83,10 @@ interface SessionCommandApi {
                 responseCode = "400",
                 description = "SESSION-400-08 출석 시각 순서 오류, SESSION-400-09 출석 시각 일부만 입력",
             ),
+            ApiResponse(
+                responseCode = "409",
+                description = "SESSION-409-01 같은 기수·같은 날짜(KST) 세션이 이미 있음",
+            ),
         ],
     )
     fun createSession(request: SessionCreateRequest): CustomResponse<Void>
@@ -91,6 +96,7 @@ interface SessionCommandApi {
         description =
             "세션을 수정하고 연관된 멤버의 출석 상태를 갱신 합니다. 출석 시각 세 개는 모두 필요하며 " +
                 "출석 시작 < 지각 시작 < 출석 마감 순서여야 합니다(SESSION-400-08). " +
+                "날짜를 다른 세션이 있는 KST 달력일로 바꾸면 SESSION-409-01. " +
                 "인증 기록은 새 시각으로 다시 판정하고, 운영진이 변경한 기록은 유지합니다. " +
                 "마감이 연장되면 자동 결석만 다시 인증할 수 있도록 PENDING 으로 돌아갑니다. " +
                 "feedbackEnabled 생략(null)이면 기존 피드백 설정 유지, false 일 때만 OFF. " +
@@ -154,6 +160,10 @@ interface SessionCommandApi {
                         schema = Schema(implementation = CustomResponse::class),
                     ),
                 ],
+            ),
+            ApiResponse(
+                responseCode = "409",
+                description = "SESSION-409-01 같은 기수·같은 날짜(KST)에 다른 세션이 이미 있음",
             ),
         ],
     )

@@ -1,6 +1,7 @@
 package core.application.session.application.service
 
 import core.application.attendance.application.properties.AttendancePolicyProperties
+import core.application.session.application.exception.DuplicateSessionDateException
 import core.application.session.application.exception.InvalidAttendanceTimeOrderException
 import core.application.session.application.exception.PartialAttendanceTimesException
 import core.application.support.AttendanceTestFixture
@@ -55,6 +56,38 @@ class SessionCommandServiceTest {
         assertThat(created.attendancePolicy.attendanceStart).isEqualTo(attendanceStart)
         assertThat(created.attendancePolicy.lateStart).isEqualTo(lateStart)
         assertThat(created.attendancePolicy.absentStart).isEqualTo(absentStart)
+    }
+
+    @Test
+    fun `같은 기수 같은 KST 날짜에 세션이 있으면 생성과 날짜 변경이 409 이다`() {
+        val kst = ZoneId.of("Asia/Seoul")
+        val morning = LocalDateTime.of(2026, 10, 10, 10, 0).atZone(kst).toInstant()
+        val evening = LocalDateTime.of(2026, 10, 10, 18, 0).atZone(kst).toInstant()
+        val nextDay = LocalDateTime.of(2026, 10, 11, 14, 0).atZone(kst).toInstant()
+
+        fixture.sessionCommandService.createSession(createCommand(morning))
+        assertThatThrownBy { fixture.sessionCommandService.createSession(createCommand(evening)) }
+            .isInstanceOf(DuplicateSessionDateException::class.java)
+        assertThat(fixture.sessions.all()).hasSize(1)
+
+        fixture.sessionCommandService.createSession(createCommand(nextDay))
+        val next = fixture.sessions.all().first { it.date == nextDay }
+        assertThatThrownBy {
+            fixture.sessionCommandService.updateSession(
+                updateCommand(next, next.attendancePolicy.lateStart, next.attendancePolicy.absentStart).copy(date = evening),
+            )
+        }.isInstanceOf(DuplicateSessionDateException::class.java)
+        assertThat(fixture.sessions.stored(next.id!!.value).date).isEqualTo(nextDay)
+
+        // 같은 세션의 시각만 바꾸거나, 삭제한 날에는 다시 등록할 수 있다
+        fixture.sessionCommandService.updateSession(
+            updateCommand(next, next.attendancePolicy.lateStart, next.attendancePolicy.absentStart)
+                .copy(date = LocalDateTime.of(2026, 10, 11, 16, 0).atZone(kst).toInstant()),
+        )
+        val morningSession = fixture.sessions.all().first { it.date == morning }
+        fixture.sessionCommandService.softDeleteSession(morningSession.id!!)
+        fixture.sessionCommandService.createSession(createCommand(evening))
+        assertThat(fixture.sessions.all().count { it.deletedAt == null }).isEqualTo(2)
     }
 
     @Test
