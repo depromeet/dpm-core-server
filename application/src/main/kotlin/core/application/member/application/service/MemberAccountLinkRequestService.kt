@@ -29,6 +29,32 @@ class MemberAccountLinkRequestService(
     private val urls: OAuthAuthorizationUrlService,
 ) {
     @Transactional
+    fun startNativeKakao(
+        memberId: Long,
+        identity: LoginIdentity?,
+    ): String {
+        locks.lockMember(MemberId(memberId))
+        if (!identities.isValid(memberId, identity)) {
+            throw MemberAccountException(MemberExceptionCode.MEMBER_ACCOUNT_REAUTH_REQUIRED)
+        }
+        val state =
+            Base64.getUrlEncoder().withoutPadding().encodeToString(
+                ByteArray(32).also { SecureRandom().nextBytes(it) },
+            )
+        accounts.saveLinkRequest(
+            OAuthLinkRequest(
+                TokenHasher.sha256Hex(state),
+                memberId,
+                OAuthProvider.KAKAO,
+                NATIVE_KAKAO_REDIRECT,
+                "",
+                Instant.now().plusSeconds(300),
+            ),
+        )
+        return state
+    }
+
+    @Transactional
     fun start(
         memberId: Long,
         identity: LoginIdentity?,
@@ -69,12 +95,27 @@ class MemberAccountLinkRequestService(
         memberId: Long,
         provider: OAuthProvider,
         state: String,
+    ): OAuthLinkRequest = consumeRequest(memberId, provider, state, native = false)
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun consumeNativeKakao(
+        memberId: Long,
+        state: String,
+    ): OAuthLinkRequest = consumeRequest(memberId, OAuthProvider.KAKAO, state, native = true)
+
+    private fun consumeRequest(
+        memberId: Long,
+        provider: OAuthProvider,
+        state: String,
+        native: Boolean,
     ): OAuthLinkRequest {
         val hash = TokenHasher.sha256Hex(state)
         val request =
             accounts.lockLinkRequest(hash)
                 ?: throw MemberAccountException(MemberExceptionCode.MEMBER_ACCOUNT_LINK_INVALID)
-        if (request.memberId != memberId || request.provider != provider || !request.expiresAt.isAfter(Instant.now())) {
+        if (request.memberId != memberId || request.provider != provider || !request.expiresAt.isAfter(Instant.now()) ||
+            (request.redirectUri == NATIVE_KAKAO_REDIRECT) != native
+        ) {
             throw MemberAccountException(MemberExceptionCode.MEMBER_ACCOUNT_LINK_INVALID)
         }
         accounts.deleteLinkRequest(hash)
@@ -85,5 +126,10 @@ class MemberAccountLinkRequestService(
     @Transactional
     fun removeExpired() {
         accounts.deleteExpiredLinkRequests(Instant.now())
+    }
+
+    private companion object {
+        // Reserved internal marker: it cannot pass the web redirect validator (no host).
+        const val NATIVE_KAKAO_REDIRECT = "urn:dpm:account-link:kakao-native"
     }
 }
