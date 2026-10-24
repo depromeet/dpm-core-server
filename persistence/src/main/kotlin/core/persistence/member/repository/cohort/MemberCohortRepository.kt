@@ -49,5 +49,11 @@ class MemberCohortRepository(
             .where(MEMBER_COHORTS.MEMBER_ID.eq(memberId))
             .fetch(MEMBER_COHORTS.COHORT_ID)
             .filterNotNull()
-}
 
+    override fun findCohortIdsByMemberIds(memberIds: List<Long>): Map<Long, List<Long>> {
+        if (memberIds.isEmpty()) return emptyMap()
+        return dsl.select(MEMBER_COHORTS.MEMBER_ID, MEMBER_COHORTS.COHORT_ID).from(MEMBER_COHORTS)
+            .where(MEMBER_COHORTS.MEMBER_ID.`in`(memberIds)).fetch()
+            .groupBy({ requireNotNull(it[MEMBER_COHORTS.MEMBER_ID]) }, { requireNotNull(it[MEMBER_COHORTS.COHORT_ID]) })
+    }
+}

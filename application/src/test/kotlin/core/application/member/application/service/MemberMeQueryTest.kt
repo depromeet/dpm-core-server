@@ -204,7 +204,7 @@ class MemberMeQueryTest {
 
         assertThat(json).containsOnlyKeys(
             "email", "name", "part", "cohort", "teamNumber", "isAdmin", "status", "loginMethod",
-            "isActiveCohort", "presentCount", "lateCount", "excusedAbsentCount", "absentCount", "attendanceStatus",
+            "isActiveCohort", "presentCount", "lateCount", "excusedAbsentCount", "absentCount", "attendanceStatus", "activityStatus",
         )
         assertThat(json["teamNumber"]).isEqualTo(0)
         assertThat(json["isActiveCohort"]).isEqualTo(false)

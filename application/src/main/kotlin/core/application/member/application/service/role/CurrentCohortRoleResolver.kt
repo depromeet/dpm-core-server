@@ -29,6 +29,25 @@ class CurrentCohortRoleResolver(
             context = buildContext(memberId),
         )
 
+    fun findPrimaryRoleTypesForMembers(memberIds: List<MemberId>): Map<MemberId, RoleType> {
+        if (memberIds.isEmpty()) return emptyMap()
+        val ids = memberIds.map { it.value }.distinct()
+        val activeId = runCatching { cohortQueryService.getActiveCohort().id?.value }.getOrNull()
+        val assignments = memberRolePersistencePort.findActiveRoleAssignmentsByMemberIds(ids)
+        val memberships = memberCohortPersistencePort.findCohortIdsByMemberIds(ids)
+        val states = activeId?.let { activities.findAll(ids, it) }.orEmpty()
+        return memberIds.associateWith { memberId ->
+            findPrimaryRoleType(
+                assignments[memberId.value].orEmpty(),
+                CohortRoleContext(
+                    activeId,
+                    memberships[memberId.value].orEmpty().toSet(),
+                    states[memberId.value]?.status,
+                ),
+            )
+        }
+    }
+
     fun selectRepresentativeRoleForMember(
         memberId: MemberId,
         roleNames: List<String>,

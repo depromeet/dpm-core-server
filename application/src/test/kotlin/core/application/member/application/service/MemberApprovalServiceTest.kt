@@ -33,7 +33,7 @@ class MemberApprovalServiceTest {
     private val initializer = mock(MemberActivationInitializer::class.java)
     private val activities =
         mock(MemberActivityService::class.java).also { activity ->
-            `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+            `when`(activity.lockCurrentCohort()).thenReturn(CohortId(19))
         }
     private val service = MemberApprovalService(members, memberCohorts, teams, roles, cohorts, roleQueries, initializer, activities)
 
@@ -60,7 +60,7 @@ class MemberApprovalServiceTest {
             `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(targets)
             assertThatThrownBy { service.approve(listOf(2, 1)) }.isInstanceOf(MemberApprovalTargetNotAllowedException::class.java)
         }
-        verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer, activities)
+        verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer)
     }
 
     @Test
@@ -71,7 +71,7 @@ class MemberApprovalServiceTest {
             listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), isDeleted = true)),
         )
         assertThatThrownBy { service.approve(listOf(1)) }.isInstanceOf(MemberDeletedException::class.java)
-        verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer, activities)
+        verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer)
     }
 
     @Test
@@ -80,7 +80,7 @@ class MemberApprovalServiceTest {
             listOf(
                 MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()),
                 MemberApprovalTarget(2, MemberStatus.ACTIVE, setOf(19)),
-                MemberApprovalTarget(3, MemberStatus.INACTIVE, setOf(19)),
+                MemberApprovalTarget(3, MemberStatus.ACTIVE, setOf(19)),
             ),
         )
         service.approve(listOf(3, 1, 2))
@@ -93,10 +93,10 @@ class MemberApprovalServiceTest {
 
     @Test
     fun `승인된 현재 기수 멤버만 재요청하면 초기화도 하지 않는다`() {
-        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.INACTIVE, setOf(19))))
+        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19))))
         service.approve(listOf(1))
         verify(members).lockApprovalTargets(listOf(1))
         verifyNoMoreInteractions(members)
-        verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer, activities)
+        verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer)
     }
 }

@@ -211,7 +211,7 @@ class MemberApprovalControllerTest {
     class Config {
         @Bean fun activities(): core.application.member.application.service.MemberActivityService =
             mock(core.application.member.application.service.MemberActivityService::class.java).also { activity ->
-                `when`(activity.lockCurrentCohort()).thenAnswer { cohorts().getActiveCohortId() }
+                `when`(activity.lockCurrentCohort()).thenReturn(CohortId(19))
             }
 
         @Bean fun memberQueries(): MemberQueryService = mock(MemberQueryService::class.java)

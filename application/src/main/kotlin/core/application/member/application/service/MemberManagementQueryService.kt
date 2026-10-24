@@ -55,7 +55,13 @@ class MemberManagementQueryService(
                 .filter { !request.missingInformationOnly || it.missingInformation }
                 .filter {
                     request.graduationStatuses.isNullOrEmpty() ||
-                        (it.graduationStatus != null && it.graduationStatus in request.graduationStatuses)
+                        (
+                            it.graduationStatus != null && it.graduationStatus in request.graduationStatuses &&
+                                (
+                                    it.graduationStatus !in RISK_STATUSES ||
+                                        it.activityStatus == MemberActivityStatus.ACTIVE
+                                )
+                        )
                 }
                 .sortedWith(compareBy<MemberSummary> { it.name }.thenBy { it.memberId })
                 .toList()

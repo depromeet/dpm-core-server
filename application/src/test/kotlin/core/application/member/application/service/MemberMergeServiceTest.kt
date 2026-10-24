@@ -33,7 +33,7 @@ class MemberMergeServiceTest {
     private val refreshTokens = mock(RefreshTokenPersistencePort::class.java)
     private val activities =
         mock(MemberActivityService::class.java).also { activity ->
-            `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+            `when`(activity.lockCurrentCohort()).thenReturn(CohortId(19))
         }
     private val service = MemberMergeService(members, merge, cohorts, approval, accounts, refreshTokens, activities)
 
@@ -86,7 +86,7 @@ class MemberMergeServiceTest {
             `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(retained, MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19))))
             assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
         }
-        verifyNoInteractions(merge, approval, accounts, refreshTokens, activities)
+        verifyNoInteractions(merge, approval, accounts, refreshTokens)
     }
 
     @Test

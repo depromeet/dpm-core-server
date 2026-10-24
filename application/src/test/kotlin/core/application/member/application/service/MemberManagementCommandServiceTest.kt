@@ -33,7 +33,7 @@ class MemberManagementCommandServiceTest {
     private val roleQueries = mock(RoleQueryUseCase::class.java)
     private val activities =
         mock(MemberActivityService::class.java).also { activity ->
-            `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+            `when`(activity.lockCurrentCohort()).thenReturn(CohortId(19))
         }
     private val service = MemberManagementCommandService(members, teams, roles, cohorts, cohortPort, roleQueries, activities)
 

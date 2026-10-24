@@ -166,7 +166,7 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
-    fun `활동 정상 위험 정지를 구분하고 위험 카드는 정지한 위험 회원도 포함한다`() {
+    fun `활동 상태를 구분하고 위험 카드는 종료 회원을 제외한다`() {
         `when`(attendance.findMemberAttendances(19, emptyList())).thenReturn(
             listOf(attendanceRow(1, 3), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5, 5), attendanceRow(7, 5)),
         )
@@ -181,7 +181,7 @@ class MemberManagementQueryServiceTest {
         val combined = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.NORMAL, ActivityStatus.INACTIVE)))
         assertThat(combined.members.map { it.memberId }).containsExactly(3L, 4L, 5L)
         val card = service.getOverview(request.copy(graduationStatuses = listOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)))
-        assertThat(card.members.map { it.memberId }).containsExactly(1L, 2L, 5L)
+        assertThat(card.members.map { it.memberId }).containsExactly(1L, 2L)
         assertThat(card.summary.graduationRiskCount).isEqualTo(card.totalElements)
         val intersection = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.AT_RISK), graduationStatuses = listOf(AttendanceGraduationStatus.IMPOSSIBLE)))
         assertThat(intersection.members.single().memberId).isEqualTo(2L)

@@ -87,6 +87,38 @@ class CurrentCohortRoleResolverTest {
         assertEquals(listOf("MASTER"), resolver.filterEffectiveRoles(roles, CurrentCohortRoleResolver.CohortRoleContext(19, emptySet(), null)))
     }
 
+    @Test
+    fun bulkAdminResolutionLoadsActivityAndMembershipOnceAndMatchesSingleRoleRules() {
+        val cohorts = mock(core.application.cohort.application.service.CohortQueryService::class.java)
+        val memberships = mock(core.domain.member.port.outbound.MemberCohortPersistencePort::class.java)
+        val roles = mock(core.domain.member.port.outbound.MemberRolePersistencePort::class.java)
+        val activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java)
+        val batch = CurrentCohortRoleResolver(cohorts, memberships, roles, activities)
+        org.mockito.Mockito.`when`(cohorts.getActiveCohort()).thenReturn(core.domain.cohort.aggregate.Cohort(CohortId(19), "19", isActive = true))
+        val ids = listOf(1L, 2L, 3L)
+        org.mockito.Mockito.`when`(roles.findActiveRoleAssignmentsByMemberIds(ids)).thenReturn(
+            ids.associateWith {
+                listOf(MemberRoleAssignment("MASTER", null))
+            },
+        )
+        org.mockito.Mockito.`when`(memberships.findCohortIdsByMemberIds(ids)).thenReturn(mapOf(1L to listOf(19L), 2L to listOf(19L)))
+        org.mockito.Mockito.`when`(activities.findAll(ids, 19)).thenReturn(
+            mapOf(
+                1L to core.domain.member.port.outbound.MemberCohortActivity(1, 19, core.domain.member.enums.MemberActivityStatus.ACTIVE),
+                2L to core.domain.member.port.outbound.MemberCohortActivity(2, 19, core.domain.member.enums.MemberActivityStatus.SUSPENDED),
+            ),
+        )
+        assertEquals(
+            mapOf(core.domain.member.vo.MemberId(1) to RoleType.Master, core.domain.member.vo.MemberId(2) to RoleType.Guest, core.domain.member.vo.MemberId(3) to RoleType.Master),
+            batch.findPrimaryRoleTypesForMembers(ids.map(::coreMemberId)),
+        )
+        org.mockito.Mockito.verify(activities).findAll(ids, 19)
+        org.mockito.Mockito.verify(memberships).findCohortIdsByMemberIds(ids)
+        org.mockito.Mockito.verifyNoMoreInteractions(activities, memberships)
+    }
+
+    private fun coreMemberId(id: Long) = core.domain.member.vo.MemberId(id)
+
     private fun context(
         activeCohortId: Long?,
         memberCohortIds: Set<Long>,

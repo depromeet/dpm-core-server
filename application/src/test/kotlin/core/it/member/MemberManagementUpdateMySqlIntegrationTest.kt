@@ -343,6 +343,46 @@ class MemberManagementUpdateMySqlIntegrationTest {
         assertThat(authentication.authorities).isEmpty()
     }
 
+    @Test
+    fun `activity migration backfill is rerunnable and matches Hibernate entities`() {
+        val root =
+            generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
+                .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
+        val fullSql = java.nio.file.Files.readString(root.resolve("db/pending/2610241900_member_cohort_activities.sql"))
+        // Stored-procedure preflight is separately exercised through the MySQL CLI; JDBC applies DDL, DML and VERIFY.
+        val body = fullSql.substring(fullSql.indexOf("-- [2]"))
+        jdbc.execute("drop table member_activity_events")
+        jdbc.execute("drop table member_cohort_activities")
+        repeat(2) {
+            jdbc.dataSource!!.connection.use { connection ->
+                org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(
+                    connection,
+                    org.springframework.core.io.ByteArrayResource(body.toByteArray(Charsets.UTF_8)),
+                )
+            }
+        }
+        assertThat(jdbc.queryForObject("select status from member_cohort_activities where member_id=2 and cohort_id=19", String::class.java)).isEqualTo("ENDED")
+        assertThat(jdbc.queryForObject("select status from member_cohort_activities where member_id=1 and cohort_id=18", String::class.java)).isEqualTo("ENDED")
+        assertThat(jdbc.queryForObject("select count(*) from member_activity_events", Int::class.java)).isZero()
+        val factory =
+            org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean().apply {
+                dataSource = jdbc.dataSource
+                jpaVendorAdapter = org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter()
+                setManagedTypes(
+                    org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes.of(
+                        "core.entity.member.MemberCohortActivityEntity",
+                        "core.entity.member.MemberActivityEventEntity",
+                    ),
+                )
+                setJpaPropertyMap(mapOf("hibernate.hbm2ddl.auto" to "validate"))
+            }
+        try {
+            factory.afterPropertiesSet()
+        } finally {
+            factory.destroy()
+        }
+    }
+
     private fun runOrderedRoleChanges(
         first: () -> Unit,
         second: () -> Unit,
