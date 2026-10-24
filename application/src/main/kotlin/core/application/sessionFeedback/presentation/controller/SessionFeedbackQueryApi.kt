@@ -19,7 +19,9 @@ interface SessionFeedbackQueryApi {
         summary = "피드백 화면 진입",
         description =
             "홈 카드·세션 목록·공유 링크 공통 진입. 세션 이름과 작성 상태(myStatus)·수집 시작 시각(startAt)만 내려준다. " +
-                "질문·선택지는 FE 고정. AVAILABLE / BEFORE_START / SUBMITTED / EXPIRED / NOT_TARGET. " +
+                "질문·선택지는 FE 고정. " +
+                "AVAILABLE / BEFORE_START / SUBMITTED / EXPIRED / ATTENDANCE_INCOMPLETE / NOT_TARGET. " +
+                "ATTENDANCE_INCOMPLETE: 출석 명단에는 있으나 아직 출석·지각 전 → FE \"세션 출석이 완료되지 않았어요.\". " +
                 "피드백 OFF 세션의 startAt 은 null(키는 포함).",
     )
     @ApiResponses(
@@ -58,6 +60,21 @@ interface SessionFeedbackQueryApi {
                                         "sessionName": "디프만 19기 OT",
                                         "myStatus": "BEFORE_START",
                                         "startAt": "2026-10-10T18:00:00"
+                                      }
+                                    }
+                                """,
+                            ),
+                            ExampleObject(
+                                name = "ATTENDANCE_INCOMPLETE",
+                                value = """
+                                    {
+                                      "status": "OK",
+                                      "message": "요청에 성공했습니다",
+                                      "code": "GLOBAL-200-01",
+                                      "data": {
+                                        "sessionName": "디프만 19기 OT",
+                                        "myStatus": "ATTENDANCE_INCOMPLETE",
+                                        "startAt": "2026-10-08T00:00:00"
                                       }
                                     }
                                 """,
