@@ -234,6 +234,64 @@ class MemberAccountMySqlIntegrationTest {
     }
 
     @Test
+    fun `네이티브 연결 요청은 웹 경로와 다른 회원이 소비하지 못하고 한 번만 성공한다`() {
+        val state = requests.startNativeKakao(1, apple)
+        assertThat(state).hasSize(43)
+        assertThatThrownBy { requests.consume(1, OAuthProvider.KAKAO, state) }.isInstanceOf(MemberAccountException::class.java)
+        assertThatThrownBy { requests.consumeNativeKakao(2, state) }.isInstanceOf(MemberAccountException::class.java)
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val results = (1..2).map { pool.submit(Callable { runCatching { requests.consumeNativeKakao(1, state) } }) }.map { it.get(10, TimeUnit.SECONDS) }
+            assertThat(results.count { it.isSuccess }).isEqualTo(1)
+            assertThat(results.single { it.isFailure }.exceptionOrNull()).isInstanceOf(MemberAccountException::class.java)
+        } finally {
+            pool.shutdownNow()
+        }
+        assertThat(jdbc.queryForObject("select count(*) from member_oauth_link_requests", Int::class.java)).isZero()
+    }
+
+    @Test
+    fun `웹 연결 요청을 네이티브 경로에서 소비할 수 없다`() {
+        val state = "w".repeat(43)
+        accounts.saveLinkRequest(OAuthLinkRequest(core.application.refreshToken.application.support.TokenHasher.sha256Hex(state), 1, OAuthProvider.KAKAO, "https://example.com/callback", "verifier", Instant.now().plusSeconds(300)))
+        assertThatThrownBy { requests.consumeNativeKakao(1, state) }.isInstanceOf(MemberAccountException::class.java)
+        assertThat(requests.consume(1, OAuthProvider.KAKAO, state).memberId).isEqualTo(1)
+    }
+
+    @Test
+    fun `네이티브 연결 시작은 유효한 로그인 식별자가 필요하고 만료 요청은 소비되지 않는다`() {
+        assertThatThrownBy { requests.startNativeKakao(1, null) }.isInstanceOf(MemberAccountException::class.java)
+        val state = requests.startNativeKakao(1, apple)
+        jdbc.update("update member_oauth_link_requests set expires_at = ?", java.sql.Timestamp.from(Instant.now().minusSeconds(1)))
+        assertThatThrownBy { requests.consumeNativeKakao(1, state) }.isInstanceOf(MemberAccountException::class.java)
+    }
+
+    @Test
+    fun `네이티브 완료는 기존 회원에 연결하며 신규 회원을 만들지 않는다`() {
+        val state = requests.startNativeKakao(1, apple)
+        nativeLinkService().complete(1, apple, state, "provider-token")
+        assertThat(oauth.findByProviderAndExternalId(OAuthProvider.KAKAO, "456")!!.memberId).isEqualTo(MemberId(1))
+        assertThat(jdbc.queryForObject("select count(*) from members", Int::class.java)).isEqualTo(2)
+        assertThatThrownBy { nativeLinkService().complete(1, apple, state, "provider-token") }.isInstanceOf(MemberAccountException::class.java)
+    }
+
+    @Test
+    fun `네이티브 인증 중 현재 로그인 수단을 해제하면 완료를 거절한다`() {
+        val state = requests.startNativeKakao(1, apple)
+        service.unlink(1, kakao, 11)
+        assertThatThrownBy { nativeLinkService().complete(1, apple, state, "provider-token") }.isInstanceOf(MemberAccountException::class.java)
+        assertThat(oauth.findByProviderAndExternalId(OAuthProvider.KAKAO, "456")).isNull()
+        assertThat(jdbc.queryForObject("select count(*) from member_oauth_link_requests", Int::class.java)).isZero()
+    }
+
+    private fun nativeLinkService(): core.application.member.application.service.KakaoNativeAccountLinkService {
+        val provider = mock(core.application.security.oauth.kakao.KakaoUserInfoClient::class.java)
+        `when`(provider.getAccessTokenInfo("provider-token")).thenReturn(core.application.security.oauth.kakao.KakaoAccessTokenInfo(456, 123, 300))
+        `when`(provider.getUserAttributesByAccessToken("provider-token")).thenReturn(mapOf("id" to 456L))
+        return core.application.member.application.service.KakaoNativeAccountLinkService(requests, service, provider, 123)
+    }
+
+    @Test
     fun `해제가 회원 잠금을 선점하면 앞서 토큰을 읽은 재발급도 해제 결과를 확인한다`() {
         val observed = CountDownLatch(1)
         val unlinked = CountDownLatch(1)
