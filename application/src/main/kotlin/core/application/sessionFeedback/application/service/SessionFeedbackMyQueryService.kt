@@ -48,21 +48,25 @@ class SessionFeedbackMyQueryService(
         now: Instant,
     ): SessionFeedbackMyStatus {
         if (form == null) return SessionFeedbackMyStatus.NOT_TARGET
-        if (!isTarget(sessionId, memberId)) return SessionFeedbackMyStatus.NOT_TARGET
+
+        val attendance = attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value)
+            ?: return SessionFeedbackMyStatus.NOT_TARGET
+        val attended =
+            attendance.status == AttendanceStatus.PRESENT || attendance.status == AttendanceStatus.LATE
+        if (!attended) {
+            // 명단에 있으나 아직 출석 전(PENDING 등) → 대상자가 아님과 구분
+            return if (attendance.status == AttendanceStatus.PENDING) {
+                SessionFeedbackMyStatus.ATTENDANCE_INCOMPLETE
+            } else {
+                SessionFeedbackMyStatus.NOT_TARGET
+            }
+        }
+
         if (feedbackPersistencePort.existsBySessionIdAndMemberId(sessionId.value, memberId.value)) {
             return SessionFeedbackMyStatus.SUBMITTED
         }
         if (!now.isBefore(form.endAt)) return SessionFeedbackMyStatus.EXPIRED
         if (now.isBefore(form.startAt)) return SessionFeedbackMyStatus.BEFORE_START
         return SessionFeedbackMyStatus.AVAILABLE
-    }
-
-    private fun isTarget(
-        sessionId: SessionId,
-        memberId: MemberId,
-    ): Boolean {
-        val attendance =
-            attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value) ?: return false
-        return attendance.status == AttendanceStatus.PRESENT || attendance.status == AttendanceStatus.LATE
     }
 }
