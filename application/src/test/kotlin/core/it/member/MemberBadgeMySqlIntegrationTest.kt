@@ -43,11 +43,6 @@ import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
 import core.persistence.refreshToken.repository.RefreshTokenRepository
-import java.time.Instant
-import java.util.concurrent.Callable
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -68,6 +63,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
+import java.time.Instant
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
@@ -331,7 +331,7 @@ class MemberBadgeMySqlIntegrationTest {
         val first = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         attendance.updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(first), MemberId(1), AttendanceStatus.ABSENT))
         assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(1)
-        repeat(4) { sessions.createSession(command.copy(week = it + 2)) }
+        repeat(4) { sessions.createSession(command.copy(date = command.date.plusSeconds((it + 1) * 86400L), week = it + 2)) }
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
         val last = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         sessions.softDeleteSession(SessionId(last))
@@ -344,14 +344,19 @@ class MemberBadgeMySqlIntegrationTest {
         jdbc.update("update members set status = 'ACTIVE'")
         badges.getBadges()
         val start = Instant.parse("2026-11-01T03:00:00Z")
-        repeat(10) { sessions.createSession(SessionCreateCommand(start, it + 1, "온라인", "테스트 세션", true, start, start.plusSeconds(600), start.plusSeconds(1200))) }
+        repeat(10) {
+            val sessionStart = start.plusSeconds(it * 86400L)
+            sessions.createSession(SessionCreateCommand(sessionStart, it + 1, "온라인", "테스트 세션", true, sessionStart, sessionStart.plusSeconds(600), sessionStart.plusSeconds(1200)))
+        }
         val ids = jdbc.queryForList("select session_id from sessions order by session_id limit 3", Long::class.java)
-        ids.forEach { attendance.closeExpiredAttendances(SessionId(it), start.plusSeconds(1201)) }
+        ids.forEachIndexed { index, id ->
+            attendance.closeExpiredAttendances(SessionId(id), start.plusSeconds(index * 86400L + 1201))
+        }
         assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(3)
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isTrue()
         val code = jdbc.queryForObject("select attendance_code from sessions where session_id = ?", String::class.java, ids.last())!!
         (1L..3L).forEach { memberId ->
-            attendance.attendSession(AttendanceRecordCommand(SessionId(ids.last()), MemberId(memberId), start.plusSeconds(1), code))
+            attendance.attendSession(AttendanceRecordCommand(SessionId(ids.last()), MemberId(memberId), start.plusSeconds(2 * 86400L + 1), code))
         }
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
     }
@@ -361,10 +366,11 @@ class MemberBadgeMySqlIntegrationTest {
         val root =
             generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
                 .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
-        val sql = java.nio.file.Files.walk(root.resolve("db")).use { paths ->
-            paths.filter { it.fileName.toString() == "2610091830_member_badges.sql" }
-                .findFirst().orElseThrow()
-        }
+        val sql =
+            java.nio.file.Files.walk(root.resolve("db")).use { paths ->
+                paths.filter { it.fileName.toString() == "2610091830_member_badges.sql" }
+                    .findFirst().orElseThrow()
+            }
         jdbc.execute("drop table member_badge_memberships")
         jdbc.execute("drop table member_badge_states")
         repeat(2) {

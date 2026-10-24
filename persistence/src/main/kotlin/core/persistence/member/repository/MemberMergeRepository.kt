@@ -5,14 +5,14 @@ import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberMergePersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
-import java.sql.Timestamp
-import java.time.Instant
-import java.time.LocalDateTime
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_CREDENTIALS
 import org.jooq.dsl.tables.references.MEMBER_OAUTH
 import org.springframework.stereotype.Repository
+import java.sql.Timestamp
+import java.time.Instant
+import java.time.LocalDateTime
 
 @Repository
 class MemberMergeRepository(private val dsl: DSLContext) : MemberMergePersistencePort {

@@ -28,7 +28,9 @@ class MemberMergeService(
         sourceId: Long?,
         actorId: Long,
     ) {
-        if (retainedId == null || sourceId == null || retainedId <= 0 || sourceId <= 0 || retainedId == sourceId || actorId <= 0) {
+        if (retainedId == null || sourceId == null || retainedId <= 0 || sourceId <= 0 ||
+            retainedId == sourceId || actorId <= 0
+        ) {
             throw InvalidMemberMergeException()
         }
         val ids = listOf(retainedId, sourceId).sorted()

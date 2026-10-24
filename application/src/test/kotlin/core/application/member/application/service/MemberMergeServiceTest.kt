@@ -17,12 +17,12 @@ import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.`when`
 
 class MemberMergeServiceTest {
     private val members = mock(MemberPersistencePort::class.java)
