@@ -83,7 +83,7 @@ enum class NotificationMessageType(
     SESSION_FEEDBACK_OPENED(
         title = "세션 피드백이 시작됐어요.",
         bodyTemplate = "{title} 세션은 어떠셨나요? 피드백을 남겨주세요!",
-        description = "세션 피드백 수집 시작 시 출석·지각자에게 발송",
+        description = "세션 피드백 수집 기간 중 아직 미발송인 출석·지각자에게 발송",
     ),
     ;
 
