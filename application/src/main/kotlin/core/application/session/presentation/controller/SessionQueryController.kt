@@ -107,7 +107,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasAuthority('read:session')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/v1/sessions/weeks")
     override fun getSessionWeeks(): CustomResponse<SessionWeeksResponse> {
         val response =
@@ -118,7 +118,7 @@ class SessionQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasAuthority('read:session')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/v3/sessions/weeks")
     override fun getSessionSelector(): CustomResponse<SessionSelectorResponse> =
         CustomResponse.ok(SessionMapper.toSessionSelectorResponse(sessionQueryService.getSessionSelector()))

@@ -366,7 +366,11 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "나의 출석 리스트 상세 조회",
-        description = "나의 출석 리스트를 상세하게 조회합니다. " + MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION,
+        description =
+            "나의 출석 리스트를 상세하게 조회합니다. 로그인만 있으면 되고 read:attendance 권한은 필요 없다 " +
+                "(GUEST·승인 대기 유저도 마이페이지 진입용). " +
+                "활성 기수 미소속이면 집계 0·sessions []·NORMAL 로 주고 404 하지 않는다. " +
+                MEMBER_ATTENDANCE_OVERVIEW_DESCRIPTION,
     )
     @ApiResponses(
         value = [
