@@ -52,7 +52,7 @@ class AttendanceApiV3PathContractTest {
                 "GET /v3/sessions/{sessionId}/attendances/{memberId} hasAuthority('create:attendance')",
                 "GET /v3/sessions/{sessionId}/attendances/me hasAuthority('read:attendance')",
                 "GET /v3/members/{memberId}/attendances hasAuthority('update:member')",
-                "GET /v3/members/me/attendances hasAuthority('read:attendance')",
+                "GET /v3/members/me/attendances isAuthenticated()",
                 "GET /v3/sessions/{sessionId}/absence-reasons/me hasAuthority('create:attendance')",
                 "GET /v3/sessions/{sessionId}/absence-reasons hasAuthority('update:attendance')",
             )
@@ -70,8 +70,8 @@ class AttendanceApiV3PathContractTest {
                 "GET /v1/sessions/{sessionId} hasAuthority('create:session')",
                 "GET /v1/sessions/{sessionId}/me hasAuthority('read:session')",
                 "GET /v1/sessions/{sessionId}/attendance-time hasAuthority('update:session')",
-                "GET /v1/sessions/weeks hasAuthority('read:session')",
-                "GET /v3/sessions/weeks hasAuthority('read:session')",
+                "GET /v1/sessions/weeks isAuthenticated()",
+                "GET /v3/sessions/weeks isAuthenticated()",
                 "GET /v1/sessions/{sessionId}/update-policy hasAuthority('update:session')",
             )
     }
