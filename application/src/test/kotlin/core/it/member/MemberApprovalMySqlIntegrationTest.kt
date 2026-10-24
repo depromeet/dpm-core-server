@@ -378,8 +378,11 @@ class MemberApprovalMySqlIntegrationTest {
         activities.change(listOf(4), 19, core.domain.member.enums.MemberActivityStatus.SUSPENDED)
         assertThat(access.isAdmin(MemberId(4))).isFalse()
         assertThat(access.getIsAdminByMemberIds(listOf(MemberId(4), MemberId(5))).values).containsOnly(false)
-        `when`(memberLoginEmailResolver.resolve(queryService.getMemberById(MemberId(4)), null)).thenReturn("signup4@example.com")
-        val me = queryService.memberMe(MemberId(4), null)
+        val me =
+            TransactionTemplate(transactionManager).execute {
+                `when`(memberLoginEmailResolver.resolve(queryService.getMemberById(MemberId(4)), null)).thenReturn("signup4@example.com")
+                queryService.memberMe(MemberId(4), null)
+            }!!
         assertThat(me.activityStatus).isEqualTo(core.domain.member.enums.MemberActivityStatus.SUSPENDED)
         assertThat(me.status).isEqualTo("INACTIVE")
         assertThatThrownBy { service.approve(listOf(4)) }.isInstanceOf(core.application.common.exception.BusinessException::class.java)

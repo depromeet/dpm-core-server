@@ -290,7 +290,7 @@ class MemberManagementUpdateMySqlIntegrationTest {
         assertThatThrownBy { service.update(1, MemberManagementUpdateRequest(status = "ACTIVE")) }
             .isInstanceOf(core.application.common.exception.BusinessException::class.java)
         service.update(1, MemberManagementUpdateRequest(activityStatus = core.domain.member.enums.MemberActivityStatus.ENDED))
-        assertThat(jdbc.queryForObject("select suspended_at from member_cohort_activities where member_id = 1 and cohort_id = 19", java.sql.Timestamp::class.java)).isEqualTo(first["suspended_at"])
+        assertThat(jdbc.queryForMap("select suspended_at from member_cohort_activities where member_id = 1 and cohort_id = 19")["suspended_at"]).isEqualTo(first["suspended_at"])
         assertThat(jdbc.queryForObject("select actor_member_id from member_activity_events where member_id = 1 and status = 'SUSPENDED'", Long::class.java)).isEqualTo(99)
         assertThat(jdbc.queryForObject("select count(*) from member_activity_events where member_id = 1", Int::class.java)).isEqualTo(2)
     }
