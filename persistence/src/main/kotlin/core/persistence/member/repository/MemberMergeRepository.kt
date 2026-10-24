@@ -5,14 +5,14 @@ import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberMergePersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
+import java.sql.Timestamp
+import java.time.Instant
+import java.time.LocalDateTime
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_CREDENTIALS
 import org.jooq.dsl.tables.references.MEMBER_OAUTH
 import org.springframework.stereotype.Repository
-import java.sql.Timestamp
-import java.time.Instant
-import java.time.LocalDateTime
 
 @Repository
 class MemberMergeRepository(private val dsl: DSLContext) : MemberMergePersistencePort {
@@ -46,10 +46,18 @@ class MemberMergeRepository(private val dsl: DSLContext) : MemberMergePersistenc
             .where(MEMBERS.MEMBER_ID.eq(memberId)).execute()
     }
 
-    override fun recordMerge(actorId: Long, retainedId: Long, sourceId: Long) {
+    override fun recordMerge(
+        actorId: Long,
+        retainedId: Long,
+        sourceId: Long,
+    ) {
         dsl.execute(
-            "INSERT INTO member_merge_events (actor_member_id, retained_member_id, source_member_id, created_at) VALUES (?, ?, ?, ?)",
-            actorId, retainedId, sourceId, Timestamp.from(Instant.now()),
+            "INSERT INTO member_merge_events (actor_member_id, retained_member_id, source_member_id, created_at) " +
+                "VALUES (?, ?, ?, ?)",
+            actorId,
+            retainedId,
+            sourceId,
+            Timestamp.from(Instant.now()),
         )
     }
 }

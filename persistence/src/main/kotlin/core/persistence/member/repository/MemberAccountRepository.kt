@@ -6,10 +6,10 @@ import core.domain.member.port.outbound.MemberAccountPersistencePort
 import core.domain.member.port.outbound.OAuthLinkRequest
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
-import org.jooq.DSLContext
-import org.springframework.stereotype.Repository
 import java.sql.Timestamp
 import java.time.Instant
+import org.jooq.DSLContext
+import org.springframework.stereotype.Repository
 
 @Repository
 class MemberAccountRepository(private val dsl: DSLContext) : MemberAccountPersistencePort {

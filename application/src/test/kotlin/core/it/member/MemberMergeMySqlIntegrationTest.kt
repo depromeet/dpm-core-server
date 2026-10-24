@@ -18,12 +18,16 @@ import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.persistence.member.repository.MemberAccountRepository
-import core.persistence.refreshToken.repository.RefreshTokenRepository
 import core.persistence.member.repository.MemberMergeRepository
 import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
+import core.persistence.refreshToken.repository.RefreshTokenRepository
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeAll
@@ -31,10 +35,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.mockito.Mockito.`when`
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -48,10 +52,6 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
-import java.util.concurrent.Callable
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = "DPM_IT_MYSQL_URL", matches = ".+")
@@ -75,7 +75,7 @@ class MemberMergeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
-        listOf("member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_credentials", "member_oauth", "member_roles", "member_teams", "member_cohorts", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
+        listOf("attendances", "member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_credentials", "member_oauth", "member_roles", "member_teams", "member_cohorts", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER'), (2, 'GUEST')")
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (1, 1, 19, 0, 0)")
@@ -118,7 +118,8 @@ class MemberMergeMySqlIntegrationTest {
         jdbc.update("update member_roles set role_id = 1 where member_id = 1")
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (18, '18', false, 0, 0)")
         jdbc.update("insert into member_cohorts (member_id, cohort_id) values (1, 18)")
-        val before = listOf("members", "member_cohorts", "member_roles", "member_teams").associateWith {
+        jdbc.update("insert into attendances (session_id, member_id, status, attended_at, updated_at) values (19, 1, 'PRESENT', now(6), now(6))")
+        val before = listOf("members", "member_cohorts", "member_roles", "member_teams", "attendances").associateWith {
             jdbc.queryForList("select * from $it where member_id = 1")
         }
 

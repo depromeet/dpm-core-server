@@ -33,16 +33,21 @@ import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.vo.SessionId
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.it.attendance.AttendanceMySqlIntegrationTestApplication
+import core.persistence.member.repository.MemberAccountRepository
 import core.persistence.member.repository.MemberAdmissionEventRepository
 import core.persistence.member.repository.MemberBadgeRepository
-import core.persistence.member.repository.MemberAccountRepository
-import core.persistence.refreshToken.repository.RefreshTokenRepository
 import core.persistence.member.repository.MemberMergeRepository
 import core.persistence.member.repository.MemberProfileRepository
 import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
+import core.persistence.refreshToken.repository.RefreshTokenRepository
+import java.time.Instant
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -63,11 +68,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
-import java.time.Instant
-import java.util.concurrent.Callable
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
@@ -84,6 +84,7 @@ import java.util.concurrent.TimeUnit
 )
 class MemberBadgeMySqlIntegrationTest {
     @Autowired lateinit var managementTargets: MemberManagementTargetQueryService
+
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var badges: MemberBadgeService
@@ -134,7 +135,7 @@ class MemberBadgeMySqlIntegrationTest {
 
     @Test
     fun `중복 의심 회원도 개별 승인과 반려가 가능하다`() {
-        assertThat(managementTargets.findAll(19).filter { it.memberId in listOf(1L, 2L) }).allMatch { it.duplicateSuspected }
+        assertThat(managementTargets.findAll(19).filter { it.memberId in listOf(1L, 2L) }).hasSize(2).allMatch { it.duplicateSuspected }
         approvals.approve(listOf(1))
         admission.reject(2)
         assertThat(jdbc.queryForObject("select status from members where member_id = 1", String::class.java)).isEqualTo("ACTIVE")
