@@ -75,6 +75,7 @@ class MemberMergeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
+        core.it.member.MemberActivityFixtures.clear(jdbc)
         listOf("member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_credentials", "member_oauth", "member_roles", "member_teams", "member_cohorts", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER'), (2, 'GUEST')")
@@ -92,6 +93,7 @@ class MemberMergeMySqlIntegrationTest {
             jdbc.update("insert into refresh_tokens (member_id, token_hash, device_id, issued_at, expires_at) values (?, ?, 'test-device', now(6), date_add(now(6), interval 1 day))", id, "test-token-$id".padEnd(64, 'x'))
             jdbc.update("insert into member_oauth_link_requests (state_hash, member_id, provider, redirect_uri, code_verifier, expires_at) values (?, ?, 'APPLE', 'https://example.test/callback', 'test-verifier', date_add(now(6), interval 5 minute))", "state-$id".padEnd(64, 'x'), id)
         }
+        core.it.member.MemberActivityFixtures.seed(jdbc)
     }
 
     @Test
@@ -243,7 +245,7 @@ class MemberMergeMySqlIntegrationTest {
     @EnableAutoConfiguration
     @EntityScan(basePackages = ["core.entity"])
     @EnableJpaRepositories(basePackages = ["core.persistence"])
-    @Import(
+    @Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
         JooqDslConfig::class,
         MemberRepository::class,
         MemberMergeRepository::class, MemberAccountRepository::class, RefreshTokenRepository::class,

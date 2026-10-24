@@ -32,7 +32,10 @@ class MemberManagementCommandServiceTest {
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val cohortPort = mock(CohortPersistencePort::class.java)
     private val roleQueries = mock(RoleQueryUseCase::class.java)
-    private val service = MemberManagementCommandService(members, teams, roles, cohorts, cohortPort, roleQueries)
+    private val activities = mock(MemberActivityService::class.java).also { activity ->
+        `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+    }
+    private val service = MemberManagementCommandService(members, teams, roles, cohorts, cohortPort, roleQueries, activities)
 
     @BeforeEach
     fun setup() {
@@ -55,7 +58,7 @@ class MemberManagementCommandServiceTest {
         order.verify(roleQueries).findIdByName("CORE")
         order.verify(teams).replaceCurrentCohortTeams(listOf(1L), 19, 42)
         order.verify(roles).replaceCurrentCohortRoles(listOf(1L), 19, 3)
-        order.verify(members).updateManagementFields(listOf(1L), true, MemberPart.SERVER, MemberStatus.INACTIVE, setOf(1))
+        order.verify(members).updateManagementFields(listOf(1L), true, MemberPart.SERVER, null, setOf(1))
         order.verifyNoMoreInteractions()
     }
 
@@ -91,7 +94,7 @@ class MemberManagementCommandServiceTest {
         ).forEach { request ->
             assertThatThrownBy { service.updateBulk(request) }.isInstanceOf(InvalidMemberManagementUpdateException::class.java)
         }
-        verifyNoInteractions(members, teams, roles, cohorts, cohortPort, roleQueries)
+        verifyNoInteractions(members, teams, roles, cohorts, cohortPort, roleQueries, activities)
     }
 
     @Test
@@ -109,7 +112,7 @@ class MemberManagementCommandServiceTest {
         }
         assertThatThrownBy { service.update(0, MemberManagementUpdateRequest(part = "SERVER")) }
             .isInstanceOf(InvalidMemberManagementUpdateException::class.java)
-        verifyNoInteractions(members, teams, roles, cohorts, cohortPort, roleQueries)
+        verifyNoInteractions(members, teams, roles, cohorts, cohortPort, roleQueries, activities)
     }
 
     @Test

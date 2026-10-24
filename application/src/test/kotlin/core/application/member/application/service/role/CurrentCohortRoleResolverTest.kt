@@ -12,6 +12,7 @@ class CurrentCohortRoleResolverTest {
         cohortQueryService = mock(core.application.cohort.application.service.CohortQueryService::class.java),
         memberCohortPersistencePort = mock(core.domain.member.port.outbound.MemberCohortPersistencePort::class.java),
         memberRolePersistencePort = mock(core.domain.member.port.outbound.MemberRolePersistencePort::class.java),
+        activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java),
     )
 
     @Test
@@ -66,6 +67,23 @@ class CurrentCohortRoleResolverTest {
     fun primaryRoleFallsBackToGuest() {
         val context = context(18L, setOf(17L))
         assertEquals(RoleType.Guest, resolver.findPrimaryRoleType(listOf(MemberRoleAssignment("DEEPER", CohortId(17L))), context))
+    }
+
+    @Test
+    fun suspendedAndEndedSuppressEveryAssignedRoleIncludingMasterAndGuest() {
+        val roles = listOf("MASTER", "CORE", "ORGANIZER", "DEEPER", "GUEST").map { MemberRoleAssignment(it, CohortId(19)) }
+        listOf(core.domain.member.enums.MemberActivityStatus.SUSPENDED, core.domain.member.enums.MemberActivityStatus.ENDED).forEach { status ->
+            listOf(setOf(19L), emptySet()).forEach { memberships ->
+                assertEquals(emptyList<String>(), resolver.filterEffectiveRoles(roles, CurrentCohortRoleResolver.CohortRoleContext(19, memberships, status)))
+            }
+        }
+    }
+
+    @Test
+    fun missingActivityFailsClosedOnlyForCurrentMembers() {
+        val roles = listOf(MemberRoleAssignment("MASTER", null))
+        assertEquals(emptyList<String>(), resolver.filterEffectiveRoles(roles, CurrentCohortRoleResolver.CohortRoleContext(19, setOf(19L), null)))
+        assertEquals(listOf("MASTER"), resolver.filterEffectiveRoles(roles, CurrentCohortRoleResolver.CohortRoleContext(19, emptySet(), null)))
     }
 
     private fun context(activeCohortId: Long?, memberCohortIds: Set<Long>) =

@@ -63,6 +63,7 @@ class MemberMeQueryTest {
             cohortQueryUseCase = CohortQueryService(cohorts),
             attendancePersistencePort = attendances,
             attendanceGraduationEvaluator = AttendanceGraduationEvaluator(),
+            activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java),
             defaultTeamId = defaultTeamId,
         )
 

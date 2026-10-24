@@ -39,6 +39,7 @@ class MemberQueryService(
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
+    private val activities: core.domain.member.port.outbound.MemberActivityPersistencePort,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
 ) : MemberQueryByRoleUseCase,
@@ -81,6 +82,7 @@ class MemberQueryService(
             isActiveCohort,
             attendance?.summary,
             attendanceStatus,
+            cohortId?.value?.let { activities.find(memberId.value, it)?.status },
         )
     }
 

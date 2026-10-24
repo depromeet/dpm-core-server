@@ -27,6 +27,7 @@ class MemberApprovalService(
     private val cohorts: CohortQueryUseCase,
     private val roleQueries: RoleQueryUseCase,
     private val initializer: MemberActivationInitializer,
+    private val activities: MemberActivityService,
 ) {
     @TrackMemberBadges
     fun approve(memberIds: List<Long?>) {
@@ -36,7 +37,7 @@ class MemberApprovalService(
             throw InvalidMemberApprovalException()
         }
         val ids = memberIds.filterNotNull().sorted()
-        val cohortId = cohorts.getActiveCohortId()
+        val cohortId = activities.lockCurrentCohort()
         val targets = members.lockApprovalTargets(ids)
         if (targets.map { it.memberId } != ids) throw MemberNotFoundException()
         if (targets.any { it.isDeleted }) throw MemberDeletedException()
@@ -44,7 +45,7 @@ class MemberApprovalService(
             targets.any { target ->
                 when (target.status) {
                     MemberStatus.PENDING -> target.cohortIds.isNotEmpty() && cohortId.value !in target.cohortIds
-                    MemberStatus.ACTIVE, MemberStatus.INACTIVE -> cohortId.value !in target.cohortIds
+                    MemberStatus.ACTIVE, MemberStatus.INACTIVE -> target.cohortIds.isEmpty()
                     else -> true
                 }
             }
@@ -52,13 +53,17 @@ class MemberApprovalService(
             throw MemberApprovalTargetNotAllowedException()
         }
 
-        // 이미 승인된 현재 기수 멤버는 상태, 팀, 역할, 초기화 데이터를 다시 변경하지 않는다.
-        val pendingIds = targets.filter { it.status == MemberStatus.PENDING }.map { it.memberId }
+        // 현재 기수의 정지/종료는 승인 API로 복구할 수 없다. 새 기수 승인은 별도 기록으로 남긴다.
+        targets.forEach { activities.requireRestorable(it.memberId, cohortId.value) }
+        val pendingIds = targets.filter { it.status == MemberStatus.PENDING || cohortId.value !in it.cohortIds }.map { it.memberId }
         if (pendingIds.isEmpty()) return
         val roleId = roleQueries.findIdByName(RoleType.Deeper.code)
         roles.replaceCurrentCohortRoles(pendingIds, cohortId.value, roleId)
         teams.replaceCurrentCohortTeams(pendingIds, cohortId.value, null)
-        pendingIds.forEach { memberCohorts.save(MemberCohort.of(MemberId(it), cohortId)) }
+        pendingIds.forEach {
+            memberCohorts.save(MemberCohort.of(MemberId(it), cohortId))
+            activities.activate(it, cohortId.value)
+        }
         members.updateManagementFields(pendingIds, false, null, MemberStatus.ACTIVE, emptySet())
 
         // 신규 승인 경로는 초기화까지 같은 트랜잭션에 포함한다. 실패하면 승인도 취소된다.

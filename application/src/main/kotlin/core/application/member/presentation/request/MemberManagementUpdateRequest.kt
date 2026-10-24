@@ -19,9 +19,11 @@ data class MemberManagementUpdateRequest(
     @field:Schema(description = "변경할 멤버 타입. UNASSIGNED는 미배정, 생략/null은 유지. update:authorization 권한 필요")
     @field:Pattern(regexp = "DEEPER|ORGANIZER|CORE|UNASSIGNED")
     val memberType: String? = null,
-    @field:Schema(description = "변경할 활동 상태. 수료 위험은 자동 계산하므로 직접 수정하지 않음")
+    @field:Schema(description = "레거시 활동 상태. INACTIVE는 기수 종료로 처리. 정지는 activityStatus=SUSPENDED 사용. 수료 위험 직접 수정 불가")
     @field:Pattern(regexp = "ACTIVE|INACTIVE")
     val status: String? = null,
+    @field:Schema(description = "기수별 활동 상태. ACTIVE/SUSPENDED/ENDED. 정지·종료는 같은 기수에서 복구 불가. status와 함께 제출 불가")
+    val activityStatus: core.domain.member.enums.MemberActivityStatus? = null,
 ) {
     @JsonAnySetter
     fun rejectUnknownField(

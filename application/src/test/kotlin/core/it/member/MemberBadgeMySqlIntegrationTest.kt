@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(
+@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
     MemberBadgeTrackingConfiguration::class, MemberBadgeTransactionTracker::class, MemberBadgeService::class,
     MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class, CurrentCohortRoleResolver::class,
     MemberBadgeRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class,
@@ -120,6 +120,7 @@ class MemberBadgeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
+        core.it.member.MemberActivityFixtures.clear(jdbc)
         listOf("member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_badge_memberships", "member_badge_states", "member_admission_events", "attendances", "sessions", "member_roles", "member_teams", "member_cohorts", "member_oauth", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         (1L..3L).forEach { id ->
@@ -130,6 +131,7 @@ class MemberBadgeMySqlIntegrationTest {
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (191, 1, 19, 0, 0)")
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
         `when`(memberQueries.getMemberIdsByCohortId(CohortId(19))).thenReturn(listOf(MemberId(1), MemberId(2), MemberId(3)))
+        core.it.member.MemberActivityFixtures.seed(jdbc)
     }
 
     @Test
@@ -195,6 +197,7 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `배지 초기화 후 다른 승인 회원의 잘못된 파트가 있어도 프로필 완료와 배지 갱신을 커밋한다`() {
         jdbc.update("update members set status = 'ACTIVE' where member_id = 2")
+        MemberActivityFixtures.seed(jdbc)
         jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (2, 1, 19, now(6))")
         jdbc.update("insert into member_teams (member_id, team_id) values (2, 191)")
         badges.getBadges()
@@ -307,6 +310,7 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `세션 생성 출석 생성과 출석 변경 세션 삭제가 수료 카드에 함께 반영된다`() {
         jdbc.update("update members set status = 'ACTIVE'")
+        MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
         sessions.createSession(SessionCreateCommand(Instant.parse("2026-11-01T03:00:00Z"), 1, "온라인", "테스트 세션", true))
         val id = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
@@ -324,6 +328,7 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `세션 분모 변경은 위험 이탈과 재진입을 새 버전으로 저장한다`() {
         jdbc.update("update members set status = 'ACTIVE'")
+        MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
         val command = SessionCreateCommand(Instant.parse("2026-11-01T03:00:00Z"), 1, "온라인", "테스트 세션", true)
         sessions.createSession(command)
@@ -341,6 +346,7 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `자동 마감과 늦게 처리된 마감 전 인증도 NEW 전이를 저장한다`() {
         jdbc.update("update members set status = 'ACTIVE'")
+        MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
         val start = Instant.parse("2026-11-01T03:00:00Z")
         repeat(10) { sessions.createSession(SessionCreateCommand(start, it + 1, "온라인", "테스트 세션", true, start, start.plusSeconds(600), start.plusSeconds(1200))) }

@@ -19,7 +19,7 @@ data class MemberManagementRequest(
     val parts: List<String?>? = null,
     @field:Schema(description = "팀 번호 다중 선택. 미배정은 0")
     val teamNumbers: List<Int?>? = null,
-    @field:Schema(description = "활동 상태 다중 선택. NORMAL=활동 중 정상, AT_RISK=활동 중 수료 위험·불가, INACTIVE=정지·기수 종료")
+    @field:Schema(description = "활동 상태 다중 선택. NORMAL=활동 중 정상, AT_RISK=활동 중 수료 위험·불가, SUSPENDED=활동 정지, ENDED=기수 종료, INACTIVE=ENDED의 호환용 별칭")
     val activityStatuses: List<ActivityStatus?>? = null,
     @field:Schema(description = "운영진·코어 제외. 기본 true")
     val excludeStaff: Boolean = true,
@@ -44,5 +44,5 @@ data class MemberManagementRequest(
 
     enum class ApprovalStatus { PENDING, APPROVED }
 
-    enum class ActivityStatus { NORMAL, AT_RISK, INACTIVE }
+    enum class ActivityStatus { NORMAL, AT_RISK, SUSPENDED, ENDED, INACTIVE }
 }

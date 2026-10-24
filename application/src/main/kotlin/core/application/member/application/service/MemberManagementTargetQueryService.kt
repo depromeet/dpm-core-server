@@ -17,11 +17,13 @@ class MemberManagementTargetQueryService(
     private val attendances: AttendancePersistencePort,
     private val roleResolver: CurrentCohortRoleResolver,
     private val graduationEvaluator: AttendanceGraduationEvaluator,
+    private val activities: core.domain.member.port.outbound.MemberActivityPersistencePort,
 ) {
     fun findAll(cohortId: Long): List<MemberSummary> {
         val source = members.findManagementMembers(cohortId)
         val memberIds = source.map { it.memberId }
         val assignments = roles.findActiveRoleAssignmentsByMemberIds(memberIds)
+        val activityByMember = activities.findAll(memberIds, cohortId)
         val attendanceSummaries =
             attendances.findMemberAttendances(cohortId, emptyList()).associate { it.id to it.summary }
         val duplicateCounts =
@@ -55,6 +57,7 @@ class MemberManagementTargetQueryService(
                     ),
                 duplicateSuspected = duplicateCounts.getOrDefault(member.name.trim() to member.part, 0) > 1,
                 updatedAt = member.updatedAt,
+                activityStatus = activityByMember[member.memberId]?.status,
             )
         }
     }

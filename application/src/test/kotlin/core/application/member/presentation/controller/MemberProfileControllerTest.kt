@@ -104,6 +104,14 @@ class MemberProfileControllerTest {
             .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-41"))
     }
 
+    @Test
+    fun `inactive member without activity authorities can still read own completed profile`() {
+        `when`(profiles.findProfile(7)).thenReturn(profile().copy(status = MemberStatus.INACTIVE, completedAt = Instant.now()))
+        mvc.perform(authenticated(get(PATH))).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.name").value("홍길동"))
+            .andExpect(jsonPath("$.data.profileCompletionRequired").value(false))
+    }
+
     private fun profile() = MemberProfile(7, "홍길동", MemberPart.WEB, MemberStatus.PENDING, null, null)
 
     private fun request(body: String) = authenticated(patch(PATH).contentType(MediaType.APPLICATION_JSON).content(body))

@@ -31,7 +31,10 @@ class MemberMergeServiceTest {
     private val approval = mock(MemberApprovalService::class.java)
     private val accounts = mock(MemberAccountPersistencePort::class.java)
     private val refreshTokens = mock(RefreshTokenPersistencePort::class.java)
-    private val service = MemberMergeService(members, merge, cohorts, approval, accounts, refreshTokens)
+    private val activities = mock(MemberActivityService::class.java).also { activity ->
+        `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+    }
+    private val service = MemberMergeService(members, merge, cohorts, approval, accounts, refreshTokens, activities)
 
     @BeforeEach
     fun setup() {
@@ -48,7 +51,7 @@ class MemberMergeServiceTest {
     @Test
     fun `잠금 후 이전과 원본 보존 삭제와 유지 계정 승인을 실행한다`() {
         service.mergeAndApprove(2, 1, 99)
-        val order = inOrder(members, merge, approval, accounts, refreshTokens)
+        val order = inOrder(members, merge, approval, accounts, refreshTokens, activities)
         order.verify(members).lockApprovalTargets(listOf(1, 2))
         order.verify(merge).hasPasswordCredential(listOf(1, 2))
         order.verify(merge).lockOAuths(listOf(1, 2))
@@ -82,7 +85,7 @@ class MemberMergeServiceTest {
             `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(retained, MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19))))
             assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
         }
-        verifyNoInteractions(merge, approval, accounts, refreshTokens)
+        verifyNoInteractions(merge, approval, accounts, refreshTokens, activities)
     }
 
     @Test

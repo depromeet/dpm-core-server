@@ -34,8 +34,9 @@ class MemberManagementQueryServiceTest {
     private val roles = mock(MemberRolePersistencePort::class.java)
     private val attendance = mock(AttendancePersistencePort::class.java)
     private val cohorts = mock(CohortQueryUseCase::class.java)
-    private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles)
-    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator()), cohorts)
+    private val activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java)
+    private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles, activities)
+    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities), cohorts)
     private val updatedAt = Instant.parse("2026-10-06T02:00:00Z")
     private val source =
         listOf(
@@ -50,7 +51,12 @@ class MemberManagementQueryServiceTest {
 
     @BeforeEach
     fun setup() {
-        `when`(cohorts.getLatestCohortId()).thenReturn(CohortId(19))
+        `when`(activities.findAll(source.map { it.memberId }, 19)).thenReturn(source.filter { it.status != MemberStatus.PENDING }.associate {
+            it.memberId to core.domain.member.port.outbound.MemberCohortActivity(it.memberId, 19,
+                if (it.status == MemberStatus.INACTIVE) core.domain.member.enums.MemberActivityStatus.ENDED else core.domain.member.enums.MemberActivityStatus.ACTIVE)
+        })
+
+        `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(members.findManagementMembers(19)).thenReturn(source)
         `when`(roles.findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })).thenReturn(
             mapOf(
@@ -244,7 +250,7 @@ class MemberManagementQueryServiceTest {
     @Test
     fun `회원별 조회 없이 회원수에 무관하게 각 port를 한번만 부른다`() {
         service.getOverview(MemberManagementRequest())
-        verify(cohorts).getLatestCohortId()
+        verify(cohorts).getActiveCohortId()
         verify(members).findManagementMembers(19)
         verify(roles).findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })
         verify(attendance).findMemberAttendances(19, emptyList())

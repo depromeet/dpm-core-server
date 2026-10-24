@@ -15,6 +15,7 @@ class CohortCommandService(
     private val cohortPersistencePort: CohortPersistencePort,
     private val cohortQueryService: CohortQueryService,
     private val cohortRoleService: CohortRoleService,
+    private val memberActivities: core.application.member.application.service.MemberActivityService,
 ) {
     @TrackMemberBadges
     fun create(value: String): Cohort {
@@ -40,6 +41,7 @@ class CohortCommandService(
         cohortId: CohortId,
         value: String,
     ): Cohort {
+        memberActivities.lockCohortChanges()
         val existing = cohortQueryService.getCohort(cohortId)
         val normalizedValue = value.trim()
         if (existing.value != normalizedValue && cohortPersistencePort.existsByValue(normalizedValue)) {
@@ -50,6 +52,8 @@ class CohortCommandService(
             Cohort(
                 id = cohortId,
                 value = normalizedValue,
+                isActive = existing.isActive,
+                activatedAt = existing.activatedAt,
                 createdAt = existing.createdAt,
             ),
         )
@@ -57,6 +61,7 @@ class CohortCommandService(
 
     @TrackMemberBadges
     fun delete(cohortId: CohortId) {
+        memberActivities.lockCohortChanges()
         cohortQueryService.getCohort(cohortId)
         if (cohortPersistencePort.hasAnyReference(cohortId)) {
             throw CohortReferencedException()
@@ -67,6 +72,7 @@ class CohortCommandService(
     @TrackMemberBadges
     fun activateCohort(cohortId: CohortId): Cohort {
         cohortQueryService.getCohort(cohortId)
+        memberActivities.endBeforeCohortSwitch(cohortId.value)
         cohortPersistencePort.activate(cohortId)
         return cohortQueryService.getCohort(cohortId)
     }

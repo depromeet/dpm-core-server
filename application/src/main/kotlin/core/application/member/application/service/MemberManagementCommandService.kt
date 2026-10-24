@@ -25,6 +25,7 @@ class MemberManagementCommandService(
     private val cohorts: CohortQueryUseCase,
     private val cohortPersistencePort: CohortPersistencePort,
     private val roleQueryUseCase: RoleQueryUseCase,
+    private val activities: MemberActivityService,
 ) {
     @TrackMemberBadges
     fun update(
@@ -44,8 +45,8 @@ class MemberManagementCommandService(
         changes: MemberManagementUpdateRequest,
         bulk: Boolean,
     ) {
-        val fieldCount = listOf(changes.part, changes.teamId, changes.memberType, changes.status).count { it != null }
-        if (fieldCount == 0 || (bulk && fieldCount != 1) ||
+        val fieldCount = listOf(changes.part, changes.teamId, changes.memberType, changes.status, changes.activityStatus).count { it != null }
+        if (fieldCount == 0 || (bulk && fieldCount != 1) || (changes.status != null && changes.activityStatus != null) ||
             memberIds.isEmpty() || memberIds.any { it == null || it <= 0 } ||
             memberIds.distinct().size != memberIds.size ||
             (changes.part != null && changes.part !in PARTS) ||
@@ -57,11 +58,15 @@ class MemberManagementCommandService(
         }
 
         val ids = memberIds.filterNotNull().sorted()
-        val cohortId = cohorts.getActiveCohortId()
+        val cohortId = activities.lockCurrentCohort()
         // 모든 대상의 잠금을 같은 순서로 획득하고, 검증이 끝나기 전에는 변경하지 않는다.
         if (members.lockApprovedManagementMemberIds(ids, cohortId.value) != ids) {
             throw MemberManagementTargetNotAllowedException()
         }
+        val activityStatus = changes.activityStatus ?: changes.status?.let {
+            if (it == "ACTIVE") core.domain.member.enums.MemberActivityStatus.ACTIVE else core.domain.member.enums.MemberActivityStatus.ENDED
+        }
+        activityStatus?.let { activities.change(ids, cohortId.value, it) }
         val teamId = changes.teamId?.takeIf { it != 0L }
         if (teamId != null && cohortPersistencePort.findTeamsByCohortId(cohortId).none { it.id == teamId }) {
             throw InvalidMemberManagementTeamException()
@@ -79,7 +84,7 @@ class MemberManagementCommandService(
             memberIds = ids,
             updatePart = changes.part != null,
             part = changes.part?.takeUnless { it == UNASSIGNED }?.let(MemberPart::valueOf),
-            status = changes.status?.let(MemberStatus::valueOf),
+            status = null,
             changedAssociationMemberIds = changedAssociationMemberIds,
         )
     }

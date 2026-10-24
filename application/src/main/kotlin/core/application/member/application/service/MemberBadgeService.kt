@@ -73,7 +73,7 @@ class MemberBadgeService(
             MemberBadgeCard.PENDING to members.filter { it.status == MemberStatus.PENDING }.map { it.memberId }.toSet(),
             MemberBadgeCard.INCOMPLETE to members.filter { it.missingInformation }.map { it.memberId }.toSet(),
             MemberBadgeCard.AT_RISK to
-                members.filter { it.graduationStatus in RISK_STATUSES }.map { it.memberId }.toSet(),
+                members.filter { it.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && it.graduationStatus in RISK_STATUSES }.map { it.memberId }.toSet(),
         )
     }
 

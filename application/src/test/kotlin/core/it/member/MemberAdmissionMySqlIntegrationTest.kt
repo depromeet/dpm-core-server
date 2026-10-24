@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicLong
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(
+@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
     MemberRepository::class,
     MemberAdmissionEventRepository::class,
     MemberAdmissionService::class,
@@ -87,6 +87,7 @@ class MemberAdmissionMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
+        core.it.member.MemberActivityFixtures.clear(jdbc)
         listOf("member_admission_events", "role_permissions", "member_roles", "member_teams", "member_cohorts", "member_permissions", "member_oauth", "members", "permissions", "roles", "teams", "cohorts").forEach {
             jdbc.execute("delete from $it")
         }
@@ -97,6 +98,7 @@ class MemberAdmissionMySqlIntegrationTest {
         jdbc.update("insert into member_cohorts (member_id, cohort_id) values (2, 19), (3, 18)")
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER'), (2, 'ORGANIZER'), (3, 'MASTER')")
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
+        core.it.member.MemberActivityFixtures.seed(jdbc)
     }
 
     @Test

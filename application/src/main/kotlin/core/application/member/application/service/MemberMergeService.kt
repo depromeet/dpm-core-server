@@ -21,6 +21,7 @@ class MemberMergeService(
     private val approval: MemberApprovalService,
     private val accounts: MemberAccountPersistencePort,
     private val refreshTokens: RefreshTokenPersistencePort,
+    private val activities: MemberActivityService,
 ) {
     @TrackMemberBadges
     fun mergeAndApprove(
@@ -32,7 +33,7 @@ class MemberMergeService(
             throw InvalidMemberMergeException()
         }
         val ids = listOf(retainedId, sourceId).sorted()
-        val cohortId = cohorts.getActiveCohortId().value
+        val cohortId = activities.lockCurrentCohort().value
         val targets = members.lockApprovalTargets(ids)
         if (targets.map { it.memberId } != ids) throw MemberNotFoundException()
         val retained = targets.single { it.memberId == retainedId }
@@ -47,6 +48,7 @@ class MemberMergeService(
         ) {
             throw InvalidMemberMergeException()
         }
+        activities.requireRestorable(retainedId, cohortId)
         if (merge.hasPasswordCredential(ids)) throw InvalidMemberMergeException()
         val oauths = merge.lockOAuths(ids)
         if (ids.any { id -> oauths.none { it.memberId.value == id } }) throw InvalidMemberMergeException()

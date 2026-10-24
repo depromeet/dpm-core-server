@@ -20,7 +20,7 @@ class MemberManagementQueryService(
 ) {
     @Transactional(readOnly = true)
     fun getOverview(request: MemberManagementRequest): MemberManagementResponse {
-        val cohortId = cohorts.getLatestCohortId().value
+        val cohortId = cohorts.getActiveCohortId().value
         val allMembers = targets.findAll(cohortId)
         val search = request.search?.trim().orEmpty()
         val filtered =
@@ -38,10 +38,11 @@ class MemberManagementQueryService(
                         request.activityStatuses.any { activity ->
                             when (activity) {
                                 ActivityStatus.NORMAL ->
-                                    member.status == MemberStatus.ACTIVE && member.graduationStatus !in RISK_STATUSES
+                                    member.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && member.graduationStatus !in RISK_STATUSES
                                 ActivityStatus.AT_RISK ->
-                                    member.status == MemberStatus.ACTIVE && member.graduationStatus in RISK_STATUSES
-                                ActivityStatus.INACTIVE -> member.status == MemberStatus.INACTIVE
+                                    member.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && member.graduationStatus in RISK_STATUSES
+                                ActivityStatus.INACTIVE, ActivityStatus.ENDED -> member.activityStatus == core.domain.member.enums.MemberActivityStatus.ENDED
+                                ActivityStatus.SUSPENDED -> member.activityStatus == core.domain.member.enums.MemberActivityStatus.SUSPENDED
                                 null -> false
                             }
                         }
@@ -73,7 +74,7 @@ class MemberManagementQueryService(
                     coreCount = core,
                     pendingCount = allMembers.count { it.status == MemberStatus.PENDING },
                     missingInformationCount = allMembers.count { it.missingInformation },
-                    graduationRiskCount = allMembers.count { it.graduationStatus in RISK_STATUSES },
+                    graduationRiskCount = allMembers.count { it.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && it.graduationStatus in RISK_STATUSES },
                 ),
             totalElements = filtered.size,
             page = request.page,
