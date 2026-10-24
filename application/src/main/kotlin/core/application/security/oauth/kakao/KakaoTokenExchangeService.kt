@@ -13,6 +13,14 @@ class KakaoTokenExchangeService(
 ) : KakaoUserInfoClient {
     private val restClient = RestClient.create()
 
+    override fun getAccessTokenInfo(accessToken: String): KakaoAccessTokenInfo =
+        restClient.get()
+            .uri("https://kapi.kakao.com/v1/user/access_token_info")
+            .header("Authorization", "Bearer $accessToken")
+            .retrieve()
+            .body(KakaoAccessTokenInfo::class.java)
+            ?: throw IllegalStateException("Failed to retrieve Kakao token information")
+
     override fun getUserAttributes(
         authorizationCode: String,
         redirectUri: String?,
