@@ -51,10 +51,15 @@ class MemberManagementQueryServiceTest {
 
     @BeforeEach
     fun setup() {
-        `when`(activities.findAll(source.map { it.memberId }, 19)).thenReturn(source.filter { it.status != MemberStatus.PENDING }.associate {
-            it.memberId to core.domain.member.port.outbound.MemberCohortActivity(it.memberId, 19,
-                if (it.status == MemberStatus.INACTIVE) core.domain.member.enums.MemberActivityStatus.ENDED else core.domain.member.enums.MemberActivityStatus.ACTIVE)
-        })
+        `when`(activities.findAll(source.map { it.memberId }, 19)).thenReturn(
+            source.filter { it.status != MemberStatus.PENDING }.associate {
+                it.memberId to
+                    core.domain.member.port.outbound.MemberCohortActivity(
+                        it.memberId, 19,
+                        if (it.status == MemberStatus.INACTIVE) core.domain.member.enums.MemberActivityStatus.ENDED else core.domain.member.enums.MemberActivityStatus.ACTIVE,
+                    )
+            },
+        )
 
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(members.findManagementMembers(19)).thenReturn(source)

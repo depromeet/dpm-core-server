@@ -89,7 +89,15 @@ class CohortRepository(
 
     override fun hasAnyReference(cohortId: CohortId): Boolean {
         val cohortValue = cohortId.value
-        return listOf("member_cohorts", "member_cohort_activities", "member_activity_events", "teams", "sessions", "after_party_invite_tags").any { tableName ->
+        return listOf(
+            "member_cohorts",
+            "member_cohort_activities",
+            "member_activity_events",
+            "teams",
+            "sessions",
+            "after_party_invite_tags",
+        ).any {
+                tableName ->
             dsl.fetchExists(
                 dsl.selectOne()
                     .from(DSL.table(DSL.name(tableName)))

@@ -33,16 +33,16 @@ import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.vo.SessionId
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.it.attendance.AttendanceMySqlIntegrationTestApplication
+import core.persistence.member.repository.MemberAccountRepository
 import core.persistence.member.repository.MemberAdmissionEventRepository
 import core.persistence.member.repository.MemberBadgeRepository
-import core.persistence.member.repository.MemberAccountRepository
-import core.persistence.refreshToken.repository.RefreshTokenRepository
 import core.persistence.member.repository.MemberMergeRepository
 import core.persistence.member.repository.MemberProfileRepository
 import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
+import core.persistence.refreshToken.repository.RefreshTokenRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -72,7 +72,8 @@ import java.util.concurrent.TimeUnit
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
+@Import(
+    core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
     MemberBadgeTrackingConfiguration::class, MemberBadgeTransactionTracker::class, MemberBadgeService::class,
     MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class, CurrentCohortRoleResolver::class,
     MemberBadgeRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class,
@@ -84,6 +85,7 @@ import java.util.concurrent.TimeUnit
 )
 class MemberBadgeMySqlIntegrationTest {
     @Autowired lateinit var managementTargets: MemberManagementTargetQueryService
+
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var badges: MemberBadgeService
@@ -366,10 +368,11 @@ class MemberBadgeMySqlIntegrationTest {
         val root =
             generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
                 .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
-        val sql = java.nio.file.Files.walk(root.resolve("db")).use { paths ->
-            paths.filter { it.fileName.toString() == "2610091830_member_badges.sql" }
-                .findFirst().orElseThrow()
-        }
+        val sql =
+            java.nio.file.Files.walk(root.resolve("db")).use { paths ->
+                paths.filter { it.fileName.toString() == "2610091830_member_badges.sql" }
+                    .findFirst().orElseThrow()
+            }
         jdbc.execute("drop table member_badge_memberships")
         jdbc.execute("drop table member_badge_states")
         repeat(2) {

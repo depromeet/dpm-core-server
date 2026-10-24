@@ -322,14 +322,17 @@ class MemberManagementUpdateMySqlIntegrationTest {
     fun `existing signed token keeps authentication but loses live activity permissions on suspension`() {
         jdbc.update("insert into permissions (permission_id, resource, action) values (668, 'session', 'read')")
         jdbc.update("insert into role_permissions (role_id, permission_id, granted_at) values (4, 668, now(6)), (5, 668, now(6))")
-        val roleRepository = core.persistence.authorization.repository.RoleRepository(
-            org.mockito.Mockito.mock(core.persistence.authorization.repository.RoleJpaRepository::class.java), dsl,
-        )
+        val roleRepository =
+            core.persistence.authorization.repository.RoleRepository(
+                org.mockito.Mockito.mock(core.persistence.authorization.repository.RoleJpaRepository::class.java),
+                dsl,
+            )
         val queries = core.application.authorization.application.service.RoleQueryService(roleRepository, memberRolePort, resolver, cohortQueries)
-        val properties = core.application.security.properties.TokenProperties(
-            java.util.Base64.getEncoder().encodeToString(ByteArray(64) { 7 }),
-            core.application.security.properties.TokenProperties.ExpirationTime(600, 1200),
-        )
+        val properties =
+            core.application.security.properties.TokenProperties(
+                java.util.Base64.getEncoder().encodeToString(ByteArray(64) { 7 }),
+                core.application.security.properties.TokenProperties.ExpirationTime(600, 1200),
+            )
         val tokens = core.application.security.oauth.token.JwtTokenProvider(properties, queries)
         val token = tokens.generateAccessToken("1", null)
         assertThat(tokens.getAuthentication(token).authorities.map { it.authority }).contains("read:session")

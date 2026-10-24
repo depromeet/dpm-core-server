@@ -2,6 +2,7 @@ package core.application.member.presentation.response
 
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.member.enums.LoginMethod
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
@@ -48,7 +49,9 @@ data class MemberManagementResponse(
         val email: String?,
         @field:Schema(description = "WEB/SERVER/DESIGN/IOS/ANDROID/UNASSIGNED")
         val part: String,
-        @field:Schema(description = "배정된 타입 DEEPER/ORGANIZER/CORE/UNASSIGNED. 활동 정지 시에도 배정은 유지하며 실제 권한과 다름. MASTER는 표시하지 않음")
+        @field:Schema(
+            description = "배정된 타입 DEEPER/ORGANIZER/CORE/UNASSIGNED. 활동 정지 시에도 배정은 유지하며 실제 권한과 다름. MASTER는 표시하지 않음",
+        )
         val memberType: String,
         @field:Schema(description = "팀 번호. 미배정은 0")
         val teamNumber: Int,
@@ -62,7 +65,10 @@ data class MemberManagementResponse(
         val updatedAt: Instant?,
         @field:Schema(description = "대표 로그인 수단. 카카오 → 애플 → 이메일 계정 순. 최근 로그인 수단이 아니며, 연결 정보가 없으면 null", nullable = true)
         val loginMethod: LoginMethod? = null,
-        @field:Schema(description = "해당 기수 활동 상태. ACTIVE/SUSPENDED/ENDED. 미승인 또는 활동 정보가 없으면 null. status는 기존 호환용 가입 상태", nullable = true)
-        val activityStatus: core.domain.member.enums.MemberActivityStatus? = null,
+        @field:Schema(
+            description = "해당 기수 활동 상태. ACTIVE/SUSPENDED/ENDED. 미승인 또는 활동 정보가 없으면 null. status는 기존 호환용 가입 상태",
+            nullable = true,
+        )
+        val activityStatus: MemberActivityStatus? = null,
     )
 }

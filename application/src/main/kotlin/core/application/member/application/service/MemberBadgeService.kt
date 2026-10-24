@@ -7,6 +7,7 @@ import core.application.member.presentation.response.MemberBadgeResponse
 import core.application.member.presentation.response.MemberBadgesResponse
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberBadgePersistencePort
 import core.domain.member.port.outbound.MemberBadgeState
@@ -73,7 +74,9 @@ class MemberBadgeService(
             MemberBadgeCard.PENDING to members.filter { it.status == MemberStatus.PENDING }.map { it.memberId }.toSet(),
             MemberBadgeCard.INCOMPLETE to members.filter { it.missingInformation }.map { it.memberId }.toSet(),
             MemberBadgeCard.AT_RISK to
-                members.filter { it.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && it.graduationStatus in RISK_STATUSES }.map { it.memberId }.toSet(),
+                members.filter {
+                    it.activityStatus == MemberActivityStatus.ACTIVE && it.graduationStatus in RISK_STATUSES
+                }.map { it.memberId }.toSet(),
         )
     }
 

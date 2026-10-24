@@ -18,12 +18,12 @@ import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.persistence.member.repository.MemberAccountRepository
-import core.persistence.refreshToken.repository.RefreshTokenRepository
 import core.persistence.member.repository.MemberMergeRepository
 import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
+import core.persistence.refreshToken.repository.RefreshTokenRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeAll
@@ -88,6 +88,7 @@ class MemberMergeMySqlIntegrationTest {
             jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider, email) values (?, ?, ?, ?, ?)", id, id, "external-$id", if (id == 1L) "KAKAO" else "APPLE", "oauth-$id@example.test")
         }
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
+        `when`(cohorts.findActiveCohortId()).thenReturn(CohortId(19))
         `when`(roles.findIdByName("DEEPER")).thenReturn(1)
         (1L..2L).forEach { id ->
             jdbc.update("insert into refresh_tokens (member_id, token_hash, device_id, issued_at, expires_at) values (?, ?, 'test-device', now(6), date_add(now(6), interval 1 day))", id, "test-token-$id".padEnd(64, 'x'))
@@ -120,9 +121,10 @@ class MemberMergeMySqlIntegrationTest {
         jdbc.update("update member_roles set role_id = 1 where member_id = 1")
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (18, '18', false, 0, 0)")
         jdbc.update("insert into member_cohorts (member_id, cohort_id) values (1, 18)")
-        val before = listOf("members", "member_cohorts", "member_roles", "member_teams").associateWith {
-            jdbc.queryForList("select * from $it where member_id = 1")
-        }
+        val before =
+            listOf("members", "member_cohorts", "member_roles", "member_teams").associateWith {
+                jdbc.queryForList("select * from $it where member_id = 1")
+            }
 
         service.mergeAndApprove(1, 2, 99)
 
@@ -138,13 +140,16 @@ class MemberMergeMySqlIntegrationTest {
         val ready = CountDownLatch(2)
         val pool = Executors.newFixedThreadPool(2)
         try {
-            val futures = (1..2).map {
-                pool.submit(Callable {
-                    ready.countDown()
-                    check(ready.await(10, TimeUnit.SECONDS))
-                    runCatching { service.mergeAndApprove(1, 2, 99) }
-                })
-            }
+            val futures =
+                (1..2).map {
+                    pool.submit(
+                        Callable {
+                            ready.countDown()
+                            check(ready.await(10, TimeUnit.SECONDS))
+                            runCatching { service.mergeAndApprove(1, 2, 99) }
+                        },
+                    )
+                }
             val results = futures.map { it.get(20, TimeUnit.SECONDS) }
             assertThat(results.count { it.isSuccess }).isEqualTo(1)
             assertThat(results.single { it.isFailure }.exceptionOrNull()).isInstanceOf(InvalidMemberMergeException::class.java)
@@ -245,7 +250,8 @@ class MemberMergeMySqlIntegrationTest {
     @EnableAutoConfiguration
     @EntityScan(basePackages = ["core.entity"])
     @EnableJpaRepositories(basePackages = ["core.persistence"])
-    @Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
+    @Import(
+        core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
         JooqDslConfig::class,
         MemberRepository::class,
         MemberMergeRepository::class, MemberAccountRepository::class, RefreshTokenRepository::class,

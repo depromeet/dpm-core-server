@@ -4,6 +4,7 @@ import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.LoginMethod
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.team.vo.TeamNumber
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -100,8 +101,11 @@ data class MemberDetailsResponse(
         nullable = true,
     )
     val attendanceStatus: String?,
-    @field:Schema(description = "마지막 소속 기수의 활동 상태. ACTIVE/SUSPENDED/ENDED, 정보가 없으면 null. 가입 상태 status와 별도", nullable = true)
-    val activityStatus: core.domain.member.enums.MemberActivityStatus? = null,
+    @field:Schema(
+        description = "마지막 소속 기수의 활동 상태. ACTIVE/SUSPENDED/ENDED, 정보가 없으면 null. 가입 상태 status와 별도",
+        nullable = true,
+    )
+    val activityStatus: MemberActivityStatus? = null,
 ) {
     companion object {
         fun of(
@@ -113,7 +117,7 @@ data class MemberDetailsResponse(
             isActiveCohort: Boolean,
             attendanceSummary: AttendanceSummaryQueryModel?,
             attendanceStatus: AttendanceGraduationStatus?,
-            activityStatus: core.domain.member.enums.MemberActivityStatus? = null,
+            activityStatus: MemberActivityStatus? = null,
         ): MemberDetailsResponse =
             MemberDetailsResponse(
                 email = email,

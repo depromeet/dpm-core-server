@@ -29,7 +29,9 @@ class MemberMergeService(
         sourceId: Long?,
         actorId: Long,
     ) {
-        if (retainedId == null || sourceId == null || retainedId <= 0 || sourceId <= 0 || retainedId == sourceId || actorId <= 0) {
+        if (retainedId == null || sourceId == null || retainedId <= 0 || sourceId <= 0 ||
+            retainedId == sourceId || actorId <= 0
+        ) {
             throw InvalidMemberMergeException()
         }
         val ids = listOf(retainedId, sourceId).sorted()
@@ -38,11 +40,12 @@ class MemberMergeService(
         if (targets.map { it.memberId } != ids) throw MemberNotFoundException()
         val retained = targets.single { it.memberId == retainedId }
         val source = targets.single { it.memberId == sourceId }
-        val retainedAllowed = when (retained.status) {
-            MemberStatus.PENDING -> retained.cohortIds.isEmpty() || cohortId in retained.cohortIds
-            MemberStatus.ACTIVE -> cohortId in retained.cohortIds
-            else -> false
-        }
+        val retainedAllowed =
+            when (retained.status) {
+                MemberStatus.PENDING -> retained.cohortIds.isEmpty() || cohortId in retained.cohortIds
+                MemberStatus.ACTIVE -> cohortId in retained.cohortIds
+                else -> false
+            }
         if (targets.any { it.isDeleted } || !retainedAllowed || source.status != MemberStatus.PENDING ||
             (source.cohortIds.isNotEmpty() && cohortId !in source.cohortIds)
         ) {

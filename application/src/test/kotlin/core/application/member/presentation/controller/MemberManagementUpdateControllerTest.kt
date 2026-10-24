@@ -8,7 +8,6 @@ import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberPart
-import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.port.outbound.MemberTeamPersistencePort

@@ -31,9 +31,10 @@ class MemberMergeServiceTest {
     private val approval = mock(MemberApprovalService::class.java)
     private val accounts = mock(MemberAccountPersistencePort::class.java)
     private val refreshTokens = mock(RefreshTokenPersistencePort::class.java)
-    private val activities = mock(MemberActivityService::class.java).also { activity ->
-        `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
-    }
+    private val activities =
+        mock(MemberActivityService::class.java).also { activity ->
+            `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+        }
     private val service = MemberMergeService(members, merge, cohorts, approval, accounts, refreshTokens, activities)
 
     @BeforeEach

@@ -2,6 +2,7 @@ package core.application.member.presentation.request
 
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import core.domain.member.enums.MemberActivityStatus
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
@@ -23,7 +24,7 @@ data class MemberManagementUpdateRequest(
     @field:Pattern(regexp = "ACTIVE|INACTIVE")
     val status: String? = null,
     @field:Schema(description = "기수별 활동 상태. ACTIVE/SUSPENDED/ENDED. 정지·종료는 같은 기수에서 복구 불가. status와 함께 제출 불가")
-    val activityStatus: core.domain.member.enums.MemberActivityStatus? = null,
+    val activityStatus: MemberActivityStatus? = null,
 ) {
     @JsonAnySetter
     fun rejectUnknownField(

@@ -19,6 +19,7 @@ import core.domain.member.aggregate.Member
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.inbound.MemberQueryByRoleUseCase
 import core.domain.member.port.inbound.MemberQueryUseCase
+import core.domain.member.port.outbound.MemberActivityPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
@@ -39,7 +40,7 @@ class MemberQueryService(
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val attendancePersistencePort: AttendancePersistencePort,
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
-    private val activities: core.domain.member.port.outbound.MemberActivityPersistencePort,
+    private val activities: MemberActivityPersistencePort,
     @Value("\${member.default-team-id:0}")
     private val defaultTeamId: Int,
 ) : MemberQueryByRoleUseCase,

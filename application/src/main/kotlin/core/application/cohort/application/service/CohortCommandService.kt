@@ -2,6 +2,7 @@ package core.application.cohort.application.service
 
 import core.application.cohort.application.exception.CohortAlreadyExistsException
 import core.application.cohort.application.exception.CohortReferencedException
+import core.application.member.application.service.MemberActivityService
 import core.application.member.application.service.TrackMemberBadges
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
@@ -15,7 +16,7 @@ class CohortCommandService(
     private val cohortPersistencePort: CohortPersistencePort,
     private val cohortQueryService: CohortQueryService,
     private val cohortRoleService: CohortRoleService,
-    private val memberActivities: core.application.member.application.service.MemberActivityService,
+    private val memberActivities: MemberActivityService,
 ) {
     @TrackMemberBadges
     fun create(value: String): Cohort {

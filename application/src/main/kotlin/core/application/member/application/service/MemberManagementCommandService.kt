@@ -8,8 +8,8 @@ import core.application.member.presentation.request.MemberManagementUpdateReques
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberPart
-import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.port.outbound.MemberTeamPersistencePort
@@ -45,8 +45,18 @@ class MemberManagementCommandService(
         changes: MemberManagementUpdateRequest,
         bulk: Boolean,
     ) {
-        val fieldCount = listOf(changes.part, changes.teamId, changes.memberType, changes.status, changes.activityStatus).count { it != null }
-        if (fieldCount == 0 || (bulk && fieldCount != 1) || (changes.status != null && changes.activityStatus != null) ||
+        val fieldCount =
+            listOf(
+                changes.part,
+                changes.teamId,
+                changes.memberType,
+                changes.status,
+                changes.activityStatus,
+            ).count {
+                it != null
+            }
+        if (fieldCount == 0 || (bulk && fieldCount != 1) ||
+            (changes.status != null && changes.activityStatus != null) ||
             memberIds.isEmpty() || memberIds.any { it == null || it <= 0 } ||
             memberIds.distinct().size != memberIds.size ||
             (changes.part != null && changes.part !in PARTS) ||
@@ -63,9 +73,10 @@ class MemberManagementCommandService(
         if (members.lockApprovedManagementMemberIds(ids, cohortId.value) != ids) {
             throw MemberManagementTargetNotAllowedException()
         }
-        val activityStatus = changes.activityStatus ?: changes.status?.let {
-            if (it == "ACTIVE") core.domain.member.enums.MemberActivityStatus.ACTIVE else core.domain.member.enums.MemberActivityStatus.ENDED
-        }
+        val activityStatus =
+            changes.activityStatus ?: changes.status?.let {
+                if (it == "ACTIVE") MemberActivityStatus.ACTIVE else MemberActivityStatus.ENDED
+            }
         activityStatus?.let { activities.change(ids, cohortId.value, it) }
         val teamId = changes.teamId?.takeIf { it != 0L }
         if (teamId != null && cohortPersistencePort.findTeamsByCohortId(cohortId).none { it.id == teamId }) {

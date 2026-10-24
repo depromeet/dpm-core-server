@@ -1,5 +1,6 @@
 package core.application.member.application.service
 
+import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.common.exception.BusinessException
 import core.application.member.application.exception.MemberExceptionCode
 import core.domain.cohort.port.inbound.CohortQueryUseCase
@@ -22,29 +23,40 @@ class MemberActivityService(
     /** 모든 활동 변경 경로는 기수 → 회원 ID 순서로 잠근다. */
     fun lockCurrentCohort(): CohortId {
         activities.lockCohorts()
-        return cohorts.findActiveCohortId() ?: throw core.application.cohort.application.exception.CohortNotFoundException()
+        return cohorts.findActiveCohortId() ?: throw CohortNotFoundException()
     }
 
     fun lockCohortChanges() {
         activities.lockCohorts()
     }
 
-    fun requireRestorable(memberId: Long, cohortId: Long) {
+    fun requireRestorable(
+        memberId: Long,
+        cohortId: Long,
+    ) {
         val activity = activities.find(memberId, cohortId)
         if (activity != null && (activity.status != MemberActivityStatus.ACTIVE || activity.suspendedAt != null)) {
             throw BusinessException(MemberExceptionCode.MEMBER_ACTIVITY_RESTORE_NOT_ALLOWED)
         }
     }
 
-    fun activate(memberId: Long, cohortId: Long) {
+    fun activate(
+        memberId: Long,
+        cohortId: Long,
+    ) {
         requireRestorable(memberId, cohortId)
         activities.transition(memberId, cohortId, MemberActivityStatus.ACTIVE, actorId())
     }
 
-    fun change(memberIds: List<Long>, cohortId: Long, status: MemberActivityStatus) {
+    fun change(
+        memberIds: List<Long>,
+        cohortId: Long,
+        status: MemberActivityStatus,
+    ) {
         memberIds.forEach { memberId ->
-            val current = activities.find(memberId, cohortId)
-                ?: throw BusinessException(MemberExceptionCode.MEMBER_ACTIVITY_NOT_INITIALIZED)
+            val current =
+                activities.find(memberId, cohortId)
+                    ?: throw BusinessException(MemberExceptionCode.MEMBER_ACTIVITY_NOT_INITIALIZED)
             if (status == MemberActivityStatus.ACTIVE) {
                 requireRestorable(memberId, cohortId)
             } else if (current.status == MemberActivityStatus.ENDED && status != MemberActivityStatus.ENDED) {
@@ -52,8 +64,13 @@ class MemberActivityService(
             }
             activities.transition(memberId, cohortId, status, actorId())
         }
-        members.updateManagementFields(memberIds, false, null,
-            if (status == MemberActivityStatus.ACTIVE) MemberStatus.ACTIVE else MemberStatus.INACTIVE, emptySet())
+        members.updateManagementFields(
+            memberIds,
+            false,
+            null,
+            if (status == MemberActivityStatus.ACTIVE) MemberStatus.ACTIVE else MemberStatus.INACTIVE,
+            emptySet(),
+        )
     }
 
     /** 이미 잠근 기수 아래에서 회원을 순서대로 잠그고 종료한다. 정지 표시는 지우지 않는다. */
@@ -68,7 +85,10 @@ class MemberActivityService(
         val remainingIds = targets.map { it.memberId }
         remainingIds.forEach { activities.transition(it, currentCohortId, MemberActivityStatus.ENDED, actorId()) }
         // 가입 대기/반려로 전환된 계정을 승인 상태로 되돌리지 않는다.
-        val approvedIds = targets.filter { it.status in setOf(MemberStatus.ACTIVE, MemberStatus.INACTIVE) }.map { it.memberId }
+        val approvedIds =
+            targets.filter {
+                it.status in setOf(MemberStatus.ACTIVE, MemberStatus.INACTIVE)
+            }.map { it.memberId }
         members.updateManagementFields(approvedIds, false, null, MemberStatus.INACTIVE, emptySet())
     }
 

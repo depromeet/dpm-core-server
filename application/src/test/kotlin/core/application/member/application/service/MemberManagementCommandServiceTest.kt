@@ -11,7 +11,6 @@ import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberPart
-import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.port.outbound.MemberTeamPersistencePort
@@ -32,9 +31,10 @@ class MemberManagementCommandServiceTest {
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val cohortPort = mock(CohortPersistencePort::class.java)
     private val roleQueries = mock(RoleQueryUseCase::class.java)
-    private val activities = mock(MemberActivityService::class.java).also { activity ->
-        `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
-    }
+    private val activities =
+        mock(MemberActivityService::class.java).also { activity ->
+            `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+        }
     private val service = MemberManagementCommandService(members, teams, roles, cohorts, cohortPort, roleQueries, activities)
 
     @BeforeEach

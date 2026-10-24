@@ -9,6 +9,7 @@ import core.application.member.presentation.response.MemberManagementResponse.Su
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -38,11 +39,14 @@ class MemberManagementQueryService(
                         request.activityStatuses.any { activity ->
                             when (activity) {
                                 ActivityStatus.NORMAL ->
-                                    member.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && member.graduationStatus !in RISK_STATUSES
+                                    member.activityStatus == MemberActivityStatus.ACTIVE &&
+                                        member.graduationStatus !in RISK_STATUSES
                                 ActivityStatus.AT_RISK ->
-                                    member.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && member.graduationStatus in RISK_STATUSES
-                                ActivityStatus.INACTIVE, ActivityStatus.ENDED -> member.activityStatus == core.domain.member.enums.MemberActivityStatus.ENDED
-                                ActivityStatus.SUSPENDED -> member.activityStatus == core.domain.member.enums.MemberActivityStatus.SUSPENDED
+                                    member.activityStatus == MemberActivityStatus.ACTIVE &&
+                                        member.graduationStatus in RISK_STATUSES
+                                ActivityStatus.INACTIVE, ActivityStatus.ENDED ->
+                                    member.activityStatus == MemberActivityStatus.ENDED
+                                ActivityStatus.SUSPENDED -> member.activityStatus == MemberActivityStatus.SUSPENDED
                                 null -> false
                             }
                         }
@@ -74,7 +78,10 @@ class MemberManagementQueryService(
                     coreCount = core,
                     pendingCount = allMembers.count { it.status == MemberStatus.PENDING },
                     missingInformationCount = allMembers.count { it.missingInformation },
-                    graduationRiskCount = allMembers.count { it.activityStatus == core.domain.member.enums.MemberActivityStatus.ACTIVE && it.graduationStatus in RISK_STATUSES },
+                    graduationRiskCount =
+                        allMembers.count {
+                            it.activityStatus == MemberActivityStatus.ACTIVE && it.graduationStatus in RISK_STATUSES
+                        },
                 ),
             totalElements = filtered.size,
             page = request.page,

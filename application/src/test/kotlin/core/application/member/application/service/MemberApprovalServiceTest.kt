@@ -31,9 +31,10 @@ class MemberApprovalServiceTest {
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val roleQueries = mock(RoleQueryUseCase::class.java)
     private val initializer = mock(MemberActivationInitializer::class.java)
-    private val activities = mock(MemberActivityService::class.java).also { activity ->
-        `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
-    }
+    private val activities =
+        mock(MemberActivityService::class.java).also { activity ->
+            `when`(activity.lockCurrentCohort()).thenAnswer { cohorts.getActiveCohortId() }
+        }
     private val service = MemberApprovalService(members, memberCohorts, teams, roles, cohorts, roleQueries, initializer, activities)
 
     @BeforeEach

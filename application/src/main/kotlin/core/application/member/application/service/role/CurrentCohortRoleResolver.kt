@@ -2,6 +2,8 @@ package core.application.member.application.service.role
 
 import core.application.cohort.application.service.CohortQueryService
 import core.domain.authorization.vo.RoleType
+import core.domain.member.enums.MemberActivityStatus
+import core.domain.member.port.outbound.MemberActivityPersistencePort
 import core.domain.member.port.outbound.MemberCohortPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
@@ -13,7 +15,7 @@ class CurrentCohortRoleResolver(
     private val cohortQueryService: CohortQueryService,
     private val memberCohortPersistencePort: MemberCohortPersistencePort,
     private val memberRolePersistencePort: MemberRolePersistencePort,
-    private val activities: core.domain.member.port.outbound.MemberActivityPersistencePort,
+    private val activities: MemberActivityPersistencePort,
 ) {
     fun filterEffectiveRolesForMember(memberId: MemberId): List<String> =
         filterEffectiveRoles(
@@ -31,8 +33,9 @@ class CurrentCohortRoleResolver(
         memberId: MemberId,
         roleNames: List<String>,
     ): String? {
-        val assignments = memberRolePersistencePort.findActiveRoleAssignmentsByMemberId(memberId.value)
-            .filter { it.roleName in roleNames }
+        val assignments =
+            memberRolePersistencePort.findActiveRoleAssignmentsByMemberId(memberId.value)
+                .filter { it.roleName in roleNames }
         return selectRepresentativeRole(assignments, buildContext(memberId))
     }
 
@@ -81,11 +84,14 @@ class CurrentCohortRoleResolver(
     ): Boolean {
         val isActiveMember = context.activeCohortId != null && context.activeCohortId in context.memberCohortIds
         // 정지·종료는 MASTER/GUEST를 통한 우회도 막는다. 기수 미소속 글로벌 MASTER는 유지한다.
-        if (context.activityStatus in setOf(
-                core.domain.member.enums.MemberActivityStatus.SUSPENDED,
-                core.domain.member.enums.MemberActivityStatus.ENDED,
-            ) || (isActiveMember && context.activityStatus != core.domain.member.enums.MemberActivityStatus.ACTIVE)
-        ) return false
+        if (context.activityStatus in
+            setOf(
+                MemberActivityStatus.SUSPENDED,
+                MemberActivityStatus.ENDED,
+            ) || (isActiveMember && context.activityStatus != MemberActivityStatus.ACTIVE)
+        ) {
+            return false
+        }
         return when (assignment.roleName) {
             RoleType.Master.code, RoleType.Guest.code -> true
             RoleType.Core.code, RoleType.Organizer.code, RoleType.Deeper.code -> {
@@ -101,10 +107,11 @@ class CurrentCohortRoleResolver(
     data class CohortRoleContext(
         val activeCohortId: Long?,
         val memberCohortIds: Set<Long>,
-        val activityStatus: core.domain.member.enums.MemberActivityStatus? = core.domain.member.enums.MemberActivityStatus.ACTIVE,
+        val activityStatus: MemberActivityStatus? = MemberActivityStatus.ACTIVE,
     )
 
     companion object {
-        private val ROLE_PRIORITY = listOf(RoleType.Master, RoleType.Core, RoleType.Organizer, RoleType.Deeper, RoleType.Guest)
+        private val ROLE_PRIORITY =
+            listOf(RoleType.Master, RoleType.Core, RoleType.Organizer, RoleType.Deeper, RoleType.Guest)
     }
 }

@@ -55,7 +55,10 @@ class MemberApprovalService(
 
         // 현재 기수의 정지/종료는 승인 API로 복구할 수 없다. 새 기수 승인은 별도 기록으로 남긴다.
         targets.forEach { activities.requireRestorable(it.memberId, cohortId.value) }
-        val pendingIds = targets.filter { it.status == MemberStatus.PENDING || cohortId.value !in it.cohortIds }.map { it.memberId }
+        val pendingIds =
+            targets.filter {
+                it.status == MemberStatus.PENDING || cohortId.value !in it.cohortIds
+            }.map { it.memberId }
         if (pendingIds.isEmpty()) return
         val roleId = roleQueries.findIdByName(RoleType.Deeper.code)
         roles.replaceCurrentCohortRoles(pendingIds, cohortId.value, roleId)

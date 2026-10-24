@@ -47,7 +47,8 @@ import java.util.concurrent.atomic.AtomicLong
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
+@Import(
+    core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
     MemberRepository::class,
     MemberAdmissionEventRepository::class,
     MemberAdmissionService::class,
@@ -249,10 +250,11 @@ class MemberAdmissionMySqlIntegrationTest {
         val root =
             generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
                 .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
-        val sql = java.nio.file.Files.walk(root.resolve("db")).use { paths ->
-            paths.filter { it.fileName.toString() == "2610180100_rejected_member_profile_completion.sql" }
-                .findFirst().orElseThrow()
-        }
+        val sql =
+            java.nio.file.Files.walk(root.resolve("db")).use { paths ->
+                paths.filter { it.fileName.toString() == "2610180100_rejected_member_profile_completion.sql" }
+                    .findFirst().orElseThrow()
+            }
 
         fun applySql() {
             jdbc.dataSource!!.connection.use { connection ->

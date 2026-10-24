@@ -16,6 +16,7 @@ import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -180,7 +181,7 @@ class MemberCommandService(
     private fun synchronizeActivity(member: Member) {
         if (member.status == MemberStatus.INACTIVE) {
             val cohortId = cohortQueryUseCase.getActiveCohortId()
-            activities.change(listOf(member.id!!.value), cohortId.value, core.domain.member.enums.MemberActivityStatus.ENDED)
+            activities.change(listOf(member.id!!.value), cohortId.value, MemberActivityStatus.ENDED)
         }
     }
 

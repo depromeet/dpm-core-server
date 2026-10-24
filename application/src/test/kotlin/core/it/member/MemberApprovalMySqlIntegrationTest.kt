@@ -88,7 +88,8 @@ import java.util.concurrent.atomic.AtomicLong
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
+@Import(
+    core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
     core.application.attendance.application.service.AttendanceGraduationEvaluator::class,
     MemberRepository::class,
     MemberRoleRepository::class,

@@ -10,7 +10,15 @@ import jakarta.persistence.UniqueConstraint
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "member_cohort_activities", uniqueConstraints = [UniqueConstraint(name = "uk_member_cohort_activity", columnNames = ["member_id", "cohort_id"])])
+@Table(
+    name = "member_cohort_activities",
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_member_cohort_activity",
+            columnNames = ["member_id", "cohort_id"],
+        ),
+    ],
+)
 class MemberCohortActivityEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_cohort_activity_id") val id: Long = 0,
