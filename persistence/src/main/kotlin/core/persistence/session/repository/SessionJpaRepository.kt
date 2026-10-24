@@ -16,6 +16,20 @@ interface SessionJpaRepository : JpaRepository<SessionEntity, Long> {
 
     fun findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId: Long): List<SessionEntity>
 
+    @Query(
+        "select case when count(s) > 0 then true else false end from SessionEntity s " +
+            "where s.cohortId = :cohortId " +
+            "and s.deletedAt is null " +
+            "and s.date >= :rangeStart and s.date < :rangeEnd " +
+            "and (:excludeSessionId is null or s.id <> :excludeSessionId)",
+    )
+    fun existsByCohortIdAndDateRange(
+        @Param("cohortId") cohortId: Long,
+        @Param("rangeStart") rangeStart: Instant,
+        @Param("rangeEnd") rangeEnd: Instant,
+        @Param("excludeSessionId") excludeSessionId: Long?,
+    ): Boolean
+
     fun findByIdAndDeletedAtIsNull(id: Long): SessionEntity?
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

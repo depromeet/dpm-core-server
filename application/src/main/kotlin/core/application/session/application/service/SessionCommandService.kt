@@ -4,11 +4,13 @@ import core.application.attendance.application.properties.AttendancePolicyProper
 import core.application.attendance.application.service.AttendanceCommandService
 import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.service.TrackMemberBadges
+import core.application.session.application.exception.DuplicateSessionDateException
 import core.application.session.application.exception.InvalidSessionIdException
 import core.application.session.application.exception.PartialAttendanceTimesException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.validator.SessionValidator
 import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
+import core.domain.cohort.vo.CohortId
 import core.domain.notification.aggregate.SentSessionNotification
 import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.inbound.SentSessionNotificationCommandUseCase
@@ -27,6 +29,9 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * 세션 행 쓰기 잠금을 먼저 잡고 출석 행을 바꿔 인증/자동 결석/운영진 변경과 직렬화한다
@@ -48,6 +53,7 @@ class SessionCommandService(
     @TrackMemberBadges
     fun createSession(command: SessionCreateCommand) {
         val latestCohortId = cohortQueryService.getLatestCohortId()
+        ensureNoSessionOnSameLocalDate(latestCohortId, command.date)
         val attendanceTimes = resolveAttendanceTimes(command)
         val newSession = Session.create(command, latestCohortId, attendanceTimes)
 
@@ -92,6 +98,7 @@ class SessionCommandService(
                 ?: throw SessionNotFoundException()
 
         sessionValidator.validateAttendanceTimes(command.attendanceStart, command.lateStart, command.absentStart)
+        ensureNoSessionOnSameLocalDate(session.cohortId, command.date, excludeSessionId = command.sessionId.value)
 
         val previousAttendancePolicy = session.attendancePolicy
 
@@ -154,5 +161,29 @@ class SessionCommandService(
 
         sessionValidator.validateAttendanceTimes(attendanceStart, lateStart, absentStart)
         return SessionAttendanceTimes(attendanceStart, lateStart, absentStart)
+    }
+
+    /** 같은 기수·같은 KST 달력일에 삭제되지 않은 세션이 있으면 거절한다. */
+    private fun ensureNoSessionOnSameLocalDate(
+        cohortId: CohortId,
+        date: Instant,
+        excludeSessionId: Long? = null,
+    ) {
+        val day = LocalDate.ofInstant(date, KOREA_ZONE)
+        val rangeStart = day.atStartOfDay(KOREA_ZONE).toInstant()
+        val rangeEnd = day.plusDays(1).atStartOfDay(KOREA_ZONE).toInstant()
+        if (sessionPersistencePort.existsByCohortIdAndDateRange(
+                cohortId.value,
+                rangeStart,
+                rangeEnd,
+                excludeSessionId,
+            )
+        ) {
+            throw DuplicateSessionDateException()
+        }
+    }
+
+    private companion object {
+        val KOREA_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
     }
 }

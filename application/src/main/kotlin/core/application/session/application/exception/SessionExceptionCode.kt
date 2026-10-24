@@ -25,6 +25,11 @@ enum class SessionExceptionCode(
         "SESSION-400-09",
         "출석 시작/지각 시작/출석 마감 시각은 모두 입력하거나 모두 생략해야 합니다",
     ),
+    DUPLICATE_SESSION_DATE(
+        HttpStatus.CONFLICT,
+        "SESSION-409-01",
+        "같은 기수에 해당 날짜의 세션이 이미 등록되어 있습니다",
+    ),
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION-404-01", "세션을 찾을 수 없습니다"),
     COHORT_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION-404-02", "해당 기수의 세션을 찾을 수 없습니다"),
     ;
