@@ -102,12 +102,16 @@ class CurrentCohortRoleResolver(
         context: CohortRoleContext,
     ): Boolean {
         val isActiveMember = context.activeCohortId != null && context.activeCohortId in context.memberCohortIds
-        // 정지·종료는 MASTER/GUEST를 통한 우회도 막는다. 기수 미소속 글로벌 MASTER는 유지한다.
+        // 과거 소속이 있는 회원은 새 기수 승인 전에도 MASTER/GUEST로 우회할 수 없다.
+        // 소속 자체가 없는 글로벌 MASTER 예외와 기수 활동 회원을 구분한다.
         if (context.activityStatus in
             setOf(
                 MemberActivityStatus.SUSPENDED,
                 MemberActivityStatus.ENDED,
-            ) || (isActiveMember && context.activityStatus != MemberActivityStatus.ACTIVE)
+            ) || (
+                context.memberCohortIds.isNotEmpty() &&
+                    (!isActiveMember || context.activityStatus != MemberActivityStatus.ACTIVE)
+            )
         ) {
             return false
         }

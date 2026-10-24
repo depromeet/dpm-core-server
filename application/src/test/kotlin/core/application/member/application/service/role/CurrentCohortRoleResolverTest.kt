@@ -81,9 +81,10 @@ class CurrentCohortRoleResolverTest {
     }
 
     @Test
-    fun missingActivityFailsClosedOnlyForCurrentMembers() {
+    fun missingActivityFailsClosedForCurrentAndPreviousMembersButPreservesGlobalMaster() {
         val roles = listOf(MemberRoleAssignment("MASTER", null))
         assertEquals(emptyList<String>(), resolver.filterEffectiveRoles(roles, CurrentCohortRoleResolver.CohortRoleContext(19, setOf(19L), null)))
+        assertEquals(emptyList<String>(), resolver.filterEffectiveRoles(roles, CurrentCohortRoleResolver.CohortRoleContext(20, setOf(19L), null)))
         assertEquals(listOf("MASTER"), resolver.filterEffectiveRoles(roles, CurrentCohortRoleResolver.CohortRoleContext(19, emptySet(), null)))
     }
 
@@ -95,13 +96,13 @@ class CurrentCohortRoleResolverTest {
         val activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java)
         val batch = CurrentCohortRoleResolver(cohorts, memberships, roles, activities)
         org.mockito.Mockito.`when`(cohorts.getActiveCohort()).thenReturn(core.domain.cohort.aggregate.Cohort(CohortId(19), "19", isActive = true))
-        val ids = listOf(1L, 2L, 3L)
+        val ids = listOf(1L, 2L, 3L, 4L)
         org.mockito.Mockito.`when`(roles.findActiveRoleAssignmentsByMemberIds(ids)).thenReturn(
             ids.associateWith {
                 listOf(MemberRoleAssignment("MASTER", null))
             },
         )
-        org.mockito.Mockito.`when`(memberships.findCohortIdsByMemberIds(ids)).thenReturn(mapOf(1L to listOf(19L), 2L to listOf(19L)))
+        org.mockito.Mockito.`when`(memberships.findCohortIdsByMemberIds(ids)).thenReturn(mapOf(1L to listOf(19L), 2L to listOf(19L), 4L to listOf(18L)))
         org.mockito.Mockito.`when`(activities.findAll(ids, 19)).thenReturn(
             mapOf(
                 1L to core.domain.member.port.outbound.MemberCohortActivity(1, 19, core.domain.member.enums.MemberActivityStatus.ACTIVE),
@@ -109,7 +110,7 @@ class CurrentCohortRoleResolverTest {
             ),
         )
         assertEquals(
-            mapOf(core.domain.member.vo.MemberId(1) to RoleType.Master, core.domain.member.vo.MemberId(2) to RoleType.Guest, core.domain.member.vo.MemberId(3) to RoleType.Master),
+            mapOf(core.domain.member.vo.MemberId(1) to RoleType.Master, core.domain.member.vo.MemberId(2) to RoleType.Guest, core.domain.member.vo.MemberId(3) to RoleType.Master, core.domain.member.vo.MemberId(4) to RoleType.Guest),
             batch.findPrimaryRoleTypesForMembers(ids.map(::coreMemberId)),
         )
         org.mockito.Mockito.verify(activities).findAll(ids, 19)

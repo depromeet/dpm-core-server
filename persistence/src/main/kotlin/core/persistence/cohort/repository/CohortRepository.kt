@@ -5,28 +5,47 @@ import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.port.outbound.query.CohortTeamQueryModel
 import core.domain.cohort.vo.CohortId
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.records.CohortsRecord
+import org.jooq.dsl.tables.references.COHORTS
 import org.jooq.dsl.tables.references.TEAMS
 import org.jooq.impl.DSL
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Repository
 class CohortRepository(
     private val cohortJpaRepository: CohortJpaRepository,
     private val dsl: DSLContext,
 ) : CohortPersistencePort {
-    override fun findAll(): List<Cohort> = cohortJpaRepository.findAll().map { it.toDomain() }
+    // Badge snapshots may already have loaded a CohortEntity before the cohort lock was acquired.
+    // Read current scalar values rather than reusing that persistence-context snapshot.
+    override fun findAll(): List<Cohort> = dsl.selectFrom(COHORTS).fetch { it.toDomain() }
 
-    override fun findById(cohortId: CohortId): Cohort? = cohortJpaRepository.findByIdOrNull(cohortId.value)?.toDomain()
+    override fun findById(cohortId: CohortId): Cohort? =
+        dsl.selectFrom(COHORTS).where(COHORTS.COHORT_ID.eq(cohortId.value)).fetchOne()?.toDomain()
 
-    override fun findByValue(value: String): Cohort? = cohortJpaRepository.findByValue(value)?.toDomain()
+    override fun findByValue(value: String): Cohort? =
+        dsl.selectFrom(COHORTS).where(COHORTS.VALUE.eq(value)).fetchOne()?.toDomain()
 
-    override fun findActive(): Cohort? = cohortJpaRepository.findByIsActiveTrue()?.toDomain()
+    override fun findActive(): Cohort? =
+        dsl.selectFrom(COHORTS).where(COHORTS.IS_ACTIVE.eq(true)).fetchOne()?.toDomain()
 
     override fun save(cohort: Cohort): Cohort {
         val now = System.currentTimeMillis()
-        val existing = cohort.id?.let { cohortJpaRepository.findByIdOrNull(it.value) }
+        val existing = cohort.id?.let(::findById)
+        if (existing != null) {
+            // Never merge a replacement entity with empty orphan-removal collections.
+            dsl.update(COHORTS).set(COHORTS.VALUE, cohort.value)
+                .set(COHORTS.IS_ACTIVE, cohort.isActive)
+                .set(
+                    COHORTS.ACTIVATED_AT,
+                    (cohort.activatedAt ?: existing.activatedAt)?.atOffset(ZoneOffset.UTC)?.toLocalDateTime(),
+                )
+                .set(COHORTS.UPDATED_AT, now).where(COHORTS.COHORT_ID.eq(cohort.id!!.value)).execute()
+            return requireNotNull(findById(cohort.id!!))
+        }
         val entity =
             core.entity.cohort.CohortEntity(
                 id = cohort.id?.value ?: 0L,
@@ -39,39 +58,37 @@ class CohortRepository(
         return cohortJpaRepository.save(entity).toDomain()
     }
 
+    override fun rename(
+        cohortId: CohortId,
+        value: String,
+    ): Cohort {
+        dsl.update(COHORTS).set(COHORTS.VALUE, value).set(COHORTS.UPDATED_AT, System.currentTimeMillis())
+            .where(COHORTS.COHORT_ID.eq(cohortId.value)).execute()
+        return requireNotNull(findById(cohortId))
+    }
+
     override fun deactivateAll() {
-        val now = System.currentTimeMillis()
-        cohortJpaRepository.findAll().forEach { entity ->
-            if (entity.isActive) {
-                cohortJpaRepository.save(
-                    core.entity.cohort.CohortEntity(
-                        id = entity.id,
-                        value = entity.value,
-                        isActive = false,
-                        activatedAt = entity.activatedAt,
-                        createdAt = entity.createdAt,
-                        updatedAt = now,
-                    ),
-                )
-            }
-        }
+        dsl.update(COHORTS).set(COHORTS.IS_ACTIVE, false).set(COHORTS.UPDATED_AT, System.currentTimeMillis())
+            .where(COHORTS.IS_ACTIVE.eq(true)).execute()
     }
 
     override fun activate(cohortId: CohortId) {
         deactivateAll()
-        val entity = cohortJpaRepository.findByIdOrNull(cohortId.value) ?: return
-        val now = System.currentTimeMillis()
-        cohortJpaRepository.save(
-            core.entity.cohort.CohortEntity(
-                id = entity.id,
-                value = entity.value,
-                isActive = true,
-                activatedAt = Instant.now(),
-                createdAt = entity.createdAt,
-                updatedAt = now,
-            ),
-        )
+        dsl.update(COHORTS).set(COHORTS.IS_ACTIVE, true)
+            .set(COHORTS.ACTIVATED_AT, LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC))
+            .set(COHORTS.UPDATED_AT, System.currentTimeMillis())
+            .where(COHORTS.COHORT_ID.eq(cohortId.value)).execute()
     }
+
+    private fun CohortsRecord.toDomain() =
+        Cohort(
+            id = CohortId(cohortId!!),
+            value = value!!,
+            isActive = isActive!!,
+            activatedAt = activatedAt?.toInstant(ZoneOffset.UTC),
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
 
     override fun findTeamsByCohortId(cohortId: CohortId): List<CohortTeamQueryModel> =
         dsl

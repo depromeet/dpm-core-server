@@ -49,15 +49,7 @@ class CohortCommandService(
             throw CohortAlreadyExistsException()
         }
 
-        return cohortPersistencePort.save(
-            Cohort(
-                id = cohortId,
-                value = normalizedValue,
-                isActive = existing.isActive,
-                activatedAt = existing.activatedAt,
-                createdAt = existing.createdAt,
-            ),
-        )
+        return cohortPersistencePort.rename(cohortId, normalizedValue)
     }
 
     @TrackMemberBadges
