@@ -53,8 +53,12 @@ class FakeSessionFeedbackFormPersistencePort : SessionFeedbackFormPersistencePor
     @Synchronized
     override fun findAllPendingPushAt(now: Instant): List<SessionFeedbackForm> =
         rows.values
-            .filter { it.deletedAt == null && it.pushEnabled && it.pushSentAt == null && !now.isBefore(it.startAt) }
-            .sortedBy { it.startAt }
+            .filter {
+                it.deletedAt == null &&
+                    it.pushEnabled &&
+                    !now.isBefore(it.startAt) &&
+                    now.isBefore(it.endAt)
+            }.sortedBy { it.startAt }
 
     @Synchronized
     override fun delete(form: SessionFeedbackForm) {
