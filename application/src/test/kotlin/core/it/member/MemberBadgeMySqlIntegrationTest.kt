@@ -35,6 +35,8 @@ import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.it.attendance.AttendanceMySqlIntegrationTestApplication
 import core.persistence.member.repository.MemberAdmissionEventRepository
 import core.persistence.member.repository.MemberBadgeRepository
+import core.persistence.member.repository.MemberAccountRepository
+import core.persistence.refreshToken.repository.RefreshTokenRepository
 import core.persistence.member.repository.MemberMergeRepository
 import core.persistence.member.repository.MemberProfileRepository
 import core.persistence.member.repository.MemberRepository
@@ -75,12 +77,13 @@ import java.util.concurrent.TimeUnit
     MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class, CurrentCohortRoleResolver::class,
     MemberBadgeRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class,
     MemberCohortRepository::class, core.application.member.application.service.cohort.MemberCohortService::class, MemberAdmissionEventRepository::class, MemberAdmissionService::class,
-    MemberMergeRepository::class,
+    MemberMergeRepository::class, MemberAccountRepository::class, RefreshTokenRepository::class,
     MemberMergeService::class,
     MemberProfileService::class, MemberProfileRepository::class,
     MemberDeletionService::class, MemberApprovalService::class, MemberManagementCommandService::class, BadgeFixtureWriter::class,
 )
 class MemberBadgeMySqlIntegrationTest {
+    @Autowired lateinit var managementTargets: MemberManagementTargetQueryService
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var badges: MemberBadgeService
@@ -117,7 +120,7 @@ class MemberBadgeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
-        listOf("member_badge_memberships", "member_badge_states", "member_admission_events", "attendances", "sessions", "member_roles", "member_teams", "member_cohorts", "member_oauth", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
+        listOf("member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_badge_memberships", "member_badge_states", "member_admission_events", "attendances", "sessions", "member_roles", "member_teams", "member_cohorts", "member_oauth", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         (1L..3L).forEach { id ->
             jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at, updated_at) values (?, '홍길동', ?, 'SERVER', 'PENDING', now(6), now(6))", id, "test$id@example.com")
@@ -127,6 +130,16 @@ class MemberBadgeMySqlIntegrationTest {
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (191, 1, 19, 0, 0)")
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
         `when`(memberQueries.getMemberIdsByCohortId(CohortId(19))).thenReturn(listOf(MemberId(1), MemberId(2), MemberId(3)))
+    }
+
+    @Test
+    fun `중복 의심 회원도 개별 승인과 반려가 가능하다`() {
+        assertThat(managementTargets.findAll(19).filter { it.memberId in listOf(1L, 2L) }).allMatch { it.duplicateSuspected }
+        approvals.approve(listOf(1))
+        admission.reject(2)
+        assertThat(jdbc.queryForObject("select status from members where member_id = 1", String::class.java)).isEqualTo("ACTIVE")
+        assertThat(jdbc.queryForObject("select status from members where member_id = 2", String::class.java)).isEqualTo("REJECTED")
+        assertThat(jdbc.queryForObject("select count(*) from member_merge_events", Int::class.java)).isZero()
     }
 
     @Test
@@ -388,7 +401,7 @@ class MemberBadgeMySqlIntegrationTest {
             jdbc.update("insert into member_oauth (member_id, provider, external_id) values (?, ?, ?)", id, if (id == 1L) "KAKAO" else "APPLE", "external-$id")
         }
         badges.getBadges()
-        merge.mergeAndApprove(1, 2)
+        merge.mergeAndApprove(1, 2, 99)
         assertThat(card().hasNew).isFalse()
         assertThat(card(MemberBadgeCard.INCOMPLETE).hasNew).isTrue()
         assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'PENDING'", Long::class.java)).containsExactly(3L)

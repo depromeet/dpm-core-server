@@ -63,6 +63,10 @@ class MemberAccountRepository(private val dsl: DSLContext) : MemberAccountPersis
         dsl.execute("DELETE FROM member_oauth_link_requests WHERE state_hash = ?", stateHash)
     }
 
+    override fun deleteLinkRequestsByMemberId(memberId: Long) {
+        dsl.execute("DELETE FROM member_oauth_link_requests WHERE member_id = ?", memberId)
+    }
+
     override fun deleteExpiredLinkRequests(now: Instant) {
         dsl.execute("DELETE FROM member_oauth_link_requests WHERE expires_at < ?", Timestamp.from(now))
     }
