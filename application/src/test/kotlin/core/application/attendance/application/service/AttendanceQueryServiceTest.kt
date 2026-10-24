@@ -129,6 +129,33 @@ class AttendanceQueryServiceTest {
         }
     }
 
+    @Test
+    fun `마이페이지 출석은 기수 미소속이어도 빈 집계로 주고 없는 멤버만 404 다`() {
+        val guest = MemberId(9)
+        org.mockito.Mockito.`when`(fixture.memberQueryUseCase.getMemberById(guest)).thenReturn(
+            core.domain.member.aggregate.Member(
+                id = guest,
+                name = "게스트",
+                email = "guest@test.com",
+                signupEmail = "guest@test.com",
+                status = core.domain.member.enums.MemberStatus.PENDING,
+            ),
+        )
+
+        val detail = fixture.attendanceQueryService.getMyDetailAttendances(guest)
+
+        assertThat(detail.member.id).isEqualTo(9L)
+        assertThat(detail.member.name).isEqualTo("게스트")
+        assertThat(detail.member.attendanceStatus).isEqualTo("NORMAL")
+        assertThat(detail.sessions).isEmpty()
+        assertThat(listOf(detail.attendance.presentCount, detail.attendance.absentCount)).containsOnly(0)
+
+        org.mockito.Mockito.`when`(fixture.memberQueryUseCase.getMemberById(MemberId(404)))
+            .thenThrow(core.application.member.application.exception.MemberNotFoundException())
+        assertThatThrownBy { fixture.attendanceQueryService.getMyDetailAttendances(MemberId(404)) }
+            .isInstanceOf(AttendanceNotFoundException::class.java)
+    }
+
     private fun memberRow(
         id: Long,
         teamNumber: Int,

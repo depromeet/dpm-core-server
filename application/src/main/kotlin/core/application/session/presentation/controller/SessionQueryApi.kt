@@ -298,7 +298,9 @@ interface SessionQueryApi {
 
     @Operation(
         summary = "세션 주차 조회",
-        description = "세션 주차를 조회합니다",
+        description =
+            "세션 주차를 조회합니다. 로그인만 있으면 되고 read:session 권한은 필요 없다 " +
+                "(GUEST·승인 대기 유저도 홈 진입용으로 조회할 수 있게).",
     )
     @ApiResponses(
         value = [
@@ -349,7 +351,8 @@ interface SessionQueryApi {
                 "week 는 표시용이며 정렬에 쓰지 않습니다. 이전/다음 세션 이동은 이 목록의 순서를 사용합니다. " +
                 "attendanceStatus 는 서버 현재 시각 기준 출석 인증 상태로, 출석 시작 전 NOT_STARTED, " +
                 "출석 시작부터 인증 마감(결석 시작) 전까지 IN_PROGRESS(지각 구간 포함), 마감 정각부터 CLOSED 입니다. " +
-                "기존 GET /v1/sessions/weeks(id, week, date, ID 순)는 그대로 둡니다.",
+                "기존 GET /v1/sessions/weeks(id, week, date, ID 순)는 그대로 둡니다. " +
+                "로그인만 있으면 되고 read:session 권한은 필요 없다(GUEST·승인 대기 유저도 홈 진입용).",
     )
     @ApiResponses(
         value = [
