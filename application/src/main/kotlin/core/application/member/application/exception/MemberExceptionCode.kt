@@ -43,6 +43,8 @@ enum class MemberExceptionCode(
     MEMBER_PROFILE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "MEMBER-409-41", "이미 프로필 입력을 완료했습니다"),
     MEMBER_LAST_LOGIN_ACCOUNT(HttpStatus.CONFLICT, "MEMBER-409-51", "마지막 로그인 수단은 해제할 수 없습니다"),
     MEMBER_ACCOUNT_REAUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "MEMBER-401-51", "다시 로그인한 후 계정 연결을 진행해주세요"),
+    MEMBER_ACTIVITY_RESTORE_NOT_ALLOWED(HttpStatus.CONFLICT, "MEMBER-409-61", "활동 정지 또는 종료된 기수에서는 활동을 다시 시작할 수 없습니다"),
+    MEMBER_ACTIVITY_NOT_INITIALIZED(HttpStatus.CONFLICT, "MEMBER-409-62", "기수별 활동 정보를 확인한 후 다시 요청해주세요"),
     MEMBER_ACCOUNT_LINK_INVALID(HttpStatus.BAD_REQUEST, "MEMBER-400-51", "계정 연결 요청이 만료되었거나 올바르지 않습니다. 다시 시작해주세요"),
     ;
 

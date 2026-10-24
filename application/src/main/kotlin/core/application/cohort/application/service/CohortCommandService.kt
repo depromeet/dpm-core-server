@@ -2,6 +2,7 @@ package core.application.cohort.application.service
 
 import core.application.cohort.application.exception.CohortAlreadyExistsException
 import core.application.cohort.application.exception.CohortReferencedException
+import core.application.member.application.service.MemberActivityService
 import core.application.member.application.service.TrackMemberBadges
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
@@ -15,6 +16,7 @@ class CohortCommandService(
     private val cohortPersistencePort: CohortPersistencePort,
     private val cohortQueryService: CohortQueryService,
     private val cohortRoleService: CohortRoleService,
+    private val memberActivities: MemberActivityService,
 ) {
     @TrackMemberBadges
     fun create(value: String): Cohort {
@@ -40,23 +42,19 @@ class CohortCommandService(
         cohortId: CohortId,
         value: String,
     ): Cohort {
+        memberActivities.lockCohortChanges()
         val existing = cohortQueryService.getCohort(cohortId)
         val normalizedValue = value.trim()
         if (existing.value != normalizedValue && cohortPersistencePort.existsByValue(normalizedValue)) {
             throw CohortAlreadyExistsException()
         }
 
-        return cohortPersistencePort.save(
-            Cohort(
-                id = cohortId,
-                value = normalizedValue,
-                createdAt = existing.createdAt,
-            ),
-        )
+        return cohortPersistencePort.rename(cohortId, normalizedValue)
     }
 
     @TrackMemberBadges
     fun delete(cohortId: CohortId) {
+        memberActivities.lockCohortChanges()
         cohortQueryService.getCohort(cohortId)
         if (cohortPersistencePort.hasAnyReference(cohortId)) {
             throw CohortReferencedException()
@@ -67,6 +65,7 @@ class CohortCommandService(
     @TrackMemberBadges
     fun activateCohort(cohortId: CohortId): Cohort {
         cohortQueryService.getCohort(cohortId)
+        memberActivities.endBeforeCohortSwitch(cohortId.value)
         cohortPersistencePort.activate(cohortId)
         return cohortQueryService.getCohort(cohortId)
     }

@@ -51,11 +51,21 @@ import java.util.concurrent.atomic.AtomicLong
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class, MemberManagementCommandService::class, RoleCommandService::class, MemberRoleService::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class)
+@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class, MemberManagementCommandService::class, RoleCommandService::class, MemberRoleService::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class)
 class MemberManagementUpdateMySqlIntegrationTest {
     @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 
     @Autowired lateinit var jdbc: JdbcTemplate
+
+    @Autowired lateinit var activityService: core.application.member.application.service.MemberActivityService
+
+    @Autowired lateinit var resolver: CurrentCohortRoleResolver
+
+    @Autowired lateinit var dsl: org.jooq.DSLContext
+
+    @Autowired lateinit var cohortQueries: core.application.cohort.application.service.CohortQueryService
+
+    @Autowired lateinit var memberRolePort: core.domain.member.port.outbound.MemberRolePersistencePort
 
     @Autowired lateinit var members: MemberPersistencePort
 
@@ -75,7 +85,8 @@ class MemberManagementUpdateMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
-        listOf("member_teams", "member_roles", "member_cohorts", "member_permissions", "member_oauth", "members", "teams", "roles", "cohorts").forEach {
+        core.it.member.MemberActivityFixtures.clear(jdbc)
+        listOf("role_permissions", "permissions", "member_teams", "member_roles", "member_cohorts", "member_permissions", "member_oauth", "members", "teams", "roles", "cohorts").forEach {
             jdbc.execute("delete from $it")
         }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (18, '18', false, 0, 0), (19, '19', true, 0, 0), (20, '20', false, 0, 0)")
@@ -102,6 +113,7 @@ class MemberManagementUpdateMySqlIntegrationTest {
         `when`(roleQueries.findIdByName("ORGANIZER")).thenReturn(2)
         `when`(roleQueries.findIdByName("CORE")).thenReturn(3)
         `when`(memberQueryService.getMemberById(MemberId(1))).thenAnswer { members.findById(MemberId(1))!! }
+        core.it.member.MemberActivityFixtures.seed(jdbc)
     }
 
     @Test
@@ -147,8 +159,10 @@ class MemberManagementUpdateMySqlIntegrationTest {
         service.updateBulk(MemberManagementBulkUpdateRequest(listOf(1, 2), MemberManagementUpdateRequest(memberType = "CORE")))
         assertThat(updatedAt(2)).isAfterOrEqualTo(afterTeam)
         listOf(1L, 2L).forEach { id -> assertThat(activeRoles(id)).containsExactlyInAnyOrder("2:18", "3:19", "4:null", "5:null") }
-        service.updateBulk(MemberManagementBulkUpdateRequest(listOf(1, 2), MemberManagementUpdateRequest(status = "ACTIVE")))
-        assertThat(jdbc.queryForObject("select status from members where member_id = 2", String::class.java)).isEqualTo("ACTIVE")
+        assertThatThrownBy {
+            service.updateBulk(MemberManagementBulkUpdateRequest(listOf(1, 2), MemberManagementUpdateRequest(status = "ACTIVE")))
+        }.isInstanceOf(core.application.common.exception.BusinessException::class.java)
+        assertThat(jdbc.queryForObject("select status from members where member_id = 2", String::class.java)).isEqualTo("INACTIVE")
     }
 
     @Test
@@ -258,6 +272,117 @@ class MemberManagementUpdateMySqlIntegrationTest {
     }
 
     /** 첫 쓰기의 커밋을 보류하고 MySQL이 두 번째 쓰기를 실제로 잠금 대기시키는지 확인한다. */
+    @Test
+    fun `suspension blocks legacy role and status restore while retaining immutable history`() {
+        val auth = org.springframework.security.core.context.SecurityContextHolder.getContext()
+        auth.authentication = org.springframework.security.authentication.UsernamePasswordAuthenticationToken("99", null, emptyList())
+        try {
+            service.update(1, MemberManagementUpdateRequest(activityStatus = core.domain.member.enums.MemberActivityStatus.SUSPENDED))
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext()
+        }
+        val first = jdbc.queryForMap("select status, suspended_at from member_cohort_activities where member_id = 1 and cohort_id = 19")
+        assertThat(first["status"]).isEqualTo("SUSPENDED")
+        assertThat(first["suspended_at"]).isNotNull()
+        assertThat(resolver.filterEffectiveRolesForMember(MemberId(1))).isEmpty()
+        legacyRoleService.updateMemberRole(MemberId(1), UpdateMemberRoleRequest("CORE", "19"))
+        assertThat(resolver.filterEffectiveRolesForMember(MemberId(1))).isEmpty()
+        assertThatThrownBy { service.update(1, MemberManagementUpdateRequest(status = "ACTIVE")) }
+            .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+        service.update(1, MemberManagementUpdateRequest(activityStatus = core.domain.member.enums.MemberActivityStatus.ENDED))
+        assertThat(jdbc.queryForMap("select suspended_at from member_cohort_activities where member_id = 1 and cohort_id = 19")["suspended_at"]).isEqualTo(first["suspended_at"])
+        assertThat(jdbc.queryForObject("select actor_member_id from member_activity_events where member_id = 1 and status = 'SUSPENDED'", Long::class.java)).isEqualTo(99)
+        assertThat(jdbc.queryForObject("select count(*) from member_activity_events where member_id = 1", Int::class.java)).isEqualTo(2)
+    }
+
+    @Test
+    fun `activity state and audit are rolled back with member projection failure`() {
+        jdbc.execute("create trigger member668_reject_update before update on members for each row signal sqlstate '45000' set message_text = 'rollback activity'")
+        try {
+            assertThatThrownBy { service.update(1, MemberManagementUpdateRequest(activityStatus = core.domain.member.enums.MemberActivityStatus.SUSPENDED)) }
+                .isInstanceOf(RuntimeException::class.java)
+        } finally {
+            jdbc.execute("drop trigger member668_reject_update")
+        }
+        assertThat(jdbc.queryForObject("select status from member_cohort_activities where member_id = 1 and cohort_id = 19", String::class.java)).isEqualTo("ACTIVE")
+        assertThat(jdbc.queryForObject("select count(*) from member_activity_events", Int::class.java)).isZero()
+    }
+
+    @Test
+    fun `cohort ending preserves suspension marker and cannot restore old cohort`() {
+        service.update(1, MemberManagementUpdateRequest(activityStatus = core.domain.member.enums.MemberActivityStatus.SUSPENDED))
+        activityService.endBeforeCohortSwitch(20)
+        assertThat(jdbc.queryForMap("select status, suspended_at from member_cohort_activities where member_id = 1 and cohort_id = 19"))
+            .containsEntry("status", "ENDED").doesNotContainEntry("suspended_at", null)
+        assertThatThrownBy { service.update(1, MemberManagementUpdateRequest(status = "ACTIVE")) }
+            .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+    }
+
+    @Test
+    fun `existing signed token keeps authentication but loses live activity permissions on suspension`() {
+        jdbc.update("insert into permissions (permission_id, resource, action) values (668, 'session', 'read')")
+        jdbc.update("insert into role_permissions (role_id, permission_id, granted_at) values (4, 668, now(6)), (5, 668, now(6))")
+        val roleRepository =
+            core.persistence.authorization.repository.RoleRepository(
+                org.mockito.Mockito.mock(core.persistence.authorization.repository.RoleJpaRepository::class.java),
+                dsl,
+            )
+        val queries = core.application.authorization.application.service.RoleQueryService(roleRepository, memberRolePort, resolver, cohortQueries)
+        val properties =
+            core.application.security.properties.TokenProperties(
+                java.util.Base64.getEncoder().encodeToString(ByteArray(64) { 7 }),
+                core.application.security.properties.TokenProperties.ExpirationTime(600, 1200),
+            )
+        val tokens = core.application.security.oauth.token.JwtTokenProvider(properties, queries)
+        val token = tokens.generateAccessToken("1", null)
+        assertThat(tokens.getAuthentication(token).authorities.map { it.authority }).contains("read:session")
+        service.update(1, MemberManagementUpdateRequest(activityStatus = core.domain.member.enums.MemberActivityStatus.SUSPENDED))
+        assertThat(members.isLoginAvailable(1)).isTrue()
+        val authentication = tokens.getAuthentication(token)
+        assertThat(authentication.isAuthenticated).isTrue()
+        assertThat(authentication.authorities).isEmpty()
+    }
+
+    @Test
+    fun `activity migration backfill is rerunnable and matches Hibernate entities`() {
+        val root =
+            generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
+                .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
+        val fullSql = java.nio.file.Files.readString(root.resolve("db/pending/2610241900_member_cohort_activities.sql"))
+        // Stored-procedure preflight is separately exercised through the MySQL CLI; JDBC applies DDL, DML and VERIFY.
+        val body = fullSql.substring(fullSql.indexOf("-- [2]"))
+        jdbc.execute("drop table member_activity_events")
+        jdbc.execute("drop table member_cohort_activities")
+        repeat(2) {
+            jdbc.dataSource!!.connection.use { connection ->
+                org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(
+                    connection,
+                    org.springframework.core.io.ByteArrayResource(body.toByteArray(Charsets.UTF_8)),
+                )
+            }
+        }
+        assertThat(jdbc.queryForObject("select status from member_cohort_activities where member_id=2 and cohort_id=19", String::class.java)).isEqualTo("ENDED")
+        assertThat(jdbc.queryForObject("select status from member_cohort_activities where member_id=1 and cohort_id=18", String::class.java)).isEqualTo("ENDED")
+        assertThat(jdbc.queryForObject("select count(*) from member_activity_events", Int::class.java)).isZero()
+        val factory =
+            org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean().apply {
+                dataSource = jdbc.dataSource
+                jpaVendorAdapter = org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter()
+                setManagedTypes(
+                    org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes.of(
+                        "core.entity.member.MemberCohortActivityEntity",
+                        "core.entity.member.MemberActivityEventEntity",
+                    ),
+                )
+                setJpaPropertyMap(mapOf("hibernate.hbm2ddl.auto" to "validate"))
+            }
+        try {
+            factory.afterPropertiesSet()
+        } finally {
+            factory.destroy()
+        }
+    }
+
     private fun runOrderedRoleChanges(
         first: () -> Unit,
         second: () -> Unit,
