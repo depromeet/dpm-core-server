@@ -15,4 +15,10 @@ interface MemberMergePersistencePort {
 
     /** Preserve all related records and identity fields. */
     fun softDeleteSource(memberId: Long)
+
+    fun recordMerge(
+        actorId: Long,
+        retainedId: Long,
+        sourceId: Long,
+    )
 }

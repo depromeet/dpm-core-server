@@ -33,6 +33,7 @@ import core.domain.session.port.inbound.command.SessionCreateCommand
 import core.domain.session.vo.SessionId
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
 import core.it.attendance.AttendanceMySqlIntegrationTestApplication
+import core.persistence.member.repository.MemberAccountRepository
 import core.persistence.member.repository.MemberAdmissionEventRepository
 import core.persistence.member.repository.MemberBadgeRepository
 import core.persistence.member.repository.MemberMergeRepository
@@ -41,6 +42,7 @@ import core.persistence.member.repository.MemberRepository
 import core.persistence.member.repository.cohort.MemberCohortRepository
 import core.persistence.member.repository.role.MemberRoleRepository
 import core.persistence.member.repository.team.MemberTeamRepository
+import core.persistence.refreshToken.repository.RefreshTokenRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -75,12 +77,14 @@ import java.util.concurrent.TimeUnit
     MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class, CurrentCohortRoleResolver::class,
     MemberBadgeRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class,
     MemberCohortRepository::class, core.application.member.application.service.cohort.MemberCohortService::class, MemberAdmissionEventRepository::class, MemberAdmissionService::class,
-    MemberMergeRepository::class,
+    MemberMergeRepository::class, MemberAccountRepository::class, RefreshTokenRepository::class,
     MemberMergeService::class,
     MemberProfileService::class, MemberProfileRepository::class,
     MemberDeletionService::class, MemberApprovalService::class, MemberManagementCommandService::class, BadgeFixtureWriter::class,
 )
 class MemberBadgeMySqlIntegrationTest {
+    @Autowired lateinit var managementTargets: MemberManagementTargetQueryService
+
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var badges: MemberBadgeService
@@ -117,7 +121,7 @@ class MemberBadgeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
-        listOf("member_badge_memberships", "member_badge_states", "member_admission_events", "attendances", "sessions", "member_roles", "member_teams", "member_cohorts", "member_oauth", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
+        listOf("member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_badge_memberships", "member_badge_states", "member_admission_events", "attendances", "sessions", "member_roles", "member_teams", "member_cohorts", "member_oauth", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         (1L..3L).forEach { id ->
             jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at, updated_at) values (?, '홍길동', ?, 'SERVER', 'PENDING', now(6), now(6))", id, "test$id@example.com")
@@ -127,6 +131,16 @@ class MemberBadgeMySqlIntegrationTest {
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (191, 1, 19, 0, 0)")
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
         `when`(memberQueries.getMemberIdsByCohortId(CohortId(19))).thenReturn(listOf(MemberId(1), MemberId(2), MemberId(3)))
+    }
+
+    @Test
+    fun `중복 의심 회원도 개별 승인과 반려가 가능하다`() {
+        assertThat(managementTargets.findAll(19).filter { it.memberId in listOf(1L, 2L) }).hasSize(2).allMatch { it.duplicateSuspected }
+        approvals.approve(listOf(1))
+        admission.reject(2)
+        assertThat(jdbc.queryForObject("select status from members where member_id = 1", String::class.java)).isEqualTo("ACTIVE")
+        assertThat(jdbc.queryForObject("select status from members where member_id = 2", String::class.java)).isEqualTo("REJECTED")
+        assertThat(jdbc.queryForObject("select count(*) from member_merge_events", Int::class.java)).isZero()
     }
 
     @Test
@@ -317,7 +331,7 @@ class MemberBadgeMySqlIntegrationTest {
         val first = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         attendance.updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(first), MemberId(1), AttendanceStatus.ABSENT))
         assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(1)
-        repeat(4) { sessions.createSession(command.copy(week = it + 2)) }
+        repeat(4) { sessions.createSession(command.copy(date = command.date.plusSeconds((it + 1) * 86400L), week = it + 2)) }
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
         val last = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         sessions.softDeleteSession(SessionId(last))
@@ -330,14 +344,19 @@ class MemberBadgeMySqlIntegrationTest {
         jdbc.update("update members set status = 'ACTIVE'")
         badges.getBadges()
         val start = Instant.parse("2026-11-01T03:00:00Z")
-        repeat(10) { sessions.createSession(SessionCreateCommand(start, it + 1, "온라인", "테스트 세션", true, start, start.plusSeconds(600), start.plusSeconds(1200))) }
+        repeat(10) {
+            val sessionStart = start.plusSeconds(it * 86400L)
+            sessions.createSession(SessionCreateCommand(sessionStart, it + 1, "온라인", "테스트 세션", true, sessionStart, sessionStart.plusSeconds(600), sessionStart.plusSeconds(1200)))
+        }
         val ids = jdbc.queryForList("select session_id from sessions order by session_id limit 3", Long::class.java)
-        ids.forEach { attendance.closeExpiredAttendances(SessionId(it), start.plusSeconds(1201)) }
+        ids.forEachIndexed { index, id ->
+            attendance.closeExpiredAttendances(SessionId(id), start.plusSeconds(index * 86400L + 1201))
+        }
         assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(3)
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isTrue()
         val code = jdbc.queryForObject("select attendance_code from sessions where session_id = ?", String::class.java, ids.last())!!
         (1L..3L).forEach { memberId ->
-            attendance.attendSession(AttendanceRecordCommand(SessionId(ids.last()), MemberId(memberId), start.plusSeconds(1), code))
+            attendance.attendSession(AttendanceRecordCommand(SessionId(ids.last()), MemberId(memberId), start.plusSeconds(2 * 86400L + 1), code))
         }
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
     }
@@ -347,10 +366,11 @@ class MemberBadgeMySqlIntegrationTest {
         val root =
             generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
                 .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
-        val sql = java.nio.file.Files.walk(root.resolve("db")).use { paths ->
-            paths.filter { it.fileName.toString() == "2610091830_member_badges.sql" }
-                .findFirst().orElseThrow()
-        }
+        val sql =
+            java.nio.file.Files.walk(root.resolve("db")).use { paths ->
+                paths.filter { it.fileName.toString() == "2610091830_member_badges.sql" }
+                    .findFirst().orElseThrow()
+            }
         jdbc.execute("drop table member_badge_memberships")
         jdbc.execute("drop table member_badge_states")
         repeat(2) {
@@ -388,7 +408,7 @@ class MemberBadgeMySqlIntegrationTest {
             jdbc.update("insert into member_oauth (member_id, provider, external_id) values (?, ?, ?)", id, if (id == 1L) "KAKAO" else "APPLE", "external-$id")
         }
         badges.getBadges()
-        merge.mergeAndApprove(1, 2)
+        merge.mergeAndApprove(1, 2, 99)
         assertThat(card().hasNew).isFalse()
         assertThat(card(MemberBadgeCard.INCOMPLETE).hasNew).isTrue()
         assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'PENDING'", Long::class.java)).containsExactly(3L)
