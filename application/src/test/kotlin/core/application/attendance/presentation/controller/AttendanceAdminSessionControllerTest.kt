@@ -230,20 +230,17 @@ class AttendanceAdminSessionControllerTest {
     }
 
     @Test
-    fun `사람별 상세는 경로별 기존 권한 그대로 me 는 로그인 멤버, id 는 지정 멤버를 조회하고 없으면 404 다`() {
-        loginAs(1L, "read:attendance")
+    fun `사람별 상세는 me 가 로그인만으로 본인 조회, id 는 update member 로 지정 멤버를 조회하고 없으면 404 다`() {
+        loginAs(1L)
         mockMvc
             .perform(get("/v3/members/7/attendances"))
             .andExpect(status().isForbidden)
             .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
         mockMvc.perform(get("/v3/members/me/attendances")).andExpect(status().isOk)
-        verify(queryService).getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(1)))
+        verify(queryService).getMyDetailAttendances(MemberId(1))
 
         loginAs(1L, "update:member")
-        mockMvc
-            .perform(get("/v3/members/me/attendances"))
-            .andExpect(status().isForbidden)
-            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        mockMvc.perform(get("/v3/members/me/attendances")).andExpect(status().isOk)
         given(queryService.getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(404))))
             .willThrow(AttendanceNotFoundException())
         mockMvc.perform(get("/v3/members/7/attendances")).andExpect(status().isOk)
@@ -256,8 +253,8 @@ class AttendanceAdminSessionControllerTest {
 
     @Test
     fun `사람별 상세 응답은 집계 0 과 null 인 인증 시각도 키로 주고 날짜는 오프셋 없는 ISO 문자열이다`() {
-        loginAs(1L, "read:attendance")
-        given(queryService.getDetailMemberAttendances(GetDetailMemberAttendancesQuery(MemberId(1)))).willReturn(
+        loginAs(1L)
+        given(queryService.getMyDetailAttendances(MemberId(1))).willReturn(
             DetailMemberAttendancesResponse(
                 member = DetailMemberInfo(1, "김철수", TeamNumber(0), false, null, "NORMAL"),
                 attendance = MemberDetailAttendanceCountInfo(0, 0, 0, 0),
@@ -291,7 +288,7 @@ class AttendanceAdminSessionControllerTest {
 
     @Test
     fun `세션 선택은 v1 이 기존 세 필드 그대로이고 v3 가 확장 필드와 출석 인증 상태를 준다`() {
-        loginAs(1L, "read:session")
+        loginAs(1L)
         val date = Instant.parse("2025-08-02T04:00:00Z")
         given(sessionQueryService.getSessionWeeks()).willReturn(listOf(SessionWeekQueryModel(SessionId(5), 1, date)))
         given(sessionQueryService.getSessionSelector()).willReturn(

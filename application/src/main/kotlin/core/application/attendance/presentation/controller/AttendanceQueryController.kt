@@ -102,20 +102,12 @@ class AttendanceQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasAuthority('read:attendance')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/v3/members/me/attendances")
     override fun getMyDetailAttendances(
         @CurrentMemberId memberId: MemberId,
-    ): CustomResponse<DetailMemberAttendancesResponse> {
-        val response =
-            attendanceQueryService.getDetailMemberAttendances(
-                GetDetailMemberAttendancesQuery(
-                    memberId = memberId,
-                ),
-            )
-
-        return CustomResponse.ok(response)
-    }
+    ): CustomResponse<DetailMemberAttendancesResponse> =
+        CustomResponse.ok(attendanceQueryService.getMyDetailAttendances(memberId))
 
     @PreAuthorize("hasAuthority('create:attendance')")
     @GetMapping("/v3/sessions/{sessionId}/absence-reasons/me")
