@@ -9,6 +9,7 @@ import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.attendance.presentation.response.AbsenceReasonImageInfo
 import core.application.common.exception.BusinessException
 import core.application.image.FakeImageStoragePort
+import core.application.support.MutableClock
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
@@ -75,6 +76,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
     @Autowired lateinit var imagePort: ImagePersistencePort
 
     @Autowired lateinit var jdbcTemplate: JdbcTemplate
+
+    @Autowired lateinit var clock: MutableClock
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
 
@@ -208,6 +211,60 @@ class AbsenceReasonImageMySqlIntegrationTest {
     }
 
     @Test
+    fun `제출하면 바로 승인되고 미인증과 결석은 인정결석이 되며 출석은 그대로이고 출석 행이 없어도 제출된다`() {
+        val session = newSession()
+        val (pending, absent, present, noRow) = List(4) { newMember() }
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = pending, status = AttendanceStatus.PENDING))
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = absent, status = AttendanceStatus.ABSENT))
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = present, status = AttendanceStatus.PRESENT))
+
+        listOf(pending, absent, present, noRow).forEach { submit(session, it, "사유", null) }
+
+        assertThat(attendanceStatus(session, pending)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(attendanceStatus(session, absent)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(attendanceStatus(session, present)).isEqualTo(AttendanceStatus.PRESENT)
+        assertThat(listOf(pending, absent, present, noRow).map { reasonStatus(session, it) }).containsOnly("APPROVED")
+    }
+
+    @Test
+    fun `반려된 사유서를 수정하면 다시 승인되고 인정결석이 된다`() {
+        val member = newMember()
+        val session = newSession()
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = member, status = AttendanceStatus.ABSENT))
+        submit(session, member, "사유", null)
+        commandService.reviewAbsenceReason(AbsenceReasonReviewCommand(session.id!!, member, approved = false))
+        // 운영진이 반려 후 출석을 결석으로 바꾼 상황
+        attendancePort.updateStatusByAdmin(session.id!!.value, listOf(member.value), AttendanceStatus.ABSENT, clock.instant())
+
+        update(session, member, "보완한 사유", null)
+
+        assertThat(reasonStatus(session, member)).isEqualTo("APPROVED")
+        assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+    }
+
+    @Test
+    fun `삭제하면 인정결석이 마감 전에는 미인증으로, 마감 후에는 자동 결석으로 돌아간다`() {
+        val (beforeClose, afterClose) = List(2) { newMember() }
+        val session = newSession()
+        listOf(beforeClose, afterClose).forEach {
+            attendancePort.save(Attendance(sessionId = session.id!!, memberId = it, status = AttendanceStatus.PENDING))
+            submit(session, it, "사유", null)
+        }
+
+        commandService.deleteAbsenceReason(session.id!!, beforeClose)
+        val original = clock.now
+        try {
+            clock.now = session.attendancePolicy.absentStart
+            commandService.deleteAbsenceReason(session.id!!, afterClose)
+        } finally {
+            clock.now = original
+        }
+
+        assertThat(attendanceRow(session, beforeClose)).isEqualTo(Triple("PENDING", false, false))
+        assertThat(attendanceRow(session, afterClose)).isEqualTo(Triple("ABSENT", false, true))
+    }
+
+    @Test
     fun `운영진 목록은 사유서별 imageIds 와 파일명을 순서대로, 없으면 빈 목록으로 준다`() {
         val session = newSession()
         val (withImages, withoutImages) = List(2) { newMember() }
@@ -250,6 +307,34 @@ class AbsenceReasonImageMySqlIntegrationTest {
         contents: String,
         imageIds: List<ImageId>?,
     ) = commandService.updateAbsenceReason(AbsenceReportUpdateCommand(session.id!!, memberId, contents, imageIds))
+
+    private fun attendanceStatus(
+        session: Session,
+        memberId: MemberId,
+    ): AttendanceStatus = attendancePort.findAttendanceBy(session.id!!.value, memberId.value)!!.status
+
+    /** status, 운영진 변경 표시(updated_at) 유무, 자동 결석 표지(auto_absent_at) 유무 */
+    private fun attendanceRow(
+        session: Session,
+        memberId: MemberId,
+    ): Triple<String, Boolean, Boolean> =
+        jdbcTemplate.queryForObject(
+            "select status, updated_at, auto_absent_at from attendances where session_id = ? and member_id = ? and deleted_at is null",
+            { rs, _ -> Triple(rs.getString(1), rs.getTimestamp(2) != null, rs.getTimestamp(3) != null) },
+            session.id!!.value,
+            memberId.value,
+        )!!
+
+    private fun reasonStatus(
+        session: Session,
+        memberId: MemberId,
+    ): String =
+        jdbcTemplate.queryForObject(
+            "select status from absence_reasons where session_id = ? and member_id = ?",
+            String::class.java,
+            session.id!!.value,
+            memberId.value,
+        )!!
 
     private fun myImageIds(
         session: Session,

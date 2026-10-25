@@ -89,6 +89,23 @@ interface AttendancePersistencePort {
         updatedAt: Instant,
     ): Int
 
+    /** 결석 사유서 제출. PENDING·ABSENT 행만 EXCUSED_ABSENT 로 바꾸고 updatedAt 을 남긴다. 갱신한 행 수를 반환한다. */
+    fun excuseAbsence(
+        sessionId: Long,
+        memberId: Long,
+        updatedAt: Instant,
+    ): Int
+
+    /**
+     * 결석 사유서 삭제. EXCUSED_ABSENT 행만 되돌리고 updatedAt 을 지운다.
+     * [closedAt] 이 null 이면 PENDING, 아니면 그 시각으로 자동 결석 표지를 남긴 ABSENT 로 바꾼다.
+     */
+    fun releaseExcusedAbsence(
+        sessionId: Long,
+        memberId: Long,
+        closedAt: Instant?,
+    ): Int
+
     /** 지정한 멤버들 중 삭제되지 않은 출석 행이 있는 멤버 수 */
     fun countActiveAttendances(
         sessionId: Long,
