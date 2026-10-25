@@ -468,6 +468,23 @@ class AttendanceRepository(
         return attendanceJpaRepository.updateStatusByAdmin(sessionId, sortedMemberIds, status.name, updatedAt)
     }
 
+    override fun excuseAbsence(
+        sessionId: Long,
+        memberId: Long,
+        updatedAt: Instant,
+    ): Int = attendanceJpaRepository.excuseAbsence(sessionId, memberId, updatedAt)
+
+    override fun releaseExcusedAbsence(
+        sessionId: Long,
+        memberId: Long,
+        closedAt: Instant?,
+    ): Int =
+        if (closedAt == null) {
+            attendanceJpaRepository.releaseExcusedAbsence(sessionId, memberId, AttendanceStatus.PENDING.name, null)
+        } else {
+            attendanceJpaRepository.releaseExcusedAbsence(sessionId, memberId, AttendanceStatus.ABSENT.name, closedAt)
+        }
+
     override fun countActiveAttendances(
         sessionId: Long,
         memberIds: List<Long>,

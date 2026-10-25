@@ -11,7 +11,7 @@ import java.time.Instant
  * 결석 사유서(AbsenceReason) 도메인 모델
  *
  * 디퍼가 특정 세션(Session)의 결석에 대해 제출한 사유서를 나타냅니다.
- * 제출 시 [AbsenceReasonStatus.PENDING] 상태로 생성되며, 운영진의 검토를 거쳐 승인/반려됩니다.
+ * 제출하면 운영진 검토 없이 [AbsenceReasonStatus.APPROVED] 상태로 생성됩니다. 운영진은 이후에 반려할 수 있습니다.
  */
 class AbsenceReason(
     val id: AbsenceReasonId? = null,
@@ -35,13 +35,13 @@ class AbsenceReason(
         private set
 
     /**
-     * 사유서를 재제출합니다. 검토 상태를 다시 [AbsenceReasonStatus.PENDING] 으로 되돌립니다.
+     * 사유서를 재제출합니다. 제출과 같이 바로 [AbsenceReasonStatus.APPROVED] 로 둡니다.
      *
      * @param contents 새로운 결석 사유
      */
     fun resubmit(contents: String) {
         this.contents = contents
-        this.status = AbsenceReasonStatus.PENDING
+        this.status = AbsenceReasonStatus.APPROVED
         this.updatedAt = Instant.now()
     }
 
@@ -77,7 +77,7 @@ class AbsenceReason(
                 sessionId = command.sessionId,
                 memberId = command.memberId,
                 contents = command.contents,
-                status = AbsenceReasonStatus.PENDING,
+                status = AbsenceReasonStatus.APPROVED,
                 createdAt = Instant.now(),
             )
     }

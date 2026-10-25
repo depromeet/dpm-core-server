@@ -51,6 +51,41 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         @Param("updatedAt") updatedAt: Instant,
     ): Int
 
+    /** 결석 사유서 제출. 미인증(PENDING)이나 결석만 인정결석으로 바꾸고 출석·지각은 그대로 둔다. */
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+        "update AttendanceEntity a " +
+            "set a.status = 'EXCUSED_ABSENT', a.attendedAt = null, a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
+            "where a.sessionId = :sessionId " +
+            "and a.memberId = :memberId " +
+            "and a.status in ('PENDING', 'ABSENT') " +
+            "and a.deletedAt is null",
+    )
+    fun excuseAbsence(
+        @Param("sessionId") sessionId: Long,
+        @Param("memberId") memberId: Long,
+        @Param("updatedAt") updatedAt: Instant,
+    ): Int
+
+    /** 결석 사유서 삭제. 인정결석만 사유서가 없었을 때의 상태로 되돌리고 운영진 변경 표시를 지운다. */
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+        "update AttendanceEntity a " +
+            "set a.status = :status, a.attendedAt = null, a.updatedAt = null, a.autoAbsentAt = :autoAbsentAt " +
+            "where a.sessionId = :sessionId " +
+            "and a.memberId = :memberId " +
+            "and a.status = 'EXCUSED_ABSENT' " +
+            "and a.deletedAt is null",
+    )
+    fun releaseExcusedAbsence(
+        @Param("sessionId") sessionId: Long,
+        @Param("memberId") memberId: Long,
+        @Param("status") status: String,
+        @Param("autoAbsentAt") autoAbsentAt: Instant?,
+    ): Int
+
     @Query(
         "select count(distinct a.memberId) from AttendanceEntity a " +
             "where a.sessionId = :sessionId " +
