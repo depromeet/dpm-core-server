@@ -331,6 +331,21 @@ class FakeSessionPersistencePort(
         sessions.values.filter { it.cohortId.value == cohortId && it.deletedAt == null }.map { copyOf(it) }
 
     @Synchronized
+    override fun existsByCohortIdAndDateRange(
+        cohortId: Long,
+        rangeStartInclusive: Instant,
+        rangeEndExclusive: Instant,
+        excludeSessionId: Long?,
+    ): Boolean =
+        sessions.values.any {
+            it.deletedAt == null &&
+                it.cohortId.value == cohortId &&
+                !it.date.isBefore(rangeStartInclusive) &&
+                it.date.isBefore(rangeEndExclusive) &&
+                (excludeSessionId == null || it.id?.value != excludeSessionId)
+        }
+
+    @Synchronized
     override fun findSessionById(sessionId: Long): Session? =
         sessions[sessionId]?.takeIf { it.deletedAt == null }?.let { copyOf(it) }
 
@@ -408,6 +423,15 @@ class FakeCohortPersistencePort : CohortPersistencePort {
     @Synchronized
     override fun deleteById(cohortId: CohortId) {
         cohorts.remove(cohortId.value)
+    }
+
+    @Synchronized
+    override fun rename(
+        cohortId: CohortId,
+        value: String,
+    ): Cohort {
+        val c = cohorts.getValue(cohortId.value)
+        return save(Cohort(c.id, value, c.isActive, c.activatedAt, c.createdAt, c.updatedAt))
     }
 
     @Synchronized

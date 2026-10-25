@@ -4,9 +4,12 @@ import core.application.attendance.application.exception.AttendanceNotFoundExcep
 import core.application.attendance.presentation.mapper.AttendanceMapper
 import core.application.attendance.presentation.response.DetailAttendancesBySessionResponse
 import core.application.attendance.presentation.response.DetailMemberAttendancesResponse
+import core.application.attendance.presentation.response.DetailMemberInfo
 import core.application.attendance.presentation.response.MemberAttendancesResponse
+import core.application.attendance.presentation.response.MemberDetailAttendanceCountInfo
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
+import core.application.member.application.exception.MemberNotFoundException
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
@@ -16,9 +19,12 @@ import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
+import core.domain.member.enums.MemberStatus
+import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
+import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -29,6 +35,7 @@ class AttendanceQueryService(
     private val attendanceGraduationEvaluator: AttendanceGraduationEvaluator,
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val sessionPersistencePort: SessionPersistencePort,
+    private val memberQueryUseCase: MemberQueryUseCase,
 ) {
     /**
      * 현재 활성 기수 세션의 전체 출석 명단. 필터와 페이지 없이 준다.
@@ -108,6 +115,47 @@ class AttendanceQueryService(
             memberAttendanceModel = memberAttendanceQueryResult,
             sessionAttendancesModel = sessionAttendanceQueryResult,
             evaluation = attendanceGraduationEvaluator.evaluate(memberAttendanceQueryResult.summary).name,
+        )
+    }
+
+    /**
+     * 마이페이지용 본인 출석 상세. 활성 기수 소속이면 사람별 상세와 같고,
+     * GUEST·승인 대기처럼 기수 미소속이면 집계 0·세션 빈 목록으로 준다(404 대신).
+     */
+    fun getMyDetailAttendances(memberId: MemberId): DetailMemberAttendancesResponse {
+        val cohortId = cohortQueryUseCase.getActiveCohortId().value
+        val inCohort = attendancePersistencePort.findDetailMemberAttendance(memberId.value, cohortId)
+        if (inCohort != null) {
+            return AttendanceMapper.toDetailMemberAttendancesResponse(
+                memberAttendanceModel = inCohort,
+                sessionAttendancesModel =
+                    attendancePersistencePort.findMemberSessionAttendances(memberId.value, cohortId),
+                evaluation = attendanceGraduationEvaluator.evaluate(inCohort.summary).name,
+            )
+        }
+
+        val member =
+            try {
+                memberQueryUseCase.getMemberById(memberId)
+            } catch (_: MemberNotFoundException) {
+                throw AttendanceNotFoundException()
+            }
+        if (member.deletedAt != null || member.status == MemberStatus.WITHDRAWN) {
+            throw AttendanceNotFoundException()
+        }
+
+        return DetailMemberAttendancesResponse(
+            member =
+                DetailMemberInfo(
+                    id = memberId.value,
+                    name = member.name,
+                    teamNumber = TeamNumber.defaultValue(),
+                    isAdmin = false,
+                    part = member.part?.name,
+                    attendanceStatus = "NORMAL",
+                ),
+            attendance = MemberDetailAttendanceCountInfo(0, 0, 0, 0),
+            sessions = emptyList(),
         )
     }
 

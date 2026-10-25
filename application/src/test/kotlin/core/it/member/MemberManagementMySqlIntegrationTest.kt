@@ -45,7 +45,7 @@ import java.time.Instant
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(MemberRepository::class, MemberRoleRepository::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class, MemberManagementQueryService::class, core.application.member.application.service.MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class)
+@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class, MemberManagementQueryService::class, core.application.member.application.service.MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class)
 class MemberManagementMySqlIntegrationTest {
     @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 
@@ -66,6 +66,37 @@ class MemberManagementMySqlIntegrationTest {
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
 
     @MockitoBean lateinit var notifications: SentSessionNotificationCommandUseCase
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    fun `가입과 최신 재신청 요청순은 수정시각과 반려이력을 무시하고 페이지 전체에 적용된다`() {
+        val cohort = cohorts.save(Cohort(value = "68101")).id!!
+        jdbc.update("update cohorts set is_active = (cohort_id = ?)", cohort.value)
+        val dates = mapOf(68101L to "2026-10-01 00:00:00", 68102L to "2026-10-24 00:00:00", 68103L to "2026-10-23 00:00:00", 68104L to "2026-10-23 00:00:00", 68105L to "2026-09-01 00:00:00", 68106L to "2026-10-02 00:00:00")
+        dates.forEach { (id, createdAt) ->
+            jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at, updated_at) values (?, ?, ?, 'SERVER', 'PENDING', ?, '2026-10-30 00:00:00')", id, "정렬$id", "sort$id@example.com", createdAt)
+        }
+        jdbc.update("insert into member_admission_events (member_id, event_type, created_at) values (68101, 'REAPPLIED', '2026-10-20 00:00:00'), (68101, 'REAPPLIED', '2026-10-25 00:00:00.123456'), (68106, 'REJECTED', '2026-10-29 00:00:00')")
+        val expected = listOf(68101L, 68102L, 68104L, 68103L, 68106L, 68105L)
+        val request = MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, search = "정렬")
+        val result = service.getOverview(request)
+        assertThat(result.members.map { it.memberId }).containsExactlyElementsOf(expected)
+        assertThat(result.totalElements).isEqualTo(6)
+        assertThat((1..3).flatMap { page -> service.getOverview(request.copy(page = page, size = 2)).members.map { it.memberId } })
+            .containsExactlyElementsOf(expected)
+        assertThat(members.findPendingRequestTimes(expected)[68101]).isEqualTo(Instant.parse("2026-10-25T00:00:00.123456Z"))
+        assertThat(members.findPendingRequestTimes(emptyList())).isEmpty()
+
+        // 같은 회원의 재신청이 여러 번이어도 목록 행은 늘지 않고, 가장 최근 요청만 순서에 사용한다.
+        jdbc.update("insert into member_admission_events (member_id, event_type, created_at) values (68106, 'REAPPLIED', '2026-10-26 00:00:00')")
+        assertThat(service.getOverview(request).members.map { it.memberId }).containsExactly(68106L, 68101L, 68102L, 68104L, 68103L, 68105L)
+        jdbc.update("update members set name = '정렬가', updated_at = '2026-11-01 00:00:00' where member_id = 68105")
+        assertThat(service.getOverview(request).members.last().memberId).isEqualTo(68105L)
+
+        jdbc.update("update members set status = 'ACTIVE' where member_id = 68102")
+        jdbc.update("update members set deleted_at = now(6) where member_id = 68103")
+        assertThat(members.findPendingRequestTimes(listOf(68102, 68103, 999999))).isEmpty()
+    }
 
     @Test
     fun `공통 출석 집계를 회원별로 연결하고 최신 유효 기록과 0건으로 수료를 판정한다`() {
@@ -111,6 +142,7 @@ class MemberManagementMySqlIntegrationTest {
         attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(7), status = AttendanceStatus.ABSENT))
         attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(8), status = AttendanceStatus.ABSENT, deletedAt = start))
 
+        MemberActivityFixtures.seed(jdbc)
         val rows = members.findManagementMembers(current.value)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L)
         assertThat(rows.map { it.loginMethod }).containsOnlyNulls()
@@ -171,6 +203,7 @@ class MemberManagementMySqlIntegrationTest {
         jdbc.update("update members set name = '삭제별명' where member_id in (5, 7)")
         jdbc.update("update members set name = '탈퇴별명' where member_id in (6, 8)")
 
+        MemberActivityFixtures.seed(jdbc)
         val rows = members.findManagementMembers(cohortId)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L, 9L, 10L, 11L)
         assertThat(rows.associate { it.memberId to it.email }).containsExactlyInAnyOrderEntriesOf(

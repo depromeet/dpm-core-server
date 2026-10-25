@@ -5,8 +5,10 @@ import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberOAuthConflictException
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberAccountPersistencePort
 import core.domain.member.port.outbound.MemberMergePersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -17,26 +19,39 @@ class MemberMergeService(
     private val merge: MemberMergePersistencePort,
     private val cohorts: CohortQueryUseCase,
     private val approval: MemberApprovalService,
+    private val accounts: MemberAccountPersistencePort,
+    private val refreshTokens: RefreshTokenPersistencePort,
+    private val activities: MemberActivityService,
 ) {
     @TrackMemberBadges
     fun mergeAndApprove(
         retainedId: Long?,
         sourceId: Long?,
+        actorId: Long,
     ) {
-        if (retainedId == null || sourceId == null || retainedId <= 0 || sourceId <= 0 || retainedId == sourceId) {
-            throw InvalidMemberMergeException()
-        }
-        val ids = listOf(retainedId, sourceId).sorted()
-        val cohortId = cohorts.getActiveCohortId().value
-        val targets = members.lockApprovalTargets(ids)
-        if (targets.map { it.memberId } != ids) throw MemberNotFoundException()
-        if (targets.any {
-                it.isDeleted || it.status != MemberStatus.PENDING ||
-                    (it.cohortIds.isNotEmpty() && cohortId !in it.cohortIds)
-            }
+        if (retainedId == null || sourceId == null || retainedId <= 0 || sourceId <= 0 ||
+            retainedId == sourceId || actorId <= 0
         ) {
             throw InvalidMemberMergeException()
         }
+        val ids = listOf(retainedId, sourceId).sorted()
+        val cohortId = activities.lockCurrentCohort().value
+        val targets = members.lockApprovalTargets(ids)
+        if (targets.map { it.memberId } != ids) throw MemberNotFoundException()
+        val retained = targets.single { it.memberId == retainedId }
+        val source = targets.single { it.memberId == sourceId }
+        val retainedAllowed =
+            when (retained.status) {
+                MemberStatus.PENDING -> retained.cohortIds.isEmpty() || cohortId in retained.cohortIds
+                MemberStatus.ACTIVE -> cohortId in retained.cohortIds
+                else -> false
+            }
+        if (targets.any { it.isDeleted } || !retainedAllowed || source.status != MemberStatus.PENDING ||
+            (source.cohortIds.isNotEmpty() && cohortId !in source.cohortIds)
+        ) {
+            throw InvalidMemberMergeException()
+        }
+        activities.requireRestorable(retainedId, cohortId)
         if (merge.hasPasswordCredential(ids)) throw InvalidMemberMergeException()
         val oauths = merge.lockOAuths(ids)
         if (ids.any { id -> oauths.none { it.memberId.value == id } }) throw InvalidMemberMergeException()
@@ -45,6 +60,9 @@ class MemberMergeService(
         }
         merge.transferOAuths(sourceId, retainedId)
         merge.softDeleteSource(sourceId)
-        approval.approve(listOf(retainedId))
+        refreshTokens.deleteByMemberId(sourceId)
+        accounts.deleteLinkRequestsByMemberId(sourceId)
+        merge.recordMerge(actorId, retainedId, sourceId)
+        if (retained.status == MemberStatus.PENDING) approval.approve(listOf(retainedId))
     }
 }

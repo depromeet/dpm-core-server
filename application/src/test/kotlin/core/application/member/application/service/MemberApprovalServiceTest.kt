@@ -31,7 +31,11 @@ class MemberApprovalServiceTest {
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val roleQueries = mock(RoleQueryUseCase::class.java)
     private val initializer = mock(MemberActivationInitializer::class.java)
-    private val service = MemberApprovalService(members, memberCohorts, teams, roles, cohorts, roleQueries, initializer)
+    private val activities =
+        mock(MemberActivityService::class.java).also { activity ->
+            `when`(activity.lockCurrentCohort()).thenReturn(CohortId(19))
+        }
+    private val service = MemberApprovalService(members, memberCohorts, teams, roles, cohorts, roleQueries, initializer, activities)
 
     @BeforeEach
     fun setup() {
@@ -44,14 +48,13 @@ class MemberApprovalServiceTest {
         listOf(emptyList(), listOf(1L, 1L), listOf(null), listOf(0L), listOf(-1L)).forEach { ids ->
             assertThatThrownBy { service.approve(ids) }.isInstanceOf(InvalidMemberApprovalException::class.java)
         }
-        verifyNoInteractions(members, memberCohorts, teams, roles, cohorts, roleQueries, initializer)
+        verifyNoInteractions(members, memberCohorts, teams, roles, cohorts, roleQueries, initializer, activities)
     }
 
     @Test
     fun `과거 기수 탈퇴 대상을 포함하면 어떤 멤버도 변경하지 않는다`() {
         listOf(
             listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.PENDING, setOf(18))),
-            listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.ACTIVE, setOf(18))),
             listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.WITHDRAWN, setOf(19))),
         ).forEach { targets ->
             `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(targets)
@@ -77,7 +80,7 @@ class MemberApprovalServiceTest {
             listOf(
                 MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()),
                 MemberApprovalTarget(2, MemberStatus.ACTIVE, setOf(19)),
-                MemberApprovalTarget(3, MemberStatus.INACTIVE, setOf(19)),
+                MemberApprovalTarget(3, MemberStatus.ACTIVE, setOf(19)),
             ),
         )
         service.approve(listOf(3, 1, 2))
@@ -90,7 +93,7 @@ class MemberApprovalServiceTest {
 
     @Test
     fun `승인된 현재 기수 멤버만 재요청하면 초기화도 하지 않는다`() {
-        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.INACTIVE, setOf(19))))
+        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19))))
         service.approve(listOf(1))
         verify(members).lockApprovalTargets(listOf(1))
         verifyNoMoreInteractions(members)

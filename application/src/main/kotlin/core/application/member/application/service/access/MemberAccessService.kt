@@ -15,7 +15,10 @@ class MemberAccessService(
 
     fun getRoleType(memberId: MemberId): RoleType = currentCohortRoleResolver.findPrimaryRoleTypeForMember(memberId)
 
-    fun getIsAdminByMemberIds(memberIds: List<MemberId>): Map<MemberId, Boolean> = memberIds.associateWith(::isAdmin)
+    fun getIsAdminByMemberIds(memberIds: List<MemberId>): Map<MemberId, Boolean> =
+        currentCohortRoleResolver.findPrimaryRoleTypesForMembers(
+            memberIds,
+        ).mapValues { (_, role) -> role in ADMIN_ROLES }
 
     companion object {
         private val ADMIN_ROLES = setOf(RoleType.Core, RoleType.Organizer, RoleType.Master)

@@ -85,6 +85,7 @@ class AnnouncementReminderScheduler(
             notificationCommandUseCase.sendPushNotificationToMembers(
                 memberIds = targetMemberIds,
                 messageType = messageType,
+                data = mapOf("announcementId" to announcementId.value),
             )
 
             val updatedNotification =

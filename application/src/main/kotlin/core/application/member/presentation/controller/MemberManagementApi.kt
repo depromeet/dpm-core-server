@@ -14,10 +14,15 @@ interface MemberManagementApi {
         summary = "멤버 관리 목록 및 요약 조회",
         description =
             "현재 기수와 기수 없는 가입 대기자를 조회합니다. 요약은 검색·필터와 무관하며 " +
-                "목록은 닉네임, 회원 ID 오름차순입니다. 페이지는 1부터 시작합니다. " +
+                "미승인(PENDING) 목록은 최근 가입·재신청 요청순입니다. 재신청 이력이 있으면 최신 재신청 시각, " +
+                "없으면 회원 생성 시각을 사용하며 동률은 회원 ID 내림차순입니다. 시각 없는 기존 회원은 마지막에 표시합니다. " +
+                "이름·파트 수정은 순서에 영향을 주지 않습니다. 승인(APPROVED) 목록은 닉네임, 회원 ID 오름차순입니다. " +
+                "필터·정렬 후 페이지를 나누며 페이지는 1부터 시작합니다. " +
                 "parts·teamNumbers·activityStatuses는 반복 파라미터 또는 쉼표로 여러 값을 전달합니다. " +
                 "같은 필터 안에서는 OR, 필터 사이는 AND이며 생략하거나 빈 리스트면 적용하지 않습니다. " +
-                "중복 의심은 탭·검색·필터 적용 전 관리 대상 중 닉네임과 파트가 같은 다른 회원이 있으면 true입니다.",
+                "활동 상태는 activityStatus로 구분하며 SUSPENDED/ENDED는 수료 위험 인원에서 제외합니다. INACTIVE 필터는 " +
+                "ENDED의 호환 별칭입니다. 중복 의심은 탭·검색·필터 적용 전 관리 대상 중 닉네임과 파트가 같은 다른 회원이 있으면 " +
+                "true입니다.",
     )
     fun getOverview(request: MemberManagementRequest): CustomResponse<MemberManagementResponse>
 
@@ -25,7 +30,10 @@ interface MemberManagementApi {
         summary = "승인된 멤버 정보 수정",
         description =
             "현재 기수의 ACTIVE/INACTIVE 멤버만 수정합니다. 지정한 컬럼을 한 트랜잭션에서 변경하며 생략/null은 유지합니다. " +
-                "타입 변경은 update:member와 update:authorization 권한이 모두 필요합니다. 닉네임과 수료 상태는 수정하지 않습니다.",
+                "activityStatus=SUSPENDED는 활동 정지, ENDED는 기수 종료입니다. 같은 기수에서는 ACTIVE로 복구할 수 " +
+                "없으며 409 MEMBER-409-61을 반환합니다. 정지/종료 후에도 로그인·본인 정보 조회는 가능하지만 활동·관리 권한은 " +
+                "차단합니다. 타입 변경은 update:member와 update:authorization 권한이 모두 필요합니다. 닉네임과 수료 상태는 " +
+                "수정하지 않습니다.",
     )
     fun updateMember(
         memberId: Long,

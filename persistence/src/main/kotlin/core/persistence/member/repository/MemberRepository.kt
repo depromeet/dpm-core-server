@@ -6,6 +6,7 @@ import core.domain.cohort.vo.AuthorityId
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.LoginMethod
+import core.domain.member.enums.MemberAdmissionEventType
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -61,6 +62,7 @@ import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -70,6 +72,29 @@ class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val dsl: DSLContext,
 ) : MemberPersistencePort {
+    override fun findPendingRequestTimes(memberIds: List<Long>): Map<Long, Instant> {
+        if (memberIds.isEmpty()) return emptyMap()
+        val requestedAt = DSL.coalesce(max(MEMBER_ADMISSION_EVENTS.CREATED_AT), MEMBERS.CREATED_AT)
+        return dsl.select(MEMBERS.MEMBER_ID, requestedAt)
+            .from(MEMBERS)
+            .leftJoin(MEMBER_ADMISSION_EVENTS).on(
+                MEMBER_ADMISSION_EVENTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID),
+                MEMBER_ADMISSION_EVENTS.EVENT_TYPE.eq(MemberAdmissionEventType.REAPPLIED.name),
+            )
+            .where(
+                MEMBERS.MEMBER_ID.`in`(memberIds),
+                MEMBERS.STATUS.eq(MemberStatus.PENDING.name),
+                MEMBERS.DELETED_AT.isNull,
+            )
+            .groupBy(MEMBERS.MEMBER_ID, MEMBERS.CREATED_AT)
+            .fetch()
+            .mapNotNull { record ->
+                record[requestedAt]?.atZone(ZoneId.of("UTC"))?.toInstant()?.let {
+                    requireNotNull(record[MEMBERS.MEMBER_ID]) to it
+                }
+            }.toMap()
+    }
+
     override fun softDeleteMembers(memberIds: List<Long>) {
         if (memberIds.isEmpty()) return
         dsl.update(MEMBERS)
@@ -569,6 +594,16 @@ class MemberRepository(
 
     override fun hardDeleteById(memberId: MemberId): List<String> {
         val value = memberId.value
+        dsl.deleteFrom(
+            DSL.table("member_cohort_activities"),
+        ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
+        dsl.deleteFrom(
+            DSL.table("member_activity_events"),
+        ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
+        dsl.update(
+            DSL.table("member_activity_events"),
+        ).set(DSL.field("actor_member_id", Long::class.java), null as Long?)
+            .where(DSL.field("actor_member_id", Long::class.java).eq(value)).execute()
         val absenceReasonIds =
             dsl
                 .select(ABSENCE_REASONS.ABSENCE_REASON_ID)

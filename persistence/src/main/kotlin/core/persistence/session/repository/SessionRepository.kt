@@ -30,6 +30,19 @@ class SessionRepository(
     override fun findAllCohortSessions(cohortId: Long): List<Session> =
         sessionJpaRepository.findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId).map { it.toDomain() }
 
+    override fun existsByCohortIdAndDateRange(
+        cohortId: Long,
+        rangeStartInclusive: Instant,
+        rangeEndExclusive: Instant,
+        excludeSessionId: Long?,
+    ): Boolean =
+        sessionJpaRepository.existsByCohortIdAndDateRange(
+            cohortId,
+            rangeStartInclusive,
+            rangeEndExclusive,
+            excludeSessionId,
+        )
+
     override fun findSessionById(sessionId: Long): Session? =
         sessionJpaRepository.findByIdAndDeletedAtIsNull(sessionId)?.toDomain()
 

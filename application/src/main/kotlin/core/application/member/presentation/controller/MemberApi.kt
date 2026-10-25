@@ -333,7 +333,8 @@ interface MemberApi {
         summary = "멤버 데이터 주입 및 승인 API (dev)",
         description =
             "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다. " +
-                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다.",
+                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다. 현재 기수 활동 정지·종료 회원의 상태 " +
+                "변경은 MEMBER-409-61로 거절합니다. INACTIVE는 기수 종료이며 복구할 수 없습니다.",
         requestBody =
             RequestBody(
                 content = [
@@ -413,7 +414,8 @@ interface MemberApi {
         summary = "멤버 상태 변경 API (dev)",
         description =
             "멤버의 상태를 변경합니다. 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE) " +
-                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다.",
+                "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다. 현재 기수 활동 정지·종료 회원의 상태 " +
+                "변경은 MEMBER-409-61로 거절합니다. INACTIVE는 기수 종료이며 복구할 수 없습니다.",
         requestBody =
             RequestBody(
                 content = [
@@ -447,6 +449,10 @@ interface MemberApi {
     )
     fun updateMemberStatus(request: UpdateMemberStatusRequest): CustomResponse<Void>
 
+    @Operation(
+        summary = "현재 활성 기수 가입 초기화",
+        description = "현재 활성 기수만 지정할 수 있습니다. 이전 기수 승인 회원을 새 기수 디퍼로 승인하며 과거 활동 이력을 보존합니다. 같은 기수의 정지·종료는 복구하지 않습니다.",
+    )
     fun initMemberCohort(
         memberId: MemberId,
         cohortId: CohortId,

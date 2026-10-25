@@ -9,7 +9,9 @@ import core.application.member.presentation.response.MemberManagementResponse.Su
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberPersistencePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -17,11 +19,25 @@ import org.springframework.transaction.annotation.Transactional
 class MemberManagementQueryService(
     private val targets: MemberManagementTargetQueryService,
     private val cohorts: CohortQueryUseCase,
+    private val members: MemberPersistencePort,
 ) {
     @Transactional(readOnly = true)
     fun getOverview(request: MemberManagementRequest): MemberManagementResponse {
-        val cohortId = cohorts.getLatestCohortId().value
+        val cohortId = cohorts.getActiveCohortId().value
         val allMembers = targets.findAll(cohortId)
+        val ordering =
+            if (request.approvalStatus == ApprovalStatus.PENDING) {
+                val requestTimes =
+                    members.findPendingRequestTimes(
+                        allMembers.filter {
+                            it.status == MemberStatus.PENDING
+                        }.map { it.memberId },
+                    )
+                // 시각 없는 레거시 행은 마지막에 두고, 동률은 ID로 고정해 페이지 간 순서가 흔들리지 않게 한다.
+                compareByDescending<MemberSummary> { requestTimes[it.memberId] }.thenByDescending { it.memberId }
+            } else {
+                compareBy<MemberSummary> { it.name }.thenBy { it.memberId }
+            }
         val search = request.search?.trim().orEmpty()
         val filtered =
             allMembers.asSequence()
@@ -38,10 +54,14 @@ class MemberManagementQueryService(
                         request.activityStatuses.any { activity ->
                             when (activity) {
                                 ActivityStatus.NORMAL ->
-                                    member.status == MemberStatus.ACTIVE && member.graduationStatus !in RISK_STATUSES
+                                    member.activityStatus == MemberActivityStatus.ACTIVE &&
+                                        member.graduationStatus !in RISK_STATUSES
                                 ActivityStatus.AT_RISK ->
-                                    member.status == MemberStatus.ACTIVE && member.graduationStatus in RISK_STATUSES
-                                ActivityStatus.INACTIVE -> member.status == MemberStatus.INACTIVE
+                                    member.activityStatus == MemberActivityStatus.ACTIVE &&
+                                        member.graduationStatus in RISK_STATUSES
+                                ActivityStatus.INACTIVE, ActivityStatus.ENDED ->
+                                    member.activityStatus == MemberActivityStatus.ENDED
+                                ActivityStatus.SUSPENDED -> member.activityStatus == MemberActivityStatus.SUSPENDED
                                 null -> false
                             }
                         }
@@ -50,9 +70,15 @@ class MemberManagementQueryService(
                 .filter { !request.missingInformationOnly || it.missingInformation }
                 .filter {
                     request.graduationStatuses.isNullOrEmpty() ||
-                        (it.graduationStatus != null && it.graduationStatus in request.graduationStatuses)
+                        (
+                            it.graduationStatus != null && it.graduationStatus in request.graduationStatuses &&
+                                (
+                                    it.graduationStatus !in RISK_STATUSES ||
+                                        it.activityStatus == MemberActivityStatus.ACTIVE
+                                )
+                        )
                 }
-                .sortedWith(compareBy<MemberSummary> { it.name }.thenBy { it.memberId })
+                .sortedWith(ordering)
                 .toList()
         // 수료 판정/필터를 끝낸 뒤 페이지를 나눈다. 큰 page 값도 정수 오버플로 없이 빈 목록이 된다.
         val offset = ((request.page.toLong() - 1) * request.size).coerceAtMost(filtered.size.toLong()).toInt()
@@ -73,7 +99,10 @@ class MemberManagementQueryService(
                     coreCount = core,
                     pendingCount = allMembers.count { it.status == MemberStatus.PENDING },
                     missingInformationCount = allMembers.count { it.missingInformation },
-                    graduationRiskCount = allMembers.count { it.graduationStatus in RISK_STATUSES },
+                    graduationRiskCount =
+                        allMembers.count {
+                            it.activityStatus == MemberActivityStatus.ACTIVE && it.graduationStatus in RISK_STATUSES
+                        },
                 ),
             totalElements = filtered.size,
             page = request.page,

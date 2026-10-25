@@ -34,7 +34,7 @@ enum class MemberExceptionCode(
     MEMBER_REJECTION_TARGET_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-11", "현재 기수 또는 기수 없는 가입 대기자만 반려할 수 있습니다"),
     MEMBER_REAPPLICATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-12", "반려된 회원만 가입을 재신청할 수 있습니다"),
     MEMBER_ADMISSION_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-13", "가입 반려와 재신청은 전용 API를 사용해주세요"),
-    INVALID_MEMBER_MERGE(HttpStatus.BAD_REQUEST, "MEMBER-400-21", "현재 기수 또는 기수 없는 서로 다른 소셜 가입 대기 계정만 통합할 수 있습니다"),
+    INVALID_MEMBER_MERGE(HttpStatus.BAD_REQUEST, "MEMBER-400-21", "가입 대기 소셜 계정은 현재 기수 승인 계정 또는 가입 대기 계정에만 통합할 수 있습니다"),
     MEMBER_OAUTH_CONFLICT(HttpStatus.CONFLICT, "MEMBER-409-21", "로그인 수단이 충돌하거나 소유 계정이 변경되었습니다. 다시 로그인해주세요"),
     INVALID_MEMBER_BADGE_VERSION(HttpStatus.BAD_REQUEST, "MEMBER-400-31", "NEW 확인 버전이 올바르지 않습니다"),
     MEMBER_BADGE_COHORT_CHANGED(HttpStatus.CONFLICT, "MEMBER-409-31", "관리 기수가 변경되었습니다. 다시 조회해주세요"),
@@ -43,6 +43,8 @@ enum class MemberExceptionCode(
     MEMBER_PROFILE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "MEMBER-409-41", "이미 프로필 입력을 완료했습니다"),
     MEMBER_LAST_LOGIN_ACCOUNT(HttpStatus.CONFLICT, "MEMBER-409-51", "마지막 로그인 수단은 해제할 수 없습니다"),
     MEMBER_ACCOUNT_REAUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "MEMBER-401-51", "다시 로그인한 후 계정 연결을 진행해주세요"),
+    MEMBER_ACTIVITY_RESTORE_NOT_ALLOWED(HttpStatus.CONFLICT, "MEMBER-409-61", "활동 정지 또는 종료된 기수에서는 활동을 다시 시작할 수 없습니다"),
+    MEMBER_ACTIVITY_NOT_INITIALIZED(HttpStatus.CONFLICT, "MEMBER-409-62", "기수별 활동 정보를 확인한 후 다시 요청해주세요"),
     MEMBER_ACCOUNT_LINK_INVALID(HttpStatus.BAD_REQUEST, "MEMBER-400-51", "계정 연결 요청이 만료되었거나 올바르지 않습니다. 다시 시작해주세요"),
     ;
 
