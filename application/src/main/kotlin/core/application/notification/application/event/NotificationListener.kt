@@ -66,7 +66,6 @@ class NotificationListener(
                 ),
             data =
                 mapOf(
-                    "type" to "ABSENCE_REASON",
                     "sessionId" to event.sessionId.value,
                     "memberId" to event.memberId.value,
                 ),
