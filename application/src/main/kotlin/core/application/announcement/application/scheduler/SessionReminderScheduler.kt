@@ -65,6 +65,7 @@ class SessionReminderScheduler(
             notificationCommandUseCase.sendPushNotificationToMembers(
                 memberIds = currentCohortMemberIds,
                 messageType = NotificationMessageType.ATTENDANCE_STARTED,
+                data = mapOf("sessionId" to sessionId.value),
             )
 
             if (sentNotification != null) {
