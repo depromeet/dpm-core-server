@@ -45,7 +45,7 @@ import java.time.Instant
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(MemberRepository::class, MemberRoleRepository::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class, MemberManagementQueryService::class, core.application.member.application.service.MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class)
+@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class, MemberManagementQueryService::class, core.application.member.application.service.MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class)
 class MemberManagementMySqlIntegrationTest {
     @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 
@@ -111,6 +111,7 @@ class MemberManagementMySqlIntegrationTest {
         attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(7), status = AttendanceStatus.ABSENT))
         attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(8), status = AttendanceStatus.ABSENT, deletedAt = start))
 
+        MemberActivityFixtures.seed(jdbc)
         val rows = members.findManagementMembers(current.value)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L)
         assertThat(rows.map { it.loginMethod }).containsOnlyNulls()
@@ -171,6 +172,7 @@ class MemberManagementMySqlIntegrationTest {
         jdbc.update("update members set name = '삭제별명' where member_id in (5, 7)")
         jdbc.update("update members set name = '탈퇴별명' where member_id in (6, 8)")
 
+        MemberActivityFixtures.seed(jdbc)
         val rows = members.findManagementMembers(cohortId)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L, 9L, 10L, 11L)
         assertThat(rows.associate { it.memberId to it.email }).containsExactlyInAnyOrderEntriesOf(

@@ -6,6 +6,7 @@ import core.application.member.presentation.response.MemberManagementResponse.Me
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.authorization.vo.RoleType
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberActivityPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import org.springframework.stereotype.Service
@@ -17,11 +18,13 @@ class MemberManagementTargetQueryService(
     private val attendances: AttendancePersistencePort,
     private val roleResolver: CurrentCohortRoleResolver,
     private val graduationEvaluator: AttendanceGraduationEvaluator,
+    private val activities: MemberActivityPersistencePort,
 ) {
     fun findAll(cohortId: Long): List<MemberSummary> {
         val source = members.findManagementMembers(cohortId)
         val memberIds = source.map { it.memberId }
         val assignments = roles.findActiveRoleAssignmentsByMemberIds(memberIds)
+        val activityByMember = activities.findAll(memberIds, cohortId)
         val attendanceSummaries =
             attendances.findMemberAttendances(cohortId, emptyList()).associate { it.id to it.summary }
         val duplicateCounts =
@@ -55,6 +58,7 @@ class MemberManagementTargetQueryService(
                     ),
                 duplicateSuspected = duplicateCounts.getOrDefault(member.name.trim() to member.part, 0) > 1,
                 updatedAt = member.updatedAt,
+                activityStatus = activityByMember[member.memberId]?.status,
             )
         }
     }

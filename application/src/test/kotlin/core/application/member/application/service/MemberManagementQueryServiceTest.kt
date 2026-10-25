@@ -34,8 +34,9 @@ class MemberManagementQueryServiceTest {
     private val roles = mock(MemberRolePersistencePort::class.java)
     private val attendance = mock(AttendancePersistencePort::class.java)
     private val cohorts = mock(CohortQueryUseCase::class.java)
-    private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles)
-    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator()), cohorts)
+    private val activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java)
+    private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles, activities)
+    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities), cohorts)
     private val updatedAt = Instant.parse("2026-10-06T02:00:00Z")
     private val source =
         listOf(
@@ -50,7 +51,17 @@ class MemberManagementQueryServiceTest {
 
     @BeforeEach
     fun setup() {
-        `when`(cohorts.getLatestCohortId()).thenReturn(CohortId(19))
+        `when`(activities.findAll(source.map { it.memberId }, 19)).thenReturn(
+            source.filter { it.status != MemberStatus.PENDING }.associate {
+                it.memberId to
+                    core.domain.member.port.outbound.MemberCohortActivity(
+                        it.memberId, 19,
+                        if (it.status == MemberStatus.INACTIVE) core.domain.member.enums.MemberActivityStatus.ENDED else core.domain.member.enums.MemberActivityStatus.ACTIVE,
+                    )
+            },
+        )
+
+        `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(members.findManagementMembers(19)).thenReturn(source)
         `when`(roles.findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })).thenReturn(
             mapOf(
@@ -155,7 +166,7 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
-    fun `활동 정상 위험 정지를 구분하고 위험 카드는 정지한 위험 회원도 포함한다`() {
+    fun `활동 상태를 구분하고 위험 카드는 종료 회원을 제외한다`() {
         `when`(attendance.findMemberAttendances(19, emptyList())).thenReturn(
             listOf(attendanceRow(1, 3), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5, 5), attendanceRow(7, 5)),
         )
@@ -170,7 +181,7 @@ class MemberManagementQueryServiceTest {
         val combined = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.NORMAL, ActivityStatus.INACTIVE)))
         assertThat(combined.members.map { it.memberId }).containsExactly(3L, 4L, 5L)
         val card = service.getOverview(request.copy(graduationStatuses = listOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)))
-        assertThat(card.members.map { it.memberId }).containsExactly(1L, 2L, 5L)
+        assertThat(card.members.map { it.memberId }).containsExactly(1L, 2L)
         assertThat(card.summary.graduationRiskCount).isEqualTo(card.totalElements)
         val intersection = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.AT_RISK), graduationStatuses = listOf(AttendanceGraduationStatus.IMPOSSIBLE)))
         assertThat(intersection.members.single().memberId).isEqualTo(2L)
@@ -244,7 +255,7 @@ class MemberManagementQueryServiceTest {
     @Test
     fun `회원별 조회 없이 회원수에 무관하게 각 port를 한번만 부른다`() {
         service.getOverview(MemberManagementRequest())
-        verify(cohorts).getLatestCohortId()
+        verify(cohorts).getActiveCohortId()
         verify(members).findManagementMembers(19)
         verify(roles).findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })
         verify(attendance).findMemberAttendances(19, emptyList())
