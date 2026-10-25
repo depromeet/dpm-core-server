@@ -12,7 +12,7 @@ data class MemberMergeRequest(
     @field:NotNull
     @field:Positive
     @field:JsonDeserialize(using = MemberManagementLongDeserializer::class)
-    @field:Schema(description = "통합 후 유지하고 승인할 미승인 멤버 ID", example = "1")
+    @field:Schema(description = "병합 후 유지할 멤버 ID. 현재 기수 ACTIVE 또는 현재 기수·기수 없는 PENDING", example = "1")
     val retainedMemberId: Long?,
     @field:NotNull
     @field:Positive

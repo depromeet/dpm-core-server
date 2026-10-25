@@ -7,11 +7,13 @@ import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberOAuth
 import core.domain.member.enums.MemberStatus
 import core.domain.member.enums.OAuthProvider
+import core.domain.member.port.outbound.MemberAccountPersistencePort
 import core.domain.member.port.outbound.MemberMergePersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
+import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -27,7 +29,9 @@ class MemberMergeServiceTest {
     private val merge = mock(MemberMergePersistencePort::class.java)
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val approval = mock(MemberApprovalService::class.java)
-    private val service = MemberMergeService(members, merge, cohorts, approval)
+    private val accounts = mock(MemberAccountPersistencePort::class.java)
+    private val refreshTokens = mock(RefreshTokenPersistencePort::class.java)
+    private val service = MemberMergeService(members, merge, cohorts, approval, accounts, refreshTokens)
 
     @BeforeEach
     fun setup() {
@@ -43,20 +47,48 @@ class MemberMergeServiceTest {
 
     @Test
     fun `잠금 후 이전과 원본 보존 삭제와 유지 계정 승인을 실행한다`() {
-        service.mergeAndApprove(2, 1)
-        val order = inOrder(members, merge, approval)
+        service.mergeAndApprove(2, 1, 99)
+        val order = inOrder(members, merge, approval, accounts, refreshTokens)
         order.verify(members).lockApprovalTargets(listOf(1, 2))
         order.verify(merge).hasPasswordCredential(listOf(1, 2))
         order.verify(merge).lockOAuths(listOf(1, 2))
         order.verify(merge).transferOAuths(1, 2)
         order.verify(merge).softDeleteSource(1)
+        order.verify(refreshTokens).deleteByMemberId(1)
+        order.verify(accounts).deleteLinkRequestsByMemberId(1)
+        order.verify(merge).recordMerge(99, 2, 1)
         order.verify(approval).approve(listOf(2))
+    }
+
+    @Test
+    fun `현재 기수 승인 회원에 합칠 때 재승인하지 않는다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(
+            listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(18, 19)), MemberApprovalTarget(2, MemberStatus.PENDING, emptySet())),
+        )
+        service.mergeAndApprove(1, 2, 99)
+        verify(merge).transferOAuths(2, 1)
+        verify(merge).recordMerge(99, 1, 2)
+        verifyNoInteractions(approval)
+    }
+
+    @Test
+    fun `유지할 계정이 정지 반려 탈퇴 또는 과거 기수 승인 회원이면 거절한다`() {
+        listOf(
+            MemberApprovalTarget(1, MemberStatus.INACTIVE, setOf(19)),
+            MemberApprovalTarget(1, MemberStatus.REJECTED, setOf(19)),
+            MemberApprovalTarget(1, MemberStatus.WITHDRAWN, setOf(19)),
+            MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(18)),
+        ).forEach { retained ->
+            `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(retained, MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19))))
+            assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
+        }
+        verifyNoInteractions(merge, approval, accounts, refreshTokens)
     }
 
     @Test
     fun `비밀번호 또는 소셜 없는 대상은 이전하지 않는다`() {
         `when`(merge.hasPasswordCredential(listOf(1, 2))).thenReturn(true)
-        assertThatThrownBy { service.mergeAndApprove(1, 2) }.isInstanceOf(InvalidMemberMergeException::class.java)
+        assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
         verify(merge, never()).transferOAuths(2, 1)
         verifyNoInteractions(approval)
     }
@@ -64,7 +96,7 @@ class MemberMergeServiceTest {
     @Test
     fun `같은 provider의 다른 계정은 덮어쓰지 않는다`() {
         `when`(merge.lockOAuths(listOf(1, 2))).thenReturn(listOf(oauth(1, OAuthProvider.KAKAO), oauth(2, OAuthProvider.KAKAO)))
-        assertThatThrownBy { service.mergeAndApprove(1, 2) }.isInstanceOf(MemberOAuthConflictException::class.java)
+        assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(MemberOAuthConflictException::class.java)
         verify(merge, never()).transferOAuths(2, 1)
         verifyNoInteractions(approval)
     }
@@ -77,16 +109,17 @@ class MemberMergeServiceTest {
             MemberApprovalTarget(2, MemberStatus.PENDING, setOf(18)),
         ).forEach { target ->
             `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), target))
-            assertThatThrownBy { service.mergeAndApprove(1, 2) }.isInstanceOf(InvalidMemberMergeException::class.java)
+            assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
         }
         verifyNoInteractions(merge, approval)
     }
 
     @Test
     fun `동일 식별자와 잘못된 ID는 조회하지 않는다`() {
-        assertThatThrownBy { service.mergeAndApprove(1, 1) }.isInstanceOf(InvalidMemberMergeException::class.java)
-        assertThatThrownBy { service.mergeAndApprove(null, 2) }.isInstanceOf(InvalidMemberMergeException::class.java)
-        assertThatThrownBy { service.mergeAndApprove(1, 0) }.isInstanceOf(InvalidMemberMergeException::class.java)
+        assertThatThrownBy { service.mergeAndApprove(1, 1, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
+        assertThatThrownBy { service.mergeAndApprove(null, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
+        assertThatThrownBy { service.mergeAndApprove(1, 0, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
+        assertThatThrownBy { service.mergeAndApprove(1, 2, 0) }.isInstanceOf(InvalidMemberMergeException::class.java)
         verifyNoInteractions(members, merge, approval)
     }
 

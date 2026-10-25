@@ -34,7 +34,7 @@ enum class MemberExceptionCode(
     MEMBER_REJECTION_TARGET_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-11", "현재 기수 또는 기수 없는 가입 대기자만 반려할 수 있습니다"),
     MEMBER_REAPPLICATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-12", "반려된 회원만 가입을 재신청할 수 있습니다"),
     MEMBER_ADMISSION_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MEMBER-400-13", "가입 반려와 재신청은 전용 API를 사용해주세요"),
-    INVALID_MEMBER_MERGE(HttpStatus.BAD_REQUEST, "MEMBER-400-21", "현재 기수 또는 기수 없는 서로 다른 소셜 가입 대기 계정만 통합할 수 있습니다"),
+    INVALID_MEMBER_MERGE(HttpStatus.BAD_REQUEST, "MEMBER-400-21", "가입 대기 소셜 계정은 현재 기수 승인 계정 또는 가입 대기 계정에만 통합할 수 있습니다"),
     MEMBER_OAUTH_CONFLICT(HttpStatus.CONFLICT, "MEMBER-409-21", "로그인 수단이 충돌하거나 소유 계정이 변경되었습니다. 다시 로그인해주세요"),
     INVALID_MEMBER_BADGE_VERSION(HttpStatus.BAD_REQUEST, "MEMBER-400-31", "NEW 확인 버전이 올바르지 않습니다"),
     MEMBER_BADGE_COHORT_CHANGED(HttpStatus.CONFLICT, "MEMBER-409-31", "관리 기수가 변경되었습니다. 다시 조회해주세요"),

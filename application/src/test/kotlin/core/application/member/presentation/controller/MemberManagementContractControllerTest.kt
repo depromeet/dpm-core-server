@@ -100,7 +100,7 @@ class MemberManagementContractControllerTest {
     fun `통합 권한이 있으면 서비스에 두 ID를 전달한다`() {
         mvc.perform(authenticated(json(post("/v3/members/merge"), MERGE_BODY), "create:member", "delete:member"))
             .andExpect(status().isOk)
-        verify(context.getBean(core.application.member.application.service.MemberMergeService::class.java)).mergeAndApprove(1, 2)
+        verify(context.getBean(core.application.member.application.service.MemberMergeService::class.java)).mergeAndApprove(1, 2, 1)
     }
 
     @Test
