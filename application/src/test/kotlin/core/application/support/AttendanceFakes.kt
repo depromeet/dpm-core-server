@@ -426,6 +426,15 @@ class FakeCohortPersistencePort : CohortPersistencePort {
     }
 
     @Synchronized
+    override fun rename(
+        cohortId: CohortId,
+        value: String,
+    ): Cohort {
+        val c = cohorts.getValue(cohortId.value)
+        return save(Cohort(c.id, value, c.isActive, c.activatedAt, c.createdAt, c.updatedAt))
+    }
+
+    @Synchronized
     override fun existsByValue(value: String): Boolean = cohorts.values.any { it.value == value }
 
     override fun hasAnyReference(cohortId: CohortId): Boolean = false

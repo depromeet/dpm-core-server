@@ -75,6 +75,7 @@ class MemberMergeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
+        MemberActivityFixtures.clear(jdbc)
         listOf("attendances", "member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_credentials", "member_oauth", "member_roles", "member_teams", "member_cohorts", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER'), (2, 'GUEST')")
@@ -87,11 +88,13 @@ class MemberMergeMySqlIntegrationTest {
             jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider, email) values (?, ?, ?, ?, ?)", id, id, "external-$id", if (id == 1L) "KAKAO" else "APPLE", "oauth-$id@example.test")
         }
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
+        `when`(cohorts.findActiveCohortId()).thenReturn(CohortId(19))
         `when`(roles.findIdByName("DEEPER")).thenReturn(1)
         (1L..2L).forEach { id ->
             jdbc.update("insert into refresh_tokens (member_id, token_hash, device_id, issued_at, expires_at) values (?, ?, 'test-device', now(6), date_add(now(6), interval 1 day))", id, "test-token-$id".padEnd(64, 'x'))
             jdbc.update("insert into member_oauth_link_requests (state_hash, member_id, provider, redirect_uri, code_verifier, expires_at) values (?, ?, 'APPLE', 'https://example.test/callback', 'test-verifier', date_add(now(6), interval 5 minute))", "state-$id".padEnd(64, 'x'), id)
         }
+        core.it.member.MemberActivityFixtures.seed(jdbc)
     }
 
     @Test
@@ -119,6 +122,7 @@ class MemberMergeMySqlIntegrationTest {
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (18, '18', false, 0, 0)")
         jdbc.update("insert into member_cohorts (member_id, cohort_id) values (1, 18)")
         jdbc.update("insert into attendances (session_id, member_id, status, attended_at, updated_at) values (19, 1, 'PRESENT', now(6), now(6))")
+        MemberActivityFixtures.seed(jdbc)
         val before =
             listOf("members", "member_cohorts", "member_roles", "member_teams", "attendances").associateWith {
                 jdbc.queryForList("select * from $it where member_id = 1")
@@ -249,6 +253,7 @@ class MemberMergeMySqlIntegrationTest {
     @EntityScan(basePackages = ["core.entity"])
     @EnableJpaRepositories(basePackages = ["core.persistence"])
     @Import(
+        core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
         JooqDslConfig::class,
         MemberRepository::class,
         MemberMergeRepository::class, MemberAccountRepository::class, RefreshTokenRepository::class,

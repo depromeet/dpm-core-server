@@ -13,4 +13,6 @@ interface MemberCohortPersistencePort {
     fun deleteByMemberId(memberId: Long)
 
     fun findCohortIdsByMemberId(memberId: Long): List<Long>
+
+    fun findCohortIdsByMemberIds(memberIds: List<Long>): Map<Long, List<Long>>
 }
