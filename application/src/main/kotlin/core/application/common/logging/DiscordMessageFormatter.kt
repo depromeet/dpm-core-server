@@ -171,6 +171,7 @@ class DiscordMessageFormatter(
                 add(field("요청", request, inline = false))
             }
             // 값이 비면 이름만 덩그러니 남은 칸이 생긴다. Discord 는 막지 않으므로 여기서 거른다.
+            // 이메일은 콘솔·journal 전용(MDC userEmail). Discord 웹훅에는 memberId 만 남겨 PII 확산을 막는다.
             mdc[MdcLoggingFilter.MEMBER_ID]?.takeIf { it.isNotBlank() }?.let { add(field("사용자", "memberId $it")) }
             mdc[MdcLoggingFilter.REQUEST_ID]?.takeIf { it.isNotBlank() }?.let { add(field("requestId", it)) }
         }
