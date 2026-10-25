@@ -36,7 +36,7 @@ class MemberManagementQueryServiceTest {
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java)
     private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles, activities)
-    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities), cohorts)
+    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities), cohorts, members)
     private val updatedAt = Instant.parse("2026-10-06T02:00:00Z")
     private val source =
         listOf(
@@ -63,6 +63,7 @@ class MemberManagementQueryServiceTest {
 
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(members.findManagementMembers(19)).thenReturn(source)
+        `when`(members.findPendingRequestTimes(listOf(6, 7))).thenReturn(mapOf(6L to updatedAt, 7L to updatedAt.minusSeconds(1)))
         `when`(roles.findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })).thenReturn(
             mapOf(
                 1L to listOf(role("DEEPER"), role("ORGANIZER", 18)),
@@ -253,6 +254,42 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
+    fun `미승인 요청시각 내림차순과 ID 동률 순서로 정렬한 뒤 페이지를 나눈다`() {
+        val candidates =
+            listOf(
+                member(11, "가", MemberPart.WEB, status = MemberStatus.PENDING),
+                member(12, "나", MemberPart.WEB, status = MemberStatus.PENDING),
+                member(13, "다", MemberPart.SERVER, status = MemberStatus.PENDING),
+                member(14, "라", MemberPart.WEB, status = MemberStatus.PENDING),
+                member(15, "마", MemberPart.WEB, status = MemberStatus.PENDING),
+            )
+        `when`(members.findManagementMembers(19)).thenReturn(candidates)
+        `when`(members.findPendingRequestTimes(candidates.map { it.memberId })).thenReturn(
+            mapOf(11L to updatedAt, 12L to updatedAt.plusSeconds(1), 13L to updatedAt.plusSeconds(2)),
+        )
+        val request = MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING)
+        assertThat(service.getOverview(request).members.map { it.memberId }).containsExactly(13L, 12L, 11L, 15L, 14L)
+        val page = service.getOverview(request.copy(parts = listOf("WEB"), page = 2, size = 2))
+        assertThat(page.totalElements).isEqualTo(4)
+        assertThat(page.members.map { it.memberId }).containsExactly(15L, 14L)
+        assertThat(page.summary.pendingCount).isEqualTo(5)
+
+        // 이름/파트 수정으로 updatedAt이 바뀌어도 요청시각은 바뀌지 않는다.
+        `when`(members.findManagementMembers(19)).thenReturn(candidates.map { it.copy(updatedAt = updatedAt.plusSeconds(it.memberId)) })
+        assertThat(service.getOverview(request).members.map { it.memberId }).containsExactly(13L, 12L, 11L, 15L, 14L)
+    }
+
+    @Test
+    fun `같은 요청시각은 큰 ID를 먼저 보여주며 승인 목록 이름순은 유지한다`() {
+        val pending = listOf(member(11, "나", MemberPart.WEB, status = MemberStatus.PENDING), member(12, "가", MemberPart.WEB, status = MemberStatus.PENDING))
+        `when`(members.findManagementMembers(19)).thenReturn(pending)
+        `when`(members.findPendingRequestTimes(listOf(11, 12))).thenReturn(mapOf(11L to updatedAt, 12L to updatedAt))
+        assertThat(service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING)).members.map { it.memberId }).containsExactly(12L, 11L)
+        `when`(members.findManagementMembers(19)).thenReturn(pending.map { it.copy(status = MemberStatus.ACTIVE) } + member(10, "가", MemberPart.WEB))
+        assertThat(service.getOverview(MemberManagementRequest()).members.map { it.memberId }).containsExactly(10L, 12L, 11L)
+    }
+
+    @Test
     fun `회원별 조회 없이 회원수에 무관하게 각 port를 한번만 부른다`() {
         service.getOverview(MemberManagementRequest())
         verify(cohorts).getActiveCohortId()
@@ -260,6 +297,14 @@ class MemberManagementQueryServiceTest {
         verify(roles).findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })
         verify(attendance).findMemberAttendances(19, emptyList())
         verifyNoMoreInteractions(cohorts, members, roles, attendance)
+    }
+
+    @Test
+    fun `미승인 요청시각은 목록 대상 ID를 한 번에 조회한다`() {
+        service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
+        verify(members).findManagementMembers(19)
+        verify(members).findPendingRequestTimes(listOf(6, 7))
+        verifyNoMoreInteractions(members)
     }
 
     private fun member(
