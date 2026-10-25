@@ -11,6 +11,7 @@ import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberPersistencePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -18,11 +19,25 @@ import org.springframework.transaction.annotation.Transactional
 class MemberManagementQueryService(
     private val targets: MemberManagementTargetQueryService,
     private val cohorts: CohortQueryUseCase,
+    private val members: MemberPersistencePort,
 ) {
     @Transactional(readOnly = true)
     fun getOverview(request: MemberManagementRequest): MemberManagementResponse {
         val cohortId = cohorts.getActiveCohortId().value
         val allMembers = targets.findAll(cohortId)
+        val ordering =
+            if (request.approvalStatus == ApprovalStatus.PENDING) {
+                val requestTimes =
+                    members.findPendingRequestTimes(
+                        allMembers.filter {
+                            it.status == MemberStatus.PENDING
+                        }.map { it.memberId },
+                    )
+                // 시각 없는 레거시 행은 마지막에 두고, 동률은 ID로 고정해 페이지 간 순서가 흔들리지 않게 한다.
+                compareByDescending<MemberSummary> { requestTimes[it.memberId] }.thenByDescending { it.memberId }
+            } else {
+                compareBy<MemberSummary> { it.name }.thenBy { it.memberId }
+            }
         val search = request.search?.trim().orEmpty()
         val filtered =
             allMembers.asSequence()
@@ -63,7 +78,7 @@ class MemberManagementQueryService(
                                 )
                         )
                 }
-                .sortedWith(compareBy<MemberSummary> { it.name }.thenBy { it.memberId })
+                .sortedWith(ordering)
                 .toList()
         // 수료 판정/필터를 끝낸 뒤 페이지를 나눈다. 큰 page 값도 정수 오버플로 없이 빈 목록이 된다.
         val offset = ((request.page.toLong() - 1) * request.size).coerceAtMost(filtered.size.toLong()).toInt()

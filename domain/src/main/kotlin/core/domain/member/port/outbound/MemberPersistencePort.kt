@@ -11,6 +11,7 @@ import core.domain.member.port.outbound.query.MemberManagementQueryModel
 import core.domain.member.port.outbound.query.MemberNameRoleQueryModel
 import core.domain.member.port.outbound.query.MemberOverviewQueryModel
 import core.domain.member.vo.MemberId
+import java.time.Instant
 
 interface MemberPersistencePort {
     /** 삭제 트랜잭션에서 이미 잠그고 검증한 회원의 상태와 삭제 시각만 변경한다. */
@@ -24,6 +25,9 @@ interface MemberPersistencePort {
 
     /** 현재 기수 소속 또는 어느 기수에도 속하지 않은 PENDING. 삭제/탈퇴 회원은 제외한다. */
     fun findManagementMembers(cohortId: Long): List<MemberManagementQueryModel>
+
+    /** 미승인 회원의 최신 재신청 시각, 재신청 이력이 없으면 최초 생성 시각을 일괄 조회한다. */
+    fun findPendingRequestTimes(memberIds: List<Long>): Map<Long, Instant>
 
     /** 현재 기수의 승인된 멤버를 ID 순서로 잠그고 수정 가능한 ID를 반환한다. 쓰기 트랜잭션 안에서 호출한다. */
     fun lockApprovedManagementMemberIds(
