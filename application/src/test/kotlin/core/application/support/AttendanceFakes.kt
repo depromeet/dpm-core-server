@@ -165,6 +165,46 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
     }
 
     @Synchronized
+    override fun excuseAbsence(
+        sessionId: Long,
+        memberId: Long,
+        updatedAt: Instant,
+    ): Int {
+        val targets =
+            rows.values.filter {
+                it.sessionId == sessionId && it.memberId == memberId && it.deletedAt == null &&
+                    it.status in setOf(AttendanceStatus.PENDING, AttendanceStatus.ABSENT)
+            }
+        targets.forEach {
+            it.status = AttendanceStatus.EXCUSED_ABSENT
+            it.attendedAt = null
+            it.updatedAt = updatedAt
+            it.autoAbsentAt = null
+        }
+        return targets.size
+    }
+
+    @Synchronized
+    override fun releaseExcusedAbsence(
+        sessionId: Long,
+        memberId: Long,
+        closedAt: Instant?,
+    ): Int {
+        val targets =
+            rows.values.filter {
+                it.sessionId == sessionId && it.memberId == memberId && it.deletedAt == null &&
+                    it.status == AttendanceStatus.EXCUSED_ABSENT
+            }
+        targets.forEach {
+            it.status = if (closedAt == null) AttendanceStatus.PENDING else AttendanceStatus.ABSENT
+            it.attendedAt = null
+            it.updatedAt = null
+            it.autoAbsentAt = closedAt
+        }
+        return targets.size
+    }
+
+    @Synchronized
     override fun countActiveAttendances(
         sessionId: Long,
         memberIds: List<Long>,
