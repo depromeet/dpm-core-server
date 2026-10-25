@@ -51,6 +51,8 @@ class MemberPurgeMySqlIntegrationTest {
         (1L..2L).forEach { id ->
             val other = 3 - id
             jdbc.update("insert into members (member_id, name, signup_email, email, part, status, created_at, updated_at, deleted_at) values (?, '홍길동', ?, ?, 'SERVER', 'ACTIVE', '2020-01-01', '2020-01-02', ?)", id, "signup$id@example.com", "email$id@example.com", if (id == 1L) "2026-10-01" else null)
+            jdbc.update("insert into member_cohort_activities (member_id, cohort_id, status, created_at, updated_at) values (?,19,'ENDED',now(6),now(6))", id)
+            jdbc.update("insert into member_activity_events (member_id, cohort_id, actor_member_id, status, created_at) values (?,19,1,'ENDED',now(6))", id)
             jdbc.update("insert into member_cohorts (member_id, cohort_id) values (?, 19)", id)
             jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, 1, 19, now(6))", id)
             jdbc.update("insert into member_permissions (member_id, permission_id, granted_at) values (?, 1, now(6))", id)
@@ -91,6 +93,7 @@ class MemberPurgeMySqlIntegrationTest {
 
         assertThat(keys).containsExactly("images/1")
         assertThat(count("members", "member_id", 1)).isZero()
+        assertThat(jdbc.queryForObject("select actor_member_id from member_activity_events where member_id = 2", Long::class.java)).isNull()
         MEMBER_TABLES.forEach { (table, column) ->
             assertThat(count(table, column, 1)).`as`(table).isZero()
             assertThat(count(table, column, 2)).`as`(table).isPositive()
@@ -118,6 +121,7 @@ class MemberPurgeMySqlIntegrationTest {
         /** 회원 id를 직접 참조하는 테이블과 컬럼. */
         private val MEMBER_TABLES =
             linkedMapOf(
+                "member_cohort_activities" to "member_id", "member_activity_events" to "member_id",
                 "member_cohorts" to "member_id", "member_roles" to "member_id", "member_permissions" to "member_id",
                 "member_teams" to "member_id", "member_oauth" to "member_id", "member_credentials" to "member_id",
                 "refresh_tokens" to "member_id", "notification_tokens" to "member_id", "member_admission_events" to "member_id",

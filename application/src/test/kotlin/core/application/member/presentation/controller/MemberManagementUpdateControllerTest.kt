@@ -8,7 +8,6 @@ import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberPart
-import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.port.outbound.MemberTeamPersistencePort
@@ -109,7 +108,7 @@ class MemberManagementUpdateControllerTest {
     fun `단건의 여러 컬럼과 bulk 경로의 한 컬럼을 각각 바인딩한다`() {
         mvc.perform(request("1", """{"part":"UNASSIGNED","status":"INACTIVE"}"""))
             .andExpect(status().isOk)
-        verify(members).updateManagementFields(listOf(1L), true, null, MemberStatus.INACTIVE, emptySet())
+        verify(members).updateManagementFields(listOf(1L), true, null, null, emptySet())
         mvc.perform(request("bulk", """{"memberIds":[2,1],"changes":{"part":"SERVER"}}"""))
             .andExpect(status().isOk)
         verify(members).updateManagementFields(listOf(1L, 2L), true, MemberPart.SERVER, null, emptySet())
@@ -201,6 +200,11 @@ class MemberManagementUpdateControllerTest {
     @EnableMethodSecurity(proxyTargetClass = true)
     @Import(MemberManagementController::class, MemberManagementCommandService::class, GlobalExceptionHandler::class)
     class Config {
+        @Bean fun activities(): core.application.member.application.service.MemberActivityService =
+            mock(core.application.member.application.service.MemberActivityService::class.java).also { activity ->
+                `when`(activity.lockCurrentCohort()).thenReturn(CohortId(19))
+            }
+
         @Bean fun queryService(): MemberManagementQueryService = mock(MemberManagementQueryService::class.java)
 
         @Bean fun members(): MemberPersistencePort = mock(MemberPersistencePort::class.java)

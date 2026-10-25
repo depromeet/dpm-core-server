@@ -209,6 +209,11 @@ class MemberApprovalControllerTest {
     @EnableMethodSecurity(proxyTargetClass = true)
     @Import(MemberApprovalController::class, MemberController::class, MemberApprovalService::class, GlobalExceptionHandler::class)
     class Config {
+        @Bean fun activities(): core.application.member.application.service.MemberActivityService =
+            mock(core.application.member.application.service.MemberActivityService::class.java).also { activity ->
+                `when`(activity.lockCurrentCohort()).thenReturn(CohortId(19))
+            }
+
         @Bean fun memberQueries(): MemberQueryService = mock(MemberQueryService::class.java)
 
         @Bean
@@ -223,6 +228,7 @@ class MemberApprovalControllerTest {
                 mock(core.domain.membercredential.port.outbound.MemberCredentialPersistencePort::class.java),
                 cohorts(), mock(org.springframework.context.ApplicationEventPublisher::class.java),
                 mock(core.application.member.application.service.MemberProfileService::class.java),
+                activities(), mock(MemberApprovalService::class.java),
             )
 
         @Bean fun nameValidator(): MemberNameHashTypeValidator = mock(MemberNameHashTypeValidator::class.java)

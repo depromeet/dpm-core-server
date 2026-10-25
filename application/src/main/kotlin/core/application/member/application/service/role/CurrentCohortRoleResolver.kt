@@ -2,6 +2,8 @@ package core.application.member.application.service.role
 
 import core.application.cohort.application.service.CohortQueryService
 import core.domain.authorization.vo.RoleType
+import core.domain.member.enums.MemberActivityStatus
+import core.domain.member.port.outbound.MemberActivityPersistencePort
 import core.domain.member.port.outbound.MemberCohortPersistencePort
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
@@ -13,6 +15,7 @@ class CurrentCohortRoleResolver(
     private val cohortQueryService: CohortQueryService,
     private val memberCohortPersistencePort: MemberCohortPersistencePort,
     private val memberRolePersistencePort: MemberRolePersistencePort,
+    private val activities: MemberActivityPersistencePort,
 ) {
     fun filterEffectiveRolesForMember(memberId: MemberId): List<String> =
         filterEffectiveRoles(
@@ -26,12 +29,32 @@ class CurrentCohortRoleResolver(
             context = buildContext(memberId),
         )
 
+    fun findPrimaryRoleTypesForMembers(memberIds: List<MemberId>): Map<MemberId, RoleType> {
+        if (memberIds.isEmpty()) return emptyMap()
+        val ids = memberIds.map { it.value }.distinct()
+        val activeId = runCatching { cohortQueryService.getActiveCohort().id?.value }.getOrNull()
+        val assignments = memberRolePersistencePort.findActiveRoleAssignmentsByMemberIds(ids)
+        val memberships = memberCohortPersistencePort.findCohortIdsByMemberIds(ids)
+        val states = activeId?.let { activities.findAll(ids, it) }.orEmpty()
+        return memberIds.associateWith { memberId ->
+            findPrimaryRoleType(
+                assignments[memberId.value].orEmpty(),
+                CohortRoleContext(
+                    activeId,
+                    memberships[memberId.value].orEmpty().toSet(),
+                    states[memberId.value]?.status,
+                ),
+            )
+        }
+    }
+
     fun selectRepresentativeRoleForMember(
         memberId: MemberId,
         roleNames: List<String>,
     ): String? {
-        val assignments = memberRolePersistencePort.findActiveRoleAssignmentsByMemberId(memberId.value)
-            .filter { it.roleName in roleNames }
+        val assignments =
+            memberRolePersistencePort.findActiveRoleAssignmentsByMemberId(memberId.value)
+                .filter { it.roleName in roleNames }
         return selectRepresentativeRole(assignments, buildContext(memberId))
     }
 
@@ -70,6 +93,7 @@ class CurrentCohortRoleResolver(
         return CohortRoleContext(
             activeCohortId = activeCohort?.id?.value,
             memberCohortIds = memberCohortPersistencePort.findCohortIdsByMemberId(memberId.value).toSet(),
+            activityStatus = activeCohort?.id?.value?.let { activities.find(memberId.value, it)?.status },
         )
     }
 
@@ -78,6 +102,19 @@ class CurrentCohortRoleResolver(
         context: CohortRoleContext,
     ): Boolean {
         val isActiveMember = context.activeCohortId != null && context.activeCohortId in context.memberCohortIds
+        // 과거 소속이 있는 회원은 새 기수 승인 전에도 MASTER/GUEST로 우회할 수 없다.
+        // 소속 자체가 없는 글로벌 MASTER 예외와 기수 활동 회원을 구분한다.
+        if (context.activityStatus in
+            setOf(
+                MemberActivityStatus.SUSPENDED,
+                MemberActivityStatus.ENDED,
+            ) || (
+                context.memberCohortIds.isNotEmpty() &&
+                    (!isActiveMember || context.activityStatus != MemberActivityStatus.ACTIVE)
+            )
+        ) {
+            return false
+        }
         return when (assignment.roleName) {
             RoleType.Master.code, RoleType.Guest.code -> true
             RoleType.Core.code, RoleType.Organizer.code, RoleType.Deeper.code -> {
@@ -93,9 +130,11 @@ class CurrentCohortRoleResolver(
     data class CohortRoleContext(
         val activeCohortId: Long?,
         val memberCohortIds: Set<Long>,
+        val activityStatus: MemberActivityStatus? = MemberActivityStatus.ACTIVE,
     )
 
     companion object {
-        private val ROLE_PRIORITY = listOf(RoleType.Master, RoleType.Core, RoleType.Organizer, RoleType.Deeper, RoleType.Guest)
+        private val ROLE_PRIORITY =
+            listOf(RoleType.Master, RoleType.Core, RoleType.Organizer, RoleType.Deeper, RoleType.Guest)
     }
 }

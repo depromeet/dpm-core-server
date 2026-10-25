@@ -76,7 +76,7 @@ import java.util.concurrent.atomic.AtomicLong
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(RefreshTokenRepository::class, MemberRepository::class, MemberDeletionService::class, MemberManagementCommandService::class, MemberRoleRepository::class, MemberTeamRepository::class, AnnouncementRepository::class, BillRepository::class, GatheringRepository::class)
+@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, RefreshTokenRepository::class, MemberRepository::class, MemberDeletionService::class, MemberManagementCommandService::class, MemberRoleRepository::class, MemberTeamRepository::class, AnnouncementRepository::class, BillRepository::class, GatheringRepository::class)
 class MemberDeletionMySqlIntegrationTest {
     @Autowired lateinit var jdbc: JdbcTemplate
 
@@ -106,6 +106,7 @@ class MemberDeletionMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
+        core.it.member.MemberActivityFixtures.clear(jdbc)
         (RELATED_TABLES + listOf("members", "teams", "roles", "cohorts")).forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         (1L..3L).forEach { id ->
@@ -130,6 +131,7 @@ class MemberDeletionMySqlIntegrationTest {
         jdbc.update("insert into bills (bill_id, bill_account_id, title, description, bill_status, host_user_id, created_at, updated_at) values (1, 1, '정산', '보존', 'OPEN', 1, now(6), now(6))")
         jdbc.update("insert into gatherings (gathering_id, bill_id, title, held_at, category, host_user_id, round_number, created_at, updated_at) values (1, 1, '모임', now(6), 'GATHERING', 1, 1, now(6), now(6))")
         jdbc.update("insert into gathering_members (gathering_id, member_id, is_viewed, is_joined, is_invitation_submitted, created_at, updated_at) values (1, 1, true, true, true, now(6), now(6)), (1, 2, true, true, true, now(6), now(6))")
+        core.it.member.MemberActivityFixtures.seed(jdbc)
     }
 
     @Test

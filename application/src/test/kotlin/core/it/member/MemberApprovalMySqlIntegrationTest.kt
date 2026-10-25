@@ -89,6 +89,7 @@ import java.util.concurrent.atomic.AtomicLong
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(
+    core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class,
     core.application.attendance.application.service.AttendanceGraduationEvaluator::class,
     MemberRepository::class,
     MemberRoleRepository::class,
@@ -114,6 +115,10 @@ class MemberApprovalMySqlIntegrationTest {
     @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 
     @Autowired lateinit var jdbc: JdbcTemplate
+
+    @Autowired lateinit var activities: core.application.member.application.service.MemberActivityService
+
+    @Autowired lateinit var access: MemberAccessService
 
     @Autowired lateinit var service: MemberApprovalService
 
@@ -155,6 +160,7 @@ class MemberApprovalMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
+        core.it.member.MemberActivityFixtures.clear(jdbc)
         listOf(
             "after_party_invitees", "after_party_invite_tags", "after_party", "assignment_submissions", "announcement_reads",
             "attendances", "sessions", "member_teams", "member_roles", "member_cohorts", "member_permissions", "member_oauth",
@@ -185,6 +191,7 @@ class MemberApprovalMySqlIntegrationTest {
         }
         jdbc.update("insert into after_party (after_party_id, title, category, scheduled_at, closed_at, is_approved, member_id, created_at, updated_at, can_edit_after_approval) values (1, 'party', 'AFTER_PARTY', '2099-01-01', '2099-01-01', false, 4, now(6), now(6), false)")
         jdbc.update("insert into after_party_invite_tags (after_party_id, cohort_id, authority_id, tag_name, created_at) values (1, 19, 1, '19기 디퍼', now(6))")
+        core.it.member.MemberActivityFixtures.seed(jdbc)
     }
 
     @Test
@@ -207,7 +214,8 @@ class MemberApprovalMySqlIntegrationTest {
     fun `승인 재요청은 상태 팀 역할 시각과 초기화 기록을 바꾸지 않는다`() {
         service.approve(listOf(1))
         val before = jdbc.queryForObject("select updated_at from members where member_id = 1", java.sql.Timestamp::class.java)
-        service.approve(listOf(1, 4, 5))
+        service.approve(listOf(1, 4))
+        assertThatThrownBy { service.approve(listOf(1, 5)) }.isInstanceOf(core.application.common.exception.BusinessException::class.java)
         assertInitialized(1)
         assertThat(jdbc.queryForObject("select updated_at from members where member_id = 1", java.sql.Timestamp::class.java)).isEqualTo(before)
         assertThat(jdbc.queryForObject("select status from members where member_id = 5", String::class.java)).isEqualTo("INACTIVE")
@@ -363,6 +371,34 @@ class MemberApprovalMySqlIntegrationTest {
         listOf("attendances", "announcement_reads", "assignment_submissions", "after_party_invitees").forEach {
             assertThat(count(it, 1)).isZero()
         }
+    }
+
+    @Test
+    fun `new cohort approval keeps old suspension history and initializes only new cohort`() {
+        activities.change(listOf(4), 19, core.domain.member.enums.MemberActivityStatus.SUSPENDED)
+        assertThat(access.isAdmin(MemberId(4))).isFalse()
+        assertThat(access.getIsAdminByMemberIds(listOf(MemberId(4), MemberId(5))).values).containsOnly(false)
+        val me =
+            TransactionTemplate(transactionManager).execute {
+                `when`(memberLoginEmailResolver.resolve(queryService.getMemberById(MemberId(4)), null)).thenReturn("signup4@example.com")
+                queryService.memberMe(MemberId(4), null)
+            }!!
+        assertThat(me.activityStatus).isEqualTo(core.domain.member.enums.MemberActivityStatus.SUSPENDED)
+        assertThat(me.status).isEqualTo("INACTIVE")
+        assertThatThrownBy { service.approve(listOf(4)) }.isInstanceOf(core.application.common.exception.BusinessException::class.java)
+        jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (20, '20', false, 0, 0)")
+        activities.endBeforeCohortSwitch(20)
+        jdbc.update("update cohorts set is_active = (cohort_id = 20)")
+        service.approve(listOf(4))
+        val history = jdbc.queryForList("select cohort_id, status, suspended_at from member_cohort_activities where member_id = 4 order by cohort_id")
+        assertThat(history).hasSize(2)
+        assertThat(history[0]).containsEntry("status", "ENDED").doesNotContainEntry("suspended_at", null)
+        assertThat(history[1]).containsEntry("status", "ACTIVE").containsEntry("suspended_at", null)
+        assertThat(jdbc.queryForObject("select status from members where member_id = 4", String::class.java)).isEqualTo("ACTIVE")
+        assertThat(jdbc.queryForObject("select count(*) from member_cohorts where member_id = 4", Int::class.java)).isEqualTo(2)
+        val eventCount = jdbc.queryForObject("select count(*) from member_activity_events where member_id = 4", Int::class.java)
+        service.approve(listOf(4))
+        assertThat(jdbc.queryForObject("select count(*) from member_activity_events where member_id = 4", Int::class.java)).isEqualTo(eventCount)
     }
 
     private fun assertInitialized(memberId: Long) {

@@ -87,7 +87,7 @@ class MemberBadgeServiceTest {
         service.reconcile(19, null)
         val cards = service.getBadges().cards.associateBy { it.card }
         assertThat(cards.getValue(MemberBadgeCard.INCOMPLETE).version).isEqualTo(1)
-        assertThat(cards.getValue(MemberBadgeCard.AT_RISK).version).isEqualTo(2)
+        assertThat(cards.getValue(MemberBadgeCard.AT_RISK).version).isEqualTo(1)
         assertThat(cards.getValue(MemberBadgeCard.PENDING).hasNew).isFalse()
     }
 
@@ -102,7 +102,7 @@ class MemberBadgeServiceTest {
         status: MemberStatus = MemberStatus.PENDING,
         missing: Boolean = false,
         risk: AttendanceGraduationStatus? = null,
-    ) = MemberSummary(id, 19, "홍길동", "test@example.com", "SERVER", "DEEPER", 1, status, missing, risk, false, null)
+    ) = MemberSummary(id, 19, "홍길동", "test@example.com", "SERVER", "DEEPER", 1, status, missing, risk, false, null, activityStatus = if (status == MemberStatus.ACTIVE) core.domain.member.enums.MemberActivityStatus.ACTIVE else core.domain.member.enums.MemberActivityStatus.ENDED)
 
     private class Store : MemberBadgePersistencePort {
         val states = mutableMapOf<Pair<Long, String>, MemberBadgeState>()

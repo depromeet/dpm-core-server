@@ -22,6 +22,9 @@ class MemberAccessServiceTest {
                 assertEquals(admin, service.isAdmin(id))
                 id to admin
             }.toMap()
+        `when`(resolver.findPrimaryRoleTypesForMembers(expected.keys.toList())).thenReturn(
+            cases.mapIndexed { index, (role, _) -> MemberId(index.toLong() + 1) to role }.toMap(),
+        )
         assertEquals(expected, service.getIsAdminByMemberIds(expected.keys.toList()))
         assertEquals(emptyMap<MemberId, Boolean>(), service.getIsAdminByMemberIds(emptyList()))
     }
