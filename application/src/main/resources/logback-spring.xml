@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  콘솔 로깅은 스프링 부트 기본 설정을 그대로 쓰고, ERROR 로그를 Discord 로 보내는 appender 만 얹는다.
+  콘솔 로깅은 스프링 부트 기본 설정을 쓰되, 요청 method/URI·userId·email 을 MDC 로 붙여
+  journalctl(/logs 봇)에서도 어느 API·누가 호출했는지 보이게 한다.
+  ERROR Discord 웹훅 appender 는 기존과 같다.
   application.yml 의 logging.level 설정은 이 파일 적용 이후에 덧씌워지므로 그대로 동작한다.
 -->
 <configuration>
@@ -11,6 +13,11 @@
     <statusListener class="ch.qos.logback.core.status.OnErrorConsoleStatusListener"/>
 
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- console-appender.xml 보다 먼저 두어 CONSOLE_LOG_PATTERN 이 적용되게 한다. -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd'T'HH:mm:ss.SSSXXX}}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} [%X{httpMethod:-} %X{requestUri:-}] [userId=%X{userId:--} email=%X{userEmail:--}] %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
     <root level="INFO">
