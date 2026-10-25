@@ -18,6 +18,8 @@ interface MemberAccountPersistencePort {
 
     fun deleteLinkRequest(stateHash: String)
 
+    fun deleteLinkRequestsByMemberId(memberId: Long)
+
     fun deleteExpiredLinkRequests(now: Instant)
 }
 

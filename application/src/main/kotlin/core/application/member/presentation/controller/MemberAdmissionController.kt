@@ -28,8 +28,9 @@ class MemberAdmissionController(
     @PostMapping("/merge")
     override fun mergeAndApprove(
         @Valid @RequestBody request: MemberMergeRequest,
+        @CurrentMemberId actorId: Long,
     ): CustomResponse<Void> {
-        mergeService.mergeAndApprove(request.retainedMemberId, request.sourceMemberId)
+        mergeService.mergeAndApprove(request.retainedMemberId, request.sourceMemberId, actorId)
         return CustomResponse.ok()
     }
 
