@@ -61,11 +61,13 @@ import org.jooq.impl.DSL.noCondition
 import org.jooq.impl.DSL.selectOne
 import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Repository
+@Transactional(readOnly = true)
 class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val dsl: DSLContext,
@@ -266,6 +268,7 @@ class MemberRepository(
     override fun findAllBySignupEmail(email: String): List<Member> =
         memberJpaRepository.findAllBySignupEmail(email).map { it.toDomain() }
 
+    @Transactional
     override fun save(member: Member): Member =
         if (member.id == null) {
             val now = LocalDateTime.now()
