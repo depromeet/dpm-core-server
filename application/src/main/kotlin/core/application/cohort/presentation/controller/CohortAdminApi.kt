@@ -14,6 +14,12 @@ interface CohortAdminApi {
     fun getActiveCohort(): CustomResponse<CohortNumberResponse>
 
     @ApiResponse(responseCode = "200", description = "활성 기수 전환 성공")
-    @Operation(summary = "활성 기수 전환", description = "지정 기수를 활성 기수로 전환합니다.")
+    @Operation(
+        summary = "활성 기수 전환",
+        description =
+            "지정 기수를 활성화하고 이전 활성 기수의 활동 기록을 ENDED로 종료합니다. 정지 이력은 유지합니다. " +
+                "현재 활성 기수 재요청은 종료하지 않습니다. 이전 기수 회원을 새 기수에 자동 승인하지 않으며 별도 승인이 필요합니다. " +
+                "종료한 동일 기수의 활동은 복구할 수 없습니다.",
+    )
     fun activateCohort(cohortId: CohortId): CustomResponse<CohortNumberResponse>
 }

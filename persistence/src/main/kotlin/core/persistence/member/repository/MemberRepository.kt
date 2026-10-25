@@ -566,6 +566,16 @@ class MemberRepository(
 
     override fun hardDeleteById(memberId: MemberId): List<String> {
         val value = memberId.value
+        dsl.deleteFrom(
+            DSL.table("member_cohort_activities"),
+        ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
+        dsl.deleteFrom(
+            DSL.table("member_activity_events"),
+        ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
+        dsl.update(
+            DSL.table("member_activity_events"),
+        ).set(DSL.field("actor_member_id", Long::class.java), null as Long?)
+            .where(DSL.field("actor_member_id", Long::class.java).eq(value)).execute()
         val absenceReasonIds =
             dsl
                 .select(ABSENCE_REASONS.ABSENCE_REASON_ID)

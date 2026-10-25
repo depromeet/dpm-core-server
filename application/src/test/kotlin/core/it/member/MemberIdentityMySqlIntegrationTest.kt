@@ -185,7 +185,7 @@ class MemberIdentityMySqlIntegrationTest {
         jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider) values (10, 1, 'apple', 'APPLE')")
         val queries = stub<MemberQueryService>()
         `when`(queries.getMemberById(MemberId(1))).thenAnswer { members.findById(MemberId(1))!! }
-        val service = MemberCommandService(members, queries, stub(), stub(), stub(), stub(), stub(), MemberOAuthService(oauths), credentials, stub(), stub(), MemberProfileService(profiles))
+        val service = MemberCommandService(members, queries, stub(), stub(), stub(), stub(), stub(), MemberOAuthService(oauths), credentials, stub(), stub(), MemberProfileService(profiles), stub(), stub())
         val pool = Executors.newSingleThreadExecutor()
         try {
             listOf(false, true).forEach { deleted ->

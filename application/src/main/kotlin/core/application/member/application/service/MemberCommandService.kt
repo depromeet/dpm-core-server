@@ -16,6 +16,7 @@ import core.application.security.oauth.token.JwtTokenInjector
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import core.domain.member.event.MemberActivatedEvent
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -44,6 +45,8 @@ class MemberCommandService(
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val memberProfileService: MemberProfileService,
+    private val activities: MemberActivityService,
+    private val approvals: MemberApprovalService,
 ) {
     private val logger = KotlinLogging.logger { }
 
@@ -69,6 +72,7 @@ class MemberCommandService(
                 )
             memberTeamService.addMemberToTeam(it.memberId, it.teamId)
             memberCohortService.addMemberToCohort(it.memberId)
+            synchronizeActivity(updatedMember)
             initializeMemberDataForActiveMember(updatedMember)
         }
     }
@@ -145,6 +149,7 @@ class MemberCommandService(
                         updateStatus(request.memberStatus)
                     },
                 )
+            synchronizeActivity(updatedMember)
             initializeMemberDataForActiveMember(updatedMember)
         } else {
             throw MemberStatusAlreadyUpdatedException()
@@ -155,7 +160,9 @@ class MemberCommandService(
         memberIds: List<Long>,
         statuses: List<MemberStatus>,
     ) {
+        val cohortId = activities.lockCurrentCohort()
         val targets = memberPersistencePort.lockApprovalTargets(memberIds.distinct().sorted())
+        targets.forEach { activities.requireRestorable(it.memberId, cohortId.value) }
         if (MemberStatus.REJECTED in statuses || targets.any { it.status == MemberStatus.REJECTED }) {
             throw BusinessException(MemberExceptionCode.MEMBER_ADMISSION_CHANGE_NOT_ALLOWED)
         }
@@ -166,8 +173,16 @@ class MemberCommandService(
         memberId: MemberId,
         cohortId: CohortId,
     ) {
-        memberCohortService.addMemberToCohort(memberId, cohortId)
-        publishMemberActivatedEvent(memberId, cohortId)
+        val activeCohortId = activities.lockCurrentCohort()
+        if (cohortId != activeCohortId) throw BusinessException(MemberExceptionCode.MEMBER_APPROVAL_TARGET_NOT_ALLOWED)
+        approvals.approve(listOf(memberId.value))
+    }
+
+    private fun synchronizeActivity(member: Member) {
+        if (member.status == MemberStatus.INACTIVE) {
+            val cohortId = cohortQueryUseCase.getActiveCohortId()
+            activities.change(listOf(member.id!!.value), cohortId.value, MemberActivityStatus.ENDED)
+        }
     }
 
     private fun initializeMemberDataForActiveMember(member: Member) {
@@ -179,6 +194,7 @@ class MemberCommandService(
         memberTeamService.ensureMemberTeamInitialized(memberId)
         val latestCohortId = cohortQueryUseCase.getActiveCohortId()
         memberCohortService.addMemberToCohort(memberId, latestCohortId)
+        activities.activate(memberId.value, latestCohortId.value)
         publishMemberActivatedEvent(memberId, latestCohortId)
     }
 
