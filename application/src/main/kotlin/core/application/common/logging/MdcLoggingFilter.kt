@@ -48,7 +48,13 @@ class MdcLoggingFilter : OncePerRequestFilter() {
          */
         const val MEMBER_ID = "memberId"
 
+        /** 콘솔·journal 패턴용. [MEMBER_ID] 와 같은 값. */
+        const val USER_ID = "userId"
+
+        /** 로그인 사용자의 표시 이메일(없으면 signupEmail). 비로그인이면 비움. */
+        const val USER_EMAIL = "userEmail"
+
         private const val REQUEST_ID_LENGTH = 8
-        private val KEYS = listOf(REQUEST_ID, HTTP_METHOD, REQUEST_URI, CLIENT_IP, MEMBER_ID)
+        private val KEYS = listOf(REQUEST_ID, HTTP_METHOD, REQUEST_URI, CLIENT_IP, MEMBER_ID, USER_ID, USER_EMAIL)
     }
 }
