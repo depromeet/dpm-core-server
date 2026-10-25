@@ -180,7 +180,8 @@ interface AttendanceCommandApi {
     @Operation(
         summary = "결석 사유 제출",
         description =
-            "결석 사유를 제출합니다. 이미 제출했다면 내용을 바꾸고 검토 상태를 대기(PENDING)로 되돌립니다. " +
+            "결석 사유를 제출합니다. 운영진 검토 없이 바로 승인(APPROVED)되고, 미인증·결석 출석은 인정결석으로 바뀝니다. " +
+                "이미 제출했다면 내용을 바꿉니다. " +
                 ABSENCE_REASON_IMAGE_FLOW,
         requestBody =
             RequestBody(
@@ -233,7 +234,7 @@ interface AttendanceCommandApi {
     @Operation(
         summary = "결석 사유 수정",
         description =
-            "본인이 제출한 결석 사유서의 내용을 수정합니다. 수정 시 검토 상태는 다시 대기(PENDING)로 전환됩니다. " +
+            "본인이 제출한 결석 사유서의 내용을 수정합니다. 수정하면 다시 승인(APPROVED)되고 인정결석이 반영됩니다. " +
                 ABSENCE_REASON_IMAGE_FLOW,
         requestBody =
             RequestBody(
@@ -289,7 +290,9 @@ interface AttendanceCommandApi {
 
     @Operation(
         summary = "결석 사유 삭제",
-        description = "본인이 제출한 결석 사유서를 삭제합니다. 첨부만 해제되며 이미지는 남아 다른 사유서에 다시 첨부할 수 있습니다.",
+        description =
+            "본인이 제출한 결석 사유서를 삭제합니다. 인정결석은 마감 전이면 미인증, 마감 후면 결석으로 되돌아갑니다. " +
+                "첨부만 해제되며 이미지는 남아 다른 사유서에 다시 첨부할 수 있습니다.",
     )
     @ApiResponses(
         value = [
@@ -310,7 +313,9 @@ interface AttendanceCommandApi {
 
     @Operation(
         summary = "결석 사유 검토 (운영진)",
-        description = "운영진이 제출된 결석 사유서를 승인하거나 반려합니다. 승인 시 해당 멤버의 출석 상태가 인정결석으로 변경됩니다.",
+        description =
+            "운영진이 결석 사유서를 승인하거나 반려합니다. 제출 시 이미 승인되므로 필요할 때만 씁니다. " +
+                "승인 시 출석 상태가 인정결석으로 변경되고, 반려 시 출석은 그대로입니다.",
         requestBody =
             RequestBody(
                 description = "결석 사유 검토 요청",
