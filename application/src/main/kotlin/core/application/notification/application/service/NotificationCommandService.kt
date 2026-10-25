@@ -22,6 +22,19 @@ class NotificationCommandService(
 ) : NotificationCommandUseCase {
     companion object {
         private val logger = LoggerFactory.getLogger(NotificationCommandService::class.java)
+
+        /**
+         * Expo data 에 항상 NotificationMessageType 이름을 type 으로 넣는다.
+         * 호출부에서 넘긴 sessionId / announcementId / afterPartyId 등은 그대로 유지한다.
+         */
+        fun mergePushData(
+            messageType: NotificationMessageType,
+            data: Map<String, Any>?,
+        ): Map<String, Any> =
+            buildMap {
+                data?.let { putAll(it) }
+                put("type", messageType.name)
+            }
     }
 
     @Transactional
@@ -68,7 +81,7 @@ class NotificationCommandService(
         data: Map<String, Any>? = null,
     ) {
         val (title, body) = messageType.formatWithTitle(variables)
-        sendPushNotificationInternal(memberId, title, body, data)
+        sendPushNotificationInternal(memberId, title, body, mergePushData(messageType, data))
     }
 
     fun sendCustomPushNotification(
@@ -99,7 +112,13 @@ class NotificationCommandService(
     ) {
         val (title, body) = messageType.formatWithTitle(variables)
 
-        sendPushNotificationInternalToMembers(memberIds, title, body, data, ExpoPriority.NORMAL)
+        sendPushNotificationInternalToMembers(
+            memberIds,
+            title,
+            body,
+            mergePushData(messageType, data),
+            ExpoPriority.NORMAL,
+        )
     }
 
     fun sendCustomPushNotificationByTags(
