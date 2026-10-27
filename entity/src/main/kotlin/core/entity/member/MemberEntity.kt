@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.annotations.ColumnDefault
 import org.hibernate.annotations.CreationTimestamp
 import java.time.Instant
 
@@ -43,6 +44,10 @@ class MemberEntity(
     // 일반 회원 저장은 완료 표시를 되돌릴 수 없다. 프로필 전용 UPDATE에서만 기록한다.
     @Column(name = "profile_completed_at", insertable = false, updatable = false)
     val profileCompletedAt: Instant? = null,
+    // 확인 상태는 승인/확인 전용 UPDATE로만 변경한다. 일반 저장으로 과거 값을 덮어쓰지 않는다.
+    @ColumnDefault("false")
+    @Column(name = "approval_welcome_seen", nullable = false, insertable = false, updatable = false)
+    val approvalWelcomeSeen: Boolean = false,
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     val memberRoles: MutableList<MemberRoleEntity> = mutableListOf(),
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
@@ -66,6 +71,7 @@ class MemberEntity(
             updatedAt = updatedAt,
             deletedAt = deletedAt,
             profileCompletedAt = profileCompletedAt,
+            approvalWelcomeSeen = approvalWelcomeSeen,
             memberRoles = memberRoles.map { it.toDomain() }.toMutableList(),
             memberPermissions = memberPermissions.map { it.toDomain() }.toMutableList(),
             memberCohorts = memberCohorts.map { it.toDomain() }.toMutableList(),

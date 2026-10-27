@@ -116,7 +116,7 @@ class MemberMergeMySqlIntegrationTest {
 
     @Test
     fun `승인된 유지 회원의 프로필 기수 팀 역할과 기존 데이터는 바꾸지 않는다`() {
-        jdbc.update("update members set status = 'ACTIVE', profile_completed_at = now(6), updated_at = now(6) where member_id = 1")
+        jdbc.update("update members set status = 'ACTIVE', approval_welcome_seen = true, profile_completed_at = now(6), updated_at = now(6) where member_id = 1")
         jdbc.update("update roles set name = 'CORE' where role_id = 1")
         jdbc.update("update member_roles set role_id = 1 where member_id = 1")
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (18, '18', false, 0, 0)")

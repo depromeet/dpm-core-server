@@ -40,12 +40,14 @@ class MemberProfileService(private val profiles: MemberProfilePersistencePort) {
         if (appleOnly && !profiles.hasAppleAccount(memberId)) throw AppleLoginMemberRequiredException()
         if (profile.completedAt != null) {
             if (profile.name.trim() == normalizedName && profile.part == normalizedPart) return response(profile)
-            throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_ALREADY_COMPLETED)
+            if (profile.status != MemberStatus.PENDING) {
+                throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_ALREADY_COMPLETED)
+            }
         }
         if (!profiles.completeProfile(memberId, normalizedName, normalizedPart)) {
             throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_ALREADY_COMPLETED)
         }
-        return MemberProfileResponse(normalizedName, normalizedPart.name, false)
+        return MemberProfileResponse(normalizedName, normalizedPart.name, false, profile.status == MemberStatus.PENDING)
     }
 
     private fun available(profile: MemberProfile?): MemberProfile {
@@ -55,7 +57,12 @@ class MemberProfileService(private val profiles: MemberProfilePersistencePort) {
     }
 
     private fun response(profile: MemberProfile) =
-        MemberProfileResponse(profile.name, profile.part?.name, profile.completedAt == null)
+        MemberProfileResponse(
+            profile.name,
+            profile.part?.name,
+            profile.completedAt == null,
+            profile.completedAt == null || profile.status == MemberStatus.PENDING,
+        )
 
     private companion object {
         val KOREAN_NAME = Regex("[가-힣]+(?: +[가-힣]+)*")
