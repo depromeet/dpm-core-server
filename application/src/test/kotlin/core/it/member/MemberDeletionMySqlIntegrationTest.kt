@@ -76,13 +76,15 @@ import java.util.concurrent.atomic.AtomicLong
 @Tag("mysql-integration")
 @EnabledIfEnvironmentVariable(named = AttendanceConcurrencyMySqlIntegrationTest.URL_ENV, matches = ".+")
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, RefreshTokenRepository::class, MemberRepository::class, MemberDeletionService::class, MemberManagementCommandService::class, MemberRoleRepository::class, MemberTeamRepository::class, AnnouncementRepository::class, BillRepository::class, GatheringRepository::class)
+@Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, RefreshTokenRepository::class, MemberRepository::class, MemberDeletionService::class, core.application.member.application.service.MemberWriteGuard::class, MemberManagementCommandService::class, MemberRoleRepository::class, MemberTeamRepository::class, AnnouncementRepository::class, BillRepository::class, GatheringRepository::class)
 class MemberDeletionMySqlIntegrationTest {
     @Autowired lateinit var jdbc: JdbcTemplate
 
     @Autowired lateinit var members: MemberPersistencePort
 
     @Autowired lateinit var tokenStore: RefreshTokenPersistencePort
+
+    @Autowired lateinit var writeGuard: core.application.member.application.service.MemberWriteGuard
 
     @Autowired lateinit var deletion: MemberDeletionService
 
@@ -110,7 +112,7 @@ class MemberDeletionMySqlIntegrationTest {
         (RELATED_TABLES + listOf("members", "teams", "roles", "cohorts")).forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         (1L..3L).forEach { id ->
-            jdbc.update("insert into members (member_id, name, signup_email, email, part, status, created_at, updated_at) values (?, '홍길동', ?, ?, 'SERVER', 'ACTIVE', '2020-01-01', '2020-01-02')", id, "signup$id@example.com", "email$id@example.com")
+            jdbc.update("insert into members (member_id, name, signup_email, email, part, status, created_at, updated_at) values (?, '홍길동', ?, ?, 'SERVER', 'PENDING', '2020-01-01', '2020-01-02')", id, "signup$id@example.com", "email$id@example.com")
             jdbc.update("insert into member_cohorts (member_id, cohort_id) values (?, 19)", id)
         }
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (191, 1, 19, 0, 0)")
@@ -147,7 +149,7 @@ class MemberDeletionMySqlIntegrationTest {
     }
 
     @Test
-    fun `회원 두 필드만 바꾸고 모든 관련 데이터와 다른 참여자의 공유 기록 조회를 보존한다`() {
+    fun `미승인 삭제는 회원 두 필드만 바꾸고 관련 데이터와 공유 기록 조회를 보존한다`() {
         val before = snapshot()
         val memberBefore = memberRow(1)
         deletion.delete(listOf(1), 3)
@@ -179,7 +181,7 @@ class MemberDeletionMySqlIntegrationTest {
         jdbc.update("update members set status = 'WITHDRAWN' where member_id = 2")
         assertThatThrownBy { deletion.delete(listOf(1, 2), 3) }.isInstanceOf(MemberNotFoundException::class.java)
         assertThat(memberRow(1)).isEqualTo(before)
-        jdbc.update("update members set status = 'ACTIVE' where member_id = 2")
+        jdbc.update("update members set status = 'PENDING' where member_id = 2")
         jdbc.execute("create trigger member623_reject_delete before update on members for each row begin if new.member_id = 2 and new.deleted_at is not null then signal sqlstate '45000' set message_text = 'rollback test'; end if; end")
         try {
             assertThatThrownBy { deletion.delete(listOf(2, 1), 3) }.isInstanceOf(RuntimeException::class.java)
@@ -319,6 +321,151 @@ class MemberDeletionMySqlIntegrationTest {
             members.lockApprovalTargets(listOf(1))
             assertThat(tokenStore.lockByTokenHash("test-hash")!!.rotatedAt).isNotNull()
         }
+    }
+
+    @Test
+    fun `공지 회식 정산 모임 각각 소유자 삭제를 차단한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id = 1")
+        listOf(
+            "update announcements set author_id = 2 where author_id = 1",
+            "update after_party set member_id = 2 where member_id = 1",
+            "update bills set host_user_id = 2 where host_user_id = 1",
+            "update gatherings set host_user_id = 2 where host_user_id = 1",
+        ).forEach { transfer ->
+            assertThatThrownBy { deletion.delete(listOf(1), 3) }
+                .hasMessage(core.application.member.application.exception.MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
+            assertThat(memberRow(1)["deleted_at"]).isNull()
+            jdbc.update(transfer)
+        }
+        deletion.delete(listOf(1), 3)
+        assertThat(jdbc.queryForObject("select count(*) from members where member_id = 1", Int::class.java)).isZero()
+    }
+
+    @Test
+    fun `승인 회원의 공유 기록이 있으면 전체 삭제를 취소한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id = 1")
+        val before = snapshot()
+        assertThatThrownBy { deletion.delete(listOf(1, 2), 3) }
+            .hasMessage(core.application.member.application.exception.MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
+        assertThat(snapshot()).isEqualTo(before)
+        assertThat(memberRow(2)["deleted_at"]).isNull()
+    }
+
+    @Test
+    fun `승인 회원 삭제는 개인 연결만 지우고 다른 소유자의 공유 기록을 유지한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id = 1")
+        transferSharedRecords()
+        deletion.delete(listOf(1), 3)
+        assertThat(jdbc.queryForObject("select count(*) from members where member_id = 1", Int::class.java)).isZero()
+        listOf("member_oauth", "member_credentials", "refresh_tokens", "attendances", "member_cohorts", "member_roles").forEach { table ->
+            assertThat(jdbc.queryForObject("select count(*) from $table where member_id = 1", Int::class.java)).isZero()
+        }
+        listOf("announcements", "after_party", "bills", "gatherings").forEach { table ->
+            assertThat(jdbc.queryForObject("select count(*) from $table", Int::class.java)).isOne()
+        }
+        assertThat(jdbc.queryForObject("select count(*) from after_party_invitees where member_id = 2", Int::class.java)).isOne()
+        assertThat(jdbc.queryForObject("select count(*) from gathering_members where member_id = 2", Int::class.java)).isOne()
+    }
+
+    @Test
+    fun `일괄 영구 삭제 중 DB 오류가 나면 앞선 개인 연결 삭제도 롤백한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id in (1,3)")
+        transferSharedRecords()
+        jdbc.execute("create trigger member693_reject_purge before delete on members for each row begin if old.member_id = 3 then signal sqlstate '45000' set message_text = 'rollback test'; end if; end")
+        try {
+            assertThatThrownBy { deletion.delete(listOf(1, 3), 99) }.isInstanceOf(RuntimeException::class.java)
+        } finally {
+            jdbc.execute("drop trigger member693_reject_purge")
+        }
+        assertThat(jdbc.queryForObject("select count(*) from members where member_id in (1,3)", Int::class.java)).isEqualTo(2)
+        assertThat(jdbc.queryForObject("select count(*) from member_oauth where member_id = 1", Int::class.java)).isOne()
+        assertThat(jdbc.queryForObject("select count(*) from refresh_tokens where member_id = 1", Int::class.java)).isOne()
+    }
+
+    @Test
+    fun `삭제가 먼저 잠그면 공유 기록 생성은 삭제 커밋 뒤 회원 없음으로 실패한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id = 1")
+        transferSharedRecords()
+        val changed = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val connectionId = AtomicLong()
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val first =
+                pool.submit(
+                    Callable {
+                        TransactionTemplate(transactionManager).executeWithoutResult {
+                            deletion.delete(listOf(1), 3)
+                            connectionId.set(jdbc.queryForObject("select connection_id()", Long::class.java)!!)
+                            changed.countDown()
+                            check(release.await(10, TimeUnit.SECONDS))
+                        }
+                    },
+                )
+            check(changed.await(10, TimeUnit.SECONDS))
+            val second =
+                pool.submit(
+                    Callable {
+                        runCatching {
+                            TransactionTemplate(transactionManager).executeWithoutResult {
+                                writeGuard.lockAvailable(listOf(1))
+                                jdbc.update("insert into announcements (announcement_id, announcement_type, title, author_id, cohort_id, created_at, updated_at) values (99, 0, '새 공지', 1, 19, now(6), now(6))")
+                            }
+                        }
+                    },
+                )
+            awaitLock(connectionId.get())
+            release.countDown()
+            first.get(10, TimeUnit.SECONDS)
+            assertThat(second.get(10, TimeUnit.SECONDS).exceptionOrNull()).isInstanceOf(MemberNotFoundException::class.java)
+            assertThat(jdbc.queryForObject("select count(*) from announcements where announcement_id = 99", Int::class.java)).isZero()
+        } finally {
+            release.countDown()
+            pool.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `공유 기록 생성이 먼저 잠그면 삭제는 커밋된 소유 기록을 보고 거절한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id = 1")
+        transferSharedRecords()
+        val changed = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val connectionId = AtomicLong()
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val first =
+                pool.submit(
+                    Callable {
+                        TransactionTemplate(transactionManager).executeWithoutResult {
+                            writeGuard.lockAvailable(listOf(1))
+                            jdbc.update("insert into announcements (announcement_id, announcement_type, title, author_id, cohort_id, created_at, updated_at) values (99, 0, '새 공지', 1, 19, now(6), now(6))")
+                            connectionId.set(jdbc.queryForObject("select connection_id()", Long::class.java)!!)
+                            changed.countDown()
+                            check(release.await(10, TimeUnit.SECONDS))
+                        }
+                    },
+                )
+            check(changed.await(10, TimeUnit.SECONDS))
+            val second = pool.submit(Callable { runCatching { deletion.delete(listOf(1), 3) } })
+            awaitLock(connectionId.get())
+            release.countDown()
+            first.get(10, TimeUnit.SECONDS)
+            assertThat(second.get(10, TimeUnit.SECONDS).exceptionOrNull())
+                .hasMessage(core.application.member.application.exception.MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
+            assertThat(memberRow(1)["deleted_at"]).isNull()
+            assertThat(jdbc.queryForObject("select count(*) from announcements where announcement_id = 99", Int::class.java)).isOne()
+        } finally {
+            release.countDown()
+            pool.shutdownNow()
+        }
+    }
+
+    private fun transferSharedRecords() {
+        jdbc.update("update announcements set author_id = 2 where author_id = 1")
+        jdbc.update("update after_party set member_id = 2 where member_id = 1")
+        jdbc.update("update bills set host_user_id = 2 where host_user_id = 1")
+        jdbc.update("update gatherings set host_user_id = 2 where host_user_id = 1")
     }
 
     private fun memberRow(id: Long): Map<String, Any> = jdbc.queryForMap("select * from members where member_id = ?", id)

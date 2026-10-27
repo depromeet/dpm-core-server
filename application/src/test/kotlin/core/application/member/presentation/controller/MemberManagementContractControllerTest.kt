@@ -13,6 +13,7 @@ import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
+import core.domain.member.vo.MemberId
 import jakarta.servlet.Filter
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -78,6 +79,8 @@ class MemberManagementContractControllerTest {
         `when`(badgeService.getBadges()).thenReturn(MemberBadgesResponse(19, listOf(MemberBadgeResponse(MemberBadgeCard.PENDING, true, 3))))
         `when`(badgeService.acknowledge(MemberBadgeCard.PENDING, 19, 3)).thenReturn(MemberBadgeResponse(MemberBadgeCard.PENDING, false, 3))
         reset(members)
+        `when`(members.hardDeleteById(MemberId(1))).thenReturn(emptyList())
+        `when`(members.hardDeleteById(MemberId(2))).thenReturn(emptyList())
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19))))
         `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.INACTIVE, setOf(18))))
         mvc =
@@ -211,10 +214,18 @@ class MemberManagementContractControllerTest {
     fun `단건 일괄 삭제는 성공 계약과 실제 서비스 호출을 제공한다`() {
         mvc.perform(authenticated(delete("/v3/members/1"), "delete:member", actorMemberId = 3))
             .andExpect(status().isOk).andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
-        verify(members).softDeleteMembers(listOf(1))
+        verify(members).hardDeleteById(MemberId(1))
         mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":[2,1]}"""), "delete:member", actorMemberId = 3))
             .andExpect(status().isOk).andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
-        verify(members).softDeleteMembers(listOf(1, 2))
+        verify(members).softDeleteMembers(listOf(1))
+        verify(members).hardDeleteById(MemberId(2))
+    }
+
+    @Test
+    fun `공유 기록 소유자 삭제는 409 오류 계약을 반환한다`() {
+        `when`(members.ownsSharedRecords(1)).thenReturn(true)
+        mvc.perform(authenticated(delete("/v3/members/1"), "delete:member", actorMemberId = 3))
+            .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-72"))
     }
 
     @Test

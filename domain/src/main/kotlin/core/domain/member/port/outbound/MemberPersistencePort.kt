@@ -23,6 +23,9 @@ interface MemberPersistencePort {
     /** 삭제 트랜잭션에서 이미 잠그고 검증한 회원의 상태와 삭제 시각만 변경한다. */
     fun softDeleteMembers(memberIds: List<Long>)
 
+    /** 회원 행을 잠근 뒤 작성/주최한 공유 기록을 확인한다. */
+    fun ownsSharedRecords(memberId: Long): Boolean
+
     /** 토큰 인증 및 재발급에서 현재 삭제/탈퇴 여부를 확인한다. */
     fun isLoginAvailable(memberId: Long): Boolean
 
@@ -107,7 +110,8 @@ interface MemberPersistencePort {
     )
 
     /**
-     * 회원과 그 회원을 참조하는 모든 행을 영구 삭제한다.
+     * 회원과 연관 업무 데이터를 영구 삭제한다.
+     * 배지 대상 기록은 호출자가 MemberPurgedEvent를 발행하여 같은 트랜잭션의 마지막 단계에서 정리한다.
      *
      * @return 함께 삭제된 이미지의 버킷 객체 키. 버킷 정리는 호출자가 커밋 후에 한다.
      */
