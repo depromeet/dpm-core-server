@@ -78,7 +78,7 @@ class MemberCommandService(
     }
 
     /**
-     * 멤버를 탈퇴 처리(Soft Delete)하고, 클라이언트의 Refresh Token을 무효화 및 삭제함.
+     * 멤버를 탈퇴 처리하고 로그인 쿠키와 Refresh Token 세션을 정리한다.
      *
      * @throws MemberNotFoundException
      *
@@ -91,6 +91,7 @@ class MemberCommandService(
         response: HttpServletResponse,
     ) {
         logger.warn { "Invalidating refresh token during member withdrawal for memberId=${memberId.value}" }
+        tokenInjector.invalidateAccessToken(response)
         tokenInjector.invalidateRefreshToken(response)
         refreshTokenInvalidator.destroyRefreshToken(memberId)
 
