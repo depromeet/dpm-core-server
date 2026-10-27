@@ -5,6 +5,7 @@ import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.MemberActivityStatus
+import core.domain.member.enums.MemberStatus
 import core.domain.team.vo.TeamNumber
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -106,6 +107,8 @@ data class MemberDetailsResponse(
         nullable = true,
     )
     val activityStatus: MemberActivityStatus? = null,
+    @field:Schema(description = "계정 기준 승인 완료 화면 확인 여부. 미승인 상태는 false이며 승인 여부는 status와 함께 확인")
+    val hasSeenApprovalWelcome: Boolean = false,
 ) {
     companion object {
         fun of(
@@ -135,6 +138,8 @@ data class MemberDetailsResponse(
                 absentCount = attendanceSummary?.absentCount ?: 0,
                 attendanceStatus = attendanceStatus?.name,
                 activityStatus = activityStatus,
+                hasSeenApprovalWelcome =
+                    member.status in setOf(MemberStatus.ACTIVE, MemberStatus.INACTIVE) && member.approvalWelcomeSeen,
             )
     }
 }
