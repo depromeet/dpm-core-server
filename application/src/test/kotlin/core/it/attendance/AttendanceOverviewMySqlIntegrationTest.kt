@@ -70,6 +70,46 @@ class AttendanceOverviewMySqlIntegrationTest {
     private fun uniqueId(): Long = ThreadLocalRandom.current().nextLong(1_000_000_000L, 9_000_000_000L)
 
     @Test
+    fun `오프라인 지각은 모든 출석 조회에서 같은 환산 결석으로 집계한다`() {
+        val (_, cohort) = newCohortPair()
+        val member = newMember(uniqueName())
+        joinCohort(member, cohort)
+        val first = newSession(cohort, week = 1, isOnline = false)
+        addAttendance(first, member, AttendanceStatus.ABSENT)
+        addAttendance(newSession(cohort, week = 2, isOnline = false), member, AttendanceStatus.ABSENT)
+        val late = newSession(cohort, week = 3, isOnline = false)
+        addAttendance(late, member, AttendanceStatus.LATE)
+        val evaluator = core.application.attendance.application.service.AttendanceGraduationEvaluator()
+
+        fun summaries() =
+            listOf(
+                attendancePort.findMemberAttendances(cohort.value, emptyList()).single { it.id == member }.summary,
+                attendancePort.findDetailMemberAttendance(member, cohort.value)!!.summary,
+                attendancePort.findDetailAttendanceBySession(GetDetailAttendanceBySessionQuery(first.id!!, MemberId(member)))!!.summary,
+            )
+
+        assertThat(summaries()).allSatisfy {
+            assertThat(it.offlineLateCount).isEqualTo(1)
+            assertThat(evaluator.evaluate(it)).isEqualTo(core.domain.attendance.enums.AttendanceGraduationStatus.AT_RISK)
+        }
+
+        addAttendance(newSession(cohort, week = 4, isOnline = false), member, AttendanceStatus.LATE)
+        addAttendance(newSession(cohort, week = 5, isOnline = true), member, AttendanceStatus.LATE)
+        addAttendance(newSession(cohort, week = 6, isOnline = false), member, AttendanceStatus.EXCUSED_ABSENT)
+        addAttendance(newSession(cohort, week = 7, isOnline = false), member, AttendanceStatus.PENDING)
+        // 삭제된 지각과 같은 세션의 이전 기록은 중복 집계하지 않는다.
+        addAttendance(late, member, AttendanceStatus.LATE, deletedAt = firstSessionStart)
+
+        assertThat(summaries()).allSatisfy {
+            assertThat(it.lateCount).isEqualTo(3)
+            assertThat(it.offlineLateCount).isEqualTo(2)
+            assertThat(it.absentCount).isEqualTo(2)
+            assertThat(it.excusedAbsentCount).isEqualTo(1)
+            assertThat(evaluator.evaluate(it)).isEqualTo(core.domain.attendance.enums.AttendanceGraduationStatus.IMPOSSIBLE)
+        }
+    }
+
+    @Test
     fun `사람별 목록은 현재 기수 소속 멤버 전원을 기록이 없어도 한 행씩 팀, 이름, ID 순으로 주고 살아 있는 최신 기록만 센다`() {
         val name = uniqueName()
         val (oldCohort, currentCohort) = newCohortPair()
