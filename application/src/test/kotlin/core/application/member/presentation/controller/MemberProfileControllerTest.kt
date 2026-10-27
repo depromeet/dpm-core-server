@@ -1,12 +1,15 @@
 package core.application.member.presentation.controller
 
 import core.application.common.exception.GlobalExceptionHandler
+import core.application.member.application.service.MemberApprovalWelcomeService
 import core.application.member.application.service.MemberProfileService
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberProfile
 import core.domain.member.port.outbound.MemberProfilePersistencePort
+import core.domain.member.port.outbound.query.MemberApprovalTarget
 import jakarta.servlet.Filter
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -49,6 +52,8 @@ class MemberProfileControllerTest {
 
     @Autowired lateinit var profiles: MemberProfilePersistencePort
 
+    @Autowired lateinit var members: MemberPersistencePort
+
     private lateinit var mvc: MockMvc
 
     @BeforeEach
@@ -58,9 +63,23 @@ class MemberProfileControllerTest {
                 .addFilters<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(context.getBean("springSecurityFilterChain", Filter::class.java))
                 .build()
         clearInvocations(profiles)
+        clearInvocations(members)
         `when`(profiles.findProfile(7)).thenReturn(profile())
         `when`(profiles.lockProfile(7)).thenReturn(profile())
         `when`(profiles.completeProfile(7, "홍길동", MemberPart.WEB)).thenReturn(true)
+    }
+
+    @Test
+    fun `승인 확인은 본인 인증으로만 저장하며 익명과 미승인은 거절한다`() {
+        val path = "/v3/members/me/approval-welcome"
+        mvc.perform(patch(path)).andExpect(status().isUnauthorized)
+        verifyNoInteractions(members)
+        `when`(members.lockApprovalTargets(listOf(7))).thenReturn(listOf(MemberApprovalTarget(7, MemberStatus.PENDING, emptySet())))
+        mvc.perform(authenticated(patch(path))).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.code").value("MEMBER-409-71"))
+        `when`(members.lockApprovalTargets(listOf(7))).thenReturn(listOf(MemberApprovalTarget(7, MemberStatus.ACTIVE, setOf(19))))
+        mvc.perform(authenticated(patch(path))).andExpect(status().isOk)
+        verify(members).markApprovalWelcomeSeen(7)
     }
 
     @Test
@@ -99,7 +118,7 @@ class MemberProfileControllerTest {
 
     @Test
     fun `완료 후 다른 값은 공통 응답 형식의 409다`() {
-        `when`(profiles.lockProfile(7)).thenReturn(profile().copy(completedAt = Instant.now()))
+        `when`(profiles.lockProfile(7)).thenReturn(profile().copy(status = MemberStatus.ACTIVE, completedAt = Instant.now()))
         mvc.perform(request("""{"name":"김길동","part":"WEB"}"""))
             .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-41"))
     }
@@ -126,9 +145,11 @@ class MemberProfileControllerTest {
     @EnableWebMvc
     @EnableWebSecurity
     @EnableMethodSecurity(proxyTargetClass = true)
-    @Import(MemberProfileController::class, MemberProfileService::class, GlobalExceptionHandler::class)
+    @Import(MemberProfileController::class, MemberProfileService::class, MemberApprovalWelcomeController::class, MemberApprovalWelcomeService::class, GlobalExceptionHandler::class)
     class Config : WebMvcConfigurer {
         @Bean fun profiles(): MemberProfilePersistencePort = mock(MemberProfilePersistencePort::class.java)
+
+        @Bean fun members(): MemberPersistencePort = mock(MemberPersistencePort::class.java)
 
         override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
             resolvers.add(CurrentMemberIdArgumentResolver())

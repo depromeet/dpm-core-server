@@ -63,13 +63,16 @@ class MemberCommandService(
     fun initMemberDataAndApprove(request: InitMemberDataRequest) {
         guardLegacyAdmissionChange(request.members.map { it.memberId.value }, request.members.map { it.status })
         request.members.forEach {
+            val member = memberQueryService.getMemberById(it.memberId)
+            val newlyApproved = member.status == MemberStatus.PENDING && it.status == MemberStatus.ACTIVE
             val updatedMember =
                 memberPersistencePort.save(
-                    memberQueryService.getMemberById(it.memberId).apply {
+                    member.apply {
                         updatePart(it.memberPart)
                         updateStatus(it.status)
                     },
                 )
+            if (newlyApproved) memberPersistencePort.resetApprovalWelcome(listOf(it.memberId.value))
             memberTeamService.addMemberToTeam(it.memberId, it.teamId)
             memberCohortService.addMemberToCohort(it.memberId)
             synchronizeActivity(updatedMember)
@@ -143,12 +146,15 @@ class MemberCommandService(
         val existMember = memberQueryService.getMemberById(request.memberId)
 
         if (existMember.status != request.memberStatus) {
+            val newlyApproved =
+                existMember.status == MemberStatus.PENDING && request.memberStatus == MemberStatus.ACTIVE
             val updatedMember =
                 memberPersistencePort.save(
                     existMember.apply {
                         updateStatus(request.memberStatus)
                     },
                 )
+            if (newlyApproved) memberPersistencePort.resetApprovalWelcome(listOf(request.memberId.value))
             synchronizeActivity(updatedMember)
             initializeMemberDataForActiveMember(updatedMember)
         } else {

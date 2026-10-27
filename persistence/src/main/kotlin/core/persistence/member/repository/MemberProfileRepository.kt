@@ -8,6 +8,7 @@ import core.domain.member.port.outbound.MemberProfilePersistencePort
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_OAUTH
+import org.jooq.impl.DSL
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -44,9 +45,14 @@ class MemberProfileRepository(private val dsl: DSLContext) : MemberProfilePersis
         return dsl.update(MEMBERS)
             .set(MEMBERS.NAME, name)
             .set(MEMBERS.PART, part.name)
-            .set(MEMBERS.PROFILE_COMPLETED_AT, now)
+            .set(MEMBERS.PROFILE_COMPLETED_AT, DSL.coalesce(MEMBERS.PROFILE_COMPLETED_AT, DSL.`val`(now)))
             .set(MEMBERS.UPDATED_AT, now)
-            .where(MEMBERS.MEMBER_ID.eq(memberId), MEMBERS.PROFILE_COMPLETED_AT.isNull)
+            .where(
+                MEMBERS.MEMBER_ID.eq(memberId),
+                MEMBERS.DELETED_AT.isNull,
+                MEMBERS.STATUS.ne(MemberStatus.WITHDRAWN.name),
+                MEMBERS.PROFILE_COMPLETED_AT.isNull.or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name)),
+            )
             .execute() == 1
     }
 

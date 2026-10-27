@@ -14,6 +14,12 @@ import core.domain.member.vo.MemberId
 import java.time.Instant
 
 interface MemberPersistencePort {
+    /** 이미 잠근 신규 승인 회원의 승인 완료 화면을 미확인으로 초기화한다. */
+    fun resetApprovalWelcome(memberIds: List<Long>)
+
+    /** 잠근 승인 회원의 확인 상태를 기록한다. 반복 호출은 확인 상태를 유지한다. */
+    fun markApprovalWelcomeSeen(memberId: Long)
+
     /** 삭제 트랜잭션에서 이미 잠그고 검증한 회원의 상태와 삭제 시각만 변경한다. */
     fun softDeleteMembers(memberIds: List<Long>)
 

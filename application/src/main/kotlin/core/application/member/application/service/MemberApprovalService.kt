@@ -68,6 +68,7 @@ class MemberApprovalService(
             activities.activate(it, cohortId.value)
         }
         members.updateManagementFields(pendingIds, false, null, MemberStatus.ACTIVE, emptySet())
+        members.resetApprovalWelcome(targets.filter { it.status == MemberStatus.PENDING }.map { it.memberId })
 
         // 신규 승인 경로는 초기화까지 같은 트랜잭션에 포함한다. 실패하면 승인도 취소된다.
         pendingIds.forEach { initializer.initialize(MemberId(it), cohortId) }

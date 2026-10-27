@@ -40,6 +40,20 @@ class MemberMeQueryTest {
     private val service = service(defaultTeamId = 0)
 
     @Test
+    fun `승인 화면 확인은 회원 계정에 따라 조회하며 미승인에는 노출하지 않는다`() {
+        val memberId = MemberId(1)
+        listOf(MemberStatus.ACTIVE, MemberStatus.INACTIVE, MemberStatus.PENDING, MemberStatus.REJECTED).forEach { status ->
+            listOf(false, true).forEach { seen ->
+                given(memberPersistencePort.findById(memberId)).willReturn(
+                    Member(id = memberId, name = "홍길동", email = "member@example.com", signupEmail = "member@example.com", status = status, approvalWelcomeSeen = seen),
+                )
+                assertThat(service.memberMe(memberId, null).hasSeenApprovalWelcome)
+                    .isEqualTo(seen && status in setOf(MemberStatus.ACTIVE, MemberStatus.INACTIVE))
+            }
+        }
+    }
+
+    @Test
     fun `반려 회원의 내 정보는 REJECTED 상태를 그대로 제공한다`() {
         val memberId = MemberId(1)
         given(memberPersistencePort.findById(memberId)).willReturn(
@@ -205,11 +219,13 @@ class MemberMeQueryTest {
         assertThat(json).containsOnlyKeys(
             "email", "name", "part", "cohort", "teamNumber", "isAdmin", "status", "loginMethod",
             "isActiveCohort", "presentCount", "lateCount", "excusedAbsentCount", "absentCount", "attendanceStatus", "activityStatus",
+            "hasSeenApprovalWelcome",
         )
         assertThat(json["teamNumber"]).isEqualTo(0)
         assertThat(json["isActiveCohort"]).isEqualTo(false)
         assertThat(json["presentCount"]).isEqualTo(0)
         assertThat(json).containsEntry("attendanceStatus", null)
+        assertThat(json).containsEntry("hasSeenApprovalWelcome", false)
     }
 
     private fun givenMember(
