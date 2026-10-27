@@ -101,6 +101,7 @@ import java.util.concurrent.atomic.AtomicLong
     MemberAccessService::class,
     CurrentCohortRoleResolver::class,
     AnnouncementCommandService::class,
+    core.application.member.application.service.MemberWriteGuard::class,
     AnnouncementReadCommandService::class,
     AssignmentSubmissionCommandService::class,
     AnnouncementReadRepository::class,

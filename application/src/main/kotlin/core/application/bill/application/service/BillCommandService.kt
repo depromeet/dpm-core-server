@@ -7,6 +7,7 @@ import core.application.bill.presentation.request.CreateBillRequest
 import core.application.bill.presentation.request.UpdateGatheringJoinsRequest
 import core.application.gathering.application.exception.GatheringNotFoundException
 import core.application.gathering.application.validator.GatheringReceiptValidator
+import core.application.member.application.service.MemberWriteGuard
 import core.domain.bill.aggregate.Bill
 import core.domain.bill.port.inbound.command.UpdateMemberDepositCommand
 import core.domain.bill.port.inbound.command.UpdateMemberListDepositCommand
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional
 class BillCommandService(
+    private val memberWriteGuard: MemberWriteGuard,
     private val billPersistencePort: BillPersistencePort,
     private val billAccountQueryService: BillAccountQueryService,
     private val gatheringCommandUseCase: GatheringCommandUseCase,
@@ -36,6 +38,7 @@ class BillCommandService(
         hostUserId: MemberId,
         request: CreateBillRequest,
     ): BillId {
+        memberWriteGuard.lockAvailable(listOf(hostUserId.value))
         val billId = verifyAccountThenCreateBill(hostUserId, request)
         saveRelatedGatherings(request, billId, hostUserId)
         return billId
