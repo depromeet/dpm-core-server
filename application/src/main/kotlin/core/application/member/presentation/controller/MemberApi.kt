@@ -208,7 +208,8 @@ interface MemberApi {
                                     "lateCount": 1,
                                     "excusedAbsentCount": 1,
                                     "absentCount": 0,
-                                    "attendanceStatus": "NORMAL"
+                                    "attendanceStatus": "NORMAL",
+                                    "hasSeenApprovalWelcome": false
                                 }
                             }
                         """,
@@ -224,7 +225,9 @@ interface MemberApi {
                 "cohort, teamNumber, 출석 집계(presentCount/lateCount/excusedAbsentCount/absentCount), " +
                 "attendanceStatus 는 마지막 소속 기수 기준입니다. isActiveCohort 는 그 기수가 현재 활성 기수인지 여부입니다. " +
                 "attendanceStatus 는 현재 기수면 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE), 이전 기수면 COMPLETED, " +
-                "소속 기수가 없으면 null 이며 멤버 상태(status)와 별개입니다.",
+                "소속 기수가 없으면 null 이며 멤버 상태(status)와 별개입니다. " +
+                "승인된 회원의 hasSeenApprovalWelcome=false이면 승인 완료 화면을 표시하고, 입장하기를 누르면 " +
+                "PATCH /v3/members/me/approval-welcome을 호출합니다. 확인 여부는 계정 기준이며 조회만으로 변경되지 않습니다.",
     )
     fun me(
         @CurrentMemberId memberId: MemberId,
@@ -311,7 +314,7 @@ interface MemberApi {
     )
     @Operation(
         summary = "멤버 탈퇴 API",
-        description = "현재 로그인한 멤버를 탈퇴 처리합니다. 탈퇴 후에는 해당 멤버의 모든 정보가 삭제됩니다.",
+        description = "현재 로그인한 멤버를 탈퇴 처리합니다. 로그인 쿠키와 세션, 로그인 연결을 정리하고 회원은 탈퇴 상태로 보관합니다.",
     )
     fun withdraw(
         @CurrentMemberId memberId: MemberId,

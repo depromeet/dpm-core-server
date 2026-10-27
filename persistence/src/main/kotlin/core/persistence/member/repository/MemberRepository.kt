@@ -72,6 +72,23 @@ class MemberRepository(
     private val memberJpaRepository: MemberJpaRepository,
     private val dsl: DSLContext,
 ) : MemberPersistencePort {
+    override fun resetApprovalWelcome(memberIds: List<Long>) {
+        if (memberIds.isEmpty()) return
+        dsl.update(MEMBERS).set(MEMBERS.APPROVAL_WELCOME_SEEN, false)
+            .where(MEMBERS.MEMBER_ID.`in`(memberIds), MEMBERS.DELETED_AT.isNull)
+            .execute()
+    }
+
+    override fun markApprovalWelcomeSeen(memberId: Long) {
+        dsl.update(MEMBERS).set(MEMBERS.APPROVAL_WELCOME_SEEN, true)
+            .where(
+                MEMBERS.MEMBER_ID.eq(memberId),
+                MEMBERS.DELETED_AT.isNull,
+                MEMBERS.STATUS.`in`(MemberStatus.ACTIVE.name, MemberStatus.INACTIVE.name),
+                MEMBERS.APPROVAL_WELCOME_SEEN.eq(false),
+            ).execute()
+    }
+
     override fun findPendingRequestTimes(memberIds: List<Long>): Map<Long, Instant> {
         if (memberIds.isEmpty()) return emptyMap()
         val requestedAt = DSL.coalesce(max(MEMBER_ADMISSION_EVENTS.CREATED_AT), MEMBERS.CREATED_AT)
@@ -160,6 +177,12 @@ class MemberRepository(
                 selectOne().from(MEMBER_CREDENTIALS)
                     .where(MEMBER_CREDENTIALS.MEMBER_ID.eq(MEMBERS.MEMBER_ID)),
             )
+        val credentialEmail =
+            field(
+                DSL.select(MEMBER_CREDENTIALS.EMAIL).from(MEMBER_CREDENTIALS)
+                    .where(MEMBER_CREDENTIALS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+                    .orderBy(MEMBER_CREDENTIALS.CREDENTIAL_ID.desc()).limit(1),
+            )
         val oauthProvider =
             field(
                 DSL.select(MEMBER_OAUTH.PROVIDER).from(MEMBER_OAUTH)
@@ -195,6 +218,7 @@ class MemberRepository(
             oauthProvider.`as`("oauth_provider"),
             hasCredential.`as`("has_credential"),
             oauthEmail.`as`("oauth_email"),
+            credentialEmail.`as`("credential_email"),
         ).from(MEMBERS)
             .where(MEMBERS.DELETED_AT.isNull)
             .and(MEMBERS.STATUS.`in`(MemberStatus.ACTIVE.name, MemberStatus.INACTIVE.name, MemberStatus.PENDING.name))
@@ -208,10 +232,10 @@ class MemberRepository(
                     memberId = requireNotNull(record[MEMBERS.MEMBER_ID]),
                     name = requireNotNull(record[MEMBERS.NAME]),
                     email =
-                        if (loginMethod == LoginMethod.KAKAO) {
-                            selectedEmail
-                        } else {
-                            selectedEmail ?: requireNotNull(record[MEMBERS.SIGNUP_EMAIL])
+                        when (loginMethod) {
+                            LoginMethod.KAKAO, LoginMethod.APPLE -> selectedEmail
+                            LoginMethod.EMAIL -> record.get("credential_email", String::class.java)
+                            null -> record[MEMBERS.SIGNUP_EMAIL]
                         },
                     loginMethod = loginMethod,
                     part = record[MEMBERS.PART]?.let { runCatching { MemberPart.valueOf(it) }.getOrNull() },
@@ -297,6 +321,7 @@ class MemberRepository(
                 updatedAt = inserted.updatedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
                 deletedAt = inserted.deletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
                 profileCompletedAt = inserted.profileCompletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                approvalWelcomeSeen = inserted.approvalWelcomeSeen ?: false,
             )
         } else {
             memberJpaRepository.save(MemberEntity.from(member)).toDomain()
@@ -592,8 +617,21 @@ class MemberRepository(
             .execute()
     }
 
+    override fun ownsSharedRecords(memberId: Long): Boolean =
+        dsl.fetchExists(DSL.selectOne().from(ANNOUNCEMENTS).where(ANNOUNCEMENTS.AUTHOR_ID.eq(memberId))) ||
+            dsl.fetchExists(DSL.selectOne().from(AFTER_PARTY).where(AFTER_PARTY.MEMBER_ID.eq(memberId))) ||
+            dsl.fetchExists(DSL.selectOne().from(BILLS).where(BILLS.HOST_USER_ID.eq(memberId))) ||
+            dsl.fetchExists(DSL.selectOne().from(GATHERINGS).where(GATHERINGS.HOST_USER_ID.eq(memberId)))
+
     override fun hardDeleteById(memberId: MemberId): List<String> {
         val value = memberId.value
+        // Badge memberships are reconciled after all business writes by MemberBadgeTransactionTracker.
+        dsl.deleteFrom(DSL.table("session_feedback_push_receipts"))
+            .where(DSL.field("member_id", Long::class.java).eq(value)).execute()
+
+        dsl.deleteFrom(
+            DSL.table("member_oauth_link_requests"),
+        ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
         dsl.deleteFrom(
             DSL.table("member_cohort_activities"),
         ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()

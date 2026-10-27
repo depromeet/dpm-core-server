@@ -63,13 +63,16 @@ class MemberCommandService(
     fun initMemberDataAndApprove(request: InitMemberDataRequest) {
         guardLegacyAdmissionChange(request.members.map { it.memberId.value }, request.members.map { it.status })
         request.members.forEach {
+            val member = memberQueryService.getMemberById(it.memberId)
+            val newlyApproved = member.status == MemberStatus.PENDING && it.status == MemberStatus.ACTIVE
             val updatedMember =
                 memberPersistencePort.save(
-                    memberQueryService.getMemberById(it.memberId).apply {
+                    member.apply {
                         updatePart(it.memberPart)
                         updateStatus(it.status)
                     },
                 )
+            if (newlyApproved) memberPersistencePort.resetApprovalWelcome(listOf(it.memberId.value))
             memberTeamService.addMemberToTeam(it.memberId, it.teamId)
             memberCohortService.addMemberToCohort(it.memberId)
             synchronizeActivity(updatedMember)
@@ -78,7 +81,7 @@ class MemberCommandService(
     }
 
     /**
-     * 멤버를 탈퇴 처리(Soft Delete)하고, 클라이언트의 Refresh Token을 무효화 및 삭제함.
+     * 멤버를 탈퇴 처리하고 로그인 쿠키와 Refresh Token 세션을 정리한다.
      *
      * @throws MemberNotFoundException
      *
@@ -91,6 +94,7 @@ class MemberCommandService(
         response: HttpServletResponse,
     ) {
         logger.warn { "Invalidating refresh token during member withdrawal for memberId=${memberId.value}" }
+        tokenInjector.invalidateAccessToken(response)
         tokenInjector.invalidateRefreshToken(response)
         refreshTokenInvalidator.destroyRefreshToken(memberId)
 
@@ -143,12 +147,15 @@ class MemberCommandService(
         val existMember = memberQueryService.getMemberById(request.memberId)
 
         if (existMember.status != request.memberStatus) {
+            val newlyApproved =
+                existMember.status == MemberStatus.PENDING && request.memberStatus == MemberStatus.ACTIVE
             val updatedMember =
                 memberPersistencePort.save(
                     existMember.apply {
                         updateStatus(request.memberStatus)
                     },
                 )
+            if (newlyApproved) memberPersistencePort.resetApprovalWelcome(listOf(request.memberId.value))
             synchronizeActivity(updatedMember)
             initializeMemberDataForActiveMember(updatedMember)
         } else {

@@ -88,6 +88,7 @@ class MemberApprovalServiceTest {
         verify(roles).replaceCurrentCohortRoles(listOf(1), 19, 1)
         verify(teams).replaceCurrentCohortTeams(listOf(1), 19, null)
         verify(members).updateManagementFields(listOf(1), false, null, MemberStatus.ACTIVE, emptySet())
+        verify(members).resetApprovalWelcome(listOf(1))
         verify(initializer).initialize(MemberId(1), CohortId(19))
     }
 
@@ -98,5 +99,13 @@ class MemberApprovalServiceTest {
         verify(members).lockApprovalTargets(listOf(1))
         verifyNoMoreInteractions(members)
         verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer)
+    }
+
+    @Test
+    fun `기존 회원의 새 기수 승인은 승인 화면 확인을 초기화하지 않는다`() {
+        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.INACTIVE, setOf(18))))
+        service.approve(listOf(1))
+        verify(members).resetApprovalWelcome(emptyList())
+        verify(initializer).initialize(MemberId(1), CohortId(19))
     }
 }
