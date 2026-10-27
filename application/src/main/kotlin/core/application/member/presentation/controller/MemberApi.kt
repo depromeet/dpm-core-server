@@ -311,7 +311,7 @@ interface MemberApi {
     )
     @Operation(
         summary = "멤버 탈퇴 API",
-        description = "현재 로그인한 멤버를 탈퇴 처리합니다. 탈퇴 후에는 해당 멤버의 모든 정보가 삭제됩니다.",
+        description = "현재 로그인한 멤버를 탈퇴 처리합니다. 로그인 쿠키와 세션, 로그인 연결을 정리하고 회원은 탈퇴 상태로 보관합니다.",
     )
     fun withdraw(
         @CurrentMemberId memberId: MemberId,
