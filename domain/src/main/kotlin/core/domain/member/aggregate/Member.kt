@@ -1,8 +1,8 @@
 package core.domain.member.aggregate
 
+import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
-import core.domain.cohort.vo.CohortId
 import core.domain.member.vo.MemberId
 import java.time.Instant
 
@@ -37,6 +37,7 @@ class Member(
     val memberTeams: List<MemberTeam> = emptyList(),
     val memberOAuths: List<MemberOAuth> = emptyList(),
     val profileCompletedAt: Instant? = null,
+    val approvalWelcomeSeen: Boolean = false,
 ) {
     var email: String? = email
         private set

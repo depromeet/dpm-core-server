@@ -21,9 +21,31 @@ class MemberProfileServiceTest {
     private val service = MemberProfileService(profiles)
 
     @Test
+    fun `검토 중에는 입력을 완료했어도 이름과 파트를 다시 수정할 수 있다`() {
+        val pending = profile(status = MemberStatus.PENDING, completed = Instant.now())
+        `when`(profiles.findProfile(1)).thenReturn(pending)
+        `when`(profiles.lockProfile(1)).thenReturn(pending)
+        `when`(profiles.completeProfile(1, "김길동", MemberPart.SERVER)).thenReturn(true)
+        assertThat(service.get(1).profileCompletionRequired).isFalse()
+        assertThat(service.get(1).profileEditable).isTrue()
+        val response = service.complete(1, "김길동", "SERVER")
+        assertThat(response.name).isEqualTo("김길동")
+        assertThat(response.profileEditable).isTrue()
+        assertThat(response.profileCompletionRequired).isFalse()
+    }
+
+    @Test
+    fun `반려 회원은 재입력 완료 뒤 다시 수정하지 않고 재신청한다`() {
+        `when`(profiles.lockProfile(1)).thenReturn(profile(status = MemberStatus.REJECTED, completed = Instant.now()))
+        assertThatThrownBy { service.complete(1, "김길동", "SERVER") }
+            .isInstanceOf(BusinessException::class.java)
+    }
+
+    @Test
     fun `완료 표시는 관리자가 파트를 지워도 입력 요구로 돌아가지 않는다`() {
         `when`(profiles.findProfile(1)).thenReturn(profile(part = null, completed = Instant.now()))
         assertThat(service.get(1).profileCompletionRequired).isFalse()
+        assertThat(service.get(1).profileEditable).isFalse()
         assertThat(service.get(1).part).isNull()
     }
 

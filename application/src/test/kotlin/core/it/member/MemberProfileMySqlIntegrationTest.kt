@@ -3,6 +3,7 @@ package core.it.member
 import core.application.common.configuration.JooqDslConfig
 import core.application.common.exception.BusinessException
 import core.application.member.application.exception.MemberDeletedException
+import core.application.member.application.service.MemberApprovalWelcomeService
 import core.application.member.application.service.MemberProfileService
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.MemberProfilePersistencePort
@@ -50,6 +51,75 @@ class MemberProfileMySqlIntegrationTest {
     @Autowired lateinit var tx: PlatformTransactionManager
 
     private val service get() = MemberProfileService(profiles)
+
+    @Test
+    fun `프로필 수정은 승인 트랜잭션의 회원 잠금 이후 최신 상태를 검사한다`() {
+        jdbc.update("update members set status='PENDING',name='홍길동',profile_completed_at=now(6) where member_id=1")
+        val pool = Executors.newSingleThreadExecutor()
+        val started = CountDownLatch(1)
+        try {
+            val edit =
+                rc().execute {
+                    members.lockApprovalTargets(listOf(1))
+                    jdbc.update("update members set status='ACTIVE' where member_id=1")
+                    pool.submit(
+                        Callable {
+                            started.countDown()
+                            runCatching { rc().execute { service.complete(1, "김길동", "WEB") } }
+                        },
+                    ).also { assertThat(started.await(5, TimeUnit.SECONDS)).isTrue() }
+                }!!
+            assertThat(edit.get(10, TimeUnit.SECONDS).exceptionOrNull()).isInstanceOf(BusinessException::class.java)
+            assertThat(profiles.findProfile(1)!!.name).isEqualTo("홍길동")
+        } finally {
+            pool.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `검토 중 수정은 최초 완료와 신청 정렬 시각을 유지하고 승인 후에는 막는다`() {
+        jdbc.update("update members set status='PENDING',name='홍길동',profile_completed_at='2026-10-01 00:00:00' where member_id=1")
+        val requestedAt = members.findPendingRequestTimes(listOf(1))
+        val completedAt = profiles.findProfile(1)!!.completedAt
+        rc().execute { service.complete(1, "김길동", "WEB") }
+        assertThat(profiles.findProfile(1)!!.name).isEqualTo("김길동")
+        assertThat(profiles.findProfile(1)!!.completedAt).isEqualTo(completedAt)
+        assertThat(members.findPendingRequestTimes(listOf(1))).isEqualTo(requestedAt)
+        jdbc.update("update members set status='ACTIVE' where member_id=1")
+        assertThatThrownBy { rc().execute { service.complete(1, "박길동", "SERVER") } }.isInstanceOf(BusinessException::class.java)
+    }
+
+    @Test
+    fun `승인 확인은 반복 호출과 오래된 엔티티 저장에도 유지되고 실제 승인 초기화만 되돌린다`() {
+        val stale = rc().execute { members.findById(MemberId(1))!! }!!
+        val welcome = MemberApprovalWelcomeService(members)
+        assertThat(stale.approvalWelcomeSeen).isFalse()
+        repeat(2) { rc().execute { welcome.confirm(1) } }
+        rc().execute { members.save(stale) }
+        assertThat(rc().execute { members.findById(MemberId(1))!!.approvalWelcomeSeen }).isTrue()
+        rc().execute { members.resetApprovalWelcome(listOf(1)) }
+        assertThat(rc().execute { members.findById(MemberId(1))!!.approvalWelcomeSeen }).isFalse()
+    }
+
+    @Test
+    fun `승인 확인 SQL은 기존 행만 확인 처리하며 재실행해도 신규 미확인을 보존한다`() {
+        val sql = migrationFile("2610272100_member_approval_welcome.sql")
+        jdbc.execute("alter table members drop column approval_welcome_seen")
+        migrate(sql)
+        assertThat(jdbc.queryForObject("select approval_welcome_seen from members where member_id=1", Boolean::class.java)).isTrue()
+        jdbc.update("insert into members (member_id,name,signup_email,status,created_at) values (2,'새회원','new@example.com','PENDING',now(6))")
+        migrate(sql)
+        assertThat(jdbc.queryForObject("select approval_welcome_seen from members where member_id=2", Boolean::class.java)).isFalse()
+        // ADD 직후 중단해도 재실행은 기본값만 정상화한다.
+        jdbc.execute("alter table members drop column approval_welcome_seen")
+        jdbc.execute("alter table members add column approval_welcome_seen boolean not null default true")
+        migrate(sql)
+        jdbc.update("insert into members (member_id,name,signup_email,status,created_at) values (3,'새회원','new3@example.com','ACTIVE',now(6))")
+        assertThat(jdbc.queryForObject("select approval_welcome_seen from members where member_id=3", Boolean::class.java)).isFalse()
+        rc().execute { members.resetApprovalWelcome(listOf(1)) }
+        migrate(sql)
+        assertThat(jdbc.queryForObject("select approval_welcome_seen from members where member_id=1", Boolean::class.java)).isFalse()
+    }
 
     @BeforeEach
     fun fixture() {
@@ -161,11 +231,12 @@ class MemberProfileMySqlIntegrationTest {
 
     private fun sentinelCount() = jdbc.queryForObject("select count(*) from members where profile_completed_at='1970-01-02 00:00:00.000000'", Long::class.java)!!
 
-    private fun migrationFile(): Path {
-        val root = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
-            .first { Files.isDirectory(it.resolve("db")) }
+    private fun migrationFile(filename: String = "2610092100_member_profile_completion.sql"): Path {
+        val root =
+            generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+                .first { Files.isDirectory(it.resolve("db")) }
         return Files.walk(root.resolve("db")).use { paths ->
-            paths.filter { it.fileName.toString() == "2610092100_member_profile_completion.sql" }
+            paths.filter { it.fileName.toString() == filename }
                 .findFirst().orElseThrow()
         }
     }

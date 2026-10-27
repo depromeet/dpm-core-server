@@ -184,6 +184,7 @@ class MemberManagementMySqlIntegrationTest {
         listOf(1L, 2L, 3L).forEach { id ->
             jdbc.update("insert into member_credentials (member_id, email, password, created_at) values (?, ?, 'test-hash', now(6))", id, "member$id@example.com")
         }
+        jdbc.update("update member_credentials set email='password3@example.com' where member_id=3")
         oauth(1001, 1, "KAKAO", "kakao1@example.com")
         oauth(1002, 1, "APPLE", "apple1@example.com") // 애플 연결이 나중에 생겨도 카카오 우선.
         oauth(1003, 2, "APPLE", "old-apple2@example.com")
@@ -207,7 +208,7 @@ class MemberManagementMySqlIntegrationTest {
         val rows = members.findManagementMembers(cohortId)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L, 9L, 10L, 11L)
         assertThat(rows.associate { it.memberId to it.email }).containsExactlyInAnyOrderEntriesOf(
-            mapOf(1L to "kakao1@example.com", 2L to "apple2@example.com", 3L to "member3@example.com", 7L to null, 8L to null, 9L to "member9@example.com", 10L to "member10@example.com", 11L to "kakao11@example.com"),
+            mapOf(1L to "kakao1@example.com", 2L to "apple2@example.com", 3L to "password3@example.com", 7L to null, 8L to null, 9L to null, 10L to null, 11L to "kakao11@example.com"),
         )
         assertThat(rows.associate { it.memberId to it.loginMethod }).containsExactlyInAnyOrderEntriesOf(
             mapOf(1L to LoginMethod.KAKAO, 2L to LoginMethod.APPLE, 3L to LoginMethod.EMAIL, 7L to LoginMethod.KAKAO, 8L to LoginMethod.KAKAO, 9L to LoginMethod.APPLE, 10L to LoginMethod.APPLE, 11L to LoginMethod.KAKAO),
@@ -224,6 +225,8 @@ class MemberManagementMySqlIntegrationTest {
         val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
         assertThat(pending.members.single().name).isEqualTo("  중복별명  ")
         assertThat(pending.members.single().duplicateSuspected).isTrue()
+        assertThat(pending.members.single().loginMethod).isEqualTo(LoginMethod.EMAIL)
+        assertThat(pending.members.single().email).isEqualTo("password3@example.com")
         assertThat(service.getOverview(MemberManagementRequest(search = " KAKAO1@EXAMPLE.COM ")).members.single().memberId).isEqualTo(1L)
         listOf("member1@example.com", "apple1@example.com", "old-kakao8@example.com", "apple7@example.com").forEach { hiddenEmail ->
             assertThat(service.getOverview(MemberManagementRequest(search = hiddenEmail, excludeStaff = false)).members).isEmpty()

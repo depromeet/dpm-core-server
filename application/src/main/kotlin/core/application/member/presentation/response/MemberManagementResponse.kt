@@ -42,8 +42,9 @@ data class MemberManagementResponse(
         val name: String,
         @field:Schema(
             description =
-                "관리 표시 이메일. 카카오 우선, 미연결이면 애플·가입 이메일 순. " +
-                    "카카오 연결의 이메일이 없으면 null. 같은 제공자는 가장 큰 연결 ID 기준",
+                "미승인·승인 목록 모두 대표 로그인 수단에 대응하는 이메일 하나를 표시합니다. 카카오 → 애플 → 이메일 로그인 순. " +
+                    "선택된 소셜 연결의 이메일이 없으면 null이며 다른 수단의 이메일로 대체하지 않습니다. " +
+                    "같은 제공자는 가장 큰 연결 ID 기준. 로그인 연결이 전혀 없으면 기존 가입 이메일 표시",
             nullable = true,
         )
         val email: String?,
