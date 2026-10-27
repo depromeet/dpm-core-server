@@ -64,8 +64,22 @@ class MemberPurgeServiceTest {
         `when`(members.hardDeleteById(MemberId(1))).thenReturn(listOf("images/a"))
         service.purge(1, 99)
         verify(members).lockApprovalTargets(listOf(1))
+        verify(members).ownsSharedRecords(1)
         verify(members).hardDeleteById(MemberId(1))
         verifyNoMoreInteractions(members)
         verify(events).publishEvent(MemberPurgedEvent(1, listOf("images/a")))
+    }
+
+    @Test
+    fun `MASTER도 공유 기록 소유자를 영구 삭제할 수 없다`() {
+        `when`(access.getRoleType(MemberId(99))).thenReturn(RoleType.Master)
+        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, emptySet())))
+        `when`(members.ownsSharedRecords(1)).thenReturn(true)
+        assertThatThrownBy { service.purge(1, 99) }
+            .hasMessage(MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
+        verify(members).lockApprovalTargets(listOf(1))
+        verify(members).ownsSharedRecords(1)
+        verifyNoMoreInteractions(members)
+        verifyNoInteractions(events)
     }
 }

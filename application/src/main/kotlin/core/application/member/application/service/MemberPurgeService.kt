@@ -39,6 +39,9 @@ class MemberPurgeService(
         if (members.lockApprovalTargets(listOf(memberId)).isEmpty()) {
             throw MemberNotFoundException()
         }
+        if (members.ownsSharedRecords(memberId)) {
+            throw BusinessException(MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST)
+        }
         val imageObjectKeys = members.hardDeleteById(MemberId(memberId))
         eventPublisher.publishEvent(MemberPurgedEvent(memberId, imageObjectKeys))
     }

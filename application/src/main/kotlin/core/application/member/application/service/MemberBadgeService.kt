@@ -85,6 +85,32 @@ class MemberBadgeService(
             it.size == 3 && it.all { state -> state.initialized }
         }
 
+    /** Purge cleanup shares the state -> membership order, after the entire bulk write. */
+    internal fun reconcileAfterWrites(
+        currentCohortId: Long?,
+        baseline: Map<MemberBadgeCard, Set<Long>>?,
+        purgedMemberIds: Set<Long>,
+    ) {
+        val cohortIds = badges.findCohortIdsForMembers(purgedMemberIds) + listOfNotNull(currentCohortId)
+        cohortIds.sorted().forEach { cohortId ->
+            if (cohortId == currentCohortId) {
+                reconcile(cohortId, baseline)
+            } else {
+                badges.lockStates(cohortId).forEach { state ->
+                    val previous = badges.findMembers(cohortId, state.card)
+                    val next = previous - purgedMemberIds
+                    badges.replaceMembers(cohortId, state.card, previous, next)
+                    badges.save(
+                        state.copy(
+                            targetCount = next.size,
+                            acknowledgedVersion = if (next.isEmpty()) state.version else state.acknowledgedVersion,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
     /** Called after business writes and flush, before the same transaction commits. */
     internal fun reconcile(
         cohortId: Long,

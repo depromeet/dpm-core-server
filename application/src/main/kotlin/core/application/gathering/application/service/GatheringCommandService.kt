@@ -6,6 +6,7 @@ import core.application.gathering.application.exception.member.GatheringMemberNo
 import core.application.gathering.application.service.member.GatheringMemberCommandService
 import core.application.gathering.application.service.member.GatheringMemberQueryService
 import core.application.gathering.application.service.receipt.GatheringReceiptCommandService
+import core.application.member.application.service.MemberWriteGuard
 import core.domain.authorization.vo.RoleId
 import core.domain.bill.aggregate.Bill
 import core.domain.bill.port.inbound.BillQueryUseCase
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional
 class GatheringCommandService(
+    private val memberWriteGuard: MemberWriteGuard,
     private val gatheringPersistencePort: GatheringPersistencePort,
     private val gatheringReceiptCommandService: GatheringReceiptCommandService,
     private val gatheringMemberCommandService: GatheringMemberCommandService,
@@ -39,6 +41,7 @@ class GatheringCommandService(
         invitedRoles: List<RoleId>,
         billId: BillId,
     ) {
+        memberWriteGuard.lockAvailable(commands.map { it.hostUserId.value })
         val bill = billQueryUseCase.getById(billId)
         val memberIds =
             memberQueryByRoleUseCase.findAllMemberIdByRoleIds(invitedRoles)

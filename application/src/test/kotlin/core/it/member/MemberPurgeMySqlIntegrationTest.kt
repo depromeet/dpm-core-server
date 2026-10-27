@@ -43,7 +43,8 @@ class MemberPurgeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
-        (MEMBER_TABLES.keys + CHILD_TABLES + listOf("members", "teams", "roles", "cohorts")).forEach { jdbc.execute("delete from $it") }
+        jdbc.execute("delete from member_badge_memberships")
+        (MEMBER_TABLES.keys + CHILD_TABLES + listOf("member_merge_events", "members", "teams", "roles", "cohorts")).forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (191, 1, 19, 0, 0)")
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER')")
@@ -53,11 +54,14 @@ class MemberPurgeMySqlIntegrationTest {
             jdbc.update("insert into members (member_id, name, signup_email, email, part, status, created_at, updated_at, deleted_at) values (?, '홍길동', ?, ?, 'SERVER', 'ACTIVE', '2020-01-01', '2020-01-02', ?)", id, "signup$id@example.com", "email$id@example.com", if (id == 1L) "2026-10-01" else null)
             jdbc.update("insert into member_cohort_activities (member_id, cohort_id, status, created_at, updated_at) values (?,19,'ENDED',now(6),now(6))", id)
             jdbc.update("insert into member_activity_events (member_id, cohort_id, actor_member_id, status, created_at) values (?,19,1,'ENDED',now(6))", id)
+            jdbc.update("insert into member_badge_memberships (cohort_id, card, member_id) values (19, 'PENDING', ?)", id)
+            jdbc.update("insert into session_feedback_push_receipts (session_id, member_id, sent_at) values (19, ?, now(6))", id)
             jdbc.update("insert into member_cohorts (member_id, cohort_id) values (?, 19)", id)
             jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, 1, 19, now(6))", id)
             jdbc.update("insert into member_permissions (member_id, permission_id, granted_at) values (?, 1, now(6))", id)
             jdbc.update("insert into member_teams (member_id, team_id) values (?, 191)", id)
             jdbc.update("insert into member_oauth (member_id, external_id, provider, email) values (?, ?, 'KAKAO', 'oauth@example.com')", id, "10$id")
+            jdbc.update("insert into member_oauth_link_requests (state_hash, member_id, provider, redirect_uri, code_verifier, expires_at) values (?, ?, 'APPLE', 'https://example.test/callback', 'test-verifier', date_add(now(6), interval 5 minute))", "purge-$id".padEnd(64, 'x'), id)
             jdbc.update("insert into member_credentials (member_id, email, password, created_at) values (?, ?, 'test-hash', now(6))", id, "signup$id@example.com")
             jdbc.update("insert into refresh_tokens (member_id, token_hash, issued_at, expires_at) values (?, ?, now(6), '2099-01-01')", id, "hash$id")
             jdbc.update("insert into notification_tokens (member_id, token, created_at) values (?, ?, now(6))", id, "fcm$id")
@@ -89,9 +93,13 @@ class MemberPurgeMySqlIntegrationTest {
 
     @Test
     fun `회원과 회원을 참조하는 모든 행을 지우고 다른 회원 데이터는 남긴다`() {
+        jdbc.update("insert into member_merge_events (actor_member_id, retained_member_id, source_member_id, created_at) values (2, 2, 1, now(6))")
+        // Repository cleanup excludes badges; the application tracker handles them at beforeCommit.
+        jdbc.execute("delete from member_badge_memberships")
         val keys = TransactionTemplate(transactionManager).execute { members.hardDeleteById(MemberId(1)) }
 
         assertThat(keys).containsExactly("images/1")
+        assertThat(count("member_merge_events", "source_member_id", 1)).isOne()
         assertThat(count("members", "member_id", 1)).isZero()
         assertThat(jdbc.queryForObject("select actor_member_id from member_activity_events where member_id = 2", Long::class.java)).isNull()
         MEMBER_TABLES.forEach { (table, column) ->
@@ -121,9 +129,10 @@ class MemberPurgeMySqlIntegrationTest {
         /** 회원 id를 직접 참조하는 테이블과 컬럼. */
         private val MEMBER_TABLES =
             linkedMapOf(
+                "session_feedback_push_receipts" to "member_id",
                 "member_cohort_activities" to "member_id", "member_activity_events" to "member_id",
                 "member_cohorts" to "member_id", "member_roles" to "member_id", "member_permissions" to "member_id",
-                "member_teams" to "member_id", "member_oauth" to "member_id", "member_credentials" to "member_id",
+                "member_teams" to "member_id", "member_oauth" to "member_id", "member_oauth_link_requests" to "member_id", "member_credentials" to "member_id",
                 "refresh_tokens" to "member_id", "notification_tokens" to "member_id", "member_admission_events" to "member_id",
                 "attendances" to "member_id", "images" to "owner_member_id", "image_uploads" to "owner_member_id",
                 "absence_reasons" to "member_id", "session_feedbacks" to "member_id", "announcements" to "author_id",
