@@ -2,6 +2,8 @@ package core.domain.member.port.outbound
 
 /** Every mutation follows lockStates, in the caller's transaction. */
 interface MemberBadgePersistencePort {
+    fun findCohortIdsForMembers(memberIds: Set<Long>): Set<Long>
+
     fun findStates(cohortId: Long): List<MemberBadgeState>
 
     fun lockStates(cohortId: Long): List<MemberBadgeState>
