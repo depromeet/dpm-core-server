@@ -115,6 +115,8 @@ class MemberBadgeServiceTest {
             return findStates(cohortId)
         }
 
+        override fun findCohortIdsForMembers(memberIds: Set<Long>): Set<Long> = memberships.filterValues { members -> members.any { it in memberIds } }.keys.map { it.first }.toSet()
+
         override fun findMembers(
             cohortId: Long,
             card: String,

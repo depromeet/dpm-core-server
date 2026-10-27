@@ -43,6 +43,7 @@ class MemberPurgeMySqlIntegrationTest {
 
     @BeforeEach
     fun fixture() {
+        jdbc.execute("delete from member_badge_memberships")
         (MEMBER_TABLES.keys + CHILD_TABLES + listOf("member_merge_events", "members", "teams", "roles", "cohorts")).forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (191, 1, 19, 0, 0)")
@@ -93,6 +94,8 @@ class MemberPurgeMySqlIntegrationTest {
     @Test
     fun `회원과 회원을 참조하는 모든 행을 지우고 다른 회원 데이터는 남긴다`() {
         jdbc.update("insert into member_merge_events (actor_member_id, retained_member_id, source_member_id, created_at) values (2, 2, 1, now(6))")
+        // Repository cleanup excludes badges; the application tracker handles them at beforeCommit.
+        jdbc.execute("delete from member_badge_memberships")
         val keys = TransactionTemplate(transactionManager).execute { members.hardDeleteById(MemberId(1)) }
 
         assertThat(keys).containsExactly("images/1")
@@ -126,7 +129,7 @@ class MemberPurgeMySqlIntegrationTest {
         /** 회원 id를 직접 참조하는 테이블과 컬럼. */
         private val MEMBER_TABLES =
             linkedMapOf(
-                "member_badge_memberships" to "member_id", "session_feedback_push_receipts" to "member_id",
+                "session_feedback_push_receipts" to "member_id",
                 "member_cohort_activities" to "member_id", "member_activity_events" to "member_id",
                 "member_cohorts" to "member_id", "member_roles" to "member_id", "member_permissions" to "member_id",
                 "member_teams" to "member_id", "member_oauth" to "member_id", "member_oauth_link_requests" to "member_id", "member_credentials" to "member_id",

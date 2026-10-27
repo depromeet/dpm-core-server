@@ -10,6 +10,15 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class MemberBadgeRepository(private val dsl: DSLContext) : MemberBadgePersistencePort {
+    override fun findCohortIdsForMembers(memberIds: Set<Long>): Set<Long> =
+        if (memberIds.isEmpty()) {
+            emptySet()
+        } else {
+            dsl.selectDistinct(MEMBER_BADGE_MEMBERSHIPS.COHORT_ID).from(MEMBER_BADGE_MEMBERSHIPS)
+                .where(MEMBER_BADGE_MEMBERSHIPS.MEMBER_ID.`in`(memberIds))
+                .fetch(MEMBER_BADGE_MEMBERSHIPS.COHORT_ID).filterNotNull().toSet()
+        }
+
     override fun findStates(cohortId: Long): List<MemberBadgeState> =
         dsl.selectFrom(MEMBER_BADGE_STATES).where(MEMBER_BADGE_STATES.COHORT_ID.eq(cohortId))
             .orderBy(MEMBER_BADGE_STATES.CARD).fetch().map(::state)

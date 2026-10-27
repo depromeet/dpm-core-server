@@ -84,6 +84,7 @@ import java.util.concurrent.TimeUnit
     MemberMergeRepository::class, MemberAccountRepository::class, RefreshTokenRepository::class,
     MemberMergeService::class,
     MemberProfileService::class, MemberProfileRepository::class,
+    core.application.member.application.service.MemberPurgeService::class,
     MemberDeletionService::class, MemberApprovalService::class, MemberManagementCommandService::class, BadgeFixtureWriter::class,
 )
 class MemberBadgeMySqlIntegrationTest {
@@ -112,6 +113,8 @@ class MemberBadgeMySqlIntegrationTest {
     @Autowired lateinit var merge: MemberMergeService
 
     @Autowired lateinit var deletion: MemberDeletionService
+
+    @Autowired lateinit var purge: core.application.member.application.service.MemberPurgeService
 
     @Autowired lateinit var approvals: MemberApprovalService
 
@@ -151,6 +154,99 @@ class MemberBadgeMySqlIntegrationTest {
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
         `when`(memberQueries.getMemberIdsByCohortId(CohortId(19))).thenReturn(listOf(MemberId(1), MemberId(2), MemberId(3)))
         core.it.member.MemberActivityFixtures.seed(jdbc)
+    }
+
+    @ParameterizedTest
+    @CsvSource("single", "bulk", "purge")
+    fun `출석 수정과 영구 삭제가 겹쳐도 배지 잠금 역전 없이 모두 커밋한다`(operation: String) {
+        jdbc.update("update members set status = 'ACTIVE'")
+        MemberActivityFixtures.seed(jdbc)
+        jdbc.update("insert into roles (role_id, name) values (4, 'MASTER')")
+        jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (3, 4, null, now(6))")
+        repeat(3) {
+            sessions.createSession(SessionCreateCommand(Instant.parse("2026-11-01T03:00:00Z").plusSeconds(it * 86400L), it + 1, "온라인", "테스트 세션", true))
+        }
+        val sessionIds = jdbc.queryForList("select session_id from sessions order by session_id", Long::class.java)
+        sessionIds.forEach {
+            attendance.updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(it), MemberId(1), AttendanceStatus.ABSENT))
+        }
+        assertThat(jdbc.queryForObject("select count(*) from member_badge_memberships where card='AT_RISK' and member_id=1", Int::class.java)).isOne()
+        jdbc.update("insert into member_badge_states (cohort_id, card, version, acknowledged_version, target_count, initialized) values (18, 'PENDING', 5, 3, 2, true)")
+        jdbc.update("insert into member_badge_memberships (cohort_id, card, member_id) values (18, 'PENDING', 1), (18, 'PENDING', 3)")
+        val updated = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val connection = java.util.concurrent.atomic.AtomicLong()
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val changing =
+                pool.submit(
+                    Callable {
+                        rc().executeWithoutResult {
+                            sessionIds.forEach {
+                                attendance.updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(it), MemberId(1), AttendanceStatus.PRESENT))
+                            }
+                            connection.set(jdbc.queryForObject("select connection_id()", Long::class.java)!!)
+                            updated.countDown()
+                            check(release.await(15, TimeUnit.SECONDS))
+                        }
+                    },
+                )
+            check(updated.await(10, TimeUnit.SECONDS))
+            val deleting =
+                pool.submit(
+                    Callable {
+                        when (operation) {
+                            "single" -> deletion.delete(listOf(1), 3)
+                            "bulk" -> deletion.delete(listOf(1, 2), 3)
+                            else -> purge.purge(1, 3)
+                        }
+                    },
+                )
+            awaitAttendanceLockWait(connection.get())
+            release.countDown()
+            changing.get(15, TimeUnit.SECONDS)
+            deleting.get(15, TimeUnit.SECONDS)
+        } finally {
+            release.countDown()
+            pool.shutdownNow()
+        }
+        assertThat(jdbc.queryForObject("select count(*) from members where member_id=1", Int::class.java)).isZero()
+        assertThat(jdbc.queryForObject("select count(*) from attendances where member_id=1", Int::class.java)).isZero()
+        assertThat(jdbc.queryForObject("select count(*) from member_badge_memberships where member_id=1", Int::class.java)).isZero()
+        assertThat(jdbc.queryForObject("select target_count from member_badge_states where cohort_id=18 and card='PENDING'", Int::class.java)).isOne()
+        assertThat(jdbc.queryForObject("select version from member_badge_states where cohort_id=18 and card='PENDING'", Long::class.java)).isEqualTo(5)
+        assertThat(jdbc.queryForObject("select count(*) from member_badge_memberships where cohort_id=18 and member_id=3", Int::class.java)).isOne()
+        if (operation == "bulk") assertThat(jdbc.queryForObject("select count(*) from members where member_id=2", Int::class.java)).isZero()
+    }
+
+    @Test
+    fun `삭제 후 배지 정리 실패는 일괄 삭제 전체를 롤백한다`() {
+        jdbc.update("update members set status='ACTIVE'")
+        MemberActivityFixtures.seed(jdbc)
+        badges.getBadges()
+        jdbc.execute("create trigger member699_fail_badge before update on member_badge_states for each row signal sqlstate '45000' set message_text = 'purge rollback test'")
+        try {
+            assertThatThrownBy { deletion.delete(listOf(1, 2), 3) }.isInstanceOf(RuntimeException::class.java)
+            assertThat(jdbc.queryForObject("select count(*) from members where member_id in (1,2)", Int::class.java)).isEqualTo(2)
+            assertThat(jdbc.queryForObject("select count(*) from member_cohorts where member_id in (1,2)", Int::class.java)).isEqualTo(2)
+        } finally {
+            jdbc.execute("drop trigger member699_fail_badge")
+        }
+    }
+
+    @Test
+    fun `활성 기수가 없어도 소프트 삭제 회원의 영구 삭제는 과거 배지를 정리한다`() {
+        jdbc.update("update members set status='WITHDRAWN', deleted_at=now(6) where member_id=1")
+        jdbc.update("insert into roles (role_id, name) values (4, 'MASTER')")
+        jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (3, 4, null, now(6))")
+        jdbc.update("insert into member_badge_states (cohort_id, card, version, acknowledged_version, target_count, initialized) values (18, 'PENDING', 5, 3, 1, true)")
+        jdbc.update("insert into member_badge_memberships (cohort_id, card, member_id) values (18, 'PENDING', 1)")
+        jdbc.update("delete from member_cohorts where member_id=3")
+        jdbc.update("update cohorts set is_active=false")
+        purge.purge(1, 3)
+        assertThat(jdbc.queryForObject("select count(*) from member_badge_memberships where member_id=1", Int::class.java)).isZero()
+        assertThat(jdbc.queryForMap("select target_count, acknowledged_version from member_badge_states where cohort_id=18 and card='PENDING'"))
+            .containsEntry("target_count", 0).containsEntry("acknowledged_version", 5L)
     }
 
     @Test
@@ -565,6 +661,24 @@ class MemberBadgeMySqlIntegrationTest {
         assertThat(type.getMethod("isActive").invoke(loaded)).isEqualTo(true)
         assertThat(type.getMethod("getMemberCohorts").invoke(loaded) as Collection<*>).hasSize(3)
         assertThat(type.getMethod("getTeams").invoke(loaded) as Collection<*>).hasSize(1)
+    }
+
+    private fun awaitAttendanceLockWait(connectionId: Long) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+        while (System.nanoTime() < deadline) {
+            val waits =
+                jdbc.queryForObject(
+                    "select count(*) from performance_schema.data_lock_waits w " +
+                        "join performance_schema.threads t on t.thread_id=w.blocking_thread_id " +
+                        "join performance_schema.data_locks l on l.engine_lock_id=w.requesting_engine_lock_id and l.engine=w.engine " +
+                        "where t.processlist_id=? and l.object_schema=database() and l.object_name='attendances'",
+                    Long::class.java,
+                    connectionId,
+                )!!
+            if (waits > 0) return
+            CountDownLatch(1).await(20, TimeUnit.MILLISECONDS)
+        }
+        error("Member deletion did not wait for attendance row lock")
     }
 
     private fun awaitCohortLockWait(connectionId: Long) {

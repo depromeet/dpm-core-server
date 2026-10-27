@@ -600,9 +600,9 @@ class MemberRepository(
 
     override fun hardDeleteById(memberId: MemberId): List<String> {
         val value = memberId.value
-        listOf("member_badge_memberships", "session_feedback_push_receipts").forEach { table ->
-            dsl.deleteFrom(DSL.table(table)).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
-        }
+        // Badge memberships are reconciled after all business writes by MemberBadgeTransactionTracker.
+        dsl.deleteFrom(DSL.table("session_feedback_push_receipts"))
+            .where(DSL.field("member_id", Long::class.java).eq(value)).execute()
 
         dsl.deleteFrom(
             DSL.table("member_oauth_link_requests"),
