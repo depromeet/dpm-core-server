@@ -4,6 +4,7 @@ import core.application.afterParty.application.exception.AfterPartyNotFoundExcep
 import core.application.afterParty.application.exception.InviteTagNameNotFoundException
 import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.service.MemberWriteGuard
 import core.application.member.application.service.access.MemberAccessService
 import core.domain.afterParty.aggregate.AfterParty
 import core.domain.afterParty.aggregate.AfterPartyInviteTag
@@ -38,6 +39,7 @@ import java.time.Instant
 @Service
 @Transactional
 class AfterPartyCommandService(
+    private val memberWriteGuard: MemberWriteGuard,
     val afterPartyPersistencePort: AfterPartyPersistencePort,
     val afterPartyQueryUseCase: AfterPartyQueryUseCase,
     val afterPartyInviteeCommandUseCase: AfterPartyInviteeCommandUseCase,
@@ -170,6 +172,7 @@ class AfterPartyCommandService(
         inviteTagSpecs: List<InviteTagSpec>,
         authorMemberId: MemberId,
     ) {
+        memberWriteGuard.lockAvailable(listOf(authorMemberId.value))
         val authorMember: Member = memberQueryUseCase.getMemberById(authorMemberId)
 
         val createdAfterParty: AfterParty =
@@ -322,13 +325,14 @@ class AfterPartyCommandService(
         return "${latestCohort.value}기 ${roleLabel(roleType)}"
     }
 
-    private fun roleLabel(roleType: RoleType): String = when (roleType) {
-        RoleType.Organizer -> "운영진"
-        RoleType.Deeper -> "디퍼"
-        RoleType.Core -> "코어"
-        RoleType.Master -> "마스터"
-        RoleType.Guest -> "게스트"
-    }
+    private fun roleLabel(roleType: RoleType): String =
+        when (roleType) {
+            RoleType.Organizer -> "운영진"
+            RoleType.Deeper -> "디퍼"
+            RoleType.Core -> "코어"
+            RoleType.Master -> "마스터"
+            RoleType.Guest -> "게스트"
+        }
 
     private fun legacyAuthorityIdForInviteTag(roleType: RoleType): Long? =
         when (roleType) {

@@ -4,6 +4,7 @@ import core.application.announcement.application.exception.AnnouncementNotFoundE
 import core.application.announcement.application.exception.AnnouncementTypeCannotBeChangedException
 import core.application.announcement.application.exception.AssignmentSubmitTypeNotNullException
 import core.application.announcement.application.exception.NotAnAssignmentException
+import core.application.member.application.service.MemberWriteGuard
 import core.domain.announcement.aggregate.Announcement
 import core.domain.announcement.aggregate.AnnouncementAssignment
 import core.domain.announcement.aggregate.AnnouncementRead
@@ -41,6 +42,7 @@ import java.time.Instant
 @Service
 @Transactional
 class AnnouncementCommandService(
+    private val memberWriteGuard: MemberWriteGuard,
     val announcementPersistencePort: AnnouncementPersistencePort,
     val announcementAssignmentCommandUseCase: AnnouncementAssignmentCommandUseCase,
     val assignmentPersistencePort: AssignmentPersistencePort,
@@ -70,6 +72,7 @@ class AnnouncementCommandService(
 //            scheduledAt: Instant?
 
 //        announcement 작성
+        memberWriteGuard.lockAvailable(listOf(authorId.value))
         val activeCohortId: CohortId = cohortQueryUseCase.getActiveCohortId()
         val announcement =
             Announcement.create(

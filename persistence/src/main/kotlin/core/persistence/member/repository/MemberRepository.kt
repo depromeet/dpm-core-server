@@ -592,8 +592,21 @@ class MemberRepository(
             .execute()
     }
 
+    override fun ownsSharedRecords(memberId: Long): Boolean =
+        dsl.fetchExists(DSL.selectOne().from(ANNOUNCEMENTS).where(ANNOUNCEMENTS.AUTHOR_ID.eq(memberId))) ||
+            dsl.fetchExists(DSL.selectOne().from(AFTER_PARTY).where(AFTER_PARTY.MEMBER_ID.eq(memberId))) ||
+            dsl.fetchExists(DSL.selectOne().from(BILLS).where(BILLS.HOST_USER_ID.eq(memberId))) ||
+            dsl.fetchExists(DSL.selectOne().from(GATHERINGS).where(GATHERINGS.HOST_USER_ID.eq(memberId)))
+
     override fun hardDeleteById(memberId: MemberId): List<String> {
         val value = memberId.value
+        listOf("member_badge_memberships", "session_feedback_push_receipts").forEach { table ->
+            dsl.deleteFrom(DSL.table(table)).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
+        }
+
+        dsl.deleteFrom(
+            DSL.table("member_oauth_link_requests"),
+        ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()
         dsl.deleteFrom(
             DSL.table("member_cohort_activities"),
         ).where(DSL.field("member_id", Long::class.java).eq(value)).execute()

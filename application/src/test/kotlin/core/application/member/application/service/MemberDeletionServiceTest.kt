@@ -6,6 +6,7 @@ import core.application.member.application.exception.MemberNotFoundException
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
+import core.domain.member.vo.MemberId
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -13,10 +14,12 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
+import org.springframework.context.ApplicationEventPublisher
 
 class MemberDeletionServiceTest {
     private val members = mock(MemberPersistencePort::class.java)
-    private val service = MemberDeletionService(members)
+    private val events = mock(ApplicationEventPublisher::class.java)
+    private val service = MemberDeletionService(members, events)
 
     @Test
     fun `본인 계정이 포함되면 단건과 일괄 모두 조회 전에 거절한다`() {
@@ -52,13 +55,35 @@ class MemberDeletionServiceTest {
     }
 
     @Test
-    fun `기수와 관계없이 미삭제 상태를 잠근 뒤 상태와 삭제시각만 변경한다`() {
-        val statuses = MemberStatus.entries.filter { it != MemberStatus.WITHDRAWN }
-        val ids = statuses.indices.map { it.toLong() + 1 }
+    fun `미승인과 반려는 소프트 삭제하고 승인 회원은 영구 삭제한다`() {
+        val statuses = listOf(MemberStatus.PENDING, MemberStatus.REJECTED, MemberStatus.ACTIVE, MemberStatus.INACTIVE)
+        val ids = listOf(1L, 2L, 3L, 4L)
         `when`(members.lockApprovalTargets(ids)).thenReturn(statuses.mapIndexed { index, status -> MemberApprovalTarget(index.toLong() + 1, status, emptySet()) })
+        `when`(members.hardDeleteById(MemberId(3))).thenReturn(emptyList())
+        `when`(members.hardDeleteById(MemberId(4))).thenReturn(emptyList())
         service.delete(ids.reversed(), 99)
-        verify(members).lockApprovalTargets(ids)
-        verify(members).softDeleteMembers(ids)
+        verify(members).softDeleteMembers(listOf(1, 2))
+        verify(members).hardDeleteById(MemberId(3))
+        verify(members).hardDeleteById(MemberId(4))
+        verify(events).publishEvent(MemberPurgedEvent(3, emptyList()))
+        verify(events).publishEvent(MemberPurgedEvent(4, emptyList()))
+    }
+
+    @Test
+    fun `공유 기록 소유자가 포함되면 미승인 삭제도 시작하지 않는다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(
+            listOf(
+                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()),
+                MemberApprovalTarget(2, MemberStatus.ACTIVE, emptySet()),
+            ),
+        )
+        `when`(members.ownsSharedRecords(2)).thenReturn(true)
+        assertThatThrownBy { service.delete(listOf(1, 2), 99) }
+            .isInstanceOf(BusinessException::class.java)
+            .hasMessage(MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
+        verify(members).lockApprovalTargets(listOf(1, 2))
+        verify(members).ownsSharedRecords(2)
         verifyNoMoreInteractions(members)
+        verifyNoInteractions(events)
     }
 }
