@@ -12,7 +12,6 @@ class AttendanceGraduationEvaluatorTest {
 
     @Test
     fun `수료 판정 경계`() {
-        // 세션 수가 넉넉한 경우(40)는 횟수 기준만, 적은 경우는 80% 달성 가능 여부를 본다.
         val cases =
             listOf(
                 // 세션 0개, 모두 미인증(집계 0)
@@ -25,18 +24,28 @@ class AttendanceGraduationEvaluatorTest {
                 Case(sessions = 40, online = 2, late = 2) to AT_RISK,
                 // 인정 결석은 출석으로 본다
                 Case(sessions = 40, excused = 10) to NORMAL,
-                // 환산 4회까지 수료 가능(위험), 4.5회부터 불가. 세션이 많아 80% 조건과 무관해도 마찬가지
-                Case(sessions = 40, online = 4) to AT_RISK,
+                // 전체 환산 결석은 3.5회까지 위험, 4회부터 불가
+                Case(sessions = 40, online = 3, late = 1) to AT_RISK,
+                Case(sessions = 40, online = 4) to IMPOSSIBLE,
+                Case(sessions = 40, late = 8) to IMPOSSIBLE,
                 Case(sessions = 40, online = 4, late = 1) to IMPOSSIBLE,
                 Case(sessions = 40, late = 9) to IMPOSSIBLE,
-                // 오프라인 실제 결석 2회는 위험, 3회는 불가. 지각은 오프라인 결석으로 세지 않는다
+                // 오프라인 환산 결석 2.5회는 위험, 3회부터 불가
                 Case(sessions = 40, offline = 1, online = 1) to NORMAL,
                 Case(sessions = 40, offline = 2) to AT_RISK,
                 Case(sessions = 40, offline = 3) to IMPOSSIBLE,
-                // 80%: 남은 세션을 모두 출석했을 때 (N - 환산 결석) / N
-                Case(sessions = 20, online = 4) to AT_RISK,
+                Case(sessions = 40, offline = 2, late = 1, offlineLate = 1) to AT_RISK,
+                Case(sessions = 40, offline = 2, late = 2, offlineLate = 2) to IMPOSSIBLE,
+                Case(sessions = 40, late = 5, offlineLate = 5) to AT_RISK,
+                Case(sessions = 40, late = 6, offlineLate = 6) to IMPOSSIBLE,
+                // 온라인 지각은 오프라인 환산 결석에 더하지 않는다
+                Case(sessions = 40, offline = 2, late = 2) to AT_RISK,
+                // 출석률은 판정하지 않는다. 남은 세션 수도 판정을 바꾸지 않는다
+                Case(sessions = 20, online = 4) to IMPOSSIBLE,
                 Case(sessions = 5, online = 1) to NORMAL,
-                Case(sessions = 5, online = 1, late = 1) to IMPOSSIBLE,
+                Case(sessions = 5, online = 1, late = 1) to NORMAL,
+                Case(sessions = 2, online = 2) to NORMAL,
+                Case(sessions = 40, online = 2) to NORMAL,
             )
 
         cases.forEach { (case, expected) ->
@@ -47,6 +56,7 @@ class AttendanceGraduationEvaluatorTest {
     private data class Case(
         val sessions: Int,
         val late: Int = 0,
+        val offlineLate: Int = 0,
         val excused: Int = 0,
         val online: Int = 0,
         val offline: Int = 0,
@@ -59,6 +69,7 @@ class AttendanceGraduationEvaluatorTest {
                 excusedAbsentCount = excused,
                 onlineAbsentCount = online,
                 offlineAbsentCount = offline,
+                offlineLateCount = offlineLate,
             )
     }
 }
