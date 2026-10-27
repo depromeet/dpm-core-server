@@ -5,6 +5,7 @@ package core.domain.attendance.port.outbound.query
  *
  * @property totalSessionCount 기수의 삭제되지 않은 전체 세션 수(아직 열리지 않은 세션 포함)
  * @property offlineAbsentCount 오프라인 세션의 실제 결석 수(지각 제외)
+ * @property offlineLateCount 전체 지각 중 오프라인 세션에서 발생한 지각 수
  */
 data class AttendanceSummaryQueryModel(
     val totalSessionCount: Int,
@@ -13,6 +14,7 @@ data class AttendanceSummaryQueryModel(
     val excusedAbsentCount: Int,
     val onlineAbsentCount: Int,
     val offlineAbsentCount: Int,
+    val offlineLateCount: Int = 0,
 ) {
     val absentCount: Int
         get() = onlineAbsentCount + offlineAbsentCount

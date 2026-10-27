@@ -522,6 +522,9 @@ class AttendanceRepository(
             SESSIONS.COHORT_ID.`as`(SUMMARY_COHORT_ID),
             countWhen(ATTENDANCES.STATUS.eq(AttendanceStatus.PRESENT.name)).`as`(PRESENT_COUNT),
             countWhen(ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name)).`as`(LATE_COUNT),
+            countWhen(
+                ATTENDANCES.STATUS.eq(AttendanceStatus.LATE.name).and(SESSIONS.IS_ONLINE.eq(false)),
+            ).`as`(OFFLINE_LATE_COUNT),
             countWhen(ATTENDANCES.STATUS.eq(AttendanceStatus.EXCUSED_ABSENT.name)).`as`(EXCUSED_ABSENT_COUNT),
             countWhen(
                 ATTENDANCES.STATUS.eq(AttendanceStatus.ABSENT.name).and(SESSIONS.IS_ONLINE.eq(true)),
@@ -540,6 +543,7 @@ class AttendanceRepository(
     private val summaryCohortId = attendanceSummary.field(SUMMARY_COHORT_ID, Long::class.javaObjectType)!!
     private val summaryPresentCount = attendanceSummary.field(PRESENT_COUNT, Int::class.javaObjectType)!!
     private val summaryLateCount = attendanceSummary.field(LATE_COUNT, Int::class.javaObjectType)!!
+    private val summaryOfflineLateCount = attendanceSummary.field(OFFLINE_LATE_COUNT, Int::class.javaObjectType)!!
     private val summaryExcusedAbsentCount = attendanceSummary.field(EXCUSED_ABSENT_COUNT, Int::class.javaObjectType)!!
     private val summaryOnlineAbsentCount = attendanceSummary.field(ONLINE_ABSENT_COUNT, Int::class.javaObjectType)!!
     private val summaryOfflineAbsentCount = attendanceSummary.field(OFFLINE_ABSENT_COUNT, Int::class.javaObjectType)!!
@@ -547,6 +551,7 @@ class AttendanceRepository(
         listOf(
             summaryPresentCount,
             summaryLateCount,
+            summaryOfflineLateCount,
             summaryExcusedAbsentCount,
             summaryOnlineAbsentCount,
             summaryOfflineAbsentCount,
@@ -573,6 +578,7 @@ class AttendanceRepository(
             excusedAbsentCount = this[summaryExcusedAbsentCount] ?: 0,
             onlineAbsentCount = this[summaryOnlineAbsentCount] ?: 0,
             offlineAbsentCount = this[summaryOfflineAbsentCount] ?: 0,
+            offlineLateCount = this[summaryOfflineLateCount] ?: 0,
         )
 
     /** 그 기수에서 멤버의 가장 최근 배정(member_team_id 최대) 팀 번호. 없으면 null. 같은 기수의 이전 팀은 보지 않는다. */
@@ -592,6 +598,7 @@ class AttendanceRepository(
 
     companion object {
         private const val LATE_COUNT = "late_count"
+        private const val OFFLINE_LATE_COUNT = "offline_late_count"
         private const val ONLINE_ABSENT_COUNT = "online_absent_count"
         private const val OFFLINE_ABSENT_COUNT = "offline_absent_count"
         private const val PRESENT_COUNT = "present_count"
