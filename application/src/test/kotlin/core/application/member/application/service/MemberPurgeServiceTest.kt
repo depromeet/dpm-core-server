@@ -3,14 +3,17 @@ package core.application.member.application.service
 import core.application.common.exception.BusinessException
 import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.exception.MemberSharedRecordsException
 import core.application.member.application.service.access.MemberAccessService
 import core.domain.authorization.vo.RoleType
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.MemberId
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
@@ -64,7 +67,7 @@ class MemberPurgeServiceTest {
         `when`(members.hardDeleteById(MemberId(1))).thenReturn(listOf("images/a"))
         service.purge(1, 99)
         verify(members).lockApprovalTargets(listOf(1))
-        verify(members).ownsSharedRecords(1)
+        verify(members).findSharedRecordOwnerIds(listOf(1))
         verify(members).hardDeleteById(MemberId(1))
         verifyNoMoreInteractions(members)
         verify(events).publishEvent(MemberPurgedEvent(1, listOf("images/a")))
@@ -74,11 +77,11 @@ class MemberPurgeServiceTest {
     fun `MASTER도 공유 기록 소유자를 영구 삭제할 수 없다`() {
         `when`(access.getRoleType(MemberId(99))).thenReturn(RoleType.Master)
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, emptySet())))
-        `when`(members.ownsSharedRecords(1)).thenReturn(true)
-        assertThatThrownBy { service.purge(1, 99) }
-            .hasMessage(MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
+        `when`(members.findSharedRecordOwnerIds(listOf(1))).thenReturn(listOf(1L))
+        val exception = assertThrows<MemberSharedRecordsException> { service.purge(1, 99) }
+        assertThat(exception.blockedMemberIds).containsExactly(1)
         verify(members).lockApprovalTargets(listOf(1))
-        verify(members).ownsSharedRecords(1)
+        verify(members).findSharedRecordOwnerIds(listOf(1))
         verifyNoMoreInteractions(members)
         verifyNoInteractions(events)
     }

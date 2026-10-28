@@ -23,8 +23,8 @@ interface MemberPersistencePort {
     /** 삭제 트랜잭션에서 이미 잠그고 검증한 회원의 상태와 삭제 시각만 변경한다. */
     fun softDeleteMembers(memberIds: List<Long>)
 
-    /** 회원 행을 잠근 뒤 작성/주최한 공유 기록을 확인한다. */
-    fun ownsSharedRecords(memberId: Long): Boolean
+    /** 회원 행을 잠근 뒤 대상 중 공유 기록 소유자 ID를 중복 없이 오름차순으로 조회한다. */
+    fun findSharedRecordOwnerIds(memberIds: List<Long>): List<Long>
 
     /** 토큰 인증 및 재발급에서 현재 삭제/탈퇴 여부를 확인한다. */
     fun isLoginAvailable(memberId: Long): Boolean
