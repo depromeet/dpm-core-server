@@ -4,6 +4,7 @@ import core.application.common.exception.BusinessException
 import core.application.common.exception.GlobalExceptionCode
 import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.exception.MemberSharedRecordsException
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -40,8 +41,9 @@ class MemberDeletionService(
             targets.filter {
                 it.status == MemberStatus.ACTIVE || it.status == MemberStatus.INACTIVE
             }.map { it.memberId }
-        if (approvedIds.any { members.ownsSharedRecords(it) }) {
-            throw BusinessException(MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST)
+        val blockedMemberIds = members.findSharedRecordOwnerIds(approvedIds)
+        if (blockedMemberIds.isNotEmpty()) {
+            throw MemberSharedRecordsException(blockedMemberIds)
         }
         val pendingIds = ids - approvedIds.toSet()
         if (pendingIds.isNotEmpty()) members.softDeleteMembers(pendingIds)
