@@ -6,10 +6,13 @@ import core.application.common.exception.GlobalExceptionHandler
 import core.application.member.application.service.MemberAdmissionService
 import core.application.member.application.service.MemberBadgeService
 import core.application.member.application.service.MemberDeletionService
+import core.application.member.application.service.MemberPurgeService
+import core.application.member.application.service.access.MemberAccessService
 import core.application.member.presentation.response.MemberBadgeCard
 import core.application.member.presentation.response.MemberBadgeResponse
 import core.application.member.presentation.response.MemberBadgesResponse
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
+import core.domain.authorization.vo.RoleType
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
@@ -71,6 +74,8 @@ class MemberManagementContractControllerTest {
 
     @Autowired lateinit var members: MemberPersistencePort
 
+    @Autowired lateinit var access: MemberAccessService
+
     private lateinit var mvc: MockMvc
 
     @BeforeEach
@@ -78,7 +83,7 @@ class MemberManagementContractControllerTest {
         reset(admissionService, badgeService)
         `when`(badgeService.getBadges()).thenReturn(MemberBadgesResponse(19, listOf(MemberBadgeResponse(MemberBadgeCard.PENDING, true, 3))))
         `when`(badgeService.acknowledge(MemberBadgeCard.PENDING, 19, 3)).thenReturn(MemberBadgeResponse(MemberBadgeCard.PENDING, false, 3))
-        reset(members)
+        reset(members, access)
         `when`(members.hardDeleteById(MemberId(1))).thenReturn(emptyList())
         `when`(members.hardDeleteById(MemberId(2))).thenReturn(emptyList())
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19))))
@@ -188,6 +193,7 @@ class MemberManagementContractControllerTest {
                 "/v3/members/me/reapplication" to "post",
                 "/v3/members/{memberId}" to "delete",
                 "/v3/members/bulk" to "delete",
+                "/v3/members/{memberId}/purge" to "delete",
                 "/v3/members/badges" to "get",
                 "/v3/members/badges/{card}/acknowledgement" to "post",
             )
@@ -195,6 +201,12 @@ class MemberManagementContractControllerTest {
             val operation = document["paths"][path][method]
             assertFalse(operation["responses"].has("501"), path)
             assertTrue(operation["responses"].has("200"), path)
+        }
+        listOf("/v3/members/{memberId}", "/v3/members/bulk", "/v3/members/{memberId}/purge").forEach { path ->
+            val content = document["paths"][path]["delete"]["responses"]["409"]["content"]["application/json"]
+            val example = content["example"]
+            assertEquals("MEMBER-409-72", example["code"].asText())
+            assertTrue(example["data"]["blockedMemberIds"].isArray)
         }
         assertFalse(document["security"].isEmpty)
         val schemas = document["components"]["schemas"]
@@ -223,9 +235,49 @@ class MemberManagementContractControllerTest {
 
     @Test
     fun `공유 기록 소유자 삭제는 409 오류 계약을 반환한다`() {
-        `when`(members.ownsSharedRecords(1)).thenReturn(true)
+        `when`(members.findSharedRecordOwnerIds(listOf(1))).thenReturn(listOf(1L))
         mvc.perform(authenticated(delete("/v3/members/1"), "delete:member", actorMemberId = 3))
             .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-72"))
+            .andExpect(jsonPath("$.data.blockedMemberIds.length()").value(1))
+            .andExpect(jsonPath("$.data.blockedMemberIds[0]").value(1))
+    }
+
+    @Test
+    fun `일괄 삭제 409는 모든 차단 ID만 반환한다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 2, 4))).thenReturn(
+            listOf(1L, 2L, 4L).map { MemberApprovalTarget(it, MemberStatus.ACTIVE, setOf(19)) },
+        )
+        `when`(members.findSharedRecordOwnerIds(listOf(1, 2, 4))).thenReturn(listOf(1, 4))
+        mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":[4,2,1]}"""), "delete:member", actorMemberId = 3))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.code").value("MEMBER-409-72"))
+            .andExpect(jsonPath("$.data.blockedMemberIds.length()").value(2))
+            .andExpect(jsonPath("$.data.blockedMemberIds[0]").value(1))
+            .andExpect(jsonPath("$.data.blockedMemberIds[1]").value(4))
+            .andExpect(jsonPath("$.data.name").doesNotExist())
+            .andExpect(jsonPath("$.data.email").doesNotExist())
+    }
+
+    @Test
+    fun `MASTER 영구 삭제도 같은 차단 ID 응답을 사용한다`() {
+        `when`(access.getRoleType(MemberId(3))).thenReturn(RoleType.Master)
+        `when`(members.findSharedRecordOwnerIds(listOf(1))).thenReturn(listOf(1L))
+        mvc.perform(authenticated(delete("/v3/members/1/purge"), "delete:member", actorMemberId = 3))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.code").value("MEMBER-409-72"))
+            .andExpect(jsonPath("$.data.blockedMemberIds.length()").value(1))
+            .andExpect(jsonPath("$.data.blockedMemberIds[0]").value(1))
+    }
+
+    @Test
+    fun `삭제 권한이 없거나 대상이 없으면 차단 ID를 노출하지 않는다`() {
+        mvc.perform(authenticated(delete("/v3/members/1"), actorMemberId = 3))
+            .andExpect(status().isForbidden).andExpect(jsonPath("$.data").doesNotExist())
+        verifyNoInteractions(members)
+        mvc.perform(authenticated(delete("/v3/members/999"), "delete:member", actorMemberId = 3))
+            .andExpect(status().isNotFound).andExpect(jsonPath("$.data").doesNotExist())
+        verify(members).lockApprovalTargets(listOf(999))
+        org.mockito.Mockito.verifyNoMoreInteractions(members)
     }
 
     @Test
@@ -281,6 +333,8 @@ class MemberManagementContractControllerTest {
         MemberAdmissionController::class,
         MemberDeletionController::class,
         MemberDeletionService::class,
+        MemberPurgeController::class,
+        MemberPurgeService::class,
         MemberBadgeController::class,
         GlobalExceptionHandler::class,
         SwaggerConfig::class,
@@ -299,6 +353,8 @@ class MemberManagementContractControllerTest {
         fun admissionService(): MemberAdmissionService = mock(MemberAdmissionService::class.java)
 
         @Bean fun members(): MemberPersistencePort = mock(MemberPersistencePort::class.java)
+
+        @Bean fun access(): MemberAccessService = mock(MemberAccessService::class.java)
 
         override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
             resolvers.add(CurrentMemberIdArgumentResolver())

@@ -4,6 +4,8 @@ import core.application.common.exception.CustomResponse
 import core.application.member.presentation.request.MemberBulkDeleteRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -22,7 +24,16 @@ interface MemberDeletionApi {
         ApiResponse(responseCode = "200", description = "삭제 완료", useReturnTypeSchema = true),
         ApiResponse(responseCode = "400", description = "잘못된 멤버 ID"),
         ApiResponse(responseCode = "403", description = "삭제 권한 없음 또는 본인 계정 삭제 요청"),
-        ApiResponse(responseCode = "409", description = "MEMBER-409-72: 공지·회식·정산·모임 소유자가 포함됨. 전체 취소"),
+        ApiResponse(
+            responseCode = "409",
+            description = "MEMBER-409-72: 공유 기록 소유자가 포함되어 전체 취소. data.blockedMemberIds는 요청 대상 중 삭제 불가 ID 전체(오름차순)",
+            content = [
+                Content(
+                    mediaType = "application/json",
+                    examples = [ExampleObject(value = MEMBER_DELETION_BLOCKED_SINGLE_EXAMPLE)],
+                ),
+            ],
+        ),
         ApiResponse(responseCode = "404", description = "멤버 없음"),
     )
     fun delete(
@@ -40,7 +51,16 @@ interface MemberDeletionApi {
         ApiResponse(responseCode = "200", description = "일괄 삭제 완료", useReturnTypeSchema = true),
         ApiResponse(responseCode = "400", description = "빈 목록, 중복, null, 0 이하 또는 잘못된 ID"),
         ApiResponse(responseCode = "403", description = "삭제 권한 없음 또는 본인 계정 삭제 요청"),
-        ApiResponse(responseCode = "409", description = "MEMBER-409-72: 공지·회식·정산·모임 소유자가 포함됨. 전체 취소"),
+        ApiResponse(
+            responseCode = "409",
+            description = "MEMBER-409-72: 공유 기록 소유자가 포함되어 전체 취소. data.blockedMemberIds는 요청 대상 중 삭제 불가 ID 전체(오름차순)",
+            content = [
+                Content(
+                    mediaType = "application/json",
+                    examples = [ExampleObject(value = MEMBER_DELETION_BLOCKED_EXAMPLE)],
+                ),
+            ],
+        ),
         ApiResponse(responseCode = "404", description = "대상 중 없는 멤버가 있음. 전체 취소"),
     )
     fun deleteBulk(
@@ -48,3 +68,11 @@ interface MemberDeletionApi {
         @Parameter(hidden = true) actorMemberId: Long,
     ): CustomResponse<Void>
 }
+
+internal const val MEMBER_DELETION_BLOCKED_EXAMPLE =
+    """{"status":"CONFLICT","message":"작성하거나 주최한 공지·회식·정산·모임이 있어 삭제할 수 없습니다",""" +
+        """"code":"MEMBER-409-72","data":{"blockedMemberIds":[12,34]}}"""
+
+internal const val MEMBER_DELETION_BLOCKED_SINGLE_EXAMPLE =
+    """{"status":"CONFLICT","message":"작성하거나 주최한 공지·회식·정산·모임이 있어 삭제할 수 없습니다",""" +
+        """"code":"MEMBER-409-72","data":{"blockedMemberIds":[12]}}"""

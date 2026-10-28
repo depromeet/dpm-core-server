@@ -2,6 +2,7 @@ package core.it.member
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.exception.MemberSharedRecordsException
 import core.application.member.application.service.MemberDeletionService
 import core.application.member.application.service.MemberLoginService
 import core.application.member.application.service.MemberManagementCommandService
@@ -47,6 +48,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
@@ -349,6 +351,19 @@ class MemberDeletionMySqlIntegrationTest {
             .hasMessage(core.application.member.application.exception.MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
         assertThat(snapshot()).isEqualTo(before)
         assertThat(memberRow(2)["deleted_at"]).isNull()
+    }
+
+    @Test
+    fun `여러 공유 기록 소유자를 중복 없이 모두 반환하고 전체 상태를 보존한다`() {
+        jdbc.update("update members set status = 'ACTIVE' where member_id in (1,2)")
+        jdbc.update("update after_party set member_id = 2")
+        val before = snapshot()
+        val exception = assertThrows<MemberSharedRecordsException> { deletion.delete(listOf(3, 2, 1), 99) }
+        assertThat(exception.blockedMemberIds).containsExactly(1, 2)
+        assertThat(snapshot()).isEqualTo(before)
+        assertThat(memberRow(3)["deleted_at"]).isNull()
+        assertThat(members.findSharedRecordOwnerIds(listOf(2, 2, 3))).containsExactly(2)
+        assertThat(members.findSharedRecordOwnerIds(emptyList())).isEmpty()
     }
 
     @Test

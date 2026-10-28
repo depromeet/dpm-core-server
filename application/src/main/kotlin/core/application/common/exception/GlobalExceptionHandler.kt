@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.databind.exc.InvalidNullException
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import core.application.image.application.exception.ImageVerificationBusyException
+import core.application.member.application.exception.MemberSharedRecordsException
+import core.application.member.presentation.response.MemberDeletionBlockedResponse
 import core.application.security.oauth.exception.InvalidAccessTokenException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletResponse
@@ -21,6 +23,22 @@ import org.springframework.web.servlet.resource.NoResourceFoundException
 @RestControllerAdvice
 class GlobalExceptionHandler {
     private val logger = KotlinLogging.logger { GlobalExceptionHandler::class.java }
+
+    @ExceptionHandler(MemberSharedRecordsException::class)
+    fun handleMemberSharedRecordsException(
+        exception: MemberSharedRecordsException,
+        response: HttpServletResponse,
+    ): CustomResponse<MemberDeletionBlockedResponse> {
+        val code = exception.getCode()
+        response.status = code.getStatus().value()
+        logger.error { "$code Exception ${code.getCode()}: ${code.getMessage()}" }
+        return CustomResponse(
+            code.getStatus(),
+            code.getMessage(),
+            code.getCode(),
+            MemberDeletionBlockedResponse(exception.blockedMemberIds),
+        )
+    }
 
     @ExceptionHandler(BusinessException::class)
     protected fun handleBusinessException(
