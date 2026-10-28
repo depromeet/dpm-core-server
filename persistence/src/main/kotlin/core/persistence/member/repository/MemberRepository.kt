@@ -617,11 +617,30 @@ class MemberRepository(
             .execute()
     }
 
-    override fun ownsSharedRecords(memberId: Long): Boolean =
-        dsl.fetchExists(DSL.selectOne().from(ANNOUNCEMENTS).where(ANNOUNCEMENTS.AUTHOR_ID.eq(memberId))) ||
-            dsl.fetchExists(DSL.selectOne().from(AFTER_PARTY).where(AFTER_PARTY.MEMBER_ID.eq(memberId))) ||
-            dsl.fetchExists(DSL.selectOne().from(BILLS).where(BILLS.HOST_USER_ID.eq(memberId))) ||
-            dsl.fetchExists(DSL.selectOne().from(GATHERINGS).where(GATHERINGS.HOST_USER_ID.eq(memberId)))
+    override fun findSharedRecordOwnerIds(memberIds: List<Long>): List<Long> {
+        if (memberIds.isEmpty()) return emptyList()
+        return dsl.select(MEMBERS.MEMBER_ID).from(MEMBERS)
+            .where(MEMBERS.MEMBER_ID.`in`(memberIds))
+            .and(
+                DSL.exists(
+                    DSL.selectOne().from(ANNOUNCEMENTS).where(ANNOUNCEMENTS.AUTHOR_ID.eq(MEMBERS.MEMBER_ID)),
+                )
+                    .or(
+                        DSL.exists(
+                            DSL.selectOne().from(AFTER_PARTY).where(AFTER_PARTY.MEMBER_ID.eq(MEMBERS.MEMBER_ID)),
+                        ),
+                    )
+                    .or(DSL.exists(DSL.selectOne().from(BILLS).where(BILLS.HOST_USER_ID.eq(MEMBERS.MEMBER_ID))))
+                    .or(
+                        DSL.exists(
+                            DSL.selectOne().from(GATHERINGS).where(GATHERINGS.HOST_USER_ID.eq(MEMBERS.MEMBER_ID)),
+                        ),
+                    ),
+            )
+            .orderBy(MEMBERS.MEMBER_ID.asc())
+            .fetch(MEMBERS.MEMBER_ID)
+            .filterNotNull()
+    }
 
     override fun hardDeleteById(memberId: MemberId): List<String> {
         val value = memberId.value

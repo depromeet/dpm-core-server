@@ -3,6 +3,8 @@ package core.application.member.presentation.controller
 import core.application.common.exception.CustomResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -21,7 +23,16 @@ interface MemberPurgeApi {
         ApiResponse(responseCode = "200", description = "영구 삭제 완료", useReturnTypeSchema = true),
         ApiResponse(responseCode = "400", description = "잘못된 멤버 ID"),
         ApiResponse(responseCode = "403", description = "MASTER가 아니거나 본인 계정 삭제 요청"),
-        ApiResponse(responseCode = "409", description = "MEMBER-409-72: 공지·회식·정산·모임 소유자는 삭제 불가"),
+        ApiResponse(
+            responseCode = "409",
+            description = "MEMBER-409-72: 공유 기록 소유자가 포함되어 전체 취소. data.blockedMemberIds는 요청 대상 중 삭제 불가 ID 전체(오름차순)",
+            content = [
+                Content(
+                    mediaType = "application/json",
+                    examples = [ExampleObject(value = MEMBER_DELETION_BLOCKED_SINGLE_EXAMPLE)],
+                ),
+            ],
+        ),
         ApiResponse(responseCode = "404", description = "멤버 없음"),
     )
     fun purge(

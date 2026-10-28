@@ -3,12 +3,15 @@ package core.application.member.application.service
 import core.application.common.exception.BusinessException
 import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.exception.MemberSharedRecordsException
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.MemberId
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
@@ -20,6 +23,25 @@ class MemberDeletionServiceTest {
     private val members = mock(MemberPersistencePort::class.java)
     private val events = mock(ApplicationEventPublisher::class.java)
     private val service = MemberDeletionService(members, events)
+
+    @Test
+    fun `차단된 승인 회원 ID 전체를 반환하고 어떤 회원도 변경하지 않는다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 2, 3, 4))).thenReturn(
+            listOf(
+                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()),
+                MemberApprovalTarget(2, MemberStatus.ACTIVE, emptySet()),
+                MemberApprovalTarget(3, MemberStatus.INACTIVE, emptySet()),
+                MemberApprovalTarget(4, MemberStatus.ACTIVE, emptySet()),
+            ),
+        )
+        `when`(members.findSharedRecordOwnerIds(listOf(2, 3, 4))).thenReturn(listOf(2, 4))
+        val exception = assertThrows<MemberSharedRecordsException> { service.delete(listOf(4, 1, 3, 2), 99) }
+        assertThat(exception.blockedMemberIds).containsExactly(2, 4)
+        verify(members).lockApprovalTargets(listOf(1, 2, 3, 4))
+        verify(members).findSharedRecordOwnerIds(listOf(2, 3, 4))
+        verifyNoMoreInteractions(members)
+        verifyNoInteractions(events)
+    }
 
     @Test
     fun `본인 계정이 포함되면 단건과 일괄 모두 조회 전에 거절한다`() {
@@ -77,12 +99,12 @@ class MemberDeletionServiceTest {
                 MemberApprovalTarget(2, MemberStatus.ACTIVE, emptySet()),
             ),
         )
-        `when`(members.ownsSharedRecords(2)).thenReturn(true)
+        `when`(members.findSharedRecordOwnerIds(listOf(2))).thenReturn(listOf(2L))
         assertThatThrownBy { service.delete(listOf(1, 2), 99) }
             .isInstanceOf(BusinessException::class.java)
             .hasMessage(MemberExceptionCode.MEMBER_SHARED_RECORDS_EXIST.message)
         verify(members).lockApprovalTargets(listOf(1, 2))
-        verify(members).ownsSharedRecords(2)
+        verify(members).findSharedRecordOwnerIds(listOf(2))
         verifyNoMoreInteractions(members)
         verifyNoInteractions(events)
     }
