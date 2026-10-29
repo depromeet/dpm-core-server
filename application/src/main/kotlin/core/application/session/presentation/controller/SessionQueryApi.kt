@@ -107,7 +107,10 @@ interface SessionQueryApi {
 
     @Operation(
         summary = "기수 모든 세션 조회",
-        description = "기수에 속한 모든 세션을 조회합니다.",
+        description =
+            "현재 활성 기수의 모든 세션을 조회합니다. read:session 권한이 필요합니다. " +
+                "기수 종료·활동 정지 등으로 해당 권한이 없는 회원과 비로그인 사용자는 조회할 수 없습니다. " +
+                "기수 종료 안내는 GET /v1/sessions/next를 사용합니다.",
     )
     @ApiResponses(
         value = [
@@ -159,6 +162,8 @@ interface SessionQueryApi {
                     ),
                 ],
             ),
+            ApiResponse(responseCode = "401", description = "인증 토큰이 유효하지 않음"),
+            ApiResponse(responseCode = "403", description = "세션 조회 권한 없음 또는 비로그인 (GLOBAL-403-01)"),
         ],
     )
     fun getAllSessions(): CustomResponse<SessionListResponse>

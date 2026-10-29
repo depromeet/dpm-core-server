@@ -42,7 +42,7 @@ class SessionQueryController(
     ): CustomResponse<NextSessionHomeResponse> =
         CustomResponse.ok(sessionQueryService.getNextSessionHome(memberId))
 
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("hasAuthority('read:session')")
     @GetMapping("/v1/sessions")
     override fun getAllSessions(): CustomResponse<SessionListResponse> {
         val sessions = sessionQueryService.getAllCurrentCohortSessions()
