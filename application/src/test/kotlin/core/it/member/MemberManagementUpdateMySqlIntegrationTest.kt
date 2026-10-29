@@ -12,6 +12,7 @@ import core.application.member.presentation.request.MemberManagementBulkUpdateRe
 import core.application.member.presentation.request.MemberManagementUpdateRequest
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.member.aggregate.Member
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -31,6 +32,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -318,10 +321,13 @@ class MemberManagementUpdateMySqlIntegrationTest {
             .isInstanceOf(core.application.common.exception.BusinessException::class.java)
     }
 
-    @Test
-    fun `existing signed token keeps authentication but loses live activity permissions on suspension`() {
+    @ParameterizedTest
+    @EnumSource(value = MemberActivityStatus::class, names = ["SUSPENDED", "ENDED"])
+    fun `existing signed token loses session permissions when activity stops`(status: MemberActivityStatus) {
         jdbc.update("insert into permissions (permission_id, resource, action) values (668, 'session', 'read')")
-        jdbc.update("insert into role_permissions (role_id, permission_id, granted_at) values (4, 668, now(6)), (5, 668, now(6))")
+        jdbc.update("insert into role_permissions (role_id, permission_id, granted_at) values (1, 668, now(6)), (4, 668, now(6)), (5, 668, now(6))")
+        addRole(3, 1, 18)
+        addRole(4, 5, null)
         val roleRepository =
             core.persistence.authorization.repository.RoleRepository(
                 org.mockito.Mockito.mock(core.persistence.authorization.repository.RoleJpaRepository::class.java),
@@ -334,9 +340,13 @@ class MemberManagementUpdateMySqlIntegrationTest {
                 core.application.security.properties.TokenProperties.ExpirationTime(600, 1200),
             )
         val tokens = core.application.security.oauth.token.JwtTokenProvider(properties, queries)
+        // 과거 기수 디퍼와 미승인 회원은 역할에 권한이 있어도 현재 세션 조회 권한을 받지 않는다.
+        listOf("3", "4").forEach { memberId ->
+            assertThat(tokens.getAuthentication(tokens.generateAccessToken(memberId, null)).authorities).isEmpty()
+        }
         val token = tokens.generateAccessToken("1", null)
         assertThat(tokens.getAuthentication(token).authorities.map { it.authority }).contains("read:session")
-        service.update(1, MemberManagementUpdateRequest(activityStatus = core.domain.member.enums.MemberActivityStatus.SUSPENDED))
+        service.update(1, MemberManagementUpdateRequest(activityStatus = status))
         assertThat(members.isLoginAvailable(1)).isTrue()
         val authentication = tokens.getAuthentication(token)
         assertThat(authentication.isAuthenticated).isTrue()
