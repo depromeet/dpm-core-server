@@ -66,7 +66,7 @@ class AttendanceApiV3PathContractTest {
                 "PATCH /v1/sessions hasAuthority('update:session')",
                 "PATCH /v1/sessions/{sessionId}/delete hasAuthority('delete:session')",
                 "GET /v1/sessions/next isAuthenticated()",
-                "GET /v1/sessions permitAll()",
+                "GET /v1/sessions hasAuthority('read:session')",
                 "GET /v1/sessions/{sessionId} hasAuthority('create:session')",
                 "GET /v1/sessions/{sessionId}/me hasAuthority('read:session')",
                 "GET /v1/sessions/{sessionId}/attendance-time hasAuthority('update:session')",
