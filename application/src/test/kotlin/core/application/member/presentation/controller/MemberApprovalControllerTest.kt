@@ -76,7 +76,7 @@ class MemberApprovalControllerTest {
         clearInvocations(members, initializer, cohorts, roleQueries)
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
-        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet())))
+        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH)))
     }
 
     @Test
@@ -110,6 +110,14 @@ class MemberApprovalControllerTest {
             mvc.perform(request("""{"members":[1]}""", it)).andExpect(status().isForbidden)
         }
         verifyNoInteractions(members, initializer, cohorts, roleQueries)
+    }
+
+    @Test
+    fun `이름 파트 미제출 회원의 직접 승인은 409와 기존 오류 코드를 반환한다`() {
+        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet())))
+        mvc.perform(request("""{"members":[1]}"""))
+            .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-42"))
+        verifyNoInteractions(initializer, roleQueries)
     }
 
     @Test

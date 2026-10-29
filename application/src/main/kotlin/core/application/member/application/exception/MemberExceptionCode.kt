@@ -40,7 +40,7 @@ enum class MemberExceptionCode(
     INVALID_MEMBER_BADGE_VERSION(HttpStatus.BAD_REQUEST, "MEMBER-400-31", "NEW 확인 버전이 올바르지 않습니다"),
     MEMBER_BADGE_COHORT_CHANGED(HttpStatus.CONFLICT, "MEMBER-409-31", "관리 기수가 변경되었습니다. 다시 조회해주세요"),
     INVALID_MEMBER_PROFILE_NAME(HttpStatus.BAD_REQUEST, "MEMBER-400-41", "이름은 255자 이내의 완성형 한글과 단어 사이 공백으로 입력해주세요"),
-    MEMBER_PROFILE_COMPLETION_REQUIRED(HttpStatus.CONFLICT, "MEMBER-409-42", "이름과 파트 입력을 완료한 후 재신청해주세요"),
+    MEMBER_PROFILE_COMPLETION_REQUIRED(HttpStatus.CONFLICT, "MEMBER-409-42", "이름과 파트 입력을 완료해주세요"),
     MEMBER_PROFILE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "MEMBER-409-41", "이미 프로필 입력을 완료했습니다"),
     MEMBER_LAST_LOGIN_ACCOUNT(HttpStatus.CONFLICT, "MEMBER-409-51", "마지막 로그인 수단은 해제할 수 없습니다"),
     MEMBER_ACCOUNT_REAUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "MEMBER-401-51", "다시 로그인한 후 계정 연결을 진행해주세요"),

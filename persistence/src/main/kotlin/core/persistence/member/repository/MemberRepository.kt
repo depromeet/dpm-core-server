@@ -91,7 +91,7 @@ class MemberRepository(
 
     override fun findPendingRequestTimes(memberIds: List<Long>): Map<Long, Instant> {
         if (memberIds.isEmpty()) return emptyMap()
-        val requestedAt = DSL.coalesce(max(MEMBER_ADMISSION_EVENTS.CREATED_AT), MEMBERS.CREATED_AT)
+        val requestedAt = DSL.coalesce(max(MEMBER_ADMISSION_EVENTS.CREATED_AT), MEMBERS.PROFILE_COMPLETED_AT)
         return dsl.select(MEMBERS.MEMBER_ID, requestedAt)
             .from(MEMBERS)
             .leftJoin(MEMBER_ADMISSION_EVENTS).on(
@@ -103,7 +103,7 @@ class MemberRepository(
                 MEMBERS.STATUS.eq(MemberStatus.PENDING.name),
                 MEMBERS.DELETED_AT.isNull,
             )
-            .groupBy(MEMBERS.MEMBER_ID, MEMBERS.CREATED_AT)
+            .groupBy(MEMBERS.MEMBER_ID, MEMBERS.PROFILE_COMPLETED_AT)
             .fetch()
             .mapNotNull { record ->
                 record[requestedAt]?.atZone(ZoneId.of("UTC"))?.toInstant()?.let {
@@ -134,7 +134,12 @@ class MemberRepository(
     override fun lockApprovalTargets(memberIds: List<Long>): List<MemberApprovalTarget> {
         if (memberIds.isEmpty()) return emptyList()
         val lockedMembers =
-            dsl.select(MEMBERS.MEMBER_ID, MEMBERS.STATUS, MEMBERS.DELETED_AT).from(MEMBERS)
+            dsl.select(
+                MEMBERS.MEMBER_ID,
+                MEMBERS.STATUS,
+                MEMBERS.DELETED_AT,
+                MEMBERS.PROFILE_COMPLETED_AT,
+            ).from(MEMBERS)
                 .where(MEMBERS.MEMBER_ID.`in`(memberIds))
                 .orderBy(MEMBERS.MEMBER_ID.asc())
                 .forUpdate()
@@ -151,6 +156,7 @@ class MemberRepository(
                 status = MemberStatus.valueOf(requireNotNull(it[MEMBERS.STATUS])),
                 cohortIds = cohortIds[memberId].orEmpty().filterNotNull().toSet(),
                 isDeleted = it[MEMBERS.DELETED_AT] != null,
+                profileCompletedAt = it[MEMBERS.PROFILE_COMPLETED_AT]?.atZone(ZoneId.of("UTC"))?.toInstant(),
             )
         }
     }
@@ -223,6 +229,7 @@ class MemberRepository(
             .where(MEMBERS.DELETED_AT.isNull)
             .and(MEMBERS.STATUS.`in`(MemberStatus.ACTIVE.name, MemberStatus.INACTIVE.name, MemberStatus.PENDING.name))
             .and(isCurrentCohort.or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name).and(hasNoCohort)))
+            .and(MEMBERS.STATUS.ne(MemberStatus.PENDING.name).or(MEMBERS.PROFILE_COMPLETED_AT.isNotNull))
             .fetch { record ->
                 val selectedEmail = record.get("oauth_email", String::class.java)?.trim()?.takeIf { it.isNotEmpty() }
                 val loginMethod =

@@ -42,11 +42,40 @@ class MemberMergeServiceTest {
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(
             listOf(
-                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()),
-                MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19)),
+                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH),
+                MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19), profileCompletedAt = java.time.Instant.EPOCH),
             ),
         )
         `when`(merge.lockOAuths(listOf(1, 2))).thenReturn(listOf(oauth(1, OAuthProvider.KAKAO), oauth(2, OAuthProvider.APPLE)))
+    }
+
+    @Test
+    fun `승인 회원으로 합치는 경우도 미제출 원본 계정은 이동 전에 거절한다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(
+            listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19)), MemberApprovalTarget(2, MemberStatus.PENDING, emptySet())),
+        )
+        assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }
+            .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+            .satisfies(
+                java.util.function.Consumer<Throwable> { exception ->
+                    org.assertj.core.api.Assertions.assertThat((exception as core.application.common.exception.BusinessException).getCode())
+                        .isEqualTo(core.application.member.application.exception.MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
+                },
+            )
+        verifyNoInteractions(merge, approval, accounts, refreshTokens)
+    }
+
+    @Test
+    fun `남길 미승인 회원도 제출 전이면 병합을 거절한다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(
+            listOf(
+                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()),
+                MemberApprovalTarget(2, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH),
+            ),
+        )
+        assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }
+            .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+        verifyNoInteractions(merge, approval, accounts, refreshTokens)
     }
 
     @Test
@@ -67,7 +96,7 @@ class MemberMergeServiceTest {
     @Test
     fun `현재 기수 승인 회원에 합칠 때 재승인하지 않는다`() {
         `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(
-            listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(18, 19)), MemberApprovalTarget(2, MemberStatus.PENDING, emptySet())),
+            listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(18, 19)), MemberApprovalTarget(2, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH)),
         )
         service.mergeAndApprove(1, 2, 99)
         verify(merge).transferOAuths(2, 1)
@@ -83,7 +112,7 @@ class MemberMergeServiceTest {
             MemberApprovalTarget(1, MemberStatus.WITHDRAWN, setOf(19)),
             MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(18)),
         ).forEach { retained ->
-            `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(retained, MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19))))
+            `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(retained, MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19), profileCompletedAt = java.time.Instant.EPOCH)))
             assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
         }
         verifyNoInteractions(merge, approval, accounts, refreshTokens)
@@ -112,7 +141,7 @@ class MemberMergeServiceTest {
             MemberApprovalTarget(2, MemberStatus.PENDING, setOf(19), true),
             MemberApprovalTarget(2, MemberStatus.PENDING, setOf(18)),
         ).forEach { target ->
-            `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), target))
+            `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH), target))
             assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }.isInstanceOf(InvalidMemberMergeException::class.java)
         }
         verifyNoInteractions(merge, approval)
