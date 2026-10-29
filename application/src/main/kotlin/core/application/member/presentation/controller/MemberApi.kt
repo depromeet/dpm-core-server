@@ -336,6 +336,7 @@ interface MemberApi {
         summary = "멤버 데이터 주입 및 승인 API (dev)",
         description =
             "멤버의 추가적인 데이터를 주입하고, 승인 상태로 변경합니다. 관리자가 멤버 가입 시 데이터를 변경할 때 사용됩니다. " +
+                "아직 승인되지 않은 미제출 회원을 ACTIVE/INACTIVE로 변경하면 409 MEMBER-409-42로 거절합니다. " +
                 "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다. 현재 기수 활동 정지·종료 회원의 상태 " +
                 "변경은 MEMBER-409-61로 거절합니다. INACTIVE는 기수 종료이며 복구할 수 없습니다.",
         requestBody =
@@ -417,6 +418,7 @@ interface MemberApi {
         summary = "멤버 상태 변경 API (dev)",
         description =
             "멤버의 상태를 변경합니다. 개발 중 멤버 상태를 컨트롤하기 위해 사용합니다.(PENDING/ACTIVE) " +
+                "아직 승인되지 않은 미제출 회원을 ACTIVE/INACTIVE로 변경하면 409 MEMBER-409-42로 거절합니다. " +
                 "REJECTED로 변경하거나 반려 회원을 변경하면 MEMBER-400-13으로 거절합니다. 현재 기수 활동 정지·종료 회원의 상태 " +
                 "변경은 MEMBER-409-61로 거절합니다. INACTIVE는 기수 종료이며 복구할 수 없습니다.",
         requestBody =
