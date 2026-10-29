@@ -183,6 +183,8 @@ class MemberAdmissionMySqlIntegrationTest {
 
     @Test
     fun `승인과 반려는 같은 회원 잠금을 기다리고 두 처리가 동시에 성공하지 않는다`() {
+        profiles.complete(1, "홍길동", "SERVER")
+        profiles.complete(2, "홍길동", "SERVER")
         race({ service.reject(1) }, { approvals.approve(listOf(1)) })
         assertThat(status(1)).isEqualTo("REJECTED")
         assertThat(events(1)).containsExactly("REJECTED")

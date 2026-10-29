@@ -85,6 +85,7 @@ class MemberMergeMySqlIntegrationTest {
             jdbc.update("insert into member_cohorts (member_id, cohort_id) values (?, 19)", id)
             jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, 2, 19, now(6))", id)
             jdbc.update("insert into member_teams (member_id, team_id) values (?, 1)", id)
+            jdbc.update("update members set profile_completed_at = created_at where member_id = ?", id)
             jdbc.update("insert into member_oauth (member_oauth_id, member_id, external_id, provider, email) values (?, ?, ?, ?, ?)", id, id, "external-$id", if (id == 1L) "KAKAO" else "APPLE", "oauth-$id@example.test")
         }
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
@@ -95,6 +96,18 @@ class MemberMergeMySqlIntegrationTest {
             jdbc.update("insert into member_oauth_link_requests (state_hash, member_id, provider, redirect_uri, code_verifier, expires_at) values (?, ?, 'APPLE', 'https://example.test/callback', 'test-verifier', date_add(now(6), interval 5 minute))", "state-$id".padEnd(64, 'x'), id)
         }
         core.it.member.MemberActivityFixtures.seed(jdbc)
+    }
+
+    @Test
+    fun `승인 회원을 남기는 병합도 미제출 원본이면 연결을 이전하지 않는다`() {
+        jdbc.update("update members set status='ACTIVE' where member_id=1")
+        jdbc.update("update members set profile_completed_at=null where member_id=2")
+        val tables = listOf("members", "member_oauth", "member_roles", "member_cohorts", "member_merge_events")
+        val before = tables.associateWith { jdbc.queryForList("select * from $it") }
+        assertThatThrownBy { service.mergeAndApprove(1, 2, 99) }
+            .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+            .hasMessage("이름과 파트 입력을 완료해주세요")
+        before.forEach { (table, rows) -> assertThat(jdbc.queryForList("select * from $table")).isEqualTo(rows) }
     }
 
     @Test

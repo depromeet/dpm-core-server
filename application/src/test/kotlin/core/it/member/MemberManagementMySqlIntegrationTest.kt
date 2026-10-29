@@ -76,7 +76,11 @@ class MemberManagementMySqlIntegrationTest {
         dates.forEach { (id, createdAt) ->
             jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at, updated_at) values (?, ?, ?, 'SERVER', 'PENDING', ?, '2026-10-30 00:00:00')", id, "정렬$id", "sort$id@example.com", createdAt)
         }
+        jdbc.update("update members set profile_completed_at = created_at where member_id between 68101 and 68106")
         jdbc.update("insert into member_admission_events (member_id, event_type, created_at) values (68101, 'REAPPLIED', '2026-10-20 00:00:00'), (68101, 'REAPPLIED', '2026-10-25 00:00:00.123456'), (68106, 'REJECTED', '2026-10-29 00:00:00')")
+        // 계정 생성 시각을 바꾸어도 최초 제출 시각으로 정렬한다.
+        jdbc.update("update members set created_at='2026-10-29 00:00:00' where member_id=68105")
+        jdbc.update("insert into members (member_id,name,signup_email,part,status,created_at) values (68107,'정렬미제출','unsubmitted@example.test','SERVER','PENDING',now(6))")
         val expected = listOf(68101L, 68102L, 68104L, 68103L, 68106L, 68105L)
         val request = MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, search = "정렬")
         val result = service.getOverview(request)
@@ -111,7 +115,7 @@ class MemberManagementMySqlIntegrationTest {
         }
         // JPA Instant 쓰기 -> jOOQ LocalDateTime 읽기에서 시각이 9시간 이동하지 않아야 한다.
         members.save(Member(id = MemberId(1), name = "member1", signupEmail = "member1@example.com", part = MemberPart.SERVER, status = MemberStatus.ACTIVE, createdAt = at.minusSeconds(10), updatedAt = at))
-        jdbc.update("update members set status = 'PENDING' where member_id in (3, 4)")
+        jdbc.update("update members set status = 'PENDING', profile_completed_at = created_at where member_id in (3, 4)")
         jdbc.update("update members set deleted_at = '2026-10-02 00:00:00' where member_id = 5")
         jdbc.update("update members set status = 'WITHDRAWN' where member_id = 6")
         listOf(1L, 2L, 5L, 6L, 7L, 8L).forEach { joinCohort(it, current.value) }
@@ -142,6 +146,10 @@ class MemberManagementMySqlIntegrationTest {
         attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(7), status = AttendanceStatus.ABSENT))
         attendances.save(Attendance(sessionId = first.id!!, memberId = MemberId(8), status = AttendanceStatus.ABSENT, deletedAt = start))
 
+        repeat(3) { index ->
+            val extra = sessions.save(Session(cohortId = current, date = start.plusSeconds((index + 1) * 86400L), week = index + 3, place = "test", eventName = "offline", isOnline = false, attendancePolicy = AttendancePolicy(start, start.plusSeconds(600), start.plusSeconds(1200), "1234")))
+            attendances.save(Attendance(sessionId = extra.id!!, memberId = MemberId(7), status = AttendanceStatus.ABSENT))
+        }
         MemberActivityFixtures.seed(jdbc)
         val rows = members.findManagementMembers(current.value)
         assertThat(rows.map { it.memberId }).containsExactlyInAnyOrder(1L, 2L, 3L, 7L, 8L)
