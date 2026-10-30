@@ -44,6 +44,25 @@ class MemberApprovalServiceTest {
     }
 
     @Test
+    fun `정보 미제출 회원이 포함된 승인은 전체를 변경 전에 거절한다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(
+            listOf(
+                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH),
+                MemberApprovalTarget(2, MemberStatus.PENDING, emptySet()),
+            ),
+        )
+        assertThatThrownBy { service.approve(listOf(1, 2)) }
+            .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+            .satisfies(
+                java.util.function.Consumer<Throwable> { exception ->
+                    org.assertj.core.api.Assertions.assertThat((exception as core.application.common.exception.BusinessException).getCode())
+                        .isEqualTo(core.application.member.application.exception.MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
+                },
+            )
+        verifyNoInteractions(memberCohorts, teams, roles, roleQueries, initializer)
+    }
+
+    @Test
     fun `빈 중복 null 0 음수 ID는 조회 전에 거절한다`() {
         listOf(emptyList(), listOf(1L, 1L), listOf(null), listOf(0L), listOf(-1L)).forEach { ids ->
             assertThatThrownBy { service.approve(ids) }.isInstanceOf(InvalidMemberApprovalException::class.java)
@@ -54,8 +73,8 @@ class MemberApprovalServiceTest {
     @Test
     fun `과거 기수 탈퇴 대상을 포함하면 어떤 멤버도 변경하지 않는다`() {
         listOf(
-            listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.PENDING, setOf(18))),
-            listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.WITHDRAWN, setOf(19))),
+            listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH), MemberApprovalTarget(2, MemberStatus.PENDING, setOf(18))),
+            listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH), MemberApprovalTarget(2, MemberStatus.WITHDRAWN, setOf(19))),
         ).forEach { targets ->
             `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(targets)
             assertThatThrownBy { service.approve(listOf(2, 1)) }.isInstanceOf(MemberApprovalTargetNotAllowedException::class.java)
@@ -78,7 +97,7 @@ class MemberApprovalServiceTest {
     fun `대상 잠금을 정렬하고 새 대기자만 변경하며 이미 승인된 멤버는 유지한다`() {
         `when`(members.lockApprovalTargets(listOf(1, 2, 3))).thenReturn(
             listOf(
-                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()),
+                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH),
                 MemberApprovalTarget(2, MemberStatus.ACTIVE, setOf(19)),
                 MemberApprovalTarget(3, MemberStatus.ACTIVE, setOf(19)),
             ),

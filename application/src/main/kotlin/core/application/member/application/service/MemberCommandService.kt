@@ -173,6 +173,17 @@ class MemberCommandService(
         if (MemberStatus.REJECTED in statuses || targets.any { it.status == MemberStatus.REJECTED }) {
             throw BusinessException(MemberExceptionCode.MEMBER_ADMISSION_CHANGE_NOT_ALLOWED)
         }
+        val approvalDestinations = setOf(MemberStatus.ACTIVE, MemberStatus.INACTIVE)
+        val targetsById = targets.associateBy { it.memberId }
+        val hasUnsubmittedApproval =
+            memberIds.zip(statuses).any { (memberId, destination) ->
+                val target = targetsById[memberId]
+                destination in approvalDestinations && target != null &&
+                    target.status !in approvalDestinations && target.profileCompletedAt == null
+            }
+        if (hasUnsubmittedApproval) {
+            throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
+        }
     }
 
     @TrackMemberBadges

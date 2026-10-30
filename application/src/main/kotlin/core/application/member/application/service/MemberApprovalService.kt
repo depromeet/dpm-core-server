@@ -1,8 +1,10 @@
 package core.application.member.application.service
 
+import core.application.common.exception.BusinessException
 import core.application.member.application.exception.InvalidMemberApprovalException
 import core.application.member.application.exception.MemberApprovalTargetNotAllowedException
 import core.application.member.application.exception.MemberDeletedException
+import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleType
@@ -53,6 +55,9 @@ class MemberApprovalService(
             throw MemberApprovalTargetNotAllowedException()
         }
 
+        if (targets.any { it.status == MemberStatus.PENDING && it.profileCompletedAt == null }) {
+            throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
+        }
         // 현재 기수의 정지/종료는 승인 API로 복구할 수 없다. 새 기수 승인은 별도 기록으로 남긴다.
         targets.forEach { activities.requireRestorable(it.memberId, cohortId.value) }
         val pendingIds =
