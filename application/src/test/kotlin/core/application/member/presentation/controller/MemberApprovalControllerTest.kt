@@ -73,10 +73,10 @@ class MemberApprovalControllerTest {
             MockMvcBuilders.webAppContextSetup(context)
                 .addFilters<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(context.getBean("springSecurityFilterChain", Filter::class.java))
                 .build()
-        clearInvocations(members, initializer, cohorts, roleQueries)
+        clearInvocations(members, initializer, cohorts, roleQueries, context.getBean(MemberQueryService::class.java))
         `when`(cohorts.getActiveCohortId()).thenReturn(CohortId(19))
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
-        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet())))
+        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH)))
     }
 
     @Test
@@ -110,6 +110,14 @@ class MemberApprovalControllerTest {
             mvc.perform(request("""{"members":[1]}""", it)).andExpect(status().isForbidden)
         }
         verifyNoInteractions(members, initializer, cohorts, roleQueries)
+    }
+
+    @Test
+    fun `이름 파트 미제출 회원의 직접 승인은 409와 기존 오류 코드를 반환한다`() {
+        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet())))
+        mvc.perform(request("""{"members":[1]}"""))
+            .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-42"))
+        verifyNoInteractions(initializer, roleQueries)
     }
 
     @Test
@@ -182,6 +190,65 @@ class MemberApprovalControllerTest {
         ).forEach { (path, body) ->
             mvc.perform(legacyRequest(path, body))
                 .andExpect(status().isBadRequest).andExpect(jsonPath("$.code").value("MEMBER-400-13"))
+        }
+    }
+
+    @Test
+    fun `구 상태 변경과 데이터 주입은 미제출 회원의 ACTIVE INACTIVE 우회를 막는다`() {
+        listOf(MemberStatus.PENDING, MemberStatus.WITHDRAWN).forEach { current ->
+            `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, current, emptySet())))
+            listOf("ACTIVE", "INACTIVE").forEach { destination ->
+                listOf(
+                    "/v1/members/status" to """{"memberId":1,"memberStatus":"$destination"}""",
+                    "/v1/members/init" to """{"members":[{"memberId":1,"memberPart":"SERVER","teamId":1,"status":"$destination"}]}""",
+                ).forEach { (path, body) ->
+                    mvc.perform(legacyRequest(path, body))
+                        .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-42"))
+                }
+            }
+        }
+        verifyNoInteractions(context.getBean(MemberQueryService::class.java), initializer)
+    }
+
+    @Test
+    fun `구 일괄 주입은 미제출 대상이 섞이면 첫 회원도 조회나 저장하지 않는다`() {
+        `when`(members.lockApprovalTargets(listOf(1L, 2L))).thenReturn(
+            listOf(
+                MemberApprovalTarget(1, MemberStatus.PENDING, emptySet(), profileCompletedAt = java.time.Instant.EPOCH),
+                MemberApprovalTarget(2, MemberStatus.PENDING, emptySet()),
+            ),
+        )
+        mvc.perform(legacyRequest("/v1/members/init", """{"members":[{"memberId":1,"memberPart":"SERVER","teamId":1,"status":"ACTIVE"},{"memberId":2,"memberPart":"WEB","teamId":1,"status":"INACTIVE"}]}"""))
+            .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-42"))
+        verify(members).lockApprovalTargets(listOf(1L, 2L))
+        org.mockito.Mockito.verifyNoMoreInteractions(members)
+        verifyNoInteractions(context.getBean(MemberQueryService::class.java), initializer)
+    }
+
+    @Test
+    fun `구 주입의 중복 회원 ID도 각 요청 상태를 검사해 승인 우회를 막는다`() {
+        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet())))
+        mvc.perform(legacyRequest("/v1/members/init", """{"members":[{"memberId":1,"memberPart":"SERVER","teamId":1,"status":"ACTIVE"},{"memberId":1,"memberPart":"WEB","teamId":1,"status":"PENDING"}]}"""))
+            .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-42"))
+        verifyNoInteractions(context.getBean(MemberQueryService::class.java), initializer)
+    }
+
+    @Test
+    fun `구 주입은 대기 유지와 제출 완료 승인 및 기존 승인 회원의 완료값 누락을 허용한다`() {
+        val cases =
+            listOf(
+                Triple(MemberStatus.PENDING, MemberStatus.PENDING, null),
+                Triple(MemberStatus.PENDING, MemberStatus.ACTIVE, java.time.Instant.EPOCH),
+                Triple(MemberStatus.ACTIVE, MemberStatus.ACTIVE, null),
+                Triple(MemberStatus.INACTIVE, MemberStatus.ACTIVE, null),
+            )
+        cases.forEach { (current, destination, submittedAt) ->
+            val member = core.domain.member.aggregate.Member(id = core.domain.member.vo.MemberId(1), name = "김테스트", signupEmail = "test@example.test", status = current)
+            `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, current, setOf(19), profileCompletedAt = submittedAt)))
+            `when`(context.getBean(MemberQueryService::class.java).getMemberById(core.domain.member.vo.MemberId(1))).thenReturn(member)
+            `when`(members.save(member)).thenReturn(member)
+            mvc.perform(legacyRequest("/v1/members/init", """{"members":[{"memberId":1,"memberPart":"SERVER","teamId":1,"status":"$destination"}]}"""))
+                .andExpect(status().isOk)
         }
     }
 

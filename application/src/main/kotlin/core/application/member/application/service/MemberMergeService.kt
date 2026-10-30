@@ -1,6 +1,8 @@
 package core.application.member.application.service
 
+import core.application.common.exception.BusinessException
 import core.application.member.application.exception.InvalidMemberMergeException
+import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberOAuthConflictException
 import core.domain.cohort.port.inbound.CohortQueryUseCase
@@ -50,6 +52,9 @@ class MemberMergeService(
             (source.cohortIds.isNotEmpty() && cohortId !in source.cohortIds)
         ) {
             throw InvalidMemberMergeException()
+        }
+        if (targets.any { it.status == MemberStatus.PENDING && it.profileCompletedAt == null }) {
+            throw BusinessException(MemberExceptionCode.MEMBER_PROFILE_COMPLETION_REQUIRED)
         }
         activities.requireRestorable(retainedId, cohortId)
         if (merge.hasPasswordCredential(ids)) throw InvalidMemberMergeException()

@@ -348,7 +348,7 @@ class MemberManagementUpdateMySqlIntegrationTest {
         val root =
             generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
                 .first { java.nio.file.Files.isDirectory(it.resolve("db")) }
-        val fullSql = java.nio.file.Files.readString(root.resolve("db/pending/2610241900_member_cohort_activities.sql"))
+        val fullSql = java.nio.file.Files.readString(root.resolve("db/release/2610252103/2610241900_member_cohort_activities.sql"))
         // Stored-procedure preflight is separately exercised through the MySQL CLI; JDBC applies DDL, DML and VERIFY.
         val body = fullSql.substring(fullSql.indexOf("-- [2]"))
         jdbc.execute("drop table member_activity_events")
