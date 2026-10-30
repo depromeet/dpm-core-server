@@ -14,6 +14,7 @@ interface MemberAdmissionApi {
         summary = "가입 대기 계정 병합 및 승인",
         description =
             "create:member, delete:member 권한이 필요합니다. sourceMemberId는 현재 기수 또는 기수 없는 PENDING이어야 합니다. " +
+                "병합 대상의 PENDING 회원은 모두 이름·파트 제출을 완료해야 합니다. " +
                 "retainedMemberId는 같은 조건의 PENDING 또는 현재 기수 ACTIVE를 지정합니다. PENDING은 이름·파트를 보존하고 " +
                 "현재 기수 디퍼·팀 미배정으로 승인하며, ACTIVE는 기존 이름·파트·기수·역할·팀·활동 기록을 그대로 유지합니다. " +
                 "원본의 소셜 로그인 연결을 옮기고 원본은 soft delete합니다. 원본의 refresh 세션과 임시 연동 요청을 정리합니다. " +
@@ -30,7 +31,7 @@ interface MemberAdmissionApi {
         ApiResponse(responseCode = "400", description = "잘못된 요청 또는 병합 대상 조건 불충족 (MEMBER-400-21)"),
         ApiResponse(responseCode = "403", description = "통합·승인 권한 없음"),
         ApiResponse(responseCode = "404", description = "멤버 없음"),
-        ApiResponse(responseCode = "409", description = "로그인 수단 충돌"),
+        ApiResponse(responseCode = "409", description = "로그인 수단 충돌 또는 이름·파트 미제출 (MEMBER-409-42)"),
     )
     fun mergeAndApprove(
         request: MemberMergeRequest,

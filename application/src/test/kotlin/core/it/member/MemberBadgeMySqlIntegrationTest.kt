@@ -143,17 +143,86 @@ class MemberBadgeMySqlIntegrationTest {
     @BeforeEach
     fun fixture() {
         core.it.member.MemberActivityFixtures.clear(jdbc)
-        listOf("role_permissions", "permissions", "member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_badge_memberships", "member_badge_states", "member_admission_events", "attendances", "sessions", "member_roles", "member_teams", "member_cohorts", "member_oauth", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
+        listOf("role_permissions", "permissions", "member_merge_events", "member_oauth_link_requests", "refresh_tokens", "member_badge_memberships", "member_badge_states", "member_admission_events", "attendances", "sessions", "member_roles", "member_teams", "member_cohorts", "member_oauth", "member_credentials", "members", "roles", "teams", "cohorts").forEach { jdbc.execute("delete from $it") }
         jdbc.update("insert into cohorts (cohort_id, value, is_active, created_at, updated_at) values (19, '19', true, 0, 0)")
         (1L..3L).forEach { id ->
             jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at, updated_at) values (?, '홍길동', ?, 'SERVER', 'PENDING', now(6), now(6))", id, "test$id@example.com")
             jdbc.update("insert into member_cohorts (member_id, cohort_id) values (?, 19)", id)
         }
+        jdbc.update("update members set profile_completed_at = created_at where member_id between 1 and 3")
         jdbc.update("insert into roles (role_id, name) values (1, 'DEEPER')")
         jdbc.update("insert into teams (team_id, number, cohort_id, created_at, updated_at) values (191, 1, 19, 0, 0)")
         `when`(roleQueries.findIdByName("DEEPER")).thenReturn(1)
         `when`(memberQueries.getMemberIdsByCohortId(CohortId(19))).thenReturn(listOf(MemberId(1), MemberId(2), MemberId(3)))
         core.it.member.MemberActivityFixtures.seed(jdbc)
+    }
+
+    @ParameterizedTest
+    @CsvSource("KAKAO", "APPLE", "EMAIL")
+    fun `로그인 방식과 무관하게 최초 제출 후에만 목록과 NEW에 진입한다`(provider: String) {
+        badges.getBadges()
+        val email = "new-$provider@example.test"
+        writer.signup(email)
+        val id = jdbc.queryForObject("select member_id from members where signup_email = ?", Long::class.java, email)!!
+        if (provider == "EMAIL") {
+            jdbc.update("insert into member_credentials (member_id,email,password,created_at) values (?,?,'test-hash',now(6))", id, email)
+        } else {
+            jdbc.update("insert into member_oauth (member_id,external_id,provider,email) values (?,?,?,?)", id, "external-$provider", provider, email)
+        }
+        assertThat(managementTargets.findAll(19).map { it.memberId }).doesNotContain(id)
+        assertThat(card().version).isZero()
+        assertThat(card().hasNew).isFalse()
+        profiles.complete(id, "김신규", "WEB")
+        assertThat(managementTargets.findAll(19).single { it.memberId == id }.loginMethod?.name).isEqualTo(provider)
+        assertThat(card().version).isEqualTo(1)
+        val submittedAt = jdbc.queryForObject("select profile_completed_at from members where member_id=?", java.sql.Timestamp::class.java, id)
+        profiles.complete(id, "김수정", "SERVER")
+        assertThat(jdbc.queryForObject("select profile_completed_at from members where member_id=?", java.sql.Timestamp::class.java, id)).isEqualTo(submittedAt)
+        assertThat(card().version).isEqualTo(1)
+        admission.reject(id)
+        profiles.complete(id, "김재신청", "WEB")
+        assertThat(managementTargets.findAll(19).map { it.memberId }).doesNotContain(id)
+        admission.reapply(id)
+        assertThat(managementTargets.findAll(19).map { it.memberId }).contains(id)
+        assertThat(card().version).isEqualTo(2)
+    }
+
+    @Test
+    fun `기존 배지 SQL은 미제출 연결만 정리하고 유효 NEW와 다른 카드를 보존하며 재실행 가능하다`() {
+        badges.getBadges()
+        jdbc.update("update members set profile_completed_at=null where member_id=1")
+        jdbc.update("update member_badge_states set version=7, acknowledged_version=5 where cohort_id=19 and card='PENDING'")
+        jdbc.update("insert into member_badge_states (cohort_id,card,version,acknowledged_version,target_count,initialized) values (18,'PENDING',4,2,1,true)")
+        jdbc.update("insert into member_badge_memberships (cohort_id,card,member_id) values (18,'PENDING',1), (19,'INCOMPLETE',1)")
+        val beforeMembers = jdbc.queryForList("select * from members order by member_id")
+        val root = generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }.first { java.nio.file.Files.isDirectory(it.resolve("db")) }
+        val sql = java.nio.file.Files.readString(root.resolve("db/pending/2610300100_pending_submission_badges.sql"))
+
+        fun applySql() {
+            jdbc.execute(
+                org.springframework.jdbc.core.ConnectionCallback { connection ->
+                    sql.lineSequence().filterNot { it.trimStart().startsWith("--") }.joinToString("\n")
+                        .split(';').map(String::trim).filter(String::isNotEmpty).forEach { statement ->
+                            connection.createStatement().use { it.execute(statement) }
+                        }
+                },
+            )
+        }
+        applySql()
+        assertThat(jdbc.queryForList("select member_id from member_badge_memberships where cohort_id=19 and card='PENDING' order by member_id", Long::class.java)).containsExactly(2L, 3L)
+        assertThat(jdbc.queryForMap("select version,acknowledged_version,target_count from member_badge_states where cohort_id=19 and card='PENDING'"))
+            .containsEntry("version", 7L).containsEntry("acknowledged_version", 5L).containsEntry("target_count", 2)
+        assertThat(jdbc.queryForMap("select version,acknowledged_version,target_count from member_badge_states where cohort_id=18 and card='PENDING'"))
+            .containsEntry("version", 4L).containsEntry("acknowledged_version", 4L).containsEntry("target_count", 0)
+        assertThat(jdbc.queryForObject("select count(*) from member_badge_memberships where card='INCOMPLETE' and member_id=1", Int::class.java)).isOne()
+        val states = jdbc.queryForList("select * from member_badge_states order by cohort_id,card")
+        val memberships = jdbc.queryForList("select * from member_badge_memberships order by cohort_id,card,member_id")
+        applySql()
+        assertThat(jdbc.queryForList("select * from members order by member_id")).isEqualTo(beforeMembers)
+        assertThat(jdbc.queryForList("select * from member_badge_states order by cohort_id,card")).isEqualTo(states)
+        assertThat(jdbc.queryForList("select * from member_badge_memberships order by cohort_id,card,member_id")).isEqualTo(memberships)
+        profiles.complete(1, "김제출", "WEB")
+        assertThat(card().version).isEqualTo(8)
     }
 
     @ParameterizedTest
@@ -262,6 +331,9 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `첫 쓰기 신규 진입과 반려 재신청은 조회가 없어도 각각 보존된다`() {
         writer.signup("new@example.com")
+        assertThat(card().version).isZero()
+        val newId = jdbc.queryForObject("select member_id from members where signup_email = 'new@example.com'", Long::class.java)!!
+        profiles.complete(newId, "김신규", "WEB")
         assertThat(card().version).isEqualTo(1)
         badges.acknowledge(MemberBadgeCard.PENDING, 19, 1)
         admission.reject(1)
@@ -293,7 +365,7 @@ class MemberBadgeMySqlIntegrationTest {
         currentCohort: Boolean,
         invalidPart: String,
     ) {
-        jdbc.update("update members set name = '', part = ? where member_id = 1", invalidPart)
+        jdbc.update("update members set name = '', part = ?, profile_completed_at=null where member_id = 1", invalidPart)
         if (!currentCohort) jdbc.update("delete from member_cohorts where member_id = 1")
 
         val response = profiles.complete(1, "김가상", "WEB")
@@ -306,7 +378,8 @@ class MemberBadgeMySqlIntegrationTest {
         assertThat(jdbc.queryForObject("select profile_completed_at from members where member_id = 1", java.sql.Timestamp::class.java)).isNotNull()
         assertThat(jdbc.queryForObject("select count(*) from member_badge_states where initialized = true", Int::class.java)).isEqualTo(3)
         assertThat(jdbc.queryForList("select member_id from member_badge_memberships where card = 'PENDING' order by member_id", Long::class.java)).containsExactly(1L, 2L, 3L)
-        assertThat(badges.getBadges().cards).allMatch { !it.hasNew && it.version == 0L }
+        assertThat(card().hasNew).isTrue()
+        assertThat(card().version).isEqualTo(1)
     }
 
     @Test
@@ -427,6 +500,11 @@ class MemberBadgeMySqlIntegrationTest {
         jdbc.update("update members set status = 'ACTIVE'")
         MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
+        repeat(2) { index ->
+            sessions.createSession(SessionCreateCommand(Instant.parse("2026-10-20T03:00:00Z").plusSeconds(index * 86400L), index + 2, "온라인", "선행 세션", true))
+            val earlierId = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
+            attendance.updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(earlierId), MemberId(1), AttendanceStatus.ABSENT))
+        }
         sessions.createSession(SessionCreateCommand(Instant.parse("2026-11-01T03:00:00Z"), 1, "온라인", "테스트 세션", true))
         val id = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         assertThat(jdbc.queryForObject("select count(*) from attendances where session_id = ?", Int::class.java, id)).isEqualTo(3)
@@ -441,7 +519,7 @@ class MemberBadgeMySqlIntegrationTest {
     }
 
     @Test
-    fun `세션 분모 변경은 위험 이탈과 재진입을 새 버전으로 저장한다`() {
+    fun `출석률 분모 변경만으로 수료 위험이나 NEW가 생기지 않는다`() {
         jdbc.update("update members set status = 'ACTIVE'")
         MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
@@ -449,13 +527,13 @@ class MemberBadgeMySqlIntegrationTest {
         sessions.createSession(command)
         val first = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         attendance.updateAttendanceStatus(AttendanceStatusUpdateCommand(SessionId(first), MemberId(1), AttendanceStatus.ABSENT))
-        assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(1)
+        assertThat(card(MemberBadgeCard.AT_RISK).version).isZero()
         repeat(4) { sessions.createSession(command.copy(date = command.date.plusSeconds((it + 1) * 86400L), week = it + 2)) }
         assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
         val last = jdbc.queryForObject("select max(session_id) from sessions", Long::class.java)!!
         sessions.softDeleteSession(SessionId(last))
-        assertThat(card(MemberBadgeCard.AT_RISK).version).isEqualTo(2)
-        assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isTrue()
+        assertThat(card(MemberBadgeCard.AT_RISK).version).isZero()
+        assertThat(card(MemberBadgeCard.AT_RISK).hasNew).isFalse()
     }
 
     @Test

@@ -171,6 +171,7 @@ class MemberApprovalMySqlIntegrationTest {
         (1L..6L).forEach { id ->
             jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at, updated_at) values (?, ?, ?, 'SERVER', 'PENDING', '2020-01-01 00:00:00', '2020-01-01 00:00:00')", id, "nickname", "signup$id@example.com")
         }
+        jdbc.update("update members set profile_completed_at = created_at where member_id between 1 and 6")
         jdbc.update("insert into member_cohorts (member_id, cohort_id) values (2, 19), (2, 18), (3, 18), (4, 19), (5, 19)")
         jdbc.update("update members set status = 'ACTIVE' where member_id = 4")
         jdbc.update("update members set status = 'INACTIVE' where member_id = 5")
@@ -193,6 +194,17 @@ class MemberApprovalMySqlIntegrationTest {
         jdbc.update("insert into after_party (after_party_id, title, category, scheduled_at, closed_at, is_approved, member_id, created_at, updated_at, can_edit_after_approval) values (1, 'party', 'AFTER_PARTY', '2099-01-01', '2099-01-01', false, 4, now(6), now(6), false)")
         jdbc.update("insert into after_party_invite_tags (after_party_id, cohort_id, authority_id, tag_name, created_at) values (1, 19, 1, '19기 디퍼', now(6))")
         core.it.member.MemberActivityFixtures.seed(jdbc)
+    }
+
+    @Test
+    fun `일괄 승인 대상 중 미제출 회원이 있으면 모두 변경하지 않는다`() {
+        jdbc.update("update members set profile_completed_at=null where member_id=2")
+        val tables = listOf("members", "member_cohorts", "member_roles", "member_teams", "attendances")
+        val before = tables.associateWith { jdbc.queryForList("select * from $it") }
+        assertThatThrownBy { service.approve(listOf(1, 2)) }
+            .isInstanceOf(core.application.common.exception.BusinessException::class.java)
+            .hasMessage("이름과 파트 입력을 완료해주세요")
+        before.forEach { (table, rows) -> assertThat(jdbc.queryForList("select * from $table")).isEqualTo(rows) }
     }
 
     @Test
@@ -311,6 +323,7 @@ class MemberApprovalMySqlIntegrationTest {
     fun `서로 다른 무소속 대기자를 동시에 승인할 수 있다`() {
         listOf(7L, 8L).forEach { id ->
             jdbc.update("insert into members (member_id, name, signup_email, part, status, created_at, updated_at) values (?, 'other', ?, 'WEB', 'PENDING', now(6), now(6))", id, "signup$id@example.com")
+            jdbc.update("update members set profile_completed_at=created_at where member_id=?", id)
             jdbc.update("insert into member_roles (member_id, role_id, granted_at) values (?, 3, now(6))", id)
         }
         val ready = CountDownLatch(2)
