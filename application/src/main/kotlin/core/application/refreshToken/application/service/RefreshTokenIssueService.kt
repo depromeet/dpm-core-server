@@ -60,8 +60,10 @@ class RefreshTokenIssueService(
         deviceId: String?,
         loginIdentity: LoginIdentity?,
     ): RefreshToken {
-        val plainToken = tokenProvider.generateRefreshToken(memberId.toString(), loginIdentity)
-        val now = Instant.now()
+        val now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        val expiresAt = now.plusSeconds(tokenProperties.expirationTime.refreshToken)
+        val jti = java.util.UUID.randomUUID().toString()
+        val plainToken = tokenProvider.generateRefreshToken(memberId.toString(), loginIdentity, jti, now, expiresAt)
 
         val saved =
             refreshTokenPersistencePort.save(
@@ -71,7 +73,8 @@ class RefreshTokenIssueService(
                     tokenHash = TokenHasher.sha256Hex(plainToken),
                     deviceId = deviceId,
                     issuedAt = now,
-                    expiresAt = now.plusSeconds(tokenProperties.expirationTime.refreshToken),
+                    expiresAt = expiresAt,
+                    tokenJti = jti,
                 ),
             )
 

@@ -100,14 +100,39 @@ class RefreshTokenService(
             throw TokenInvalidException()
         }
 
+        val loginIdentity = tokenProvider.getLoginIdentity(presentedToken)
+        stored.successorTokenHash?.let { hash ->
+            val successor = refreshTokenPersistencePort.lockByTokenHash(hash) ?: throw TokenInvalidException()
+            if (successor.memberId != stored.memberId || successor.isExpired(now) ||
+                (successor.isRotated() && !successor.isWithinGrace(now, GRACE_SECONDS))
+            ) {
+                throw TokenInvalidException()
+            }
+            val plain =
+                tokenProvider.generateRefreshToken(
+                    (successor.issuedMemberId ?: throw TokenInvalidException()).toString(),
+                    loginIdentity,
+                    successor.tokenJti ?: throw TokenInvalidException(),
+                    successor.issuedAt,
+                    successor.expiresAt,
+                )
+            if (TokenHasher.sha256Hex(plain) != successor.tokenHash) throw TokenInvalidException()
+            return RefreshToken(
+                tokenId = successor.tokenId, memberId = successor.memberId, tokenHash = successor.tokenHash,
+                deviceId = successor.deviceId, issuedAt = successor.issuedAt, expiresAt = successor.expiresAt,
+                rotatedAt = successor.rotatedAt, plainToken = plain, tokenJti = successor.tokenJti,
+                issuedMemberId = successor.issuedMemberId, successorTokenHash = successor.successorTokenHash,
+            ) to loginIdentity
+        }
+
         if (!stored.isRotated()) {
             refreshTokenPersistencePort.markRotated(stored.tokenHash, now)
         }
 
         val deviceId = stored.deviceId ?: deviceIdResolver.peek(request)
         // 로그인 계정은 로그인 시점에만 알 수 있으므로, 제시된 리프레시 토큰의 값을 새 토큰으로 이어준다.
-        val loginIdentity = tokenProvider.getLoginIdentity(presentedToken)
         val issued = refreshTokenIssueService.issueForRotation(stored.memberId, deviceId, loginIdentity)
+        refreshTokenPersistencePort.linkSuccessor(stored.tokenHash, issued.tokenHash)
         return issued to loginIdentity
     }
 
