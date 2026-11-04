@@ -240,6 +240,7 @@ class MemberAccountMySqlIntegrationTest {
         val release = CountDownLatch(1)
         val hash = core.application.refreshToken.application.support.TokenHasher.sha256Hex("refresh")
         `when`(tokenProvider.validateToken("refresh")).thenReturn(true)
+        `when`(tokenProvider.getMemberId("refresh")).thenReturn(1L)
         `when`(tokenProvider.getLoginIdentity("refresh")).thenReturn(kakao)
         `when`(tokenStore.findByTokenHash(hash)).thenAnswer {
             // This consistent read establishes the snapshot before waiting on the member lock.
@@ -299,7 +300,9 @@ class MemberAccountMySqlIntegrationTest {
             issuer: RefreshTokenIssueService,
             members: MemberPersistencePort,
             identities: LoginIdentityValidator,
-        ): RefreshTokenService = RefreshTokenService(store, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider, mock(DeviceIdResolver::class.java), members, identities)
+            merges: core.domain.member.port.outbound.MemberMergePersistencePort,
+            transactions: PlatformTransactionManager,
+        ): RefreshTokenService = RefreshTokenService(store, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider, mock(DeviceIdResolver::class.java), members, identities, core.application.security.oauth.token.MergedMemberResolver(provider, members, merges, identities, store), transactions)
 
         @Bean fun redirects(): OAuthRedirectUriValidator = mock(OAuthRedirectUriValidator::class.java)
 
