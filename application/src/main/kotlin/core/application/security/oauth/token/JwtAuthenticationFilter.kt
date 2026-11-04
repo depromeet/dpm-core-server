@@ -22,6 +22,7 @@ class JwtAuthenticationFilter(
     private val objectMapper: ObjectMapper,
     private val members: MemberPersistencePort,
     private val identities: LoginIdentityValidator,
+    private val mergedMembers: MergedMemberResolver,
 ) : OncePerRequestFilter() {
     companion object {
         private const val HEADER_AUTHORIZATION = "Authorization"
@@ -63,8 +64,11 @@ class JwtAuthenticationFilter(
                     .forEach(::add)
             }.distinct()
 
-        val authenticatedToken =
-            tokenCandidates.firstOrNull { isUsable(it) }
+        val resolved =
+            tokenCandidates.firstNotNullOfOrNull { token ->
+                resolveMember(token)?.let { token to it }
+            }
+        val authenticatedToken = resolved?.first
 
         // An explicit credential cannot silently fall back to a different cookie identity.
         if (bearerToken != null && authenticatedToken != bearerToken) {
@@ -73,7 +77,13 @@ class JwtAuthenticationFilter(
             return
         }
         if (authenticatedToken != null) {
-            val authentication = jwtTokenProvider.getAuthentication(authenticatedToken)
+            val memberId = resolved.second
+            val authentication =
+                if (memberId == jwtTokenProvider.getMemberId(authenticatedToken)) {
+                    jwtTokenProvider.getAuthentication(authenticatedToken)
+                } else {
+                    jwtTokenProvider.getAuthentication(authenticatedToken, memberId)
+                }
             SecurityContextHolder.getContext().authentication = authentication
             // 알림은 AsyncAppender 의 워커 스레드에서 조립되어 SecurityContext 를 볼 수 없다.
             // MDC 는 로그 이벤트에 스냅샷으로 실려 넘어가므로, 인증 직후 여기서 넣어둔다. 정리는 MdcLoggingFilter 가 한다.
@@ -102,11 +112,13 @@ class JwtAuthenticationFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun isUsable(token: String): Boolean {
-        if (!jwtTokenProvider.validateToken(token)) return false
-        val memberId = runCatching { jwtTokenProvider.getMemberId(token) }.getOrNull() ?: return false
-        return members.isLoginAvailable(memberId) &&
-            identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(token))
+    private fun resolveMember(token: String): Long? {
+        if (!jwtTokenProvider.validateToken(token)) return null
+        val memberId = runCatching { jwtTokenProvider.getMemberId(token) }.getOrNull() ?: return null
+        if (members.isLoginAvailable(memberId)) {
+            if (identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(token))) return memberId
+        }
+        return mergedMembers.resolve(token)?.memberId
     }
 
     private fun putAuthenticatedMdc(memberIdValue: String) {

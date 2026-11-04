@@ -20,8 +20,6 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Isolation
-import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 @Service
@@ -34,27 +32,57 @@ class RefreshTokenService(
     private val deviceIdResolver: DeviceIdResolver,
     private val members: MemberPersistencePort,
     private val identities: core.application.security.oauth.token.LoginIdentityValidator,
+    private val mergedMembers: core.application.security.oauth.token.MergedMemberResolver,
+    private val transactions: org.springframework.transaction.PlatformTransactionManager,
 ) {
     private val logger = KotlinLogging.logger { }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
     fun reissue(
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): ReissueResult {
+        val transaction =
+            org.springframework.transaction.support.TransactionTemplate(transactions).apply {
+                isolationLevel = org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED
+                propagationBehavior = org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW
+            }
+        repeat(3) {
+            try {
+                val (issued, identity) = transaction.execute { rotate(request) }!!
+                return respond(issued, identity, response)
+            } catch (_: MergeChangedDuringRotation) {
+                // Release the old path's locks before discovering and locking the new path.
+            }
+        }
+        throw TokenInvalidException()
+    }
+
+    private class MergeChangedDuringRotation : RuntimeException()
+
+    private fun rotate(request: HttpServletRequest): Pair<RefreshToken, LoginIdentity?> {
         val (presentedToken, observed) = resolveStoredToken(request)
-        // 삭제와 같은 회원 잠금을 먼저 획득하고 회원 및 토큰의 최신 상태를 다시 확인한다.
-        val member = members.lockApprovalTargets(listOf(observed.memberId.value)).singleOrNull()
+        val subjectId = tokenProvider.getMemberId(presentedToken)
+        val resolved = mergedMembers.resolvePath(presentedToken) ?: throw TokenInvalidException()
+        // Merge and refresh acquire all participating member rows in the same ascending order.
+        val locked = members.lockApprovalTargets(resolved.path.sorted())
+        val latest = mergedMembers.resolvePath(presentedToken) ?: throw TokenInvalidException()
+        if (latest != resolved) throw MergeChangedDuringRotation()
+        if (locked.map { it.memberId }.toSet() != resolved.path.toSet()) throw TokenInvalidException()
+        val member = locked.singleOrNull { it.memberId == resolved.memberId }
         if (member == null || member.isDeleted || member.status == MemberStatus.WITHDRAWN) throw TokenInvalidException()
         if (!identities.isValid(
-                observed.memberId.value,
+                resolved.memberId,
                 tokenProvider.getLoginIdentity(presentedToken),
             )
         ) {
             throw TokenInvalidException()
         }
         val stored = refreshTokenPersistencePort.lockByTokenHash(observed.tokenHash) ?: throw TokenInvalidException()
-        if (stored.memberId != observed.memberId) throw TokenInvalidException()
+        if (stored.memberId.value != resolved.memberId ||
+            (observed.memberId.value != subjectId && observed.memberId.value !in resolved.path)
+        ) {
+            throw TokenInvalidException()
+        }
         val now = Instant.now()
 
         if (stored.isExpired(now)) {
@@ -76,11 +104,11 @@ class RefreshTokenService(
             refreshTokenPersistencePort.markRotated(stored.tokenHash, now)
         }
 
-        val deviceId = stored.deviceId ?: deviceIdResolver.resolve(request, response)
+        val deviceId = stored.deviceId ?: deviceIdResolver.peek(request)
         // 로그인 계정은 로그인 시점에만 알 수 있으므로, 제시된 리프레시 토큰의 값을 새 토큰으로 이어준다.
         val loginIdentity = tokenProvider.getLoginIdentity(presentedToken)
         val issued = refreshTokenIssueService.issueForRotation(stored.memberId, deviceId, loginIdentity)
-        return respond(issued, loginIdentity, response)
+        return issued to loginIdentity
     }
 
     private fun respond(

@@ -54,6 +54,9 @@ class CustomLogoutSuccessHandlerTest {
             RefreshTokenInvalidateService(tokens),
             tokens,
             objectMapper,
+            mock(core.application.security.oauth.token.MergedMemberResolver::class.java).also { resolver ->
+                `when`(resolver.resolve(anyString())).thenReturn(core.application.security.oauth.token.MergedMemberResolver.ResolvedMember(1, listOf(1)))
+            },
         )
 
     @AfterEach

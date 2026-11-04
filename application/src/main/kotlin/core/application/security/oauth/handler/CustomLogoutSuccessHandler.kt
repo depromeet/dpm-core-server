@@ -26,6 +26,7 @@ class CustomLogoutSuccessHandler(
     private val refreshTokenInvalidator: RefreshTokenInvalidator,
     private val refreshTokenPersistencePort: RefreshTokenPersistencePort,
     private val objectMapper: ObjectMapper,
+    private val mergedMembers: core.application.security.oauth.token.MergedMemberResolver,
 ) : LogoutSuccessHandler {
     private val logger = KotlinLogging.logger { }
 
@@ -94,7 +95,7 @@ class CustomLogoutSuccessHandler(
             return
         }
 
-        val memberId = MemberId(tokenProvider.getMemberId(token))
+        val memberId = MemberId(mergedMembers.resolve(token)?.memberId ?: return)
         logger.warn {
             "Device-scoped logout not possible, falling back to all devices for memberId=${memberId.value}"
         }
