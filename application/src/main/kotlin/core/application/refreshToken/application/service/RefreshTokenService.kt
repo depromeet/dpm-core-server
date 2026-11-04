@@ -101,28 +101,8 @@ class RefreshTokenService(
         }
 
         val loginIdentity = tokenProvider.getLoginIdentity(presentedToken)
-        stored.successorTokenHash?.let { hash ->
-            val successor = refreshTokenPersistencePort.lockByTokenHash(hash) ?: throw TokenInvalidException()
-            if (successor.memberId != stored.memberId || successor.isExpired(now) ||
-                (successor.isRotated() && !successor.isWithinGrace(now, GRACE_SECONDS))
-            ) {
-                throw TokenInvalidException()
-            }
-            val plain =
-                tokenProvider.generateRefreshToken(
-                    (successor.issuedMemberId ?: throw TokenInvalidException()).toString(),
-                    loginIdentity,
-                    successor.tokenJti ?: throw TokenInvalidException(),
-                    successor.issuedAt,
-                    successor.expiresAt,
-                )
-            if (TokenHasher.sha256Hex(plain) != successor.tokenHash) throw TokenInvalidException()
-            return RefreshToken(
-                tokenId = successor.tokenId, memberId = successor.memberId, tokenHash = successor.tokenHash,
-                deviceId = successor.deviceId, issuedAt = successor.issuedAt, expiresAt = successor.expiresAt,
-                rotatedAt = successor.rotatedAt, plainToken = plain, tokenJti = successor.tokenJti,
-                issuedMemberId = successor.issuedMemberId, successorTokenHash = successor.successorTokenHash,
-            ) to loginIdentity
+        if (stored.successorTokenHash != null) {
+            return currentSuccessor(stored, loginIdentity, now) to loginIdentity
         }
 
         if (!stored.isRotated()) {
@@ -134,6 +114,44 @@ class RefreshTokenService(
         val issued = refreshTokenIssueService.issueForRotation(stored.memberId, deviceId, loginIdentity)
         refreshTokenPersistencePort.linkSuccessor(stored.tokenHash, issued.tokenHash)
         return issued to loginIdentity
+    }
+
+    /** A delayed response must not replace the client's current token with a rotated ancestor. */
+    private fun currentSuccessor(
+        predecessor: RefreshToken,
+        identity: LoginIdentity?,
+        now: Instant,
+    ): RefreshToken {
+        val visited = mutableSetOf(predecessor.tokenHash)
+        var nextHash = predecessor.successorTokenHash ?: throw TokenInvalidException()
+        repeat(MAX_SUCCESSOR_DEPTH) {
+            if (!visited.add(nextHash)) throw TokenInvalidException()
+            val successor = refreshTokenPersistencePort.lockByTokenHash(nextHash) ?: throw TokenInvalidException()
+            if (successor.memberId != predecessor.memberId || successor.isExpired(now) ||
+                (successor.isRotated() && !successor.isWithinGrace(now, GRACE_SECONDS))
+            ) {
+                throw TokenInvalidException()
+            }
+            val plain =
+                tokenProvider.generateRefreshToken(
+                    (successor.issuedMemberId ?: throw TokenInvalidException()).toString(),
+                    identity,
+                    successor.tokenJti ?: throw TokenInvalidException(),
+                    successor.issuedAt,
+                    successor.expiresAt,
+                )
+            if (TokenHasher.sha256Hex(plain) != successor.tokenHash) throw TokenInvalidException()
+            if (!successor.isRotated()) {
+                if (successor.successorTokenHash != null) throw TokenInvalidException()
+                return RefreshToken(
+                    tokenId = successor.tokenId, memberId = successor.memberId, tokenHash = successor.tokenHash,
+                    deviceId = successor.deviceId, issuedAt = successor.issuedAt, expiresAt = successor.expiresAt,
+                    plainToken = plain, tokenJti = successor.tokenJti, issuedMemberId = successor.issuedMemberId,
+                )
+            }
+            nextHash = successor.successorTokenHash ?: throw TokenInvalidException()
+        }
+        throw TokenInvalidException()
     }
 
     private fun respond(
@@ -192,5 +210,6 @@ class RefreshTokenService(
 
     companion object {
         private const val GRACE_SECONDS = 60L
+        private const val MAX_SUCCESSOR_DEPTH = 64
     }
 }

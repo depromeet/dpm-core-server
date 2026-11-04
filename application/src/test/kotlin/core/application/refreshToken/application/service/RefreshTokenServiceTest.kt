@@ -354,6 +354,46 @@ class RefreshTokenServiceTest {
         assertThat(port.findAllByMemberId(memberId.value)).hasSize(2)
     }
 
+    @Test
+    fun `delayed ancestor retry returns active descendant which still refreshes after ancestor grace`() {
+        val provider = createProvider()
+        val t0 = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(t0))
+        val service = createService(provider, port)
+
+        fun refresh(token: String) =
+            service.reissue(
+                MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", token)) },
+                MockHttpServletResponse(),
+            )
+        val t1 = refresh(t0).refreshToken
+        val t2 = refresh(t1).refreshToken
+        val delayed = refresh(t0)
+        assertThat(delayed.refreshToken).isEqualTo(t2)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).hasSize(1)
+        listOf(t0, t1).forEach { port.findByTokenHash(TokenHasher.sha256Hex(it))!!.rotatedAt = Instant.now().minusSeconds(61) }
+        assertThatThrownBy { refresh(t0) }.isInstanceOf(TokenInvalidException::class.java)
+        val t3 = refresh(delayed.refreshToken)
+        assertThat(provider.getMemberId(t3.accessToken)).isEqualTo(memberId.value)
+        assertThat(t3.refreshToken).isNotEqualTo(t2)
+    }
+
+    @Test
+    fun `cyclic successor chain fails closed without creating a token`() {
+        val provider = createProvider()
+        val t0 = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(t0))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", t0)) }
+        val t1 = service.reissue(request, MockHttpServletResponse()).refreshToken
+        port.findByTokenHash(TokenHasher.sha256Hex(t1))!!.apply {
+            markRotated(Instant.now())
+            successorTokenHash = TokenHasher.sha256Hex(t0)
+        }
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+        assertThat(port.findAllByMemberId(memberId.value)).hasSize(2)
+    }
+
     private fun stored(plainToken: String): RefreshToken {
         val now = Instant.now()
         return RefreshToken(
