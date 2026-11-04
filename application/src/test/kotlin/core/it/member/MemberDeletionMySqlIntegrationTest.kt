@@ -18,6 +18,8 @@ import core.application.security.oauth.token.JwtAuthenticationFilter
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
 import core.application.security.oauth.token.JwtTokenResolver
+import core.application.security.oauth.token.LoginIdentityValidator
+import core.application.security.oauth.token.MergedMemberResolver
 import core.application.security.properties.TokenProperties
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.authorization.port.inbound.RoleQueryUseCase
@@ -51,6 +53,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
@@ -152,6 +155,8 @@ class MemberDeletionMySqlIntegrationTest {
 
     @Test
     fun `미승인 삭제는 회원 두 필드만 바꾸고 관련 데이터와 공유 기록 조회를 보존한다`() {
+        jdbc.update("update members set profile_completed_at = created_at where member_id in (1, 2, 3)")
+        assertThat(members.findManagementMembers(19).map { it.memberId }).containsExactlyInAnyOrder(1, 2, 3)
         val before = snapshot()
         val memberBefore = memberRow(1)
         deletion.delete(listOf(1), 3)
@@ -273,7 +278,10 @@ class MemberDeletionMySqlIntegrationTest {
         val hash = core.application.refreshToken.application.support.TokenHasher.sha256Hex(refresh)
         jdbc.update("update refresh_tokens set token_hash = ? where member_id = 1", hash)
         val issuer = mock(RefreshTokenIssueService::class.java)
-        val service = RefreshTokenService(tokenStore, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider, mock(DeviceIdResolver::class.java), members, mock(core.application.security.oauth.token.LoginIdentityValidator::class.java), mock(core.application.security.oauth.token.MergedMemberResolver::class.java), transactionManager)
+        val identities = mock(LoginIdentityValidator::class.java)
+        val mergedMembers = mock(MergedMemberResolver::class.java)
+        `when`(mergedMembers.resolvePath(refresh)).thenReturn(MergedMemberResolver.ResolvedMember(1, listOf(1)))
+        val service = RefreshTokenService(tokenStore, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider, mock(DeviceIdResolver::class.java), members, identities, mergedMembers, transactionManager)
         val changed = CountDownLatch(1)
         val release = CountDownLatch(1)
         val connectionId = AtomicLong()
@@ -305,7 +313,8 @@ class MemberDeletionMySqlIntegrationTest {
             release.countDown()
             first.get(10, TimeUnit.SECONDS)
             assertThat(second.get(10, TimeUnit.SECONDS).exceptionOrNull()).isInstanceOf(TokenInvalidException::class.java)
-            verifyNoInteractions(issuer)
+            verify(mergedMembers, times(2)).resolvePath(refresh)
+            verifyNoInteractions(identities, issuer)
             assertThat(jdbc.queryForObject("select count(*) from refresh_tokens where token_hash = ? and rotated_at is null", Int::class.java, hash)).isEqualTo(1)
         } finally {
             release.countDown()
