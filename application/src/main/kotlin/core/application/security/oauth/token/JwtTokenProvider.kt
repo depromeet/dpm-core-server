@@ -65,20 +65,32 @@ class JwtTokenProvider(
         memberId: String,
         loginIdentity: LoginIdentity?,
     ): String {
-        val currentTimeMillis = System.currentTimeMillis()
-        val now = Date(currentTimeMillis)
-        val expiration = Date(currentTimeMillis + tokenProperties.expirationTime.refreshToken * 1000)
+        val now = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        return generateRefreshToken(
+            memberId,
+            loginIdentity,
+            UUID.randomUUID().toString(),
+            now,
+            now.plusSeconds(tokenProperties.expirationTime.refreshToken),
+        )
+    }
 
-        return Jwts
-            .builder()
-            .id(UUID.randomUUID().toString())
+    /** Persist the exact claims needed to reproduce a rotation successor without storing plaintext. */
+    fun generateRefreshToken(
+        memberId: String,
+        loginIdentity: LoginIdentity?,
+        jti: String,
+        issuedAt: java.time.Instant,
+        expiresAt: java.time.Instant,
+    ): String =
+        Jwts.builder()
+            .id(jti)
             .subject(memberId)
             .withLoginIdentity(loginIdentity)
-            .issuedAt(now)
-            .expiration(expiration)
+            .issuedAt(Date.from(issuedAt))
+            .expiration(Date.from(expiresAt))
             .signWith(getSigningKey())
             .compact()
-    }
 
     fun generateToken(
         memberId: String,

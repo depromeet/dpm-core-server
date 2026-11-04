@@ -35,7 +35,12 @@ class RefreshTokenRepository(
         val issuedAt = field(name("issued_at"), LocalDateTime::class.java)
         val expiresAt = field(name("expires_at"), LocalDateTime::class.java)
         val rotatedAt = field(name("rotated_at"), LocalDateTime::class.java)
-        return dsl.select(tokenId, memberId, hash, deviceId, issuedAt, expiresAt, rotatedAt)
+        val tokenJti = field(name("token_jti"), String::class.java)
+        val issuedMemberId = field(name("issued_member_id"), Long::class.java)
+        val successor = field(name("successor_token_hash"), String::class.java)
+        return dsl.select(
+            tokenId, memberId, hash, deviceId, issuedAt, expiresAt, rotatedAt, tokenJti, issuedMemberId, successor,
+        )
             .from(table(name("refresh_tokens"))).where(hash.eq(tokenHash)).forUpdate()
             .fetchOne { row ->
                 RefreshToken(
@@ -46,6 +51,9 @@ class RefreshTokenRepository(
                     issuedAt = requireNotNull(row[issuedAt]).toInstant(ZoneOffset.UTC),
                     expiresAt = requireNotNull(row[expiresAt]).toInstant(ZoneOffset.UTC),
                     rotatedAt = row[rotatedAt]?.toInstant(ZoneOffset.UTC),
+                    tokenJti = row[tokenJti],
+                    issuedMemberId = row[issuedMemberId],
+                    successorTokenHash = row[successor],
                 )
             }
     }
@@ -58,6 +66,19 @@ class RefreshTokenRepository(
         rotatedAt: Instant,
     ) {
         refreshTokenJpaRepository.markRotated(tokenHash, rotatedAt)
+    }
+
+    override fun linkSuccessor(
+        tokenHash: String,
+        successorTokenHash: String,
+    ) {
+        check(
+            dsl.execute(
+                "UPDATE refresh_tokens SET successor_token_hash = ? " +
+                    "WHERE token_hash = ? AND successor_token_hash IS NULL",
+                successorTokenHash, tokenHash,
+            ) == 1,
+        )
     }
 
     override fun deleteByTokenHash(tokenHash: String) {

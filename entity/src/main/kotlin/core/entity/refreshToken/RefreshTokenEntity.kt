@@ -34,13 +34,7 @@ class RefreshTokenEntity(
     val memberId: Long,
     @Column(name = "token_hash", nullable = false, length = 64, updatable = false)
     val tokenHash: String,
-    /**
-     * 전환기 롤백 대비 평문 사본.
-     *
-     * 이전 버전은 평문으로만 조회했기 때문에, 이미지를 롤백할 가능성이 남아 있는 동안에는
-     * 이 컬럼을 계속 채워 둔다. 안정화 후 `ALTER TABLE refresh_tokens DROP COLUMN token` 과
-     * 함께 이 필드도 제거한다.
-     */
+    /** Legacy plaintext column retained for schema compatibility; new tokens are stored only as hashes. */
     @Lob
     @Column(name = "token", columnDefinition = "TEXT")
     val token: String? = null,
@@ -52,6 +46,12 @@ class RefreshTokenEntity(
     val expiresAt: Instant,
     @Column(name = "rotated_at")
     var rotatedAt: Instant? = null,
+    @Column(name = "token_jti", length = 36, updatable = false)
+    val tokenJti: String? = null,
+    @Column(name = "issued_member_id", updatable = false)
+    val issuedMemberId: Long? = null,
+    @Column(name = "successor_token_hash", length = 64)
+    var successorTokenHash: String? = null,
 ) {
     /** @param plainToken 방금 발급한 경우에만 전달한다. DB 조회 결과에는 null 이다. */
     fun toDomain(plainToken: String? = null): RefreshToken =
@@ -64,6 +64,9 @@ class RefreshTokenEntity(
             expiresAt = this.expiresAt,
             rotatedAt = this.rotatedAt,
             plainToken = plainToken,
+            tokenJti = tokenJti,
+            issuedMemberId = issuedMemberId,
+            successorTokenHash = successorTokenHash,
         )
 
     companion object {
@@ -72,11 +75,14 @@ class RefreshTokenEntity(
                 id = domain.tokenId ?: 0L,
                 memberId = domain.memberId.value,
                 tokenHash = domain.tokenHash,
-                token = domain.plainToken,
+                token = null,
                 deviceId = domain.deviceId,
                 issuedAt = domain.issuedAt,
                 expiresAt = domain.expiresAt,
                 rotatedAt = domain.rotatedAt,
+                tokenJti = domain.tokenJti,
+                issuedMemberId = domain.issuedMemberId,
+                successorTokenHash = domain.successorTokenHash,
             )
     }
 }

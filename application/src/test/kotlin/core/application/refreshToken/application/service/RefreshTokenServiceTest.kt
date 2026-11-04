@@ -211,6 +211,149 @@ class RefreshTokenServiceTest {
         org.mockito.Mockito.verify(resolver, org.mockito.Mockito.times(4)).resolvePath(old)
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(longs = [77, 335])
+    fun `one hundred grace retries return one successor and preserve unrelated devices`(sourceId: Long) {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(sourceId.toString(), KAKAO_LOGIN)
+        val unrelated = (1..11).map { stored(provider.generateRefreshToken(memberId.toString(), APPLE_LOGIN)) }
+        val port = FakeRefreshTokenPersistencePort(stored(old), *unrelated.toTypedArray())
+        val service = createService(provider, port, sourceId = sourceId)
+        val results =
+            (1..100).map {
+                service.reissue(MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }, MockHttpServletResponse())
+            }
+        assertThat(results.map { it.refreshToken }.distinct()).hasSize(1)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).hasSize(12)
+        unrelated.forEach { assertThat(port.findByTokenHash(it.tokenHash)).isNotNull() }
+        val successor = port.findByTokenHash(TokenHasher.sha256Hex(results.first().refreshToken))!!
+        assertThat(
+            provider.generateRefreshToken(
+                successor.issuedMemberId.toString(),
+                KAKAO_LOGIN,
+                successor.tokenJti!!,
+                successor.issuedAt,
+                successor.expiresAt,
+            ),
+        ).isEqualTo(results.first().refreshToken)
+    }
+
+    @Test
+    fun `deleted successor is not recreated by replaying its predecessor`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }
+        val first = service.reissue(request, MockHttpServletResponse())
+        port.deleteByTokenHash(TokenHasher.sha256Hex(first.refreshToken))
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).isEmpty()
+    }
+
+    @Test
+    fun `successor reconstruction refuses a different login identity`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }
+        val first = service.reissue(request, MockHttpServletResponse())
+        val successor = port.findByTokenHash(TokenHasher.sha256Hex(first.refreshToken))!!
+        val wrongPlain =
+            provider.generateRefreshToken(
+                memberId.toString(),
+                APPLE_LOGIN,
+                successor.tokenJti!!,
+                successor.issuedAt,
+                successor.expiresAt,
+            )
+        port.save(
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = TokenHasher.sha256Hex(wrongPlain),
+                issuedAt = successor.issuedAt,
+                expiresAt = successor.expiresAt,
+                tokenJti = successor.tokenJti,
+                issuedMemberId = successor.issuedMemberId,
+            ),
+        )
+        port.findByTokenHash(TokenHasher.sha256Hex(old))!!.successorTokenHash = TokenHasher.sha256Hex(wrongPlain)
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+    }
+
+    @Test
+    fun `legacy rotated predecessor acquires only one successor during its grace window`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val predecessor = stored(old).apply { markRotated(Instant.now()) }
+        val port = FakeRefreshTokenPersistencePort(predecessor)
+        val service = createService(provider, port)
+        val results =
+            (1..10).map {
+                service.reissue(MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }, MockHttpServletResponse())
+            }
+        assertThat(results.map { it.refreshToken }.distinct()).hasSize(1)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).hasSize(1)
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = [true, false])
+    fun `expired or stale rotated successor is never revived`(expired: Boolean) {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }
+        val first = service.reissue(request, MockHttpServletResponse())
+        val successor = port.findByTokenHash(TokenHasher.sha256Hex(first.refreshToken))!!
+        port.save(
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = successor.tokenHash,
+                issuedAt = successor.issuedAt,
+                expiresAt = if (expired) Instant.now().minusSeconds(1) else successor.expiresAt,
+                tokenJti = successor.tokenJti,
+                issuedMemberId = successor.issuedMemberId,
+                rotatedAt = if (expired) null else Instant.now().minusSeconds(61),
+            ),
+        )
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+        assertThat(port.findAllByMemberId(memberId.value)).hasSize(2)
+    }
+
+    @Test
+    fun `successor created before merge keeps its signed subject while access uses retained member`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken("77", KAKAO_LOGIN)
+        val now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        val jti = java.util.UUID.randomUUID().toString()
+        val successorPlain = provider.generateRefreshToken("77", KAKAO_LOGIN, jti, now, now.plusSeconds(3600))
+        val successor =
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = TokenHasher.sha256Hex(successorPlain),
+                issuedAt = now,
+                expiresAt = now.plusSeconds(3600),
+                tokenJti = jti,
+                issuedMemberId = 77,
+            )
+        val predecessor =
+            stored(old).apply {
+                markRotated(now)
+                successorTokenHash = successor.tokenHash
+            }
+        val port = FakeRefreshTokenPersistencePort(predecessor, successor)
+        val result =
+            createService(provider, port, sourceId = 77).reissue(
+                MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) },
+                MockHttpServletResponse(),
+            )
+        assertThat(result.refreshToken).isEqualTo(successorPlain)
+        assertThat(provider.getMemberId(result.accessToken)).isEqualTo(memberId.value)
+        assertThat(port.findAllByMemberId(memberId.value)).hasSize(2)
+    }
+
     private fun stored(plainToken: String): RefreshToken {
         val now = Instant.now()
         return RefreshToken(
@@ -305,6 +448,13 @@ private class FakeRefreshTokenPersistencePort(
         rotatedAt: Instant,
     ) {
         store.firstOrNull { it.tokenHash == tokenHash }?.markRotated(rotatedAt)
+    }
+
+    override fun linkSuccessor(
+        tokenHash: String,
+        successorTokenHash: String,
+    ) {
+        findByTokenHash(tokenHash)!!.successorTokenHash = successorTokenHash
     }
 
     override fun deleteByTokenHash(tokenHash: String) {

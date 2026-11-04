@@ -278,6 +278,7 @@ class MemberMergeMySqlIntegrationTest {
             )
         val issuer = core.application.refreshToken.application.service.RefreshTokenIssueService(provider, properties, tokenStore)
         val old = TransactionTemplate(tx).execute { issuer.issueForLogin(MemberId(sourceId), "mobile", identity) }!!
+        assertThat(jdbc.queryForObject("select token is null from refresh_tokens where token_hash=?", Boolean::class.java, old.tokenHash)).isTrue()
         val access = provider.generateAccessToken(sourceId.toString(), identity)
         service.mergeAndApprove(retainedId, sourceId, 99)
         val resolver = core.application.security.oauth.token.MergedMemberResolver(provider, members, mergeStore, identities, tokenStore)
@@ -296,6 +297,29 @@ class MemberMergeMySqlIntegrationTest {
             )
         assertThat(provider.getMemberId(result.accessToken)).isEqualTo(retainedId)
         assertThat(provider.getLoginIdentity(result.refreshToken)).isEqualTo(identity)
+        val pool = Executors.newFixedThreadPool(8)
+        try {
+            val retries =
+                (1..100).map {
+                    pool.submit(
+                        Callable {
+                            refresh.reissue(
+                                org.springframework.mock.web.MockHttpServletRequest().apply {
+                                    addHeader("Authorization", "Bearer ${old.requirePlainToken()}")
+                                },
+                                org.springframework.mock.web.MockHttpServletResponse(),
+                            ).refreshToken
+                        },
+                    )
+                }.map { it.get(30, TimeUnit.SECONDS) }
+            assertThat(retries.distinct()).containsExactly(result.refreshToken)
+            assertThat(jdbc.queryForObject("select count(*) from refresh_tokens where rotated_at is null", Int::class.java)).isEqualTo(3)
+            (1L..2L).forEach { id ->
+                assertThat(tokenStore.findByTokenHash("test-token-$id".padEnd(64, 'x'))).isNotNull()
+            }
+        } finally {
+            pool.shutdownNow()
+        }
         TransactionTemplate(tx).executeWithoutResult { tokenStore.deleteByMemberId(retainedId) }
         assertThat(resolver.resolve(old.requirePlainToken())).isNull()
         jdbc.update("delete from member_oauth where member_oauth_id=?", sourceId)
