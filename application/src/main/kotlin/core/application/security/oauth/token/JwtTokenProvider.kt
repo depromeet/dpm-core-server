@@ -65,20 +65,32 @@ class JwtTokenProvider(
         memberId: String,
         loginIdentity: LoginIdentity?,
     ): String {
-        val currentTimeMillis = System.currentTimeMillis()
-        val now = Date(currentTimeMillis)
-        val expiration = Date(currentTimeMillis + tokenProperties.expirationTime.refreshToken * 1000)
+        val now = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        return generateRefreshToken(
+            memberId,
+            loginIdentity,
+            UUID.randomUUID().toString(),
+            now,
+            now.plusSeconds(tokenProperties.expirationTime.refreshToken),
+        )
+    }
 
-        return Jwts
-            .builder()
-            .id(UUID.randomUUID().toString())
+    /** Persist the exact claims needed to reproduce a rotation successor without storing plaintext. */
+    fun generateRefreshToken(
+        memberId: String,
+        loginIdentity: LoginIdentity?,
+        jti: String,
+        issuedAt: java.time.Instant,
+        expiresAt: java.time.Instant,
+    ): String =
+        Jwts.builder()
+            .id(jti)
             .subject(memberId)
             .withLoginIdentity(loginIdentity)
-            .issuedAt(now)
-            .expiration(expiration)
+            .issuedAt(Date.from(issuedAt))
+            .expiration(Date.from(expiresAt))
             .signWith(getSigningKey())
             .compact()
-    }
 
     fun generateToken(
         memberId: String,
@@ -100,15 +112,19 @@ class JwtTokenProvider(
             .compact()
     }
 
-    fun getAuthentication(token: String?): Authentication {
-        val claims = getClaims(token)
+    fun getAuthentication(token: String?): Authentication = getAuthentication(token, getMemberId(token))
+
+    fun getAuthentication(
+        token: String?,
+        memberId: Long,
+    ): Authentication {
         val permissions =
             roleQueryUseCase
-                .getPermissionsByMemberId(MemberId(claims.subject.toLong()))
+                .getPermissionsByMemberId(MemberId(memberId))
                 .map { SimpleGrantedAuthority(it) }
 
         return UsernamePasswordAuthenticationToken(
-            User(claims.subject, "", permissions),
+            User(memberId.toString(), "", permissions),
             token,
             permissions,
         )
@@ -125,6 +141,10 @@ class JwtTokenProvider(
         } catch (e: Exception) {
             false
         }
+
+    fun isRefreshToken(token: String): Boolean = !getClaims(token).id.isNullOrBlank()
+
+    fun getIssuedAt(token: String): java.time.Instant? = getClaims(token).issuedAt?.toInstant()
 
     fun getMemberId(token: String?): Long {
         val claims = getClaims(token)

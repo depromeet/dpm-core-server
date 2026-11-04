@@ -87,7 +87,7 @@ class MemberMergeServiceTest {
         order.verify(merge).lockOAuths(listOf(1, 2))
         order.verify(merge).transferOAuths(1, 2)
         order.verify(merge).softDeleteSource(1)
-        order.verify(refreshTokens).deleteByMemberId(1)
+        order.verify(merge).transferRefreshTokens(1, 2)
         order.verify(accounts).deleteLinkRequestsByMemberId(1)
         order.verify(merge).recordMerge(99, 2, 1)
         order.verify(approval).approve(listOf(2))

@@ -18,6 +18,12 @@ interface RefreshTokenPersistencePort {
         rotatedAt: Instant,
     )
 
+    /** Caller holds the predecessor row lock. Assign its sole successor in the same transaction. */
+    fun linkSuccessor(
+        tokenHash: String,
+        successorTokenHash: String,
+    )
+
     fun deleteByTokenHash(tokenHash: String)
 
     fun deleteByMemberId(memberId: Long)

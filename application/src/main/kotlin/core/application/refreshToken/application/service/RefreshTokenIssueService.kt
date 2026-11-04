@@ -37,7 +37,9 @@ class RefreshTokenIssueService(
         loginIdentity: LoginIdentity?,
     ): RefreshToken {
         deviceId?.let { refreshTokenPersistencePort.deleteByMemberIdAndDeviceId(memberId.value, it) }
-        return issue(memberId, deviceId, loginIdentity)
+        val issued = issue(memberId, deviceId, loginIdentity)
+        enforceLimit(memberId)
+        return issued
     }
 
     /**
@@ -58,8 +60,10 @@ class RefreshTokenIssueService(
         deviceId: String?,
         loginIdentity: LoginIdentity?,
     ): RefreshToken {
-        val plainToken = tokenProvider.generateRefreshToken(memberId.toString(), loginIdentity)
-        val now = Instant.now()
+        val now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        val expiresAt = now.plusSeconds(tokenProperties.expirationTime.refreshToken)
+        val jti = java.util.UUID.randomUUID().toString()
+        val plainToken = tokenProvider.generateRefreshToken(memberId.toString(), loginIdentity, jti, now, expiresAt)
 
         val saved =
             refreshTokenPersistencePort.save(
@@ -69,11 +73,13 @@ class RefreshTokenIssueService(
                     tokenHash = TokenHasher.sha256Hex(plainToken),
                     deviceId = deviceId,
                     issuedAt = now,
-                    expiresAt = now.plusSeconds(tokenProperties.expirationTime.refreshToken),
+                    expiresAt = expiresAt,
+                    tokenJti = jti,
                 ),
             )
 
-        enforceLimit(memberId)
+        // Rotation replaces an existing session. A merge may preserve more than the login cap;
+        // rotating one device must not evict another existing device.
         return saved
     }
 

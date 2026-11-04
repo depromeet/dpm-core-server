@@ -162,6 +162,238 @@ class RefreshTokenServiceTest {
         assertThat(response.getHeaders("Set-Cookie")).isEmpty()
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = LoginMethod::class, names = ["KAKAO", "APPLE"])
+    fun `transferred session rotates to retained member for either provider`(method: LoginMethod) {
+        val provider = createProvider()
+        val identity = if (method == LoginMethod.KAKAO) KAKAO_LOGIN else APPLE_LOGIN
+        val old = provider.generateRefreshToken("77", identity)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val result =
+            createService(provider, port, sourceId = 77).reissue(
+                MockHttpServletRequest().apply { addHeader("Authorization", "Bearer $old") },
+                MockHttpServletResponse(),
+            )
+        assertThat(provider.getMemberId(result.accessToken)).isEqualTo(memberId.value)
+        assertThat(provider.getMemberId(result.refreshToken)).isEqualTo(memberId.value)
+        assertThat(provider.getLoginIdentity(result.accessToken)).isEqualTo(identity)
+        assertThat(port.findByTokenHash(TokenHasher.sha256Hex(old))!!.isRotated()).isTrue()
+    }
+
+    @Test
+    fun `rotating transferred sessions does not evict retained devices above login cap`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken("77", KAKAO_LOGIN)
+        val rows = (1..11).map { stored(provider.generateRefreshToken(memberId.toString(), APPLE_LOGIN)) }
+        val port = FakeRefreshTokenPersistencePort(stored(old), *rows.toTypedArray())
+        createService(provider, port, sourceId = 77).reissue(
+            MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) },
+            MockHttpServletResponse(),
+        )
+        rows.forEach { assertThat(port.findByTokenHash(it.tokenHash)).isNotNull() }
+    }
+
+    @Test
+    fun `merge changing the discovered path retries after releasing the old transaction`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken("77", KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val resolver = mock(core.application.security.oauth.token.MergedMemberResolver::class.java)
+        val before = core.application.security.oauth.token.MergedMemberResolver.ResolvedMember(77, listOf(77))
+        val after = core.application.security.oauth.token.MergedMemberResolver.ResolvedMember(memberId.value, listOf(77, memberId.value))
+        `when`(resolver.resolvePath(old)).thenReturn(before, after, after, after)
+        val result =
+            createService(provider, port, sourceId = 77, resolver = resolver).reissue(
+                MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) },
+                MockHttpServletResponse(),
+            )
+        assertThat(provider.getMemberId(result.accessToken)).isEqualTo(memberId.value)
+        org.mockito.Mockito.verify(resolver, org.mockito.Mockito.times(4)).resolvePath(old)
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(longs = [77, 335])
+    fun `one hundred grace retries return one successor and preserve unrelated devices`(sourceId: Long) {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(sourceId.toString(), KAKAO_LOGIN)
+        val unrelated = (1..11).map { stored(provider.generateRefreshToken(memberId.toString(), APPLE_LOGIN)) }
+        val port = FakeRefreshTokenPersistencePort(stored(old), *unrelated.toTypedArray())
+        val service = createService(provider, port, sourceId = sourceId)
+        val results =
+            (1..100).map {
+                service.reissue(MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }, MockHttpServletResponse())
+            }
+        assertThat(results.map { it.refreshToken }.distinct()).hasSize(1)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).hasSize(12)
+        unrelated.forEach { assertThat(port.findByTokenHash(it.tokenHash)).isNotNull() }
+        val successor = port.findByTokenHash(TokenHasher.sha256Hex(results.first().refreshToken))!!
+        assertThat(
+            provider.generateRefreshToken(
+                successor.issuedMemberId.toString(),
+                KAKAO_LOGIN,
+                successor.tokenJti!!,
+                successor.issuedAt,
+                successor.expiresAt,
+            ),
+        ).isEqualTo(results.first().refreshToken)
+    }
+
+    @Test
+    fun `deleted successor is not recreated by replaying its predecessor`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }
+        val first = service.reissue(request, MockHttpServletResponse())
+        port.deleteByTokenHash(TokenHasher.sha256Hex(first.refreshToken))
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).isEmpty()
+    }
+
+    @Test
+    fun `successor reconstruction refuses a different login identity`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }
+        val first = service.reissue(request, MockHttpServletResponse())
+        val successor = port.findByTokenHash(TokenHasher.sha256Hex(first.refreshToken))!!
+        val wrongPlain =
+            provider.generateRefreshToken(
+                memberId.toString(),
+                APPLE_LOGIN,
+                successor.tokenJti!!,
+                successor.issuedAt,
+                successor.expiresAt,
+            )
+        port.save(
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = TokenHasher.sha256Hex(wrongPlain),
+                issuedAt = successor.issuedAt,
+                expiresAt = successor.expiresAt,
+                tokenJti = successor.tokenJti,
+                issuedMemberId = successor.issuedMemberId,
+            ),
+        )
+        port.findByTokenHash(TokenHasher.sha256Hex(old))!!.successorTokenHash = TokenHasher.sha256Hex(wrongPlain)
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+    }
+
+    @Test
+    fun `legacy rotated predecessor acquires only one successor during its grace window`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val predecessor = stored(old).apply { markRotated(Instant.now()) }
+        val port = FakeRefreshTokenPersistencePort(predecessor)
+        val service = createService(provider, port)
+        val results =
+            (1..10).map {
+                service.reissue(MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }, MockHttpServletResponse())
+            }
+        assertThat(results.map { it.refreshToken }.distinct()).hasSize(1)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).hasSize(1)
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = [true, false])
+    fun `expired or stale rotated successor is never revived`(expired: Boolean) {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) }
+        val first = service.reissue(request, MockHttpServletResponse())
+        val successor = port.findByTokenHash(TokenHasher.sha256Hex(first.refreshToken))!!
+        port.save(
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = successor.tokenHash,
+                issuedAt = successor.issuedAt,
+                expiresAt = if (expired) Instant.now().minusSeconds(1) else successor.expiresAt,
+                tokenJti = successor.tokenJti,
+                issuedMemberId = successor.issuedMemberId,
+                rotatedAt = if (expired) null else Instant.now().minusSeconds(61),
+            ),
+        )
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+        assertThat(port.findAllByMemberId(memberId.value)).hasSize(2)
+    }
+
+    @Test
+    fun `successor created before merge keeps its signed subject while access uses retained member`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken("77", KAKAO_LOGIN)
+        val now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
+        val jti = java.util.UUID.randomUUID().toString()
+        val successorPlain = provider.generateRefreshToken("77", KAKAO_LOGIN, jti, now, now.plusSeconds(3600))
+        val successor =
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = TokenHasher.sha256Hex(successorPlain),
+                issuedAt = now,
+                expiresAt = now.plusSeconds(3600),
+                tokenJti = jti,
+                issuedMemberId = 77,
+            )
+        val predecessor =
+            stored(old).apply {
+                markRotated(now)
+                successorTokenHash = successor.tokenHash
+            }
+        val port = FakeRefreshTokenPersistencePort(predecessor, successor)
+        val result =
+            createService(provider, port, sourceId = 77).reissue(
+                MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) },
+                MockHttpServletResponse(),
+            )
+        assertThat(result.refreshToken).isEqualTo(successorPlain)
+        assertThat(provider.getMemberId(result.accessToken)).isEqualTo(memberId.value)
+        assertThat(port.findAllByMemberId(memberId.value)).hasSize(2)
+    }
+
+    @Test
+    fun `delayed ancestor retry returns active descendant which still refreshes after ancestor grace`() {
+        val provider = createProvider()
+        val t0 = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(t0))
+        val service = createService(provider, port)
+
+        fun refresh(token: String) =
+            service.reissue(
+                MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", token)) },
+                MockHttpServletResponse(),
+            )
+        val t1 = refresh(t0).refreshToken
+        val t2 = refresh(t1).refreshToken
+        val delayed = refresh(t0)
+        assertThat(delayed.refreshToken).isEqualTo(t2)
+        assertThat(port.findAllByMemberId(memberId.value).filterNot { it.isRotated() }).hasSize(1)
+        listOf(t0, t1).forEach { port.findByTokenHash(TokenHasher.sha256Hex(it))!!.rotatedAt = Instant.now().minusSeconds(61) }
+        assertThatThrownBy { refresh(t0) }.isInstanceOf(TokenInvalidException::class.java)
+        val t3 = refresh(delayed.refreshToken)
+        assertThat(provider.getMemberId(t3.accessToken)).isEqualTo(memberId.value)
+        assertThat(t3.refreshToken).isNotEqualTo(t2)
+    }
+
+    @Test
+    fun `cyclic successor chain fails closed without creating a token`() {
+        val provider = createProvider()
+        val t0 = provider.generateRefreshToken(memberId.toString(), KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(t0))
+        val service = createService(provider, port)
+        val request = MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", t0)) }
+        val t1 = service.reissue(request, MockHttpServletResponse()).refreshToken
+        port.findByTokenHash(TokenHasher.sha256Hex(t1))!!.apply {
+            markRotated(Instant.now())
+            successorTokenHash = TokenHasher.sha256Hex(t0)
+        }
+        assertThatThrownBy { service.reissue(request, MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
+        assertThat(port.findAllByMemberId(memberId.value)).hasSize(2)
+    }
+
     private fun stored(plainToken: String): RefreshToken {
         val now = Instant.now()
         return RefreshToken(
@@ -178,6 +410,8 @@ class RefreshTokenServiceTest {
         provider: JwtTokenProvider,
         port: RefreshTokenPersistencePort,
         loginAvailable: Boolean = true,
+        sourceId: Long = memberId.value,
+        resolver: core.application.security.oauth.token.MergedMemberResolver? = null,
     ): RefreshTokenService {
         val securityProperties = testSecurityProperties()
         return RefreshTokenService(
@@ -192,9 +426,21 @@ class RefreshTokenServiceTest {
                     `when`(it.isValid(memberId.value, KAKAO_LOGIN)).thenReturn(true)
                     `when`(it.isValid(memberId.value, APPLE_LOGIN)).thenReturn(true)
                 },
+            mergedMembers =
+                resolver ?: mock(core.application.security.oauth.token.MergedMemberResolver::class.java).also {
+                    `when`(it.resolvePath(org.mockito.ArgumentMatchers.anyString())).thenReturn(core.application.security.oauth.token.MergedMemberResolver.ResolvedMember(memberId.value, listOf(sourceId, memberId.value).distinct()))
+                },
+            transactions =
+                mock(org.springframework.transaction.PlatformTransactionManager::class.java).also {
+                    `when`(it.getTransaction(org.mockito.ArgumentMatchers.any())).thenReturn(org.springframework.transaction.support.SimpleTransactionStatus())
+                },
             members =
                 mock(MemberPersistencePort::class.java).also {
-                    `when`(it.lockApprovalTargets(listOf(memberId.value))).thenReturn(listOf(MemberApprovalTarget(memberId.value, MemberStatus.ACTIVE, emptySet(), !loginAvailable)))
+                    `when`(it.lockApprovalTargets(listOf(sourceId, memberId.value).distinct().sorted())).thenReturn(
+                        listOf(sourceId, memberId.value).distinct().sorted().map { id ->
+                            MemberApprovalTarget(id, if (id == memberId.value) MemberStatus.ACTIVE else MemberStatus.WITHDRAWN, emptySet(), id != memberId.value || !loginAvailable)
+                        },
+                    )
                 },
         )
     }
@@ -242,6 +488,13 @@ private class FakeRefreshTokenPersistencePort(
         rotatedAt: Instant,
     ) {
         store.firstOrNull { it.tokenHash == tokenHash }?.markRotated(rotatedAt)
+    }
+
+    override fun linkSuccessor(
+        tokenHash: String,
+        successorTokenHash: String,
+    ) {
+        findByTokenHash(tokenHash)!!.successorTokenHash = successorTokenHash
     }
 
     override fun deleteByTokenHash(tokenHash: String) {
