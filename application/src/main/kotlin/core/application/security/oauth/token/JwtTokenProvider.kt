@@ -100,15 +100,19 @@ class JwtTokenProvider(
             .compact()
     }
 
-    fun getAuthentication(token: String?): Authentication {
-        val claims = getClaims(token)
+    fun getAuthentication(token: String?): Authentication = getAuthentication(token, getMemberId(token))
+
+    fun getAuthentication(
+        token: String?,
+        memberId: Long,
+    ): Authentication {
         val permissions =
             roleQueryUseCase
-                .getPermissionsByMemberId(MemberId(claims.subject.toLong()))
+                .getPermissionsByMemberId(MemberId(memberId))
                 .map { SimpleGrantedAuthority(it) }
 
         return UsernamePasswordAuthenticationToken(
-            User(claims.subject, "", permissions),
+            User(memberId.toString(), "", permissions),
             token,
             permissions,
         )
@@ -125,6 +129,10 @@ class JwtTokenProvider(
         } catch (e: Exception) {
             false
         }
+
+    fun isRefreshToken(token: String): Boolean = !getClaims(token).id.isNullOrBlank()
+
+    fun getIssuedAt(token: String): java.time.Instant? = getClaims(token).issuedAt?.toInstant()
 
     fun getMemberId(token: String?): Long {
         val claims = getClaims(token)

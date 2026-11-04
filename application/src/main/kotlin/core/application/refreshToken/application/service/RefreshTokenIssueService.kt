@@ -37,7 +37,9 @@ class RefreshTokenIssueService(
         loginIdentity: LoginIdentity?,
     ): RefreshToken {
         deviceId?.let { refreshTokenPersistencePort.deleteByMemberIdAndDeviceId(memberId.value, it) }
-        return issue(memberId, deviceId, loginIdentity)
+        val issued = issue(memberId, deviceId, loginIdentity)
+        enforceLimit(memberId)
+        return issued
     }
 
     /**
@@ -73,7 +75,8 @@ class RefreshTokenIssueService(
                 ),
             )
 
-        enforceLimit(memberId)
+        // Rotation replaces an existing session. A merge may preserve more than the login cap;
+        // rotating one device must not evict another existing device.
         return saved
     }
 

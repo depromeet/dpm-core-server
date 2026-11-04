@@ -67,6 +67,12 @@ class MemberMergeMySqlIntegrationTest {
 
     @Autowired lateinit var tx: PlatformTransactionManager
 
+    @Autowired lateinit var tokenStore: core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
+
+    @Autowired lateinit var identities: core.application.security.oauth.token.LoginIdentityValidator
+
+    @Autowired lateinit var mergeStore: core.domain.member.port.outbound.MemberMergePersistencePort
+
     @MockitoBean lateinit var cohorts: CohortQueryUseCase
 
     @MockitoBean lateinit var roles: RoleQueryUseCase
@@ -254,8 +260,50 @@ class MemberMergeMySqlIntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from member_oauth_link_requests", Int::class.java)).isEqualTo(2)
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(longs = [1, 2])
+    fun `either provider keeps access and refresh after merging into an approved member`(sourceId: Long) {
+        val retainedId = if (sourceId == 1L) 2L else 1L
+        jdbc.update("update members set status='ACTIVE' where member_id=?", retainedId)
+        val properties =
+            core.application.security.properties.TokenProperties(
+                secretKey = java.util.Base64.getEncoder().encodeToString("merge-session-test-signing-key-with-256-bits".toByteArray()),
+                expirationTime = core.application.security.properties.TokenProperties.ExpirationTime(7200, 2592000),
+            )
+        val provider = core.application.security.oauth.token.JwtTokenProvider(properties, roles)
+        val identity =
+            core.domain.member.vo.LoginIdentity(
+                if (sourceId == 1L) core.domain.member.enums.LoginMethod.KAKAO else core.domain.member.enums.LoginMethod.APPLE,
+                sourceId,
+            )
+        val issuer = core.application.refreshToken.application.service.RefreshTokenIssueService(provider, properties, tokenStore)
+        val old = TransactionTemplate(tx).execute { issuer.issueForLogin(MemberId(sourceId), "mobile", identity) }!!
+        val access = provider.generateAccessToken(sourceId.toString(), identity)
+        service.mergeAndApprove(retainedId, sourceId, 99)
+        val resolver = core.application.security.oauth.token.MergedMemberResolver(provider, members, mergeStore, identities, tokenStore)
+        assertThat(resolver.resolve(access)!!.memberId).isEqualTo(retainedId)
+        assertThat(tokenStore.findByTokenHash(old.tokenHash)!!.memberId.value).isEqualTo(retainedId)
+        val refresh =
+            core.application.refreshToken.application.service.RefreshTokenService(
+                tokenStore, issuer, core.application.security.oauth.token.JwtTokenResolver(),
+                org.mockito.Mockito.mock(core.application.security.oauth.token.JwtTokenInjector::class.java), provider,
+                org.mockito.Mockito.mock(core.application.security.oauth.token.DeviceIdResolver::class.java), members, identities, resolver, tx,
+            )
+        val result =
+            refresh.reissue(
+                org.springframework.mock.web.MockHttpServletRequest().apply { addHeader("Authorization", "Bearer ${old.requirePlainToken()}") },
+                org.springframework.mock.web.MockHttpServletResponse(),
+            )
+        assertThat(provider.getMemberId(result.accessToken)).isEqualTo(retainedId)
+        assertThat(provider.getLoginIdentity(result.refreshToken)).isEqualTo(identity)
+        TransactionTemplate(tx).executeWithoutResult { tokenStore.deleteByMemberId(retainedId) }
+        assertThat(resolver.resolve(old.requirePlainToken())).isNull()
+        jdbc.update("delete from member_oauth where member_oauth_id=?", sourceId)
+        assertThat(resolver.resolve(access)).isNull()
+    }
+
     private fun assertCleanupAndAudit() {
-        assertThat(jdbc.queryForList("select member_id from refresh_tokens", Long::class.java)).containsExactly(1L)
+        assertThat(jdbc.queryForList("select member_id from refresh_tokens", Long::class.java)).containsExactly(1L, 1L)
         assertThat(jdbc.queryForList("select member_id from member_oauth_link_requests", Long::class.java)).containsExactly(1L)
         assertThat(jdbc.queryForMap("select actor_member_id, retained_member_id, source_member_id from member_merge_events"))
             .containsEntry("actor_member_id", 99L).containsEntry("retained_member_id", 1L).containsEntry("source_member_id", 2L)
@@ -276,6 +324,9 @@ class MemberMergeMySqlIntegrationTest {
         MemberApprovalService::class,
         MemberMergeService::class,
         MemberIdentityLockService::class,
+        core.application.security.oauth.token.LoginIdentityValidator::class,
+        core.persistence.member.repository.oauth.MemberOAuthRepository::class,
+        core.persistence.membercredential.repository.MemberCredentialRepository::class,
     )
     class Config
 

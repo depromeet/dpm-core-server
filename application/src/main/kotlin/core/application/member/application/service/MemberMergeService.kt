@@ -65,7 +65,7 @@ class MemberMergeService(
         }
         merge.transferOAuths(sourceId, retainedId)
         merge.softDeleteSource(sourceId)
-        refreshTokens.deleteByMemberId(sourceId)
+        merge.transferRefreshTokens(sourceId, retainedId)
         accounts.deleteLinkRequestsByMemberId(sourceId)
         merge.recordMerge(actorId, retainedId, sourceId)
         if (retained.status == MemberStatus.PENDING) approval.approve(listOf(retainedId))

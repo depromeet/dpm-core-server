@@ -162,6 +162,55 @@ class RefreshTokenServiceTest {
         assertThat(response.getHeaders("Set-Cookie")).isEmpty()
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = LoginMethod::class, names = ["KAKAO", "APPLE"])
+    fun `transferred session rotates to retained member for either provider`(method: LoginMethod) {
+        val provider = createProvider()
+        val identity = if (method == LoginMethod.KAKAO) KAKAO_LOGIN else APPLE_LOGIN
+        val old = provider.generateRefreshToken("77", identity)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val result =
+            createService(provider, port, sourceId = 77).reissue(
+                MockHttpServletRequest().apply { addHeader("Authorization", "Bearer $old") },
+                MockHttpServletResponse(),
+            )
+        assertThat(provider.getMemberId(result.accessToken)).isEqualTo(memberId.value)
+        assertThat(provider.getMemberId(result.refreshToken)).isEqualTo(memberId.value)
+        assertThat(provider.getLoginIdentity(result.accessToken)).isEqualTo(identity)
+        assertThat(port.findByTokenHash(TokenHasher.sha256Hex(old))!!.isRotated()).isTrue()
+    }
+
+    @Test
+    fun `rotating transferred sessions does not evict retained devices above login cap`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken("77", KAKAO_LOGIN)
+        val rows = (1..11).map { stored(provider.generateRefreshToken(memberId.toString(), APPLE_LOGIN)) }
+        val port = FakeRefreshTokenPersistencePort(stored(old), *rows.toTypedArray())
+        createService(provider, port, sourceId = 77).reissue(
+            MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) },
+            MockHttpServletResponse(),
+        )
+        rows.forEach { assertThat(port.findByTokenHash(it.tokenHash)).isNotNull() }
+    }
+
+    @Test
+    fun `merge changing the discovered path retries after releasing the old transaction`() {
+        val provider = createProvider()
+        val old = provider.generateRefreshToken("77", KAKAO_LOGIN)
+        val port = FakeRefreshTokenPersistencePort(stored(old))
+        val resolver = mock(core.application.security.oauth.token.MergedMemberResolver::class.java)
+        val before = core.application.security.oauth.token.MergedMemberResolver.ResolvedMember(77, listOf(77))
+        val after = core.application.security.oauth.token.MergedMemberResolver.ResolvedMember(memberId.value, listOf(77, memberId.value))
+        `when`(resolver.resolvePath(old)).thenReturn(before, after, after, after)
+        val result =
+            createService(provider, port, sourceId = 77, resolver = resolver).reissue(
+                MockHttpServletRequest().apply { setCookies(Cookie("refreshToken", old)) },
+                MockHttpServletResponse(),
+            )
+        assertThat(provider.getMemberId(result.accessToken)).isEqualTo(memberId.value)
+        org.mockito.Mockito.verify(resolver, org.mockito.Mockito.times(4)).resolvePath(old)
+    }
+
     private fun stored(plainToken: String): RefreshToken {
         val now = Instant.now()
         return RefreshToken(
@@ -178,6 +227,8 @@ class RefreshTokenServiceTest {
         provider: JwtTokenProvider,
         port: RefreshTokenPersistencePort,
         loginAvailable: Boolean = true,
+        sourceId: Long = memberId.value,
+        resolver: core.application.security.oauth.token.MergedMemberResolver? = null,
     ): RefreshTokenService {
         val securityProperties = testSecurityProperties()
         return RefreshTokenService(
@@ -192,9 +243,21 @@ class RefreshTokenServiceTest {
                     `when`(it.isValid(memberId.value, KAKAO_LOGIN)).thenReturn(true)
                     `when`(it.isValid(memberId.value, APPLE_LOGIN)).thenReturn(true)
                 },
+            mergedMembers =
+                resolver ?: mock(core.application.security.oauth.token.MergedMemberResolver::class.java).also {
+                    `when`(it.resolvePath(org.mockito.ArgumentMatchers.anyString())).thenReturn(core.application.security.oauth.token.MergedMemberResolver.ResolvedMember(memberId.value, listOf(sourceId, memberId.value).distinct()))
+                },
+            transactions =
+                mock(org.springframework.transaction.PlatformTransactionManager::class.java).also {
+                    `when`(it.getTransaction(org.mockito.ArgumentMatchers.any())).thenReturn(org.springframework.transaction.support.SimpleTransactionStatus())
+                },
             members =
                 mock(MemberPersistencePort::class.java).also {
-                    `when`(it.lockApprovalTargets(listOf(memberId.value))).thenReturn(listOf(MemberApprovalTarget(memberId.value, MemberStatus.ACTIVE, emptySet(), !loginAvailable)))
+                    `when`(it.lockApprovalTargets(listOf(sourceId, memberId.value).distinct().sorted())).thenReturn(
+                        listOf(sourceId, memberId.value).distinct().sorted().map { id ->
+                            MemberApprovalTarget(id, if (id == memberId.value) MemberStatus.ACTIVE else MemberStatus.WITHDRAWN, emptySet(), id != memberId.value || !loginAvailable)
+                        },
+                    )
                 },
         )
     }

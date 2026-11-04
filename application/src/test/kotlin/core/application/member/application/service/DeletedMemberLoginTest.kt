@@ -16,8 +16,6 @@ import core.application.security.oauth.apple.AppleIdTokenValidator
 import core.application.security.oauth.apple.AppleTokenExchangeService
 import core.application.security.oauth.kakao.KakaoUserInfoClient
 import core.application.security.oauth.redirect.OAuthRedirectUriValidator
-import core.application.security.oauth.token.DeviceIdResolver
-import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
 import core.domain.member.aggregate.Member
 import core.domain.member.aggregate.MemberOAuth
@@ -25,7 +23,6 @@ import core.domain.member.enums.MemberStatus
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberOAuthPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
-import core.domain.member.port.outbound.query.MemberApprovalTarget
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
 import core.domain.membercredential.aggregate.MemberCredential
@@ -113,15 +110,18 @@ class DeletedMemberLoginTest {
     }
 
     @Test
-    fun `body refresh 토큰 쿠키 저장 경로도 삭제 회원에게 새 세션을 발급하지 않는다`() {
-        val injector = mock(JwtTokenInjector::class.java)
-        val device = mock(DeviceIdResolver::class.java)
-        val service = KakaoLoginTokenSaveService(tokens, injector, issuer, device, members, mock(core.application.security.oauth.token.LoginIdentityValidator::class.java))
-        `when`(tokens.validateToken("refresh")).thenReturn(true)
-        `when`(tokens.getMemberId("refresh")).thenReturn(1L)
-        `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.WITHDRAWN, emptySet(), true)))
-        assertThatThrownBy { service.save("refresh", MockHttpServletRequest(), MockHttpServletResponse()) }.isInstanceOf(TokenInvalidException::class.java)
-        verifyNoInteractions(injector, issuer, device)
+    fun `body refresh token exchange propagates rejection without issuing another session`() {
+        val refresh =
+            mock(core.application.refreshToken.application.service.RefreshTokenService::class.java) { invocation ->
+                val presented = invocation.arguments[0] as jakarta.servlet.http.HttpServletRequest
+                org.assertj.core.api.Assertions.assertThat(presented.getHeader("Authorization")).isEqualTo("Bearer refresh")
+                org.assertj.core.api.Assertions.assertThat(presented.cookies).isEmpty()
+                throw TokenInvalidException()
+            }
+        val service = KakaoLoginTokenSaveService(refresh)
+        assertThatThrownBy { service.save("refresh", MockHttpServletRequest(), MockHttpServletResponse()) }
+            .isInstanceOf(TokenInvalidException::class.java)
+        verifyNoInteractions(tokens, issuer)
     }
 
     private fun prepare(
