@@ -16,6 +16,28 @@ import java.time.LocalDateTime
 
 @Repository
 class MemberMergeRepository(private val dsl: DSLContext) : MemberMergePersistencePort {
+    override fun findTarget(sourceId: Long): core.domain.member.port.outbound.MemberMergeTarget? {
+        val rows =
+            dsl.fetch(
+                "SELECT e.retained_member_id, e.created_at FROM member_merge_events e " +
+                    "JOIN members m ON m.member_id = e.source_member_id " +
+                    "WHERE e.source_member_id = ? AND m.status = 'WITHDRAWN' AND m.deleted_at IS NOT NULL",
+                sourceId,
+            )
+        val row = rows.singleOrNull() ?: return null
+        return core.domain.member.port.outbound.MemberMergeTarget(
+            row.get("retained_member_id", Long::class.java)!!,
+            row.get("created_at", Timestamp::class.java)!!.toInstant(),
+        )
+    }
+
+    override fun transferRefreshTokens(
+        sourceId: Long,
+        retainedId: Long,
+    ) {
+        dsl.execute("UPDATE refresh_tokens SET member_id = ? WHERE member_id = ?", retainedId, sourceId)
+    }
+
     override fun lockOAuths(memberIds: List<Long>): List<MemberOAuth> =
         dsl.selectFrom(MEMBER_OAUTH).where(MEMBER_OAUTH.MEMBER_ID.`in`(memberIds))
             .orderBy(MEMBER_OAUTH.MEMBER_OAUTH_ID.asc()).forUpdate().fetch().map {

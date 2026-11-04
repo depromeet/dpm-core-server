@@ -18,6 +18,9 @@ class RefreshToken(
     val expiresAt: Instant,
     var rotatedAt: Instant? = null,
     val plainToken: String? = null,
+    val tokenJti: String? = null,
+    val issuedMemberId: Long? = null,
+    var successorTokenHash: String? = null,
 ) {
     fun requirePlainToken(): String = plainToken ?: error("평문 토큰은 발급 직후에만 존재합니다. tokenId=$tokenId")
 
@@ -61,6 +64,7 @@ class RefreshToken(
             deviceId: String?,
             issuedAt: Instant,
             expiresAt: Instant,
+            tokenJti: String? = null,
         ): RefreshToken =
             RefreshToken(
                 tokenId = null,
@@ -71,6 +75,8 @@ class RefreshToken(
                 expiresAt = expiresAt,
                 rotatedAt = null,
                 plainToken = plainToken,
+                tokenJti = tokenJti,
+                issuedMemberId = memberId.value,
             )
     }
 }

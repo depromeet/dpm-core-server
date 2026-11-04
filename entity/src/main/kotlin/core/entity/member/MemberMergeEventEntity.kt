@@ -12,7 +12,10 @@ import java.time.Instant
 @Entity
 @Table(
     name = "member_merge_events",
-    indexes = [Index(name = "idx_member_merge_events_retained", columnList = "retained_member_id")],
+    indexes = [
+        Index(name = "idx_member_merge_events_retained", columnList = "retained_member_id"),
+        Index(name = "uk_member_merge_events_source", columnList = "source_member_id", unique = true),
+    ],
 )
 class MemberMergeEventEntity(
     @Id

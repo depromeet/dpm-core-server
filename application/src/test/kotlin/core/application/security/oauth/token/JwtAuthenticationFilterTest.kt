@@ -19,7 +19,7 @@ class JwtAuthenticationFilterTest {
     private val jwtTokenProvider = mock(JwtTokenProvider::class.java)
     private val members = mock(MemberPersistencePort::class.java)
     private val identities = mock(LoginIdentityValidator::class.java)
-    private val filter = JwtAuthenticationFilter(jwtTokenProvider, JwtTokenResolver(), ObjectMapper(), members, identities)
+    private val filter = JwtAuthenticationFilter(jwtTokenProvider, JwtTokenResolver(), ObjectMapper(), members, identities, mock(MergedMemberResolver::class.java))
 
     @AfterEach
     fun tearDown() {
@@ -166,6 +166,23 @@ class JwtAuthenticationFilterTest {
         filter.doFilter(request().apply { setCookies(Cookie("accessToken", "stale"), Cookie("refreshToken", "valid")) }, MockHttpServletResponse(), chain)
         assertThat(chain.request).isNotNull()
         assertThat(SecurityContextHolder.getContext().authentication).isEqualTo(authentication)
+    }
+
+    @Test
+    fun `merged bearer authenticates as retained member without cookie or client retry`() {
+        val resolver = mock(MergedMemberResolver::class.java)
+        val filter = JwtAuthenticationFilter(jwtTokenProvider, JwtTokenResolver(), ObjectMapper(), members, identities, resolver)
+        `when`(jwtTokenProvider.validateToken("merged")).thenReturn(true)
+        `when`(jwtTokenProvider.getMemberId("merged")).thenReturn(1L)
+        `when`(resolver.resolve("merged")).thenReturn(MergedMemberResolver.ResolvedMember(2, listOf(1, 2)))
+        val authentication = UsernamePasswordAuthenticationToken("2", "merged", emptyList())
+        `when`(jwtTokenProvider.getAuthentication("merged", 2)).thenReturn(authentication)
+        val response = MockHttpServletResponse()
+        val chain = MockFilterChain()
+        filter.doFilter(request().apply { addHeader("Authorization", "Bearer merged") }, response, chain)
+        assertThat(response.status).isEqualTo(200)
+        assertThat(chain.request).isNotNull()
+        assertThat(SecurityContextHolder.getContext().authentication.name).isEqualTo("2")
     }
 
     private fun request() = MockHttpServletRequest("GET", "/v1/sessions")
