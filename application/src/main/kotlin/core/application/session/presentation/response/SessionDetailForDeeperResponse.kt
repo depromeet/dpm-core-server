@@ -16,6 +16,8 @@ data class SessionDetailForDeeperResponse(
     val absentStart: LocalDateTime,
     val attendanceStatus: AttendanceStatus,
     val attendedAt: LocalDateTime?,
+    /** 운영진(ORGANIZER/CORE/MASTER)은 false. 디퍼 출석 배너·인증 CTA 노출에 쓴다. */
+    val canRecordAttendance: Boolean = true,
 ) {
     companion object {
         fun of(
@@ -30,6 +32,7 @@ data class SessionDetailForDeeperResponse(
             absentStart: LocalDateTime,
             attendanceStatus: AttendanceStatus,
             attendedAt: LocalDateTime?,
+            canRecordAttendance: Boolean = true,
         ): SessionDetailForDeeperResponse =
             SessionDetailForDeeperResponse(
                 id = id,
@@ -43,6 +46,7 @@ data class SessionDetailForDeeperResponse(
                 absentStart = absentStart,
                 attendanceStatus = attendanceStatus,
                 attendedAt = attendedAt,
+                canRecordAttendance = canRecordAttendance,
             )
     }
 }

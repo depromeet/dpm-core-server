@@ -17,6 +17,8 @@ data class SessionSelectorItemResponse(
     val eventName: String,
     val place: String,
     val isOnline: Boolean,
-    /** 조회 시각 기준 출석 인증 진행 상태 */
+    /** 조회 시각 기준 출석 인증 진행 상태. 운영진은 IN_PROGRESS 대신 CLOSED */
     val attendanceStatus: SessionAttendanceStatus,
+    /** 운영진(ORGANIZER/CORE/MASTER)은 false. 디퍼 출석 배너·인증 CTA 노출에 쓴다. */
+    val canRecordAttendance: Boolean = true,
 )
