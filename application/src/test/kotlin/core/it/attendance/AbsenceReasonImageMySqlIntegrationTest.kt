@@ -9,6 +9,7 @@ import core.application.attendance.application.service.AbsenceReasonQueryService
 import core.application.attendance.presentation.response.AbsenceReasonImageInfo
 import core.application.common.exception.BusinessException
 import core.application.image.FakeImageStoragePort
+import core.application.member.application.service.access.MemberAccessService
 import core.application.support.MutableClock
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
@@ -80,6 +81,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
     @Autowired lateinit var clock: MutableClock
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
+
+    @MockitoBean lateinit var memberAccessService: MemberAccessService
 
     @Test
     fun `생략은 기존 첨부 유지, 빈 목록은 해제, 값은 순서대로 교체하며 같은 이미지로 순서만 바꿀 수 있다`() {
