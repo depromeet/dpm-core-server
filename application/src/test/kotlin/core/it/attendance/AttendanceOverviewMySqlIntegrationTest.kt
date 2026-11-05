@@ -1,6 +1,7 @@
 package core.it.attendance
 
 import core.application.attendance.application.service.AttendanceCommandService
+import core.application.member.application.service.access.MemberAccessService
 import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.application.support.MutableClock
 import core.domain.attendance.aggregate.Attendance
@@ -59,6 +60,8 @@ class AttendanceOverviewMySqlIntegrationTest {
     @Autowired lateinit var clock: MutableClock
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
+
+    @MockitoBean lateinit var memberAccessService: MemberAccessService
 
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
 
@@ -441,6 +444,38 @@ class AttendanceOverviewMySqlIntegrationTest {
     }
 
     @Test
+    fun `세션 명단과 사람별 목록은 기수 DEEPER만 포함하고 운영진과 dpm_test 계정을 제외한다`() {
+        val name = uniqueName()
+        val (_, currentCohort) = newCohortPair()
+        val session = newSession(currentCohort, week = 1, isOnline = false)
+
+        val deeper = newMember("$name-deeper")
+        joinCohort(deeper, currentCohort)
+        addAttendance(session, deeper, AttendanceStatus.PRESENT)
+
+        val organizer = newMember("$name-organizer")
+        jdbcTemplate.update("insert into member_cohorts (member_id, cohort_id) values (?, ?)", organizer, currentCohort.value)
+        grantOrganizer(organizer, currentCohort)
+        addAttendance(session, organizer, AttendanceStatus.PRESENT)
+
+        val qa =
+            newMember("$name-qa", signupEmail = "qa+$name@dpm.test").also { memberId ->
+                joinCohort(memberId, currentCohort)
+                addAttendance(session, memberId, AttendanceStatus.PRESENT)
+            }
+
+        assertThat(attendancePort.findSessionRoster(session.id!!.value, currentCohort.value).map { it.memberId })
+            .containsExactly(deeper)
+        assertThat(attendancePort.findMemberAttendances(currentCohort.value, emptyList()).map { it.id })
+            .containsExactly(deeper)
+        assertThat(attendancePort.countCohortMembers(currentCohort.value)).isEqualTo(1)
+        // 단건·마이페이지용 상세는 목록 필터와 무관하게 소속만 본다
+        assertThat(attendancePort.findDetailMemberAttendance(organizer, currentCohort.value)?.memberId)
+            .isEqualTo(organizer)
+        assertThat(attendancePort.findDetailMemberAttendance(qa, currentCohort.value)?.memberId).isEqualTo(qa)
+    }
+
+    @Test
     fun `명단은 멤버당 최신 살아 있는 기록 한 행이고 운영진 변경은 저장된 인증 시각을 지운다`() {
         val name = uniqueName()
         val (oldCohort, currentCohort) = newCohortPair()
@@ -538,13 +573,16 @@ class AttendanceOverviewMySqlIntegrationTest {
         return cohortPort.save(Cohort(value = base.toString())).id!! to cohortPort.save(Cohort(value = (base + 1).toString())).id!!
     }
 
-    private fun newMember(name: String): Long {
+    private fun newMember(
+        name: String,
+        signupEmail: String? = null,
+    ): Long {
         val memberId = uniqueId()
         jdbcTemplate.update(
             "insert into members (member_id, name, signup_email, status, created_at) values (?, ?, ?, 'ACTIVE', now(6))",
             memberId,
             name,
-            "$memberId@it.dpm",
+            signupEmail ?: "$memberId@it.dpm",
         )
         return memberId
     }
@@ -554,6 +592,56 @@ class AttendanceOverviewMySqlIntegrationTest {
         cohortId: CohortId,
     ) {
         jdbcTemplate.update("insert into member_cohorts (member_id, cohort_id) values (?, ?)", memberId, cohortId.value)
+        grantDeeper(memberId, cohortId)
+    }
+
+    /** 출석 명단·사람별 목록은 기수 DEEPER만 대상으로 하므로 테스트 픽스처에도 DEEPER를 준다. */
+    private fun grantDeeper(
+        memberId: Long,
+        cohortId: CohortId,
+    ) {
+        val roleId =
+            jdbcTemplate.query("select role_id from roles where name = 'DEEPER' limit 1") { rs, _ -> rs.getLong(1) }
+                .firstOrNull()
+                ?: run {
+                    jdbcTemplate.update("insert into roles (name) values ('DEEPER')")
+                    jdbcTemplate.queryForObject("select role_id from roles where name = 'DEEPER'", Long::class.java)!!
+                }
+        val already =
+            jdbcTemplate.queryForObject(
+                "select count(*) from member_roles where member_id = ? and role_id = ? and cohort_id = ? and deleted_at is null",
+                Int::class.java,
+                memberId,
+                roleId,
+                cohortId.value,
+            )!! > 0
+        if (!already) {
+            jdbcTemplate.update(
+                "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, ?, now(6))",
+                memberId,
+                roleId,
+                cohortId.value,
+            )
+        }
+    }
+
+    private fun grantOrganizer(
+        memberId: Long,
+        cohortId: CohortId,
+    ) {
+        val roleId =
+            jdbcTemplate.query("select role_id from roles where name = 'ORGANIZER' limit 1") { rs, _ -> rs.getLong(1) }
+                .firstOrNull()
+                ?: run {
+                    jdbcTemplate.update("insert into roles (name) values ('ORGANIZER')")
+                    jdbcTemplate.queryForObject("select role_id from roles where name = 'ORGANIZER'", Long::class.java)!!
+                }
+        jdbcTemplate.update(
+            "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, ?, now(6))",
+            memberId,
+            roleId,
+            cohortId.value,
+        )
     }
 
     private fun newTeam(

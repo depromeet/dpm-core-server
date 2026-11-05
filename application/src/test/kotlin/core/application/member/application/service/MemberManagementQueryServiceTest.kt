@@ -98,6 +98,60 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
+    fun `dpm_test 계정은 목록과 요약에서 제외한다`() {
+        val withQa =
+            source +
+                member(8, "테스트", MemberPart.WEB).copy(
+                    email = "kakao8@example.com",
+                    signupEmail = "qa8@dpm.test",
+                ) +
+                member(9, "대기QA", MemberPart.WEB, status = MemberStatus.PENDING).copy(
+                    email = "pending-kakao@example.com",
+                    signupEmail = "pending@DPM.TEST",
+                )
+        val visible = withQa.filterNot { it.signupEmail?.endsWith("@dpm.test", ignoreCase = true) == true }
+        `when`(members.findManagementMembers(19)).thenReturn(withQa)
+        `when`(roles.findActiveRoleAssignmentsByMemberIds(visible.map { it.memberId })).thenReturn(
+            mapOf(
+                1L to listOf(role("DEEPER"), role("ORGANIZER", 18)),
+                2L to listOf(role("DEEPER")),
+                3L to listOf(role("MASTER", null), role("CORE")),
+                4L to listOf(role("ORGANIZER")),
+                5L to listOf(role("MASTER", null)),
+                6L to listOf(role("DEEPER")),
+                7L to listOf(role("GUEST", null)),
+            ),
+        )
+        `when`(activities.findAll(visible.map { it.memberId }, 19)).thenReturn(
+            visible.filter { it.status != MemberStatus.PENDING }.associate {
+                it.memberId to
+                    core.domain.member.port.outbound.MemberCohortActivity(
+                        it.memberId,
+                        19,
+                        if (it.status == MemberStatus.INACTIVE) {
+                            core.domain.member.enums.MemberActivityStatus.ENDED
+                        } else {
+                            core.domain.member.enums.MemberActivityStatus.ACTIVE
+                        },
+                    )
+            },
+        )
+        `when`(attendance.findMemberAttendances(19, emptyList())).thenReturn(
+            listOf(attendanceRow(1, 3), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5), attendanceRow(7)),
+        )
+
+        val approved = service.getOverview(MemberManagementRequest(excludeStaff = false))
+        assertThat(approved.members.map { it.memberId }).doesNotContain(8L, 9L)
+        assertThat(approved.summary.totalMemberCount).isEqualTo(5)
+        assertThat(approved.summary.deeperCount).isEqualTo(2)
+        assertThat(approved.summary.pendingCount).isEqualTo(2)
+
+        val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
+        assertThat(pending.members.map { it.memberId }).containsExactly(6L, 7L)
+        assertThat(pending.summary.pendingCount).isEqualTo(2)
+    }
+
+    @Test
     fun `위험 판정과 필터 후 페이지를 나누고 위험과 불가를 구분한다`() {
         val request = MemberManagementRequest(graduationStatuses = listOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE), page = 2, size = 1)
         val response = service.getOverview(request)
@@ -314,7 +368,17 @@ class MemberManagementQueryServiceTest {
         team: Int = 1,
         status: MemberStatus = MemberStatus.ACTIVE,
         cohortId: Long? = 19,
-    ) = MemberManagementQueryModel(id, name, "user$id@example.com", part, status, cohortId, team, updatedAt)
+    ) = MemberManagementQueryModel(
+        id,
+        name,
+        "user$id@example.com",
+        part,
+        status,
+        cohortId,
+        team,
+        updatedAt,
+        signupEmail = "user$id@example.com",
+    )
 
     private fun role(
         name: String,

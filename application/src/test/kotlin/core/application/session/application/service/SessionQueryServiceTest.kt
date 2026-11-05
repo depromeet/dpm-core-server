@@ -127,6 +127,22 @@ class SessionQueryServiceTest {
         }
     }
 
+    @Test
+    fun `운영진에게는 출석 진행 중 세션도 CLOSED 이고 canRecordAttendance 는 false 다`() {
+        val attendanceStart = now.plus(Duration.ofHours(1))
+        saveSession(week = 1, date = attendanceStart, attendanceStart = attendanceStart)
+        fixture.clock.now = attendanceStart
+        `when`(fixture.memberAccessService.isAdmin(memberId)).thenReturn(true)
+        stubMember(cohortId = cohortId, cohortValue = "18")
+
+        val week = fixture.sessionQueryService.getSessionSelector(memberId).single()
+        assertThat(week.attendanceStatus).isEqualTo(SessionAttendanceStatus.CLOSED)
+        assertThat(fixture.sessionQueryService.canRecordAttendance(memberId)).isFalse()
+
+        val home = fixture.sessionQueryService.getNextSessionHome(memberId)
+        assertThat(home.session?.canRecordAttendance).isFalse()
+    }
+
     private fun stubMember(
         cohortId: CohortId,
         cohortValue: String,

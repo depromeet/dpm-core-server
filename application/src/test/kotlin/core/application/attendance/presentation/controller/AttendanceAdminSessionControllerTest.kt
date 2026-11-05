@@ -291,9 +291,10 @@ class AttendanceAdminSessionControllerTest {
         loginAs(1L)
         val date = Instant.parse("2025-08-02T04:00:00Z")
         given(sessionQueryService.getSessionWeeks()).willReturn(listOf(SessionWeekQueryModel(SessionId(5), 1, date)))
-        given(sessionQueryService.getSessionSelector()).willReturn(
+        given(sessionQueryService.getSessionSelector(MemberId(1L))).willReturn(
             listOf(SessionSelectorQueryModel(SessionId(5), 1, date, "OT", "디프만 오프라인 장소", false, SessionAttendanceStatus.IN_PROGRESS)),
         )
+        given(sessionQueryService.canRecordAttendance(MemberId(1L))).willReturn(true)
 
         mockMvc
             .perform(get("/v1/sessions/weeks"))
@@ -307,7 +308,8 @@ class AttendanceAdminSessionControllerTest {
             .andExpect(jsonPath("$.data.sessions[0].id").value(5))
             .andExpect(jsonPath("$.data.sessions[0].isOnline").value(false))
             .andExpect(jsonPath("$.data.sessions[0].attendanceStatus").value("IN_PROGRESS"))
-            .andExpect(jsonPath("$.data.sessions[0].*", hasSize<Any>(7)))
+            .andExpect(jsonPath("$.data.sessions[0].canRecordAttendance").value(true))
+            .andExpect(jsonPath("$.data.sessions[0].*", hasSize<Any>(8)))
     }
 
     @Test

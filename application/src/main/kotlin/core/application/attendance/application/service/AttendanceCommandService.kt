@@ -1,7 +1,9 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
+import core.application.attendance.application.exception.OrganizerCannotRecordAttendanceException
 import core.application.member.application.service.TrackMemberBadges
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.AttendanceClosedException
 import core.application.session.application.exception.CheckedAttendanceException
@@ -38,15 +40,21 @@ class AttendanceCommandService(
     private val attendancePersistencePort: AttendancePersistencePort,
     private val sessionPersistencePort: SessionPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val memberAccessService: MemberAccessService,
     private val sessionValidator: SessionValidator,
     private val clock: Clock,
 ) {
     /**
      * 마감 전에 접수된 요청은 자동 결석이 먼저 저장됐어도 정상 판정으로 저장한다.
      * 조건부 UPDATE 가 실패하면(다른 요청이 먼저 저장) 이미 출석 오류다.
+     * 운영진(ORGANIZER/CORE/MASTER)은 웹 출석 인증을 할 수 없다.
      */
     @TrackMemberBadges
     fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
+        if (memberAccessService.isAdmin(command.memberId)) {
+            throw OrganizerCannotRecordAttendanceException()
+        }
+
         val session =
             sessionPersistencePort.findSessionByIdForShare(command.sessionId.value)
                 ?: throw SessionNotFoundException()
