@@ -29,15 +29,18 @@ class ResponseModelConverter : ModelConverter {
         val t: Type = p.actualTypeArguments.firstOrNull() ?: return next(chain, type, context)
         val tSchema = context.resolve(AnnotatedType(t))
 
-        val schemaName =
+        // Wrapper must not reuse the data DTO name (e.g. SessionListResponse), or OpenAPI
+        // components overwrite the DTO and clients bind success types to the wrong status codes.
+        val dataSchemaName =
             tSchema.name
                 ?: (t as? Class<*>)?.simpleName
                 ?: (t as? ParameterizedType)?.rawType.let { (it as? Class<*>)?.simpleName }
                 ?: "Anonymous"
+        val wrapperSchemaName = "CustomResponse$dataSchemaName"
 
         val s =
             ObjectSchema().apply {
-                name = schemaName
+                name = wrapperSchemaName
                 addProperty("status", StringSchema())
                 addProperty("message", StringSchema())
                 addProperty("code", StringSchema())
