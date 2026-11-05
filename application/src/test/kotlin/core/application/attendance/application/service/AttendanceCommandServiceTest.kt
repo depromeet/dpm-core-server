@@ -1,6 +1,7 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
+import core.application.attendance.application.exception.OrganizerCannotRecordAttendanceException
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.AttendanceClosedException
 import core.application.session.application.exception.InvalidAttendanceCodeException
@@ -18,6 +19,7 @@ import core.domain.session.port.inbound.command.SessionUpdateCommand
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.`when`
 import java.time.Instant
 
 class AttendanceCommandServiceTest {
@@ -80,6 +82,18 @@ class AttendanceCommandServiceTest {
         assertThat(fixture.attendances.row(autoAbsent).status).isEqualTo(AttendanceStatus.ABSENT)
         assertThat(fixture.attendances.row(autoAbsent).autoAbsentAt).isEqualTo(times.absentStart)
         assertThat(fixture.attendances.row(autoAbsent).attendedAt).isNull()
+    }
+
+    @Test
+    fun `운영진은 출석 인증을 할 수 없다`() {
+        val id = fixture.addAttendance(session, memberId = 1L)
+        `when`(fixture.memberAccessService.isAdmin(MemberId(1L))).thenReturn(true)
+
+        assertThatThrownBy { attend(1L, times.attendanceStart) }
+            .isInstanceOf(OrganizerCannotRecordAttendanceException::class.java)
+
+        assertThat(fixture.attendances.row(id).status).isEqualTo(AttendanceStatus.PENDING)
+        assertThat(fixture.attendances.row(id).attendedAt).isNull()
     }
 
     @Test

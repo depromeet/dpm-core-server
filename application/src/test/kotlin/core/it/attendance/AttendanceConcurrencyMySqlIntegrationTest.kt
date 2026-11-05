@@ -2,6 +2,7 @@ package core.it.attendance
 
 import core.application.attendance.application.service.AttendanceAutoAbsenceService
 import core.application.attendance.application.service.AttendanceCommandService
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.service.SessionCommandService
@@ -81,6 +82,8 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     @Autowired lateinit var transactionManager: PlatformTransactionManager
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
+
+    @MockitoBean lateinit var memberAccessService: MemberAccessService
 
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
 

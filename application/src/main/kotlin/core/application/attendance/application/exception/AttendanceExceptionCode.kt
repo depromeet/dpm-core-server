@@ -16,6 +16,11 @@ enum class AttendanceExceptionCode(
     ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE-404-01", "출석을 찾을 수 없습니다"),
     ABSENCE_REASON_IMAGE_ALREADY_ATTACHED(HttpStatus.CONFLICT, "ATTENDANCE-409-02", "이미 다른 결석 사유서에 첨부된 이미지입니다"),
     ABSENCE_REASON_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE-404-02", "결석 사유서를 찾을 수 없습니다"),
+    ORGANIZER_CANNOT_RECORD_ATTENDANCE(
+        HttpStatus.FORBIDDEN,
+        "ATTENDANCE-403-01",
+        "운영진은 출석 인증을 할 수 없습니다",
+    ),
     ;
 
     override fun getStatus(): HttpStatus = this.status

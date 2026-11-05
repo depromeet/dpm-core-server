@@ -1,6 +1,7 @@
 package core.it.attendance
 
 import core.application.attendance.application.service.AttendanceCommandService
+import core.application.member.application.service.access.MemberAccessService
 import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 import core.application.support.MutableClock
 import core.domain.attendance.aggregate.Attendance
@@ -59,6 +60,8 @@ class AttendanceOverviewMySqlIntegrationTest {
     @Autowired lateinit var clock: MutableClock
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
+
+    @MockitoBean lateinit var memberAccessService: MemberAccessService
 
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
 

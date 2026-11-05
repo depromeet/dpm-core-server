@@ -26,7 +26,8 @@ interface AttendanceCommandApi {
         description =
             "서버가 요청을 받은 시각으로 출석을 판정합니다. 인증 시작부터 PRESENT, 지각 시작부터 LATE 이며 " +
                 "인증 마감 시각부터는 저장하지 않고 거절합니다(SESSION-400-06). " +
-                "마감 전에 접수된 요청은 자동 결석보다 늦게 저장돼도 정상 판정으로 저장됩니다.",
+                "마감 전에 접수된 요청은 자동 결석보다 늦게 저장돼도 정상 판정으로 저장됩니다. " +
+                "운영진(ORGANIZER/CORE/MASTER)은 출석 인증을 할 수 없습니다(ATTENDANCE-403-01).",
         requestBody =
             RequestBody(
                 description = "출석 생성 요청",
@@ -82,6 +83,10 @@ interface AttendanceCommandApi {
                 description =
                     "SESSION-400-02 코드 불일치, SESSION-400-03 너무 이름, SESSION-400-04 이미 출석, " +
                         "SESSION-400-06 인증 마감, SESSION-400-07 운영진이 상태 확정",
+            ),
+            ApiResponse(
+                responseCode = "403",
+                description = "ATTENDANCE-403-01 운영진은 출석 인증 불가",
             ),
         ],
     )
