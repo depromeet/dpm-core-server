@@ -614,7 +614,7 @@ class AttendanceOverviewMySqlIntegrationTest {
             )!! > 0
         if (!already) {
             jdbcTemplate.update(
-                "insert into member_roles (member_id, role_id, cohort_id) values (?, ?, ?)",
+                "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, ?, now(6))",
                 memberId,
                 roleId,
                 cohortId.value,
@@ -634,7 +634,7 @@ class AttendanceOverviewMySqlIntegrationTest {
                     jdbcTemplate.queryForObject("select role_id from roles where name = 'ORGANIZER'", Long::class.java)!!
                 }
         jdbcTemplate.update(
-            "insert into member_roles (member_id, role_id, cohort_id) values (?, ?, ?)",
+            "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, ?, now(6))",
             memberId,
             roleId,
             cohortId.value,

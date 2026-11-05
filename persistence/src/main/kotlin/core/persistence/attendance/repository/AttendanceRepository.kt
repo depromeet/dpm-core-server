@@ -257,15 +257,18 @@ class AttendanceRepository(
             .leftJoin(attendanceSummary)
             .on(summaryMemberId.eq(MEMBERS.MEMBER_ID), summaryCohortId.eq(COHORTS.COHORT_ID))
             .where(
-                listOfNotNull(
-                    MEMBERS.DELETED_AT.isNull,
-                    belongsToCohort(cohortId),
+                buildList {
+                    add(MEMBERS.DELETED_AT.isNull)
+                    add(belongsToCohort(cohortId))
                     // 운영진 목록만 DEEPER·QA 제외. 단건(마이페이지·사람 상세)은 소속만 본다.
-                    memberId?.let { null } ?: notTestAccountEmail(),
-                    memberId?.let { null } ?: hasDeeperRoleInCohort(MEMBERS.MEMBER_ID, cohortId),
-                    teamNumbers.takeIf { it.isNotEmpty() }?.let { teamNumber.`in`(it) },
-                    memberId?.let { MEMBERS.MEMBER_ID.eq(it) },
-                ),
+                    if (memberId == null) {
+                        add(notTestAccountEmail())
+                        add(hasDeeperRoleInCohort(MEMBERS.MEMBER_ID, cohortId))
+                    } else {
+                        add(MEMBERS.MEMBER_ID.eq(memberId))
+                    }
+                    if (teamNumbers.isNotEmpty()) add(teamNumber.`in`(teamNumbers))
+                },
             ).orderBy(teamNumber.asc().nullsLast(), MEMBERS.NAME.asc(), MEMBERS.MEMBER_ID.asc())
             .fetch { record ->
                 MemberAttendanceQueryModel(
