@@ -230,6 +230,7 @@ class MemberRepository(
             .and(MEMBERS.STATUS.`in`(MemberStatus.ACTIVE.name, MemberStatus.INACTIVE.name, MemberStatus.PENDING.name))
             .and(isCurrentCohort.or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name).and(hasNoCohort)))
             .and(MEMBERS.STATUS.ne(MemberStatus.PENDING.name).or(MEMBERS.PROFILE_COMPLETED_AT.isNotNull))
+            .and(notTestAccountEmail())
             .fetch { record ->
                 val selectedEmail = record.get("oauth_email", String::class.java)?.trim()?.takeIf { it.isNotEmpty() }
                 val loginMethod =
@@ -253,6 +254,7 @@ class MemberRepository(
                         (record[MEMBERS.UPDATED_AT] ?: record[MEMBERS.CREATED_AT])?.atZone(
                             ZoneId.of("UTC"),
                         )?.toInstant(),
+                    signupEmail = record[MEMBERS.SIGNUP_EMAIL],
                 )
             }
     }

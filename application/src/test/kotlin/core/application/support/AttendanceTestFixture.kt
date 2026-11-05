@@ -5,6 +5,7 @@ import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.application.service.AttendanceGraduationEvaluator
 import core.application.attendance.application.service.AttendanceQueryService
 import core.application.cohort.application.service.CohortQueryService
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.service.SessionCommandService
 import core.application.session.application.service.SessionQueryService
 import core.application.session.application.validator.SessionValidator
@@ -34,6 +35,7 @@ class AttendanceTestFixture(
     val notifications = RecordingSentSessionNotificationCommandUseCase()
     val events: MutableList<Any> = Collections.synchronizedList(mutableListOf())
     val memberQueryUseCase: MemberQueryUseCase = mock(MemberQueryUseCase::class.java)
+    val memberAccessService: MemberAccessService = mock(MemberAccessService::class.java)
 
     val sessionValidator = SessionValidator()
     val cohortQueryService = CohortQueryService(cohorts)
@@ -53,6 +55,7 @@ class AttendanceTestFixture(
             sessionPersistencePort = sessions,
             attendanceQueryService = attendanceQueryService,
             memberQueryUseCase = memberQueryUseCase,
+            memberAccessService = memberAccessService,
             clock = clock,
         )
 
@@ -61,6 +64,7 @@ class AttendanceTestFixture(
             attendancePersistencePort = attendances,
             sessionPersistencePort = sessions,
             memberQueryUseCase = memberQueryUseCase,
+            memberAccessService = memberAccessService,
             sessionValidator = sessionValidator,
             clock = clock,
         )
