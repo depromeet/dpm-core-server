@@ -5,6 +5,7 @@ import core.application.member.application.service.role.CurrentCohortRoleResolve
 import core.application.member.presentation.response.MemberManagementResponse.MemberSummary
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.authorization.vo.RoleType
+import core.domain.member.constant.TestAccountEmails
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberActivityPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -21,7 +22,7 @@ class MemberManagementTargetQueryService(
     private val activities: MemberActivityPersistencePort,
 ) {
     fun findAll(cohortId: Long): List<MemberSummary> {
-        val source = members.findManagementMembers(cohortId)
+        val source = members.findManagementMembers(cohortId).filterNot { TestAccountEmails.matches(it.signupEmail) }
         val memberIds = source.map { it.memberId }
         val assignments = roles.findActiveRoleAssignmentsByMemberIds(memberIds)
         val activityByMember = activities.findAll(memberIds, cohortId)

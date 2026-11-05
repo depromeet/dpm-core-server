@@ -14,7 +14,9 @@ import core.domain.attendance.port.outbound.query.SessionDetailAttendanceQueryMo
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.team.vo.TeamNumber
 import core.entity.attendance.AttendanceEntity
+import core.persistence.member.repository.hasDeeperRoleInCohort
 import core.persistence.member.repository.memberAdminField
+import core.persistence.member.repository.notTestAccountEmail
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Field
@@ -126,8 +128,8 @@ class AttendanceRepository(
 
     /**
      * 운영진 세션 명단의 대상 조건. [joinSessionAndMember] 를 전제로 한다.
-     * 현재 기수 소속이고 삭제되지 않은 멤버의 살아 있는 출석 기록만, (세션, 멤버)당 [isLatestLiveAttendance] 하나만 본다.
-     * 멤버 삭제는 hard delete 라 MEMBERS 내부 조인으로 고아 기록도 빠진다.
+     * 현재 기수 DEEPER 소속이고 삭제되지 않은 멤버의 살아 있는 출석 기록만, (세션, 멤버)당 [isLatestLiveAttendance] 하나만 본다.
+     * `@dpm.test` QA 계정과 운영진·코어 등은 제외한다. 멤버 삭제는 hard delete 라 MEMBERS 내부 조인으로 고아 기록도 빠진다.
      */
     private fun sessionRosterConditions(
         sessionId: Long,
@@ -140,6 +142,8 @@ class AttendanceRepository(
             SESSIONS.DELETED_AT.isNull,
             MEMBERS.DELETED_AT.isNull,
             belongsToCohort(cohortId),
+            notTestAccountEmail(),
+            hasDeeperRoleInCohort(MEMBERS.MEMBER_ID, cohortId),
         )
 
     /**
@@ -196,9 +200,15 @@ class AttendanceRepository(
         teamNumbers: List<Int>,
     ): List<MemberAttendanceQueryModel> = findCohortMemberAttendances(cohortId, teamNumbers = teamNumbers)
 
-    /** [findMemberAttendances] 의 팀 필터 없는 대상 수. 소속은 EXISTS 라 중복 소속 행이 있어도 한 번만 센다. */
+    /** [findMemberAttendances] 의 팀 필터 없는 대상 수(기수 DEEPER, QA 제외). EXISTS 라 중복 소속 행이 있어도 한 번만 센다. */
     override fun countCohortMembers(cohortId: Long): Int =
-        dsl.fetchCount(MEMBERS, MEMBERS.DELETED_AT.isNull, belongsToCohort(cohortId))
+        dsl.fetchCount(
+            MEMBERS,
+            MEMBERS.DELETED_AT.isNull,
+            belongsToCohort(cohortId),
+            notTestAccountEmail(),
+            hasDeeperRoleInCohort(MEMBERS.MEMBER_ID, cohortId),
+        )
 
     override fun findDetailMemberAttendance(
         memberId: Long,
@@ -218,7 +228,7 @@ class AttendanceRepository(
             }
 
     /**
-     * 기수에 소속되고 삭제되지 않은 멤버마다 한 행. 집계는 LEFT JOIN 이라 출석 기록이 없으면 0 이고 분모는 기수 전체 세션 수다.
+     * 기수 DEEPER(삭제되지 않음, `@dpm.test` 제외)마다 한 행. 집계는 LEFT JOIN 이라 출석 기록이 없으면 0 이고 분모는 기수 전체 세션 수다.
      * 팀 필터와 표시 팀은 그 기수의 최신 배정 팀이다. 팀 번호(팀 없음은 마지막), 이름, ID 순이다.
      */
     private fun findCohortMemberAttendances(
@@ -250,6 +260,9 @@ class AttendanceRepository(
                 listOfNotNull(
                     MEMBERS.DELETED_AT.isNull,
                     belongsToCohort(cohortId),
+                    // 운영진 목록만 DEEPER·QA 제외. 단건(마이페이지·사람 상세)은 소속만 본다.
+                    memberId?.let { null } ?: notTestAccountEmail(),
+                    memberId?.let { null } ?: hasDeeperRoleInCohort(MEMBERS.MEMBER_ID, cohortId),
                     teamNumbers.takeIf { it.isNotEmpty() }?.let { teamNumber.`in`(it) },
                     memberId?.let { MEMBERS.MEMBER_ID.eq(it) },
                 ),
