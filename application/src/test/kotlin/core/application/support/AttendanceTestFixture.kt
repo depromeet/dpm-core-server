@@ -55,6 +55,7 @@ class AttendanceTestFixture(
             sessionPersistencePort = sessions,
             attendanceQueryService = attendanceQueryService,
             memberQueryUseCase = memberQueryUseCase,
+            memberAccessService = memberAccessService,
             clock = clock,
         )
 

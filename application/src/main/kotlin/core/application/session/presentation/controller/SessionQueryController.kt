@@ -90,6 +90,7 @@ class SessionQueryController(
             SessionMapper.toSessionDetailForDeeperResponse(
                 session = retrieveSession,
                 attendance = retrieveAttendance,
+                canRecordAttendance = sessionQueryService.canRecordAttendance(memberId),
             ),
         )
     }
@@ -120,8 +121,17 @@ class SessionQueryController(
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/v3/sessions/weeks")
-    override fun getSessionSelector(): CustomResponse<SessionSelectorResponse> =
-        CustomResponse.ok(SessionMapper.toSessionSelectorResponse(sessionQueryService.getSessionSelector()))
+    override fun getSessionSelector(
+        @CurrentMemberId memberId: MemberId,
+    ): CustomResponse<SessionSelectorResponse> {
+        val canRecord = sessionQueryService.canRecordAttendance(memberId)
+        return CustomResponse.ok(
+            SessionMapper.toSessionSelectorResponse(
+                sessionQueryService.getSessionSelector(memberId),
+                canRecordAttendance = canRecord,
+            ),
+        )
+    }
 
     @PreAuthorize("hasAuthority('update:session')")
     @GetMapping("/v1/sessions/{sessionId}/update-policy")
