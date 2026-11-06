@@ -8,13 +8,14 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import reactor.core.publisher.Mono
+import reactor.netty.http.client.HttpClient
 import reactor.util.retry.Retry
 import java.time.Duration
 
@@ -48,6 +49,12 @@ class ExpoPushClient(
                     it.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $expoAccessToken")
                 }
             }.build()
+
+    // An accepted POST may lose its response. Disable Netty's transparent connection retry as well.
+    private val singleAttemptClient =
+        webClient.mutate()
+            .clientConnector(ReactorClientHttpConnector(HttpClient.create().disableRetry(true)))
+            .build()
 
     fun send(
         token: String,
@@ -102,6 +109,7 @@ class ExpoPushClient(
         body: String,
         data: Map<String, Any>? = null,
         priority: ExpoPriority,
+        retryTransport: Boolean = true,
     ): List<ExpoPushTicket?> {
         if (tokens.isEmpty()) {
             return emptyList()
@@ -120,7 +128,7 @@ class ExpoPushClient(
                     )
                 }
 
-            val response = sendMessage(messages)
+            val response = sendMessage(messages, retryTransport)
 
             response?.data ?: emptyList()
         } catch (e: Exception) {
@@ -130,20 +138,25 @@ class ExpoPushClient(
     }
 
     fun sendMessage(message: List<NotificationExpoMessage>): ExpoPushResponse? =
-        webClient
-            .post()
-            .bodyValue(message)
-            .retrieve()
-            .bodyToMono(ExpoPushResponse::class.java)
-            .retryWhen(
-                Retry
-                    .backoff(3, Duration.ofMillis(100))
-                    .maxBackoff(Duration.ofSeconds(2)),
-            )
-            .onErrorResume { error ->
-                if (error is WebClientResponseException) {
-                    logger.error("Expo API 상세 응답: ${error.responseBodyAsString}")
-                }
-                Mono.error(error)
-            }.block(Duration.ofSeconds(10))
+        sendMessage(
+            message,
+            retryTransport = true,
+        )
+
+    private fun sendMessage(
+        message: List<NotificationExpoMessage>,
+        retryTransport: Boolean,
+    ): ExpoPushResponse? {
+        val client = if (retryTransport) webClient else singleAttemptClient
+        val request = client.post().bodyValue(message).retrieve().bodyToMono(ExpoPushResponse::class.java)
+        val response =
+            if (retryTransport) {
+                request.retryWhen(Retry.backoff(3, Duration.ofMillis(100)).maxBackoff(Duration.ofSeconds(2)))
+            } else {
+                request
+            }
+        return response.doOnError(WebClientResponseException::class.java) { error ->
+            logger.error("Expo API error: status={}", error.statusCode)
+        }.block(Duration.ofSeconds(10))
+    }
 }
