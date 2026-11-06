@@ -187,6 +187,8 @@ interface AttendanceCommandApi {
         description =
             "결석 사유서를 검토 대기(PENDING)로 제출합니다. 출석 상태는 유지됩니다. " +
                 "검토 대기·반려 사유서는 재제출할 수 있습니다. " +
+                "처음 제출하거나 반려 후 다시 제출하면 해당 기수 운영진과 코어에게 ABSENCE_REASON_SUBMITTED 푸시를 보냅니다. " +
+                "푸시 데이터의 sessionId와 memberId로 사유서를 찾을 수 있습니다. 검토 대기 중 내용을 고칠 때는 다시 보내지 않습니다. " +
                 ABSENCE_REASON_IMAGE_FLOW,
         requestBody =
             RequestBody(
@@ -330,7 +332,8 @@ interface AttendanceCommandApi {
                 "승인 시 출석 상태가 인정결석으로 변경되고, 반려 시 출석은 그대로입니다.",
         requestBody =
             RequestBody(
-                description = "결석 사유 검토 요청",
+                description = "심사 결과가 바뀌면 제출자에게 ABSENCE_REASON_APPROVED 또는 ABSENCE_REASON_REJECTED 푸시를 보냅니다. " +
+                    "푸시 데이터에는 sessionId가 있습니다. 같은 결정을 다시 요청해도 알림은 한 번만 요청합니다.",
                 required = true,
                 content = [
                     Content(
