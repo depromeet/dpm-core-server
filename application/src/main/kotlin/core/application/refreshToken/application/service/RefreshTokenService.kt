@@ -96,13 +96,18 @@ class RefreshTokenService(
         }
 
         val loginIdentity = tokenProvider.getLoginIdentity(presentedToken)
-        // A detached session grant is bound to this exact row and cannot follow another member merge.
-        if (stored.continuationMemberId != resolved.memberId && !identities.isValid(resolved.memberId, loginIdentity)) {
+        // Rotation may have completed before unlink granted the successor. Authorize the live row.
+        val successor =
+            stored.successorTokenHash?.let {
+                if (!stored.isRotated()) throw TokenInvalidException()
+                currentSuccessor(stored, loginIdentity, now)
+            }
+        val current = successor ?: stored
+        val hasGrant = current.continuationMemberId == resolved.memberId
+        if (!hasGrant && !identities.isValid(resolved.memberId, loginIdentity)) {
             throw TokenInvalidException()
         }
-        if (stored.successorTokenHash != null) {
-            return currentSuccessor(stored, loginIdentity, now) to loginIdentity
-        }
+        if (successor != null) return successor to loginIdentity
 
         if (!stored.isRotated()) {
             refreshTokenPersistencePort.markRotated(stored.tokenHash, now)
@@ -153,6 +158,7 @@ class RefreshTokenService(
                     tokenId = successor.tokenId, memberId = successor.memberId, tokenHash = successor.tokenHash,
                     deviceId = successor.deviceId, issuedAt = successor.issuedAt, expiresAt = successor.expiresAt,
                     plainToken = plain, tokenJti = successor.tokenJti, issuedMemberId = successor.issuedMemberId,
+                    continuationMemberId = successor.continuationMemberId,
                 )
             }
             nextHash = successor.successorTokenHash ?: throw TokenInvalidException()

@@ -447,8 +447,9 @@ class RefreshTokenServiceTest {
         )
     }
 
-    @Test
-    fun `해제된 세션의 회전 직전 토큰으로 로그아웃하면 후속 토큰도 폐기한다`() {
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = [true, false])
+    fun `해제 전 회전한 토큰은 유예 시간 안에서만 후속 세션을 로그아웃한다`(withinGrace: Boolean) {
         val now = Instant.now()
         val current =
             RefreshToken(
@@ -456,9 +457,8 @@ class RefreshTokenServiceTest {
                 tokenHash = "current",
                 issuedAt = now,
                 expiresAt = now.plusSeconds(60),
-                rotatedAt = now,
+                rotatedAt = if (withinGrace) now else now.minusSeconds(RefreshToken.GRACE_SECONDS + 1),
                 successorTokenHash = "next",
-                continuationMemberId = memberId.value,
             )
         val next =
             RefreshToken(
@@ -471,7 +471,9 @@ class RefreshTokenServiceTest {
         val other = stored("other")
         val store = FakeRefreshTokenPersistencePort(current, next, other)
         RefreshTokenInvalidateService(store).destroyByTokenHash(current.tokenHash)
-        assertThat(store.findAllByMemberId(memberId.value)).containsExactly(other)
+        assertThat(store.findByTokenHash(current.tokenHash)).isNull()
+        assertThat(store.findByTokenHash(next.tokenHash)).isEqualTo(if (withinGrace) null else next)
+        assertThat(store.findByTokenHash(other.tokenHash)).isEqualTo(other)
     }
 
     private fun createProvider(): JwtTokenProvider = JwtTokenProvider(TEST_TOKEN_PROPERTIES, StubRoleQueryUseCase())
