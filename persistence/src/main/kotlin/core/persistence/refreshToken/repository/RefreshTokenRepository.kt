@@ -37,9 +37,11 @@ class RefreshTokenRepository(
         val rotatedAt = field(name("rotated_at"), LocalDateTime::class.java)
         val tokenJti = field(name("token_jti"), String::class.java)
         val issuedMemberId = field(name("issued_member_id"), Long::class.java)
+        val continuationMemberId = field(name("continuation_member_id"), Long::class.java)
         val successor = field(name("successor_token_hash"), String::class.java)
         return dsl.select(
             tokenId, memberId, hash, deviceId, issuedAt, expiresAt, rotatedAt, tokenJti, issuedMemberId, successor,
+            continuationMemberId,
         )
             .from(table(name("refresh_tokens"))).where(hash.eq(tokenHash)).forUpdate()
             .fetchOne { row ->
@@ -54,6 +56,7 @@ class RefreshTokenRepository(
                     tokenJti = row[tokenJti],
                     issuedMemberId = row[issuedMemberId],
                     successorTokenHash = row[successor],
+                    continuationMemberId = row[continuationMemberId],
                 )
             }
     }
@@ -77,6 +80,18 @@ class RefreshTokenRepository(
                 "UPDATE refresh_tokens SET successor_token_hash = ? " +
                     "WHERE token_hash = ? AND successor_token_hash IS NULL",
                 successorTokenHash, tokenHash,
+            ) == 1,
+        )
+    }
+
+    override fun grantContinuation(
+        tokenHash: String,
+        memberId: Long,
+    ) {
+        check(
+            dsl.execute(
+                "UPDATE refresh_tokens SET continuation_member_id = ? WHERE token_hash = ? AND member_id = ?",
+                memberId, tokenHash, memberId,
             ) == 1,
         )
     }

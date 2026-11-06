@@ -121,8 +121,8 @@ class AppleAuthService(
 
         // 4. Issue App Tokens
         val loginIdentity = LoginIdentity(LoginMethod.APPLE, linkedOAuth.id!!.value)
-        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), loginIdentity)
         val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, loginIdentity)
+        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), loginIdentity, issued.tokenHash)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }

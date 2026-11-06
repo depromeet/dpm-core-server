@@ -105,6 +105,8 @@ class RefreshTokenServiceTest {
 
         val result = service.reissue(request, MockHttpServletResponse())
 
+        assertThat(provider.getSessionIdentity(result.accessToken))
+            .isEqualTo(APPLE_LOGIN.copy(sessionTokenHash = TokenHasher.sha256Hex(result.refreshToken)))
         assertThat(provider.getLoginIdentity(result.accessToken)).isEqualTo(APPLE_LOGIN)
         assertThat(provider.getLoginIdentity(result.refreshToken)).isEqualTo(APPLE_LOGIN)
     }
@@ -445,6 +447,33 @@ class RefreshTokenServiceTest {
         )
     }
 
+    @Test
+    fun `해제된 세션의 회전 직전 토큰으로 로그아웃하면 후속 토큰도 폐기한다`() {
+        val now = Instant.now()
+        val current =
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = "current",
+                issuedAt = now,
+                expiresAt = now.plusSeconds(60),
+                rotatedAt = now,
+                successorTokenHash = "next",
+                continuationMemberId = memberId.value,
+            )
+        val next =
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = "next",
+                issuedAt = now,
+                expiresAt = now.plusSeconds(60),
+                continuationMemberId = memberId.value,
+            )
+        val other = stored("other")
+        val store = FakeRefreshTokenPersistencePort(current, next, other)
+        RefreshTokenInvalidateService(store).destroyByTokenHash(current.tokenHash)
+        assertThat(store.findAllByMemberId(memberId.value)).containsExactly(other)
+    }
+
     private fun createProvider(): JwtTokenProvider = JwtTokenProvider(TEST_TOKEN_PROPERTIES, StubRoleQueryUseCase())
 
     private fun testSecurityProperties(): SecurityProperties =
@@ -495,6 +524,13 @@ private class FakeRefreshTokenPersistencePort(
         successorTokenHash: String,
     ) {
         findByTokenHash(tokenHash)!!.successorTokenHash = successorTokenHash
+    }
+
+    override fun grantContinuation(
+        tokenHash: String,
+        memberId: Long,
+    ) {
+        findByTokenHash(tokenHash)!!.continuationMemberId = memberId
     }
 
     override fun deleteByTokenHash(tokenHash: String) {
