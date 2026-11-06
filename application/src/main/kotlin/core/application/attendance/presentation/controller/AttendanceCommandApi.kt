@@ -342,7 +342,9 @@ interface AttendanceCommandApi {
         summary = "결석 사유 검토 (운영진)",
         description =
             "운영진이 검토 대기(PENDING) 사유서를 승인하거나 반려합니다. 같은 결정을 반복하면 기존 결과를 반환합니다. " +
-                "승인 시 출석 상태가 인정결석으로 변경되고, 반려 시 출석은 그대로입니다.",
+                "승인 버튼은 approved=true, 반려 버튼은 approved=false로 이 API를 호출하세요. " +
+                "승인하면 인정결석이 됩니다. 반려하면 기존 출석 상태를 유지하고 디퍼가 사유서를 다시 제출할 수 있습니다. " +
+                "출석 수동 변경 API만 호출하면 사유서는 검토 대기 상태로 남습니다.",
         requestBody =
             RequestBody(
                 description = "결석 사유 검토 요청",
@@ -369,7 +371,8 @@ interface AttendanceCommandApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "결석 사유 검토 성공",
+                description = "심사가 끝났습니다. 응답 본문에 심사 결과 데이터가 없으므로 사유서와 출석 정보를 다시 조회하세요.",
+                useReturnTypeSchema = true,
             ),
             ApiResponse(
                 responseCode = "404",
