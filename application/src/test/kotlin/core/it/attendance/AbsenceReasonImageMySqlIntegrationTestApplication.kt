@@ -13,6 +13,8 @@ import core.persistence.absencereason.repository.AbsenceReasonRepository
 import core.persistence.attendance.repository.AttendanceRepository
 import core.persistence.cohort.repository.CohortRepository
 import core.persistence.image.repository.ImageRepository
+import core.persistence.member.repository.role.MemberRoleRepository
+import core.persistence.notification.repository.NotificationRepository
 import core.persistence.session.repository.SessionRepository
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -28,6 +30,9 @@ import java.time.Instant
 @EntityScan(basePackages = ["core.entity"])
 @EnableJpaRepositories(basePackages = ["core.persistence"])
 @Import(
+    MemberRoleRepository::class,
+    NotificationRepository::class,
+    CommittedAbsenceReasonEvents::class,
     JooqDslConfig::class,
     AttendanceRepository::class,
     SessionRepository::class,
