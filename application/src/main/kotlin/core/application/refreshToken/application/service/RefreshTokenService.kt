@@ -14,6 +14,8 @@ import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.LoginIdentity
 import core.domain.refreshToken.aggregate.RefreshToken
+import core.domain.refreshToken.aggregate.RefreshToken.Companion.GRACE_SECONDS
+import core.domain.refreshToken.aggregate.RefreshToken.Companion.MAX_SUCCESSOR_DEPTH
 import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
@@ -70,13 +72,6 @@ class RefreshTokenService(
         if (locked.map { it.memberId }.toSet() != resolved.path.toSet()) throw TokenInvalidException()
         val member = locked.singleOrNull { it.memberId == resolved.memberId }
         if (member == null || member.isDeleted || member.status == MemberStatus.WITHDRAWN) throw TokenInvalidException()
-        if (!identities.isValid(
-                resolved.memberId,
-                tokenProvider.getLoginIdentity(presentedToken),
-            )
-        ) {
-            throw TokenInvalidException()
-        }
         val stored = refreshTokenPersistencePort.lockByTokenHash(observed.tokenHash) ?: throw TokenInvalidException()
         if (stored.memberId.value != resolved.memberId ||
             (observed.memberId.value != subjectId && observed.memberId.value !in resolved.path)
@@ -101,9 +96,18 @@ class RefreshTokenService(
         }
 
         val loginIdentity = tokenProvider.getLoginIdentity(presentedToken)
-        if (stored.successorTokenHash != null) {
-            return currentSuccessor(stored, loginIdentity, now) to loginIdentity
+        // Rotation may have completed before unlink granted the successor. Authorize the live row.
+        val successor =
+            stored.successorTokenHash?.let {
+                if (!stored.isRotated()) throw TokenInvalidException()
+                currentSuccessor(stored, loginIdentity, now)
+            }
+        val current = successor ?: stored
+        val hasGrant = current.continuationMemberId == resolved.memberId
+        if (!hasGrant && !identities.isValid(resolved.memberId, loginIdentity)) {
+            throw TokenInvalidException()
         }
+        if (successor != null) return successor to loginIdentity
 
         if (!stored.isRotated()) {
             refreshTokenPersistencePort.markRotated(stored.tokenHash, now)
@@ -112,6 +116,9 @@ class RefreshTokenService(
         val deviceId = stored.deviceId ?: deviceIdResolver.peek(request)
         // 로그인 계정은 로그인 시점에만 알 수 있으므로, 제시된 리프레시 토큰의 값을 새 토큰으로 이어준다.
         val issued = refreshTokenIssueService.issueForRotation(stored.memberId, deviceId, loginIdentity)
+        if (stored.continuationMemberId == resolved.memberId) {
+            refreshTokenPersistencePort.grantContinuation(issued.tokenHash, resolved.memberId)
+        }
         refreshTokenPersistencePort.linkSuccessor(stored.tokenHash, issued.tokenHash)
         return issued to loginIdentity
     }
@@ -128,6 +135,10 @@ class RefreshTokenService(
             if (!visited.add(nextHash)) throw TokenInvalidException()
             val successor = refreshTokenPersistencePort.lockByTokenHash(nextHash) ?: throw TokenInvalidException()
             if (successor.memberId != predecessor.memberId || successor.isExpired(now) ||
+                (
+                    predecessor.continuationMemberId == predecessor.memberId.value &&
+                        successor.continuationMemberId != predecessor.memberId.value
+                ) ||
                 (successor.isRotated() && !successor.isWithinGrace(now, GRACE_SECONDS))
             ) {
                 throw TokenInvalidException()
@@ -147,6 +158,7 @@ class RefreshTokenService(
                     tokenId = successor.tokenId, memberId = successor.memberId, tokenHash = successor.tokenHash,
                     deviceId = successor.deviceId, issuedAt = successor.issuedAt, expiresAt = successor.expiresAt,
                     plainToken = plain, tokenJti = successor.tokenJti, issuedMemberId = successor.issuedMemberId,
+                    continuationMemberId = successor.continuationMemberId,
                 )
             }
             nextHash = successor.successorTokenHash ?: throw TokenInvalidException()
@@ -159,7 +171,7 @@ class RefreshTokenService(
         loginIdentity: LoginIdentity?,
         response: HttpServletResponse,
     ): ReissueResult {
-        val accessToken = tokenProvider.generateAccessToken(issued.memberId.toString(), loginIdentity)
+        val accessToken = tokenProvider.generateAccessToken(issued.memberId.toString(), loginIdentity, issued.tokenHash)
         tokenInjector.injectAccessToken(accessToken, response)
         tokenInjector.injectRefreshToken(issued, response)
 
@@ -206,10 +218,5 @@ class RefreshTokenService(
                 "cookieCount=${request.cookies?.count { it.name == REFRESH_TOKEN_CAMEL_CASE } ?: 0} " +
                 "hasDeviceCookie=${deviceIdResolver.peek(request) != null}"
         }
-    }
-
-    companion object {
-        private const val GRACE_SECONDS = 60L
-        private const val MAX_SUCCESSOR_DEPTH = 64
     }
 }

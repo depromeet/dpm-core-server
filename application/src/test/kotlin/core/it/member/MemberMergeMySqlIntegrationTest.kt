@@ -2,18 +2,34 @@ package core.it.member
 
 import core.application.common.configuration.JooqDslConfig
 import core.application.member.application.exception.InvalidMemberMergeException
+import core.application.member.application.exception.MemberAccountException
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberOAuthConflictException
+import core.application.member.application.service.MemberAccountService
 import core.application.member.application.service.MemberActivationInitializer
 import core.application.member.application.service.MemberApprovalService
 import core.application.member.application.service.MemberIdentityLockService
 import core.application.member.application.service.MemberMergeService
+import core.application.refreshToken.application.exception.TokenInvalidException
+import core.application.refreshToken.application.exception.TokenNotFoundException
+import core.application.refreshToken.application.service.RefreshTokenInvalidateService
+import core.application.refreshToken.application.service.RefreshTokenIssueService
+import core.application.refreshToken.application.service.RefreshTokenService
+import core.application.refreshToken.application.support.TokenHasher
+import core.application.security.oauth.token.DeviceIdResolver
+import core.application.security.oauth.token.JwtTokenInjector
+import core.application.security.oauth.token.JwtTokenProvider
+import core.application.security.oauth.token.JwtTokenResolver
+import core.application.security.oauth.token.MergedMemberResolver
+import core.application.security.properties.TokenProperties
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberOAuth
+import core.domain.member.enums.LoginMethod
 import core.domain.member.enums.OAuthProvider
 import core.domain.member.port.outbound.MemberPersistencePort
+import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
 import core.it.attendance.AttendanceConcurrencyMySqlIntegrationTest
@@ -31,7 +47,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.doThrow
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
@@ -43,11 +62,14 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
+import java.util.Base64
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -58,6 +80,8 @@ import java.util.concurrent.TimeUnit
 @SpringBootTest(classes = [MemberMergeMySqlIntegrationTest.Config::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class MemberMergeMySqlIntegrationTest {
     @Autowired lateinit var service: MemberMergeService
+
+    @Autowired lateinit var accounts: MemberAccountService
 
     @Autowired lateinit var locks: MemberIdentityLockService
 
@@ -326,6 +350,85 @@ class MemberMergeMySqlIntegrationTest {
         assertThat(resolver.resolve(access)).isNull()
     }
 
+    @ParameterizedTest
+    @ValueSource(longs = [1, 2])
+    fun `병합된 회원이 현재 소셜을 해제한 뒤에도 요청한 기기만 세션을 갱신한다`(sourceId: Long) {
+        val retainedId = if (sourceId == 1L) 2L else 1L
+        val source = LoginIdentity(if (sourceId == 1L) LoginMethod.KAKAO else LoginMethod.APPLE, sourceId)
+        val remaining = LoginIdentity(if (retainedId == 1L) LoginMethod.KAKAO else LoginMethod.APPLE, retainedId)
+        val properties =
+            TokenProperties(
+                secretKey = Base64.getEncoder().encodeToString("unlink-session-test-signing-key-with-256-bits".toByteArray()),
+                expirationTime = TokenProperties.ExpirationTime(7200, 2592000),
+            )
+        val provider = JwtTokenProvider(properties, roles)
+        val issuer = RefreshTokenIssueService(provider, properties, tokenStore)
+        val resolver = MergedMemberResolver(provider, members, mergeStore, identities, tokenStore)
+        val refresh =
+            RefreshTokenService(
+                tokenStore, issuer, JwtTokenResolver(), mock(JwtTokenInjector::class.java), provider,
+                mock(DeviceIdResolver::class.java), members, identities, resolver, tx,
+            )
+
+        fun login(
+            id: Long,
+            device: String,
+            identity: LoginIdentity,
+        ) = TransactionTemplate(tx).execute { issuer.issueForLogin(MemberId(id), device, identity) }!!.requirePlainToken()
+
+        fun rotate(token: String) =
+            refresh.reissue(
+                MockHttpServletRequest().apply { addHeader("Authorization", "Bearer $token") },
+                MockHttpServletResponse(),
+            )
+
+        val currentBeforeMerge = login(sourceId, "current", source)
+        val anotherDevice = login(sourceId, "other", source)
+        val unaffected = login(retainedId, "remaining", remaining)
+        service.mergeAndApprove(retainedId, sourceId, 99)
+        val current = rotate(currentBeforeMerge)
+
+        assertThatThrownBy { accounts.unlink(retainedId, source, sourceId) }
+            .isInstanceOf(MemberAccountException::class.java)
+        assertThat(identities.isValid(retainedId, source)).isTrue()
+        accounts.unlink(retainedId, provider.getSessionIdentity(current.accessToken), sourceId)
+
+        assertThat(resolver.resolve(currentBeforeMerge)?.memberId).isEqualTo(retainedId)
+        assertThat(rotate(currentBeforeMerge).refreshToken).isEqualTo(current.refreshToken)
+        assertThat(identities.isValid(retainedId, source)).isFalse()
+        assertThat(resolver.resolve(provider.generateAccessToken(retainedId.toString(), source))).isNull()
+        assertThatThrownBy { rotate(anotherDevice) }.isInstanceOf(TokenInvalidException::class.java)
+        val remainingSession = rotate(unaffected)
+        assertThat(provider.getMemberId(remainingSession.accessToken)).isEqualTo(retainedId)
+
+        val pool = Executors.newFixedThreadPool(2)
+        val ready = CountDownLatch(2)
+        val successors =
+            try {
+                (1..2).map {
+                    pool.submit(
+                        Callable {
+                            ready.countDown()
+                            check(ready.await(10, TimeUnit.SECONDS))
+                            rotate(current.refreshToken)
+                        },
+                    )
+                }.map { it.get(20, TimeUnit.SECONDS) }
+            } finally {
+                pool.shutdownNow()
+            }
+        assertThat(successors.map { it.refreshToken }.distinct()).hasSize(1)
+        val next = rotate(successors.first().refreshToken)
+        assertThat(resolver.resolve(next.accessToken)?.memberId).isEqualTo(retainedId)
+
+        TransactionTemplate(tx).executeWithoutResult {
+            RefreshTokenInvalidateService(tokenStore).destroyByTokenHash(TokenHasher.sha256Hex(currentBeforeMerge))
+        }
+        assertThat(rotate(remainingSession.refreshToken).accessToken).isNotBlank()
+        assertThat(resolver.resolve(next.accessToken)).isNull()
+        assertThatThrownBy { rotate(next.refreshToken) }.isInstanceOf(TokenNotFoundException::class.java)
+    }
+
     private fun assertCleanupAndAudit() {
         assertThat(jdbc.queryForList("select member_id from refresh_tokens", Long::class.java)).containsExactly(1L, 1L)
         assertThat(jdbc.queryForList("select member_id from member_oauth_link_requests", Long::class.java)).containsExactly(1L)
@@ -346,6 +449,7 @@ class MemberMergeMySqlIntegrationTest {
         MemberTeamRepository::class,
         MemberCohortRepository::class,
         MemberApprovalService::class,
+        MemberAccountService::class,
         MemberMergeService::class,
         MemberIdentityLockService::class,
         core.application.security.oauth.token.LoginIdentityValidator::class,

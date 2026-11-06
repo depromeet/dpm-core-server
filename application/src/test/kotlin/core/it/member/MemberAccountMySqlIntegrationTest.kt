@@ -136,11 +136,25 @@ class MemberAccountMySqlIntegrationTest {
 
     @Test
     fun `동시 해제는 마지막 수단을 남기고 해제된 세션의 재요청을 거절한다`() {
+        val sessions =
+            listOf(kakao, apple).map { identity ->
+                val hash = core.application.refreshToken.application.support.TokenHasher.sha256Hex(identity.method.name)
+                val row =
+                    RefreshToken(
+                        memberId = MemberId(1),
+                        tokenHash = hash,
+                        issuedAt = Instant.now(),
+                        expiresAt = Instant.now().plusSeconds(3600),
+                    )
+                `when`(tokenStore.lockByTokenHash(hash)).thenReturn(row)
+                identity.copy(sessionTokenHash = hash)
+            }
         val pool = Executors.newFixedThreadPool(2)
         val start = CountDownLatch(1)
         try {
             val results =
-                listOf(10L to kakao, 11L to apple).map { (id, identity) ->
+                sessions.map { identity ->
+                    val id = identity.accountId
                     pool.submit(
                         Callable {
                             start.await()
@@ -242,6 +256,7 @@ class MemberAccountMySqlIntegrationTest {
         `when`(tokenProvider.validateToken("refresh")).thenReturn(true)
         `when`(tokenProvider.getMemberId("refresh")).thenReturn(1L)
         `when`(tokenProvider.getLoginIdentity("refresh")).thenReturn(kakao)
+        `when`(tokenProvider.getSessionIdentity("refresh")).thenReturn(kakao.copy(sessionTokenHash = hash))
         `when`(tokenStore.findByTokenHash(hash)).thenAnswer {
             // This consistent read establishes the snapshot before waiting on the member lock.
             assertThat(jdbc.queryForObject("select count(*) from member_oauth where member_oauth_id=10", Int::class.java)).isEqualTo(1)

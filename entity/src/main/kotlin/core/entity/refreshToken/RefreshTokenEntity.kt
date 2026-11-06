@@ -52,6 +52,8 @@ class RefreshTokenEntity(
     val issuedMemberId: Long? = null,
     @Column(name = "successor_token_hash", length = 64)
     var successorTokenHash: String? = null,
+    @Column(name = "continuation_member_id")
+    val continuationMemberId: Long? = null,
 ) {
     /** @param plainToken 방금 발급한 경우에만 전달한다. DB 조회 결과에는 null 이다. */
     fun toDomain(plainToken: String? = null): RefreshToken =
@@ -67,6 +69,7 @@ class RefreshTokenEntity(
             tokenJti = tokenJti,
             issuedMemberId = issuedMemberId,
             successorTokenHash = successorTokenHash,
+            continuationMemberId = continuationMemberId,
         )
 
     companion object {
@@ -83,6 +86,7 @@ class RefreshTokenEntity(
                 tokenJti = domain.tokenJti,
                 issuedMemberId = domain.issuedMemberId,
                 successorTokenHash = domain.successorTokenHash,
+                continuationMemberId = domain.continuationMemberId,
             )
     }
 }

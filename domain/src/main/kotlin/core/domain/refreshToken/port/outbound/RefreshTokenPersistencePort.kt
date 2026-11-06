@@ -24,6 +24,11 @@ interface RefreshTokenPersistencePort {
         successorTokenHash: String,
     )
 
+    fun grantContinuation(
+        tokenHash: String,
+        memberId: Long,
+    )
+
     fun deleteByTokenHash(tokenHash: String)
 
     fun deleteByMemberId(memberId: Long)

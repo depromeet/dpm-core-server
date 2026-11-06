@@ -26,7 +26,7 @@ class MergedMemberResolver(
         validateIdentity: Boolean,
     ): ResolvedMember? {
         if (!tokens.validateToken(token)) return null
-        val identity = tokens.getLoginIdentity(token) ?: return null
+        val identity = tokens.getSessionIdentity(token) ?: return null
         var memberId = tokens.getMemberId(token)
         val path = mutableListOf<Long>()
         repeat(9) {

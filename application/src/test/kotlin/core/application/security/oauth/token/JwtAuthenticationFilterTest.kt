@@ -74,7 +74,7 @@ class JwtAuthenticationFilterTest {
         `when`(members.isLoginAvailable(1L)).thenReturn(true)
         `when`(members.findById(core.domain.member.vo.MemberId(1L))).thenReturn(null)
         val identity = core.domain.member.vo.LoginIdentity(core.domain.member.enums.LoginMethod.KAKAO, 10)
-        `when`(jwtTokenProvider.getLoginIdentity("valid")).thenReturn(identity)
+        `when`(jwtTokenProvider.getSessionIdentity("valid")).thenReturn(identity)
         `when`(identities.isValid(1L, identity)).thenReturn(true)
         val request = request().apply { setCookies(Cookie("accessToken", "valid")) }
         val chain = MockFilterChain()
@@ -157,7 +157,7 @@ class JwtAuthenticationFilterTest {
         `when`(jwtTokenProvider.getMemberId("valid")).thenReturn(1L)
         `when`(members.isLoginAvailable(1)).thenReturn(true)
         val identity = core.domain.member.vo.LoginIdentity(core.domain.member.enums.LoginMethod.APPLE, 11)
-        `when`(jwtTokenProvider.getLoginIdentity("valid")).thenReturn(identity)
+        `when`(jwtTokenProvider.getSessionIdentity("valid")).thenReturn(identity)
         `when`(identities.isValid(1, identity)).thenReturn(true)
         val authentication = UsernamePasswordAuthenticationToken("1", "valid", emptyList())
         `when`(jwtTokenProvider.getAuthentication("valid")).thenReturn(authentication)
