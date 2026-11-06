@@ -92,7 +92,7 @@ class MemberAccountController(
                 "현재 로그인한 수단을 해제하면 요청한 세션은 유지되고, 같은 수단으로 로그인한 다른 세션은 만료됩니다. " +
                 "해제한 계정으로 다시 로그인하면 신규 가입 절차로 이동합니다. 제공자 서비스의 동의 철회는 별도입니다.",
     )
-    @ApiResponse(responseCode = "200", description = "해제 후 남아 있는 연결 계정 목록 반환")
+    @ApiResponse(responseCode = "200", description = "남은 로그인 수단 목록을 반환합니다. 현재 기기의 로그인 상태를 유지하고 이 목록으로 화면을 갱신하세요.")
     @ApiResponse(responseCode = "401", description = "MEMBER-401-51: 현재 세션을 확인할 수 없어 토큰 재발급 후 다시 요청해야 합니다.")
     @ApiResponse(responseCode = "409", description = "MEMBER-409-51: 마지막 로그인 수단이므로 해제 불가")
     fun unlink(
