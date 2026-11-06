@@ -135,6 +135,10 @@ class Attendance(
 
     /** 정책 재계산은 updatedAt 을 남기지 않고 자동 결석 표지를 지운다. */
     fun applyPolicyStatus(newStatus: AttendanceStatus) {
+        val previouslyAttended = status == AttendanceStatus.PRESENT || status == AttendanceStatus.LATE
+        if (previouslyAttended && newStatus == AttendanceStatus.ABSENT) {
+            lateParticipatedAt = attendedAt
+        }
         this.status = newStatus
         this.autoAbsentAt = null
     }

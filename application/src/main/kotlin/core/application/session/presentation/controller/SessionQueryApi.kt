@@ -62,7 +62,8 @@ interface SessionQueryApi {
                                                 "attendanceStart": "2026-10-10T14:00:00",
                                                 "lateStart": "2026-10-10T14:10:00",
                                                 "absentStart": "2026-10-10T14:20:00",
-                                                "attendanceCode": "3821",
+                                                "lateParticipationDeadline": "2026-10-10T19:00:00",
+                                                "attendanceCode": "",
                                                 "canRecordAttendance": true
                                             }
                                         }

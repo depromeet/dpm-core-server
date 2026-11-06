@@ -33,7 +33,7 @@ import java.time.LocalDateTime
 object SessionMapper {
     fun toNextSessionResponse(
         session: Session,
-        canRecordAttendance: Boolean = true,
+        isAdmin: Boolean,
     ): NextSessionResponse =
         with(session) {
             NextSessionResponse(
@@ -47,8 +47,8 @@ object SessionMapper {
                 lateStart = instantToLocalDateTime(attendancePolicy.lateStart),
                 absentStart = instantToLocalDateTime(attendancePolicy.absentStart),
                 lateParticipationDeadline = instantToLocalDateTime(lateParticipationDeadline()),
-                attendanceCode = attendancePolicy.attendanceCode,
-                canRecordAttendance = canRecordAttendance,
+                attendanceCode = if (isAdmin) attendancePolicy.attendanceCode else "",
+                canRecordAttendance = !isAdmin,
             )
         }
 

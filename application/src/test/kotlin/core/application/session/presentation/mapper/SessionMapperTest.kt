@@ -35,6 +35,13 @@ class SessionMapperTest {
     private val attendedAt = Instant.parse("2026-09-05T04:58:21Z")
 
     @Test
+    fun `홈 응답은 운영진에게만 현장 안내용 출석 코드를 제공한다`() {
+        assertThat(SessionMapper.toNextSessionResponse(session, isAdmin = false).attendanceCode).isEmpty()
+        assertThat(SessionMapper.toNextSessionResponse(session, isAdmin = true).attendanceCode)
+            .isEqualTo(session.attendancePolicy.attendanceCode)
+    }
+
+    @Test
     fun `디퍼 세션 상세는 운영진이 바꾼 예전 기록(인증 시각이 남음)의 인증 시각을 숨기고 바꾸지 않은 기록은 그대로 준다`() {
         val manual = attendance(updatedAt = Instant.parse("2026-09-05T06:00:00Z"))
         val untouched = attendance(updatedAt = null)
