@@ -258,7 +258,7 @@ class SessionCommandServiceTest {
     ): AttendanceStatus =
         fixture.attendanceCommandService.attendSession(
             AttendanceRecordCommand(session.id!!, MemberId(memberId), at, session.attendancePolicy.attendanceCode),
-        )
+        ).status
 
     private fun createCommand(
         date: Instant,

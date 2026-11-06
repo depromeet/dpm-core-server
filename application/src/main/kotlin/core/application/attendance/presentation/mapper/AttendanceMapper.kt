@@ -179,19 +179,22 @@ object AttendanceMapper {
                 },
         )
 
-    fun toMyDetailAttendanceBySessionResponse(myAttendanceModel: MyDetailAttendanceQueryModel) =
-        MyDetailAttendanceBySessionResponse(
-            attendance =
-                MyDetailAttendanceInfo(
-                    status = myAttendanceModel.attendanceStatus,
-                    attendedAt = myAttendanceModel.attendedAt?.let { instantToLocalDateTime(it) },
-                ),
-            session =
-                MyDetailAttendanceSessionInfo(
-                    week = myAttendanceModel.sessionWeek,
-                    eventName = myAttendanceModel.sessionEventName,
-                    date = instantToLocalDateTime(myAttendanceModel.sessionDate),
-                    place = myAttendanceModel.sessionPlace,
-                ),
-        )
+    fun toMyDetailAttendanceBySessionResponse(
+        myAttendanceModel: MyDetailAttendanceQueryModel,
+        canRegisterLateParticipation: Boolean,
+    ) = MyDetailAttendanceBySessionResponse(
+        attendance =
+            MyDetailAttendanceInfo(
+                status = myAttendanceModel.attendance.status.name,
+                canRegisterLateParticipation = canRegisterLateParticipation,
+                attendedAt = myAttendanceModel.attendedAt?.let { instantToLocalDateTime(it) },
+            ),
+        session =
+            MyDetailAttendanceSessionInfo(
+                week = myAttendanceModel.sessionWeek,
+                eventName = myAttendanceModel.sessionEventName,
+                date = instantToLocalDateTime(myAttendanceModel.sessionDate),
+                place = myAttendanceModel.sessionPlace,
+            ),
+    )
 }

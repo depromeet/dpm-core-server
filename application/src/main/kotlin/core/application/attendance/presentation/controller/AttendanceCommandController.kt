@@ -43,9 +43,9 @@ class AttendanceCommandController(
         @CurrentMemberId memberId: MemberId,
         @RequestBody request: AttendanceRecordRequest,
     ): CustomResponse<AttendanceResponse> {
-        // 요청을 받은 시각을 한 번만 기록해 판정과 저장, 응답에 같은 값을 쓴다.
+        // 출석 구간은 요청을 받은 시각으로 판정한다.
         val attendedAt = Instant.now(clock)
-        val attendanceStatus =
+        val recorded =
             attendanceCommandService.attendSession(
                 AttendanceRecordCommand(
                     sessionId = sessionId,
@@ -55,7 +55,7 @@ class AttendanceCommandController(
                 ),
             )
 
-        return CustomResponse.ok(toAttendanceResponse(attendanceStatus, attendedAt))
+        return CustomResponse.ok(toAttendanceResponse(recorded.status, recorded.attendedAt))
     }
 
     @PreAuthorize("hasAuthority('update:attendance')")

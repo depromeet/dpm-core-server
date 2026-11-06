@@ -3,11 +3,15 @@ package core.application.attendance.application.service
 import core.application.attendance.application.exception.AttendanceNotFoundException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.support.AttendanceTestFixture
+import core.domain.attendance.aggregate.Attendance
+import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.query.GetDetailMemberAttendancesQuery
 import core.domain.attendance.port.inbound.query.GetMemberAttendancesQuery
+import core.domain.attendance.port.inbound.query.GetMyAttendanceBySessionQuery
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
 import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.MemberDetailAttendanceQueryModel
+import core.domain.attendance.port.outbound.query.MyDetailAttendanceQueryModel
 import core.domain.attendance.port.outbound.query.SessionRosterQueryModel
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.vo.CohortId
@@ -19,6 +23,7 @@ import core.domain.team.vo.TeamNumber
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.doReturn
 import java.time.Duration
 import java.time.Instant
 
@@ -27,6 +32,49 @@ class AttendanceQueryServiceTest {
     private val fixture = AttendanceTestFixture(now = now)
     private val cohortId = fixture.createActiveCohort()
     private val adminId = MemberId(100)
+
+    @Test
+    fun `홈 출석 상세는 지각 마감부터 19시 전까지 등록 가능한 디퍼에게 늦은 참여 등록을 연다`() {
+        val query = GetMyAttendanceBySessionQuery(SessionId(1), MemberId(2))
+        val pending = Attendance(sessionId = query.sessionId, memberId = query.memberId, status = AttendanceStatus.PENDING)
+        val row =
+            MyDetailAttendanceQueryModel(
+                attendance = pending,
+                sessionAbsentStart = now,
+                sessionDeleted = false,
+                sessionWeek = 1,
+                sessionEventName = "OT",
+                sessionDate = now.minusSeconds(1800),
+                sessionPlace = "온라인",
+            )
+        fixture.attendances.mySessionAttendances[query] = row
+
+        fun canRegister() = fixture.attendanceQueryService.getMyDetailAttendanceBySession(query).attendance.canRegisterLateParticipation
+
+        fixture.clock.now = now.minusSeconds(1)
+        assertThat(canRegister()).isFalse()
+        fixture.clock.now = now
+        assertThat(canRegister()).isTrue()
+        doReturn(true).`when`(fixture.memberAccessService).isAdmin(query.memberId)
+        assertThat(canRegister()).isFalse()
+        doReturn(false).`when`(fixture.memberAccessService).isAdmin(query.memberId)
+        fixture.clock.now = Instant.parse("2026-10-10T10:00:00Z")
+        assertThat(canRegister()).isFalse()
+
+        fixture.clock.now = now
+        fixture.attendances.mySessionAttendances[query] =
+            row.copy(
+                attendance =
+                    Attendance(
+                        sessionId = query.sessionId,
+                        memberId = query.memberId,
+                        status = AttendanceStatus.ABSENT,
+                        attendedAt = now,
+                        lateParticipatedAt = now,
+                    ),
+            )
+        assertThat(canRegister()).isFalse()
+    }
 
     @Test
     fun `현재 기수 세션은 전체 명단과 팀 없는 멤버를 그대로 주고 내 팀은 현재 기수 팀이다`() {

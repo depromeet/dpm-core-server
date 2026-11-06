@@ -10,7 +10,6 @@ import core.application.sessionFeedback.application.exception.FeedbackDisabledEx
 import core.application.sessionFeedback.application.exception.FeedbackNotStartedException
 import core.application.sessionFeedback.application.exception.InvalidAspectCountException
 import core.application.sessionFeedback.application.exception.NotFeedbackTargetException
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.session.port.outbound.SessionPersistencePort
@@ -46,8 +45,9 @@ class SessionFeedbackCommandService(
     ) {
         sessionPersistencePort.findSessionById(sessionId.value) ?: throw SessionNotFoundException()
 
-        val form = feedbackFormPersistencePort.findBySessionId(sessionId.value)
-            ?: throw FeedbackDisabledException()
+        val form =
+            feedbackFormPersistencePort.findBySessionId(sessionId.value)
+                ?: throw FeedbackDisabledException()
 
         if (!isTarget(sessionId, memberId)) throw NotFeedbackTargetException()
 
@@ -85,7 +85,7 @@ class SessionFeedbackCommandService(
         memberId: MemberId,
     ): Boolean {
         val attendance = attendancePersistencePort.findAttendanceBy(sessionId.value, memberId.value) ?: return false
-        return attendance.status == AttendanceStatus.PRESENT || attendance.status == AttendanceStatus.LATE
+        return attendance.isSessionFeedbackEligible()
     }
 
     private fun validateAspects(

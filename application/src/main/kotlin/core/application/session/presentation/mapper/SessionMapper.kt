@@ -27,6 +27,7 @@ import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionId
 import core.domain.sessionFeedback.aggregate.SessionFeedbackForm
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
 
 object SessionMapper {
@@ -45,6 +46,7 @@ object SessionMapper {
                 attendanceStart = instantToLocalDateTime(attendancePolicy.attendanceStart),
                 lateStart = instantToLocalDateTime(attendancePolicy.lateStart),
                 absentStart = instantToLocalDateTime(attendancePolicy.absentStart),
+                lateParticipationDeadline = instantToLocalDateTime(lateParticipationDeadline()),
                 attendanceCode = attendancePolicy.attendanceCode,
                 canRecordAttendance = canRecordAttendance,
             )
@@ -99,6 +101,7 @@ object SessionMapper {
     fun toSessionDetailForDeeperResponse(
         session: Session,
         attendance: Attendance,
+        now: Instant,
         canRecordAttendance: Boolean = true,
     ): SessionDetailForDeeperResponse =
         with(session) {
@@ -114,6 +117,9 @@ object SessionMapper {
                 lateStart = instantToLocalDateTime(session.attendancePolicy.lateStart),
                 absentStart = instantToLocalDateTime(session.attendancePolicy.absentStart),
                 attendanceStatus = attendance.status,
+                lateParticipationDeadline = instantToLocalDateTime(lateParticipationDeadline()),
+                canRegisterLateParticipation =
+                    canRecordAttendance && isLateParticipationOpenAt(now) && attendance.canRecordAttendance(),
                 // 운영진이 바꾼 기록(updatedAt 있음)은 인증 시각이 남은 예전 기록도 attendedAt 을 null 로 준다
                 attendedAt = if (attendance.updatedAt != null) null else instantToLocalDateTime(attendance.attendedAt),
                 canRecordAttendance = canRecordAttendance,

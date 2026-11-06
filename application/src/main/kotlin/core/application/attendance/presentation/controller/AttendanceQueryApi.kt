@@ -228,7 +228,7 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "세션별 나의 출석 상세 조회",
-        description = "세션별 나의 출석을 조회합니다.",
+        description = "세션별 나의 출석과 현재 늦은 참여 등록 가능 여부를 조회합니다.",
     )
     @ApiResponses(
         value = [
@@ -250,7 +250,8 @@ interface AttendanceQueryApi {
                                         "data": {
                                             "attendance": {
                                                 "status": "PRESENT",
-                                                "attendedAt": "2025-08-09T14:05:12.000000"
+                                                "attendedAt": "2025-08-09T14:05:12.000000",
+                                                "canRegisterLateParticipation": false
                                             },
                                             "session": {
                                                 "week": 1,

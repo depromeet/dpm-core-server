@@ -1,6 +1,5 @@
 package core.application.sessionFeedback.application.scheduler
 
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.notification.enums.NotificationMessageType
 import core.domain.notification.port.inbound.NotificationCommandUseCase
@@ -47,12 +46,13 @@ class SessionFeedbackReminderScheduler(
         val eligible = findEligibleAttendances(sessionId)
         val alreadySent = pushReceiptPersistencePort.findMemberIdsBySessionId(sessionId).toMutableSet()
 
-        // 배포 전 one-shot 발송분: pushSentAt 이전(또는 미기록) 출석자는 재발송하지 않고 이력만 채운다.
+        // 예전 일괄 발송은 출석·지각자만 받았다. 늦은 참여 등록자는 실제 발송 이력으로만 판단한다.
         val pushSentAt = form.pushSentAt
         if (pushSentAt != null) {
             val legacy =
                 eligible.filter { attendance ->
                     attendance.memberId !in alreadySent &&
+                        attendance.lateParticipatedAt == null &&
                         (attendance.attendedAt == null || !attendance.attendedAt!!.isAfter(pushSentAt))
                 }
             if (legacy.isNotEmpty()) {
@@ -88,5 +88,5 @@ class SessionFeedbackReminderScheduler(
     private fun findEligibleAttendances(sessionId: Long) =
         attendancePersistencePort
             .findAllBySessionId(sessionId)
-            .filter { it.status == AttendanceStatus.PRESENT || it.status == AttendanceStatus.LATE }
+            .filter { it.isSessionFeedbackEligible() }
 }

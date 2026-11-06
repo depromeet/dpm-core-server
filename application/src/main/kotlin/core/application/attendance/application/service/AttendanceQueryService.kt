@@ -10,6 +10,7 @@ import core.application.attendance.presentation.response.MemberDetailAttendanceC
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
@@ -27,6 +28,7 @@ import core.domain.session.vo.SessionId
 import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 
 @Service
 @Transactional(readOnly = true)
@@ -36,6 +38,8 @@ class AttendanceQueryService(
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val sessionPersistencePort: SessionPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val memberAccessService: MemberAccessService,
+    private val clock: Clock,
 ) {
     /**
      * 현재 활성 기수 세션의 DEEPER 출석 명단(`@dpm.test` 제외). 필터와 페이지 없이 준다.
@@ -165,7 +169,13 @@ class AttendanceQueryService(
                 .findMyDetailAttendanceBySession(query)
                 ?: throw AttendanceNotFoundException()
 
-        return AttendanceMapper.toMyDetailAttendanceBySessionResponse(myAttendanceQueryResult)
+        val canRegisterLateParticipation =
+            myAttendanceQueryResult.isLateParticipationAvailableAt(clock.instant()) &&
+                !memberAccessService.isAdmin(query.memberId)
+        return AttendanceMapper.toMyDetailAttendanceBySessionResponse(
+            myAttendanceQueryResult,
+            canRegisterLateParticipation,
+        )
     }
 
     fun getAttendancesBySessionId(sessionId: SessionId): List<Attendance> =

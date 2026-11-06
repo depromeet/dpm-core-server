@@ -21,7 +21,8 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :status, a.attendedAt = :attendedAt, a.autoAbsentAt = null " +
+        "update AttendanceEntity a set a.status = :status, a.attendedAt = :attendedAt, " +
+            "a.lateParticipatedAt = :lateParticipatedAt, a.autoAbsentAt = null " +
             "where a.id = :attendanceId " +
             "and a.deletedAt is null " +
             "and a.attendedAt is null " +
@@ -32,6 +33,7 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         @Param("attendanceId") attendanceId: Long,
         @Param("status") status: String,
         @Param("attendedAt") attendedAt: Instant,
+        @Param("lateParticipatedAt") lateParticipatedAt: Instant?,
     ): Int
 
     /** 운영진 변경. 운영진이 정한 상태라 출석 인증 시각과 자동 결석 표지를 지운다. */
@@ -39,7 +41,8 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         "update AttendanceEntity a " +
-            "set a.status = :status, a.attendedAt = null, a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
+            "set a.status = :status, a.attendedAt = null, a.lateParticipatedAt = null, " +
+            "a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
             "where a.sessionId = :sessionId " +
             "and a.memberId in :memberIds " +
             "and a.deletedAt is null",
