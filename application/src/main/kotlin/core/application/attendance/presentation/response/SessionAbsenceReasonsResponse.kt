@@ -1,5 +1,6 @@
 package core.application.attendance.presentation.response
 
+import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 data class SessionAbsenceReasonsResponse(
@@ -10,6 +11,7 @@ data class SessionAbsenceReasonItem(
     val memberId: Long,
     val memberName: String,
     val contents: String,
+    @field:Schema(description = "사유서 검토 상태", allowableValues = ["PENDING", "APPROVED", "REJECTED"])
     val status: String,
     /** 첨부 이미지 id, 표시 순서대로. 없으면 []. images 와 같은 순서이며 호환을 위해 유지 */
     val imageIds: List<Long>,

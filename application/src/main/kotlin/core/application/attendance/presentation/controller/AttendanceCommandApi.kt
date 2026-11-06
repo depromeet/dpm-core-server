@@ -185,8 +185,8 @@ interface AttendanceCommandApi {
     @Operation(
         summary = "결석 사유 제출",
         description =
-            "결석 사유를 제출합니다. 운영진 검토 없이 바로 승인(APPROVED)되고, 미인증·결석 출석은 인정결석으로 바뀝니다. " +
-                "이미 제출했다면 내용을 바꿉니다. " +
+            "결석 사유서를 검토 대기(PENDING)로 제출합니다. 출석 상태는 유지됩니다. " +
+                "검토 대기·반려 사유서는 재제출할 수 있습니다. " +
                 ABSENCE_REASON_IMAGE_FLOW,
         requestBody =
             RequestBody(
@@ -227,7 +227,10 @@ interface AttendanceCommandApi {
             ),
             ApiResponse(responseCode = "400", description = ABSENCE_REASON_400_DESCRIPTION),
             ApiResponse(responseCode = "404", description = "SESSION-404-01 세션 없음"),
-            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-02 다른 결석 사유서에 첨부된 이미지"),
+            ApiResponse(
+                responseCode = "409",
+                description = "ATTENDANCE-409-02 다른 사유서에 첨부된 이미지, ATTENDANCE-409-03 이미 승인된 사유서",
+            ),
         ],
     )
     fun createAbsenceReport(
@@ -239,7 +242,7 @@ interface AttendanceCommandApi {
     @Operation(
         summary = "결석 사유 수정",
         description =
-            "본인이 제출한 결석 사유서의 내용을 수정합니다. 수정하면 다시 승인(APPROVED)되고 인정결석이 반영됩니다. " +
+            "본인의 검토 대기·반려 사유서를 수정하면 검토 대기(PENDING)가 됩니다. 출석 상태는 유지됩니다. " +
                 ABSENCE_REASON_IMAGE_FLOW,
         requestBody =
             RequestBody(
@@ -284,7 +287,10 @@ interface AttendanceCommandApi {
                 responseCode = "404",
                 description = "SESSION-404-01 세션 없음(삭제된 세션 포함), ATTENDANCE-404-02 제출한 결석 사유서가 존재하지 않음",
             ),
-            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-02 다른 결석 사유서에 첨부된 이미지"),
+            ApiResponse(
+                responseCode = "409",
+                description = "ATTENDANCE-409-02 다른 사유서에 첨부된 이미지, ATTENDANCE-409-03 이미 승인된 사유서",
+            ),
         ],
     )
     fun updateAbsenceReport(
@@ -296,7 +302,7 @@ interface AttendanceCommandApi {
     @Operation(
         summary = "결석 사유 삭제",
         description =
-            "본인이 제출한 결석 사유서를 삭제합니다. 인정결석은 마감 전이면 미인증, 마감 후면 결석으로 되돌아갑니다. " +
+            "본인의 검토 대기·반려 사유서를 삭제합니다. 출석 상태는 유지됩니다. " +
                 "첨부만 해제되며 이미지는 남아 다른 사유서에 다시 첨부할 수 있습니다.",
     )
     @ApiResponses(
@@ -309,6 +315,7 @@ interface AttendanceCommandApi {
                 responseCode = "404",
                 description = "제출한 결석 사유서가 존재하지 않음",
             ),
+            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-03 이미 승인된 사유서"),
         ],
     )
     fun deleteAbsenceReport(
@@ -319,7 +326,7 @@ interface AttendanceCommandApi {
     @Operation(
         summary = "결석 사유 검토 (운영진)",
         description =
-            "운영진이 결석 사유서를 승인하거나 반려합니다. 제출 시 이미 승인되므로 필요할 때만 씁니다. " +
+            "운영진이 검토 대기(PENDING) 사유서를 승인하거나 반려합니다. 같은 결정을 반복하면 기존 결과를 반환합니다. " +
                 "승인 시 출석 상태가 인정결석으로 변경되고, 반려 시 출석은 그대로입니다.",
         requestBody =
             RequestBody(
@@ -351,8 +358,9 @@ interface AttendanceCommandApi {
             ),
             ApiResponse(
                 responseCode = "404",
-                description = "SESSION-404-01 세션 없음(삭제된 세션 포함), ATTENDANCE-404-02 제출된 결석 사유서가 존재하지 않음",
+                description = "SESSION-404-01 세션 없음, ATTENDANCE-404-01 승인할 출석 기록 없음, ATTENDANCE-404-02 사유서 없음",
             ),
+            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-03 이전 검토 결과와 다른 결정"),
         ],
     )
     fun reviewAbsenceReport(
