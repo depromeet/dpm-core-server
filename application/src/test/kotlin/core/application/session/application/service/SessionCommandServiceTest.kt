@@ -170,6 +170,31 @@ class SessionCommandServiceTest {
     }
 
     @Test
+    fun `정책 변경으로 결석이 된 출석과 지각만 기존 인증 시각으로 피드백 자격을 유지한다`() {
+        fixture.sessionCommandService.createSession(createCommand(sessionStart))
+        val session = onlySession()
+        val presentAt = sessionStart.plusSeconds(60)
+        val lateAt = sessionStart.plus(Duration.ofMinutes(20))
+        fixture.addAttendance(session, memberId = 1L)
+        fixture.addAttendance(session, memberId = 2L)
+        fixture.addAttendance(session, memberId = 3L, status = AttendanceStatus.ABSENT, attendedAt = lateAt)
+        assertThat(attend(session, 1L, presentAt)).isEqualTo(AttendanceStatus.PRESENT)
+        assertThat(attend(session, 2L, lateAt)).isEqualTo(AttendanceStatus.LATE)
+
+        fixture.sessionCommandService.updateSession(updateCommand(session, sessionStart.minusSeconds(60), sessionStart))
+
+        for ((member, registeredAt) in listOf(1L to presentAt, 2L to lateAt)) {
+            val row = fixture.attendances.findAttendanceBy(session.id!!.value, member)!!
+            assertThat(row.status).isEqualTo(AttendanceStatus.ABSENT)
+            assertThat(row.lateParticipatedAt).isEqualTo(registeredAt)
+            assertThat(row.isSessionFeedbackEligible()).isTrue()
+        }
+        val legacy = fixture.attendances.findAttendanceBy(session.id!!.value, 3L)!!
+        assertThat(legacy.lateParticipatedAt).isNull()
+        assertThat(legacy.isSessionFeedbackEligible()).isFalse()
+    }
+
+    @Test
     fun `세션 시각 변경은 같은 호출 안에서 인증 기록을 재판정하고 운영진 기록은 보호한다`() {
         fixture.sessionCommandService.createSession(createCommand(sessionStart))
         val session = onlySession()
@@ -258,7 +283,7 @@ class SessionCommandServiceTest {
     ): AttendanceStatus =
         fixture.attendanceCommandService.attendSession(
             AttendanceRecordCommand(session.id!!, MemberId(memberId), at, session.attendancePolicy.attendanceCode),
-        )
+        ).status
 
     private fun createCommand(
         date: Instant,

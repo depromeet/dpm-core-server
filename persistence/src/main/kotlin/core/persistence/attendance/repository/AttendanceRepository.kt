@@ -435,12 +435,20 @@ class AttendanceRepository(
 
     /** 다른 상세 조회처럼 [isLatestLiveAttendance] 하나를 보고 운영진이 바꾼 기록의 인증 시각은 null 로 준다. */
     override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? {
-        val attendedAtField = visibleAttendedAt()
+        val absentStart = SESSIONS.ABSENT_START.coerce(SQLDataType.INSTANT)
+        val autoAbsentAt = ATTENDANCES.AUTO_ABSENT_AT.coerce(SQLDataType.INSTANT)
+        val lateParticipatedAt = ATTENDANCES.LATE_PARTICIPATED_AT.coerce(SQLDataType.INSTANT)
+        val updatedAt = updatedAtInstant()
 
         return dsl
             .select(
                 ATTENDANCES.STATUS,
-                attendedAtField,
+                ATTENDANCES.ATTENDED_AT,
+                updatedAt,
+                autoAbsentAt,
+                lateParticipatedAt,
+                absentStart,
+                SESSIONS.DELETED_AT,
                 SESSIONS.WEEK,
                 SESSIONS.EVENT_NAME,
                 SESSIONS.DATE,
@@ -450,8 +458,18 @@ class AttendanceRepository(
             .where(myAttendanceConditions(query))
             .fetchOne {
                 MyDetailAttendanceQueryModel(
-                    attendanceStatus = it[ATTENDANCES.STATUS]!!,
-                    attendedAt = it[attendedAtField],
+                    attendance =
+                        Attendance(
+                            sessionId = query.sessionId,
+                            memberId = query.memberId,
+                            status = AttendanceStatus.valueOf(it[ATTENDANCES.STATUS]!!),
+                            attendedAt = it[ATTENDANCES.ATTENDED_AT],
+                            updatedAt = it[updatedAt],
+                            autoAbsentAt = it[autoAbsentAt],
+                            lateParticipatedAt = it[lateParticipatedAt],
+                        ),
+                    sessionAbsentStart = it[absentStart]!!,
+                    sessionDeleted = it[SESSIONS.DELETED_AT] != null,
                     sessionWeek = it[SESSIONS.WEEK]!!,
                     sessionEventName = it[SESSIONS.EVENT_NAME]!!,
                     sessionDate = it[SESSIONS.DATE]!!,
@@ -470,7 +488,13 @@ class AttendanceRepository(
         attendanceId: Long,
         status: AttendanceStatus,
         attendedAt: Instant,
-    ): Boolean = attendanceJpaRepository.recordAttendanceIfAllowed(attendanceId, status.name, attendedAt) == 1
+    ): Boolean =
+        attendanceJpaRepository.recordAttendanceIfAllowed(
+            attendanceId,
+            status.name,
+            attendedAt,
+            lateParticipatedAt = attendedAt.takeIf { status == AttendanceStatus.ABSENT },
+        ) == 1
 
     override fun updateStatusByAdmin(
         sessionId: Long,

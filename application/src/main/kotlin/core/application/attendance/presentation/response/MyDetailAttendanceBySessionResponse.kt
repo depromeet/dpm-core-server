@@ -10,6 +10,7 @@ data class MyDetailAttendanceBySessionResponse(
 data class MyDetailAttendanceInfo(
     val status: String,
     val attendedAt: LocalDateTime?,
+    val canRegisterLateParticipation: Boolean,
 )
 
 data class MyDetailAttendanceSessionInfo(

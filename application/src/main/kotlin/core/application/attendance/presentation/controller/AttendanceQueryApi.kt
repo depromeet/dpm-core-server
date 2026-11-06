@@ -228,17 +228,19 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "세션별 나의 출석 상세 조회",
-        description = "세션별 나의 출석을 조회합니다.",
+        description = "지각 마감 후 attendance.canRegisterLateParticipation이 true이면 코드 입력 버튼을 열어주세요. " +
+            "등록에 성공하거나 세션 당일 19:00(한국 시간)이 되면 false입니다.",
     )
     @ApiResponses(
         value = [
             ApiResponse(
                 responseCode = "200",
                 description = "세션별 나의 출석 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
+                        schema = Schema(ref = "#/components/schemas/CustomResponseMyDetailAttendanceBySessionResponse"),
                         examples = [
                             ExampleObject(
                                 name = "세션별 나의 출석 조회 성공 응답",
@@ -246,11 +248,12 @@ interface AttendanceQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "attendance": {
                                                 "status": "PRESENT",
-                                                "attendedAt": "2025-08-09T14:05:12.000000"
+                                                "attendedAt": "2025-08-09T14:05:12.000000",
+                                                "canRegisterLateParticipation": false
                                             },
                                             "session": {
                                                 "week": 1,

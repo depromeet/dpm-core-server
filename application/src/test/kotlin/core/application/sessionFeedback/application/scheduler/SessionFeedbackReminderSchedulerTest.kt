@@ -2,6 +2,7 @@ package core.application.sessionFeedback.application.scheduler
 
 import core.application.support.AttendanceTestFixture
 import core.application.support.FakeSessionFeedbackPushReceiptPersistencePort
+import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.member.vo.MemberId
 import core.domain.notification.aggregate.NotificationToken
@@ -43,7 +44,7 @@ class SessionFeedbackReminderSchedulerTest {
         )
 
     @Test
-    fun `수집 기간 중 아직 푸시를 받지 않은 출석·지각자에게만 보내고 마감 후에는 보내지 않는다`() {
+    fun `수집 기간 중 아직 푸시를 받지 않은 작성 대상자에게만 보낸다`() {
         val cohortId = fixture.createActiveCohort()
         val session =
             fixture.createSession(
@@ -92,6 +93,17 @@ class SessionFeedbackReminderSchedulerTest {
                 SessionAttendanceTimes(start, start.plusSeconds(300), start.plusSeconds(1800)),
             )
         val form = SessionFeedbackForm.create(session.id!!, start, pushEnabled = true)
+        // 이전 일괄 발송에 포함되지 않았던 늦은 참여 등록자는 실제 발송 이력이 있어야 제외한다.
+        fixture.attendances.save(
+            Attendance(
+                sessionId = session.id!!,
+                memberId = MemberId(3L),
+                status = AttendanceStatus.ABSENT,
+                attendedAt = start,
+                lateParticipatedAt = start,
+            ),
+        )
+        fixture.addAttendance(session, memberId = 4L, status = AttendanceStatus.ABSENT, attendedAt = start)
         form.markPushSent(start)
         fixture.feedbackForms.save(form)
         fixture.addAttendance(session, memberId = 1L, status = AttendanceStatus.PRESENT, attendedAt = start)
@@ -105,9 +117,9 @@ class SessionFeedbackReminderSchedulerTest {
         fixture.clock.now = start.plus(Duration.ofMinutes(30))
         scheduler.sendFeedbackOpenedPush()
 
-        assertThat(notifications.sent).containsExactly(listOf(MemberId(2L)))
+        assertThat(notifications.sent.single()).containsExactlyInAnyOrder(MemberId(2L), MemberId(3L))
         assertThat(receipts.findMemberIdsBySessionId(session.id!!.value))
-            .containsExactlyInAnyOrder(MemberId(1L), MemberId(2L))
+            .containsExactlyInAnyOrder(MemberId(1L), MemberId(2L), MemberId(3L))
     }
 
     private class RecordingNotificationCommandUseCase : NotificationCommandUseCase {
