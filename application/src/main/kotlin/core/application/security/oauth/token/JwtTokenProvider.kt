@@ -1,5 +1,6 @@
 package core.application.security.oauth.token
 
+import core.application.refreshToken.application.support.TokenHasher
 import core.application.security.properties.TokenProperties
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.member.enums.LoginMethod
@@ -27,7 +28,8 @@ class JwtTokenProvider(
     fun generateAccessToken(
         memberId: String,
         loginIdentity: LoginIdentity?,
-    ): String = generateToken(memberId, tokenProperties.expirationTime.accessToken, loginIdentity)
+        sessionTokenHash: String? = null,
+    ): String = generateToken(memberId, tokenProperties.expirationTime.accessToken, loginIdentity, sessionTokenHash)
 
     fun generateAccessTokenWithPermissions(
         memberId: String,
@@ -96,6 +98,7 @@ class JwtTokenProvider(
         memberId: String,
         expirationTime: Long,
         loginIdentity: LoginIdentity?,
+        sessionTokenHash: String? = null,
     ): String {
         val currentTimeMillis = System.currentTimeMillis()
         val now = Date(currentTimeMillis)
@@ -106,6 +109,7 @@ class JwtTokenProvider(
             .builder()
             .subject(memberId)
             .withLoginIdentity(loginIdentity)
+            .apply { sessionTokenHash?.let { claim(SESSION_CLAIM, it) } }
             .issuedAt(now)
             .expiration(expiration)
             .signWith(secretKey)
@@ -153,7 +157,17 @@ class JwtTokenProvider(
 
     /** 로그인 계정 클레임이 없는 토큰(배포 전 발급분)이면 null 을 반환한다. */
     fun getLoginIdentity(token: String?): LoginIdentity? {
+        return loginIdentity(getClaims(token))
+    }
+
+    fun getSessionIdentity(token: String): LoginIdentity? {
         val claims = getClaims(token)
+        val identity = loginIdentity(claims) ?: return null
+        val hash = if (claims.id.isNullOrBlank()) claims[SESSION_CLAIM] as? String else TokenHasher.sha256Hex(token)
+        return identity.copy(sessionTokenHash = hash)
+    }
+
+    private fun loginIdentity(claims: Claims): LoginIdentity? {
         val method = LoginMethod.fromOrNull(claims[LOGIN_METHOD_CLAIM] as? String) ?: return null
         val accountId = (claims[LOGIN_ACCOUNT_ID_CLAIM] as? Number)?.toLong() ?: return null
         return LoginIdentity(method, accountId)
@@ -181,6 +195,7 @@ class JwtTokenProvider(
     }
 
     companion object {
+        private const val SESSION_CLAIM = "refreshSession"
         private const val LOGIN_METHOD_CLAIM = "loginMethod"
         private const val LOGIN_ACCOUNT_ID_CLAIM = "loginAccountId"
     }

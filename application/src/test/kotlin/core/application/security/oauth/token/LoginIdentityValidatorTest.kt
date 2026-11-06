@@ -8,6 +8,7 @@ import core.domain.member.vo.LoginIdentity
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberOAuthId
 import core.domain.membercredential.port.outbound.MemberCredentialPersistencePort
+import core.domain.refreshToken.port.outbound.RefreshTokenPersistencePort
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -16,7 +17,7 @@ import org.mockito.Mockito.`when`
 class LoginIdentityValidatorTest {
     private val oauth = mock(MemberOAuthPersistencePort::class.java)
     private val credentials = mock(MemberCredentialPersistencePort::class.java)
-    private val validator = LoginIdentityValidator(oauth, credentials)
+    private val validator = LoginIdentityValidator(oauth, credentials, mock(RefreshTokenPersistencePort::class.java))
 
     @Test
     fun `식별자가 없거나 해제된 토큰은 사용하지 못한다`() {

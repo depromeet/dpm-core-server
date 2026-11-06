@@ -12,7 +12,11 @@ interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenEntity, Long> {
 
     fun findAllByMemberId(memberId: Long): List<RefreshTokenEntity>
 
-    fun deleteByTokenHash(tokenHash: String)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("delete from RefreshTokenEntity t where t.tokenHash = :tokenHash")
+    fun deleteByTokenHash(
+        @Param("tokenHash") tokenHash: String,
+    )
 
     fun deleteByMemberId(memberId: Long)
 

@@ -69,15 +69,16 @@ class CustomLogoutSuccessHandlerTest {
     fun `logout expires both cookies and deletes only the presented refresh session`(refreshInCookie: Boolean) {
         val refreshToken = provider.generateRefreshToken("1", LoginIdentity(LoginMethod.KAKAO, 10L))
         val hash = TokenHasher.sha256Hex(refreshToken)
-        `when`(tokens.findByTokenHash(hash)).thenReturn(
+        val row =
             RefreshToken(
                 memberId = MemberId(1L),
                 tokenHash = hash,
                 deviceId = "test-device",
                 issuedAt = Instant.now(),
                 expiresAt = Instant.now().plusSeconds(3600),
-            ),
-        )
+            )
+        `when`(tokens.findByTokenHash(hash)).thenReturn(row)
+        `when`(tokens.lockByTokenHash(hash)).thenReturn(row)
         val request =
             MockHttpServletRequest().apply {
                 if (refreshInCookie) {
