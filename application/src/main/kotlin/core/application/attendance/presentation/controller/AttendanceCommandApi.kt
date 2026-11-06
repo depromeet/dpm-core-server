@@ -25,7 +25,7 @@ interface AttendanceCommandApi {
         summary = "세션 출석",
         description =
             "서버가 요청을 받은 시각으로 출석을 판정합니다. 인증 시작부터 PRESENT, 지각 시작부터 LATE 이며 " +
-                "인증 마감 시각부터는 저장하지 않고 거절합니다(SESSION-400-06). " +
+                "지각 인정 마감부터 세션 당일 19:00(KST) 직전까지 유효한 코드를 입력하면 ABSENT로 집계하고 피드백 참여 자격을 부여합니다. " +
                 "마감 전에 접수된 요청은 자동 결석보다 늦게 저장돼도 정상 판정으로 저장됩니다. " +
                 "운영진(ORGANIZER/CORE/MASTER)은 출석 인증을 할 수 없습니다(ATTENDANCE-403-01).",
         requestBody =
@@ -54,19 +54,34 @@ interface AttendanceCommandApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "출석 성공",
+                description = "ABSENT도 등록 성공입니다. 결석 횟수에는 포함되지만 피드백을 작성할 수 있습니다.",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
+                        schema = Schema(ref = "#/components/schemas/CustomResponseAttendanceResponse"),
                         examples = [
+                            ExampleObject(
+                                name = "지각 마감 후 참여 등록 성공",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "attendanceStatus": "ABSENT",
+                                            "attendedAt": "2026-11-07T18:59:59"
+                                        }
+                                    }
+                                """,
+                            ),
                             ExampleObject(
                                 name = "출석 성공 응답",
                                 value = """
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "attendanceStatus": "PRESENT",
                                             "attendedAt": "2025-08-02T14:00:00.000000"

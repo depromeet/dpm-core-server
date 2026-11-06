@@ -39,8 +39,7 @@ class SessionQueryController(
     @GetMapping("/v1/sessions/next")
     override fun getNextSession(
         @CurrentMemberId memberId: MemberId,
-    ): CustomResponse<NextSessionHomeResponse> =
-        CustomResponse.ok(sessionQueryService.getNextSessionHome(memberId))
+    ): CustomResponse<NextSessionHomeResponse> = CustomResponse.ok(sessionQueryService.getNextSessionHome(memberId))
 
     @PreAuthorize("hasAuthority('read:session')")
     @GetMapping("/v1/sessions")
@@ -90,6 +89,7 @@ class SessionQueryController(
             SessionMapper.toSessionDetailForDeeperResponse(
                 session = retrieveSession,
                 attendance = retrieveAttendance,
+                now = clock.instant(),
                 canRecordAttendance = sessionQueryService.canRecordAttendance(memberId),
             ),
         )

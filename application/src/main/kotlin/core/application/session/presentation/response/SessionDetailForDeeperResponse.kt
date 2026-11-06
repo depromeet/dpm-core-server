@@ -16,6 +16,9 @@ data class SessionDetailForDeeperResponse(
     val absentStart: LocalDateTime,
     val attendanceStatus: AttendanceStatus,
     val attendedAt: LocalDateTime?,
+    val lateParticipationDeadline: LocalDateTime,
+    /** 조회 시점에 이 회원이 코드로 늦은 참여를 등록할 수 있는지 여부. */
+    val canRegisterLateParticipation: Boolean,
     /** 운영진(ORGANIZER/CORE/MASTER)은 false. 디퍼 출석 배너·인증 CTA 노출에 쓴다. */
     val canRecordAttendance: Boolean = true,
 ) {
@@ -32,6 +35,8 @@ data class SessionDetailForDeeperResponse(
             absentStart: LocalDateTime,
             attendanceStatus: AttendanceStatus,
             attendedAt: LocalDateTime?,
+            lateParticipationDeadline: LocalDateTime,
+            canRegisterLateParticipation: Boolean,
             canRecordAttendance: Boolean = true,
         ): SessionDetailForDeeperResponse =
             SessionDetailForDeeperResponse(
@@ -46,6 +51,8 @@ data class SessionDetailForDeeperResponse(
                 absentStart = absentStart,
                 attendanceStatus = attendanceStatus,
                 attendedAt = attendedAt,
+                lateParticipationDeadline = lateParticipationDeadline,
+                canRegisterLateParticipation = canRegisterLateParticipation,
                 canRecordAttendance = canRecordAttendance,
             )
     }

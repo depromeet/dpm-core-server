@@ -47,6 +47,8 @@ class AttendanceTestFixture(
             cohortQueryUseCase = cohortQueryService,
             sessionPersistencePort = sessions,
             memberQueryUseCase = memberQueryUseCase,
+            memberAccessService = memberAccessService,
+            clock = clock,
         )
 
     val sessionQueryService =

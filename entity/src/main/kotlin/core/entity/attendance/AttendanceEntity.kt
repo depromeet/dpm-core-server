@@ -39,6 +39,8 @@ class AttendanceEntity(
     /** 자동 결석 처리 시각(자동 결석 출처 표지). 기능 도입 전 기록과 그 외 상태는 null. */
     @Column(name = "auto_absent_at", nullable = true)
     val autoAbsentAt: Instant? = null,
+    @Column(name = "late_participated_at")
+    val lateParticipatedAt: Instant? = null,
 ) {
     fun toDomain(): Attendance =
         Attendance(
@@ -50,6 +52,7 @@ class AttendanceEntity(
             updatedAt = this.updatedAt,
             deletedAt = this.deletedAt,
             autoAbsentAt = this.autoAbsentAt,
+            lateParticipatedAt = this.lateParticipatedAt,
         )
 
     companion object {
@@ -63,6 +66,7 @@ class AttendanceEntity(
                 updatedAt = domainModel.updatedAt,
                 deletedAt = domainModel.deletedAt,
                 autoAbsentAt = domainModel.autoAbsentAt,
+                lateParticipatedAt = domainModel.lateParticipatedAt,
             )
     }
 }

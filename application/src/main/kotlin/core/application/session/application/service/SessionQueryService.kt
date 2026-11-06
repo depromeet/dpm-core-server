@@ -45,7 +45,7 @@ class SessionQueryService(
         val memberCohortId = member.latestCohortId()
         val memberCohortValue = member.latestCohortValue()
         val activeCohortId = cohortQueryUseCase.findActiveCohortId()
-        val canRecordAttendance = !memberAccessService.isAdmin(memberId)
+        val isAdmin = memberAccessService.isAdmin(memberId)
 
         if (memberCohortId == null || activeCohortId == null || memberCohortId != activeCohortId) {
             return NextSessionHomeResponse(
@@ -64,7 +64,7 @@ class SessionQueryService(
             NextSessionHomeResponse(
                 status = NextSessionHomeStatus.AVAILABLE,
                 cohortValue = memberCohortValue,
-                session = SessionMapper.toNextSessionResponse(nextSession, canRecordAttendance),
+                session = SessionMapper.toNextSessionResponse(nextSession, isAdmin),
             )
         } else {
             NextSessionHomeResponse(

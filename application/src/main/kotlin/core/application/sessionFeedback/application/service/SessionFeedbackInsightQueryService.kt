@@ -10,7 +10,6 @@ import core.application.sessionFeedback.presentation.response.SessionFeedbackIns
 import core.application.sessionFeedback.presentation.response.SessionFeedbackInsightResponse.ResponseSummary
 import core.application.sessionFeedback.presentation.response.SessionFeedbackInsightResponse.SatisfactionDistributionItem
 import core.application.sessionFeedback.presentation.response.SessionFeedbackInsightResponse.SatisfactionInsight
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.SessionId
@@ -60,7 +59,7 @@ class SessionFeedbackInsightQueryService(
     private fun countTargets(sessionId: Long): Int =
         attendancePersistencePort
             .findAllBySessionId(sessionId)
-            .count { it.status == AttendanceStatus.PRESENT || it.status == AttendanceStatus.LATE }
+            .count { it.isSessionFeedbackEligible() }
 
     private fun buildResponseSummary(
         respondentCount: Int,

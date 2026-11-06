@@ -35,13 +35,34 @@ class SessionMapperTest {
     private val attendedAt = Instant.parse("2026-09-05T04:58:21Z")
 
     @Test
+    fun `홈 응답은 운영진에게만 현장 안내용 출석 코드를 제공한다`() {
+        assertThat(SessionMapper.toNextSessionResponse(session, isAdmin = false).attendanceCode).isEmpty()
+        assertThat(SessionMapper.toNextSessionResponse(session, isAdmin = true).attendanceCode)
+            .isEqualTo(session.attendancePolicy.attendanceCode)
+    }
+
+    @Test
     fun `디퍼 세션 상세는 운영진이 바꾼 예전 기록(인증 시각이 남음)의 인증 시각을 숨기고 바꾸지 않은 기록은 그대로 준다`() {
         val manual = attendance(updatedAt = Instant.parse("2026-09-05T06:00:00Z"))
         val untouched = attendance(updatedAt = null)
 
-        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, manual).attendedAt).isNull()
-        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, untouched).attendedAt)
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, manual, attendedAt).attendedAt).isNull()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, untouched, attendedAt).attendedAt)
             .isEqualTo(LocalDateTime.parse("2026-09-05T13:58:21"))
+    }
+
+    @Test
+    fun `늦은 참여는 본인 미인증 행에만 열리고 한국 시간 19시 정각에 닫힌다`() {
+        val pending = Attendance(sessionId = SessionId(1L), memberId = MemberId(1L), status = AttendanceStatus.PENDING)
+        val cutoff = Instant.parse("2026-09-05T10:00:00Z")
+        val before = cutoff.minusSeconds(1)
+        val detail = SessionMapper.toSessionDetailForDeeperResponse(session, pending, before)
+
+        assertThat(detail.lateParticipationDeadline).isEqualTo(LocalDateTime.parse("2026-09-05T19:00:00"))
+        assertThat(detail.canRegisterLateParticipation).isTrue()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, pending, cutoff).canRegisterLateParticipation).isFalse()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, pending, before, false).canRegisterLateParticipation).isFalse()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, attendance(null), before).canRegisterLateParticipation).isFalse()
     }
 
     private fun attendance(updatedAt: Instant?) =
