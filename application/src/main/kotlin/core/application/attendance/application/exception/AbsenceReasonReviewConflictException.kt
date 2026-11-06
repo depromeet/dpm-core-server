@@ -1,0 +1,5 @@
+package core.application.attendance.application.exception
+
+import core.application.common.exception.BusinessException
+
+class AbsenceReasonReviewConflictException : BusinessException(AttendanceExceptionCode.ABSENCE_REASON_REVIEW_CONFLICT)

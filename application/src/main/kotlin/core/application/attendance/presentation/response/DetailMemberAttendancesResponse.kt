@@ -1,6 +1,7 @@
 package core.application.attendance.presentation.response
 
 import core.domain.team.vo.TeamNumber
+import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 data class DetailMemberAttendancesResponse(
@@ -43,7 +44,7 @@ data class MemberDetailSessionInfo(
 data class MemberDetailAbsenceReasonInfo(
     val id: Long,
     val contents: String,
-    /** 검토 상태: PENDING, APPROVED, REJECTED */
+    @field:Schema(description = "사유서 검토 상태", allowableValues = ["PENDING", "APPROVED", "REJECTED"])
     val status: String,
     /** 첨부 이미지 id, 표시 순서대로. 없으면 빈 목록. images 와 같은 순서이며 호환을 위해 유지 */
     val imageIds: List<Long>,
