@@ -21,14 +21,14 @@ class RefreshTokenInvalidateService(
         var row = refreshTokenPersistencePort.lockByTokenHash(tokenHash) ?: return
         val owner = row.memberId
         val now = Instant.now()
-        // A concurrent rotation can commit just before logout. Revoke its granted successor as well.
+        // Follow the recorded session even if unlink granted a successor after this token rotated.
         val visited = mutableSetOf<String>()
         while (visited.add(row.tokenHash)) {
             refreshTokenPersistencePort.deleteByTokenHash(row.tokenHash)
-            if (row.continuationMemberId != owner.value || !row.isWithinGrace(now, RefreshToken.GRACE_SECONDS)) return
+            if (row.isExpired(now) || !row.isWithinGrace(now, RefreshToken.GRACE_SECONDS)) return
             val nextHash = row.successorTokenHash ?: return
             row = refreshTokenPersistencePort.lockByTokenHash(nextHash) ?: return
-            if (row.memberId != owner || row.continuationMemberId != owner.value) return
+            if (row.memberId != owner) return
         }
     }
 

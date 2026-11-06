@@ -12,8 +12,10 @@ import core.application.member.application.service.MemberIdentityLockService
 import core.application.member.application.service.MemberMergeService
 import core.application.refreshToken.application.exception.TokenInvalidException
 import core.application.refreshToken.application.exception.TokenNotFoundException
+import core.application.refreshToken.application.service.RefreshTokenInvalidateService
 import core.application.refreshToken.application.service.RefreshTokenIssueService
 import core.application.refreshToken.application.service.RefreshTokenService
+import core.application.refreshToken.application.support.TokenHasher
 import core.application.security.oauth.token.DeviceIdResolver
 import core.application.security.oauth.token.JwtTokenInjector
 import core.application.security.oauth.token.JwtTokenProvider
@@ -391,10 +393,13 @@ class MemberMergeMySqlIntegrationTest {
         assertThat(identities.isValid(retainedId, source)).isTrue()
         accounts.unlink(retainedId, provider.getSessionIdentity(current.accessToken), sourceId)
 
+        assertThat(resolver.resolve(currentBeforeMerge)?.memberId).isEqualTo(retainedId)
+        assertThat(rotate(currentBeforeMerge).refreshToken).isEqualTo(current.refreshToken)
         assertThat(identities.isValid(retainedId, source)).isFalse()
         assertThat(resolver.resolve(provider.generateAccessToken(retainedId.toString(), source))).isNull()
         assertThatThrownBy { rotate(anotherDevice) }.isInstanceOf(TokenInvalidException::class.java)
-        assertThat(provider.getMemberId(rotate(unaffected).accessToken)).isEqualTo(retainedId)
+        val remainingSession = rotate(unaffected)
+        assertThat(provider.getMemberId(remainingSession.accessToken)).isEqualTo(retainedId)
 
         val pool = Executors.newFixedThreadPool(2)
         val ready = CountDownLatch(2)
@@ -416,7 +421,10 @@ class MemberMergeMySqlIntegrationTest {
         val next = rotate(successors.first().refreshToken)
         assertThat(resolver.resolve(next.accessToken)?.memberId).isEqualTo(retainedId)
 
-        TransactionTemplate(tx).executeWithoutResult { tokenStore.deleteByMemberId(retainedId) }
+        TransactionTemplate(tx).executeWithoutResult {
+            RefreshTokenInvalidateService(tokenStore).destroyByTokenHash(TokenHasher.sha256Hex(currentBeforeMerge))
+        }
+        assertThat(rotate(remainingSession.refreshToken).accessToken).isNotBlank()
         assertThat(resolver.resolve(next.accessToken)).isNull()
         assertThatThrownBy { rotate(next.refreshToken) }.isInstanceOf(TokenNotFoundException::class.java)
     }

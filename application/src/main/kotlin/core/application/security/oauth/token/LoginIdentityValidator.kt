@@ -57,10 +57,10 @@ class LoginIdentityValidator(
         var hash = tokenHash
         repeat(MAX_SUCCESSOR_DEPTH) {
             val row = refreshTokens.findByTokenHash(hash) ?: return false
-            if (row.memberId.value != memberId || row.continuationMemberId != memberId || row.isExpired(now)) {
+            if (row.memberId.value != memberId || row.isExpired(now)) {
                 return false
             }
-            if (!row.isRotated()) return row.successorTokenHash == null
+            if (!row.isRotated()) return row.successorTokenHash == null && row.continuationMemberId == memberId
             if (!row.isWithinGrace(now, GRACE_SECONDS)) return false
             hash = row.successorTokenHash ?: return false
         }
