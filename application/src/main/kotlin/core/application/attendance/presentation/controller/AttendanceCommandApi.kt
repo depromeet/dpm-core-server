@@ -54,19 +54,34 @@ interface AttendanceCommandApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "출석 성공",
+                description = "ABSENT도 등록 성공입니다. 결석 횟수에는 포함되지만 피드백을 작성할 수 있습니다.",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
+                        schema = Schema(ref = "#/components/schemas/CustomResponseAttendanceResponse"),
                         examples = [
+                            ExampleObject(
+                                name = "지각 마감 후 참여 등록 성공",
+                                value = """
+                                    {
+                                        "status": "OK",
+                                        "message": "요청에 성공했습니다",
+                                        "code": "GLOBAL-200-01",
+                                        "data": {
+                                            "attendanceStatus": "ABSENT",
+                                            "attendedAt": "2026-11-07T18:59:59"
+                                        }
+                                    }
+                                """,
+                            ),
                             ExampleObject(
                                 name = "출석 성공 응답",
                                 value = """
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "attendanceStatus": "PRESENT",
                                             "attendedAt": "2025-08-02T14:00:00.000000"
