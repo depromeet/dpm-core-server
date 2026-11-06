@@ -21,6 +21,8 @@ class RefreshToken(
     val tokenJti: String? = null,
     val issuedMemberId: Long? = null,
     var successorTokenHash: String? = null,
+    // 해제 당시 회원에게만 이 세션을 허용한다. 이후 회원 병합으로 소유자가 바뀌면 효력이 끝난다.
+    var continuationMemberId: Long? = null,
 ) {
     fun requirePlainToken(): String = plainToken ?: error("평문 토큰은 발급 직후에만 존재합니다. tokenId=$tokenId")
 
@@ -57,6 +59,9 @@ class RefreshToken(
     override fun hashCode(): Int = tokenHash.hashCode()
 
     companion object {
+        const val GRACE_SECONDS = 60L
+        const val MAX_SUCCESSOR_DEPTH = 64
+
         fun issue(
             memberId: MemberId,
             plainToken: String,

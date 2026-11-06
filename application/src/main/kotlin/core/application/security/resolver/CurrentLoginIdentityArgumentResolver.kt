@@ -29,6 +29,6 @@ class CurrentLoginIdentityArgumentResolver(
         binderFactory: WebDataBinderFactory?,
     ): LoginIdentity? {
         val token = SecurityContextHolder.getContext().authentication?.credentials as? String ?: return null
-        return runCatching { jwtTokenProvider.getLoginIdentity(token) }.getOrNull()
+        return runCatching { jwtTokenProvider.getSessionIdentity(token) }.getOrNull()
     }
 }

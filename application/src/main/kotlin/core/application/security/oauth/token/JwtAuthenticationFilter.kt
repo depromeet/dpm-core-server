@@ -116,7 +116,7 @@ class JwtAuthenticationFilter(
         if (!jwtTokenProvider.validateToken(token)) return null
         val memberId = runCatching { jwtTokenProvider.getMemberId(token) }.getOrNull() ?: return null
         if (members.isLoginAvailable(memberId)) {
-            if (identities.isValid(memberId, jwtTokenProvider.getLoginIdentity(token))) return memberId
+            if (identities.isValid(memberId, jwtTokenProvider.getSessionIdentity(token))) return memberId
         }
         return mergedMembers.resolve(token)?.memberId
     }

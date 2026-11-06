@@ -95,8 +95,8 @@ class KakaoAuthService(
         memberTeamService.ensureMemberTeamInitialized(member.id!!)
 
         val loginIdentity = LoginIdentity(LoginMethod.from(attributes.getProvider()), linkedOAuth.id!!.value)
-        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), loginIdentity)
         val issued = refreshTokenIssueService.issueForLogin(member.id!!, deviceId, loginIdentity)
+        val accessToken = jwtTokenProvider.generateAccessToken(member.id!!.toString(), loginIdentity, issued.tokenHash)
 
         return AuthTokenResponse(accessToken, issued.requirePlainToken())
     }
