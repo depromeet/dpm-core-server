@@ -2,14 +2,20 @@ package core.persistence.member.repository.role
 
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberRole
+import core.domain.member.enums.MemberActivityStatus
+import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberRolePersistencePort
+import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberRoleAssignment
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.COHORTS
+import org.jooq.dsl.tables.references.MEMBERS
+import org.jooq.dsl.tables.references.MEMBER_COHORTS
+import org.jooq.dsl.tables.references.MEMBER_COHORT_ACTIVITIES
+import org.jooq.dsl.tables.references.MEMBER_ROLES
+import org.jooq.dsl.tables.references.ROLES
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.name
-import org.jooq.dsl.tables.references.MEMBER_ROLES
-import org.jooq.dsl.tables.references.MEMBERS
-import org.jooq.dsl.tables.references.ROLES
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -18,6 +24,29 @@ import java.time.ZoneId
 class MemberRoleRepository(
     private val dsl: DSLContext,
 ) : MemberRolePersistencePort {
+    override fun findAttendanceStaffIds(cohortId: CohortId): List<MemberId> =
+        dsl.selectDistinct(MEMBER_ROLES.MEMBER_ID)
+            .from(MEMBER_ROLES)
+            .join(ROLES).on(ROLES.ROLE_ID.eq(MEMBER_ROLES.ROLE_ID))
+            .join(MEMBERS).on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
+            .join(MEMBER_COHORTS).on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(COHORTS).on(COHORTS.COHORT_ID.eq(MEMBER_COHORTS.COHORT_ID))
+            .join(MEMBER_COHORT_ACTIVITIES).on(
+                MEMBER_COHORT_ACTIVITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID),
+                MEMBER_COHORT_ACTIVITIES.COHORT_ID.eq(MEMBER_COHORTS.COHORT_ID),
+            )
+            .where(
+                MEMBER_COHORTS.COHORT_ID.eq(cohortId.value),
+                COHORTS.IS_ACTIVE.isTrue,
+                MEMBER_COHORT_ACTIVITIES.STATUS.eq(MemberActivityStatus.ACTIVE.name),
+                COHORT_ID_FIELD.eq(cohortId.value).or(COHORT_ID_FIELD.isNull),
+                ROLES.NAME.`in`("ORGANIZER", "CORE"),
+                MEMBER_ROLES.DELETED_AT.isNull,
+                MEMBERS.DELETED_AT.isNull,
+                MEMBERS.STATUS.eq(MemberStatus.ACTIVE.name),
+            )
+            .fetch(MEMBER_ROLES.MEMBER_ID).filterNotNull().map(::MemberId)
+
     override fun save(memberRole: MemberRole) {
         dsl
             .insertInto(MEMBER_ROLES)
@@ -117,7 +146,10 @@ class MemberRoleRepository(
             .where(MEMBER_ROLES.MEMBER_ROLE_ID.eq(keptRoleId))
             .execute()
 
-        softDeleteDuplicates(activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId }, now)
+        softDeleteDuplicates(
+            activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId },
+            now,
+        )
     }
 
     override fun replaceCohortRole(
@@ -168,7 +200,10 @@ class MemberRoleRepository(
             .where(MEMBER_ROLES.MEMBER_ROLE_ID.eq(keptRoleId))
             .execute()
 
-        softDeleteDuplicates(activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId }, now)
+        softDeleteDuplicates(
+            activeRoles.mapNotNull { it[MEMBER_ROLES.MEMBER_ROLE_ID] }.filter { it != keptRoleId },
+            now,
+        )
     }
 
     override fun softDeleteAllByMemberId(memberId: Long) {
@@ -179,7 +214,10 @@ class MemberRoleRepository(
             .execute()
     }
 
-    override fun softDeleteByMemberIdAndRoleId(memberId: Long, roleId: Long) {
+    override fun softDeleteByMemberIdAndRoleId(
+        memberId: Long,
+        roleId: Long,
+    ) {
         dsl
             .update(MEMBER_ROLES)
             .set(MEMBER_ROLES.DELETED_AT, LocalDateTime.now(ZoneId.of(TIME_ZONE)))
@@ -230,7 +268,10 @@ class MemberRoleRepository(
             }.groupBy({ it.first }, { it.second })
     }
 
-    private fun softDeleteDuplicates(roleIds: List<Long>, now: LocalDateTime) {
+    private fun softDeleteDuplicates(
+        roleIds: List<Long>,
+        now: LocalDateTime,
+    ) {
         if (roleIds.isEmpty()) return
         dsl
             .update(MEMBER_ROLES)
