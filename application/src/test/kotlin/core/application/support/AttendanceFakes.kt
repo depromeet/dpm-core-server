@@ -193,8 +193,11 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         val allowed =
             row.status == expectedStatus && row.attendedAt != null && row.updatedAt == null && row.deletedAt == null
         if (!allowed) return false
-        row.status = newStatus
-        row.autoAbsentAt = null
+        val attendance = row.toDomain()
+        attendance.applyPolicyStatus(newStatus)
+        row.status = attendance.status
+        row.autoAbsentAt = attendance.autoAbsentAt
+        row.lateParticipatedAt = attendance.lateParticipatedAt
         return true
     }
 

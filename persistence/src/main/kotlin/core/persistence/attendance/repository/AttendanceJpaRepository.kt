@@ -68,7 +68,9 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :newStatus, a.autoAbsentAt = null " +
+        "update AttendanceEntity a set a.status = :newStatus, a.autoAbsentAt = null, " +
+            "a.lateParticipatedAt = case when :expectedStatus in ('PRESENT', 'LATE') and :newStatus = 'ABSENT' " +
+            "then a.attendedAt else a.lateParticipatedAt end " +
             "where a.id = :attendanceId " +
             "and a.status = :expectedStatus " +
             "and a.attendedAt is not null " +
