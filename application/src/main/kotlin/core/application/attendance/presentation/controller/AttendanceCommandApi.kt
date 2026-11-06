@@ -6,6 +6,7 @@ import core.application.attendance.presentation.request.AbsenceReportUpdateReque
 import core.application.attendance.presentation.request.AttendanceRecordRequest
 import core.application.attendance.presentation.request.AttendanceStatusBulkUpdateRequest
 import core.application.attendance.presentation.request.AttendanceStatusUpdateRequest
+import core.application.attendance.presentation.response.AttendanceRecordSuccessResponse
 import core.application.attendance.presentation.response.AttendanceResponse
 import core.application.common.exception.CustomResponse
 import core.domain.member.vo.MemberId
@@ -55,11 +56,10 @@ interface AttendanceCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "ABSENT도 등록 성공입니다. 결석 횟수에는 포함되지만 피드백을 작성할 수 있습니다.",
-                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(ref = "#/components/schemas/CustomResponseAttendanceResponse"),
+                        schema = Schema(implementation = AttendanceRecordSuccessResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "지각 마감 후 참여 등록 성공",

@@ -8,3 +8,11 @@ data class AttendanceResponse(
     val attendanceStatus: String,
     val attendedAt: LocalDateTime,
 )
+
+/** 출석 등록의 200 응답과 예시를 함께 제공하기 위한 OpenAPI 모델. */
+internal data class AttendanceRecordSuccessResponse(
+    val status: String,
+    val message: String,
+    val code: String,
+    val data: AttendanceResponse,
+)
