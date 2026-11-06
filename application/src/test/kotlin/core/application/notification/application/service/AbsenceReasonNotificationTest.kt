@@ -1,5 +1,6 @@
 package core.application.notification.application.service
 
+import com.sun.net.httpserver.HttpServer
 import core.application.notification.application.event.AbsenceReasonNotificationListener
 import core.domain.cohort.vo.CohortId
 import core.domain.member.port.outbound.MemberRolePersistencePort
@@ -12,6 +13,7 @@ import core.domain.session.vo.SessionId
 import core.persistence.expo.ExpoPriority
 import core.persistence.expo.ExpoPushClient
 import core.persistence.expo.ExpoPushTicket
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -20,6 +22,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
+import java.net.InetSocketAddress
+import java.util.concurrent.atomic.AtomicInteger
 
 class AbsenceReasonNotificationTest {
     private val staff = mock(MemberRolePersistencePort::class.java)
@@ -49,6 +53,7 @@ class AbsenceReasonNotificationTest {
             type.format(mapOf("week" to 2)),
             mapOf("type" to type.name, "sessionId" to session.value),
             ExpoPriority.NORMAL,
+            retryTransport = false,
         )
         verifyNoInteractions(staff)
     }
@@ -63,7 +68,7 @@ class AbsenceReasonNotificationTest {
         val type = NotificationMessageType.ABSENCE_REASON_SUBMITTED
         val body = type.format(mapOf("name" to "디퍼", "week" to 2))
         val payload = mapOf("type" to type.name, "sessionId" to session.value, "memberId" to member.value)
-        given(expo.sendBatch(devices, type.title, body, payload, ExpoPriority.NORMAL)).willReturn(
+        given(expo.sendBatch(devices, type.title, body, payload, ExpoPriority.NORMAL, retryTransport = false)).willReturn(
             listOf(
                 ExpoPushTicket("ok"),
                 ExpoPushTicket("error", details = mapOf("error" to "MessageRateExceeded")),
@@ -73,8 +78,31 @@ class AbsenceReasonNotificationTest {
 
         listener.onSubmitted(AbsenceReasonSubmittedEvent(cohort, session, member, "디퍼", 2))
 
-        verify(expo).sendBatch(devices, type.title, body, payload, ExpoPriority.NORMAL)
-        verify(expo).sendBatch(listOf("limited"), type.title, body, payload, ExpoPriority.NORMAL)
+        verify(expo).sendBatch(devices, type.title, body, payload, ExpoPriority.NORMAL, retryTransport = false)
+        verify(expo).sendBatch(listOf("limited"), type.title, body, payload, ExpoPriority.NORMAL, retryTransport = false)
         verifyNoMoreInteractions(expo)
+    }
+
+    @Test
+    fun `Expo가 요청 본문을 받은 뒤 응답 없이 연결을 끊으면 사유서 푸시를 재전송하지 않는다`() {
+        val requests = AtomicInteger()
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/") { exchange ->
+            exchange.requestBody.use { it.readAllBytes() }
+            requests.incrementAndGet()
+            exchange.close()
+        }
+        server.start()
+        try {
+            val client = ExpoPushClient("http://127.0.0.1:${server.address.port}/", null)
+            val subject = AbsenceReasonNotificationListener(staff, AbsenceReasonPushService(tokens, client))
+            given(tokens.findTokensForRecipients(listOf(member))).willReturn(listOf("device"))
+
+            subject.onReviewed(AbsenceReasonReviewedEvent(session, member, 2, true))
+
+            assertThat(requests.get()).isEqualTo(1)
+        } finally {
+            server.stop(0)
+        }
     }
 }

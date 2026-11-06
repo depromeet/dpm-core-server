@@ -351,10 +351,13 @@ class AbsenceReasonImageMySqlIntegrationTest {
         val cohort = newSession().cohortId
         val otherCohort = newSession().cohortId
         val (organizer, core, graduate, deeper, inactive) = List(5) { newMember() }
+        val legacyOrganizer = newMember()
+        val suspendedCore = newMember()
+        jdbcTemplate.update("update cohorts set is_active = true where cohort_id = ?", cohort.value)
         val staffRole = 901
         val coreRole = 902
         jdbcTemplate.update("insert into roles (role_id, name) values (?, 'ORGANIZER'), (?, 'CORE')", staffRole, coreRole)
-        listOf(organizer, core, graduate, deeper, inactive).forEach { member ->
+        listOf(organizer, core, graduate, deeper, inactive, legacyOrganizer, suspendedCore).forEach { member ->
             jdbcTemplate.update(
                 "insert into members (member_id, name, signup_email, part, status, created_at) values (?, '디퍼', ?, 'SERVER', ?, now(6))",
                 member.value,
@@ -376,8 +379,25 @@ class AbsenceReasonImageMySqlIntegrationTest {
                     if (member == graduate) otherCohort.value else cohort.value,
                 )
             }
+        listOf(legacyOrganizer to staffRole, suspendedCore to coreRole, graduate to coreRole).forEach { (member, role) ->
+            jdbcTemplate.update(
+                "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, null, now(6))",
+                member.value,
+                role,
+            )
+        }
+        jdbcTemplate.update(
+            """
+            insert into member_cohort_activities (member_id, cohort_id, status, created_at, updated_at)
+            select member_id, cohort_id, if(member_id = ?, 'SUSPENDED', 'ACTIVE'), now(6), now(6)
+            from member_cohorts where cohort_id in (?, ?)
+            """.trimIndent(),
+            suspendedCore.value,
+            cohort.value,
+            otherCohort.value,
+        )
         val recipients = memberRoles.findAttendanceStaffIds(cohort)
-        assertThat(recipients).containsExactlyInAnyOrder(organizer, core)
+        assertThat(recipients).containsExactlyInAnyOrder(organizer, core, legacyOrganizer)
 
         listOf(organizer to "staff", core to "staff", core to "core-only", core to "mixed", deeper to "mixed").forEach { (member, token) ->
             jdbcTemplate.update("insert into notification_tokens (member_id, token, created_at) values (?, ?, now(6))", member.value, token)
