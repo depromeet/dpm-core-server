@@ -47,6 +47,15 @@ class NotificationRepository(
             .orElse(null)
             ?.toDomain()
 
+    override fun findTokensForRecipients(memberIds: List<MemberId>): List<String> =
+        if (memberIds.isEmpty()) {
+            emptyList()
+        } else {
+            pushTokenJpaRepository.findTokensForRecipients(
+                memberIds.map { it.value },
+            )
+        }
+
     override fun findByMemberIdIn(memberIds: List<MemberId>): List<NotificationToken> =
         pushTokenJpaRepository
             .findByMemberIdIn(memberIds.map { it.value })

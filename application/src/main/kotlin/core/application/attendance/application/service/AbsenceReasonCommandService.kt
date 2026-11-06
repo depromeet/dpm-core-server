@@ -23,6 +23,7 @@ import core.domain.image.port.outbound.ImagePersistencePort
 import core.domain.image.vo.ImageId
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
+import core.domain.notification.event.AbsenceReasonReviewedEvent
 import core.domain.notification.event.AbsenceReasonSubmittedEvent
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
@@ -53,24 +54,25 @@ class AbsenceReasonCommandService(
 
         val session: Session = lockSession(command.sessionId)
 
-        val absenceReason: AbsenceReason =
-            absenceReasonPersistencePort
-                .findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
-                ?.apply {
-                    ensureEditable()
-                    resubmit(command.contents)
-                }
-                ?: AbsenceReason.create(command)
+        val existing =
+            absenceReasonPersistencePort.findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
+        val notifyStaff = existing?.status != AbsenceReasonStatus.PENDING
+        existing?.ensureEditable()
+        val reason = existing?.apply { resubmit(command.contents) } ?: AbsenceReason.create(command)
+        saveWithImages(reason, command.memberId, command.imageIds)
+        if (notifyStaff) publishSubmission(session, command.memberId)
+    }
 
-        saveWithImages(absenceReason, command.memberId, command.imageIds)
-
-        val submitter = memberQueryUseCase.getMemberById(command.memberId)
-
+    private fun publishSubmission(
+        session: Session,
+        memberId: MemberId,
+    ) {
+        val submitter = memberQueryUseCase.getMemberById(memberId)
         eventPublisher.publishEvent(
             AbsenceReasonSubmittedEvent(
                 cohortId = session.cohortId,
-                sessionId = command.sessionId,
-                memberId = command.memberId,
+                sessionId = requireNotNull(session.id),
+                memberId = memberId,
                 submitterName = submitter.name,
                 week = session.week,
             ),
@@ -82,7 +84,7 @@ class AbsenceReasonCommandService(
     fun updateAbsenceReason(command: AbsenceReportUpdateCommand) {
         validateRequest(command.contents, command.imageIds)
 
-        lockSession(command.sessionId)
+        val session = lockSession(command.sessionId)
 
         val absenceReason =
             absenceReasonPersistencePort
@@ -90,8 +92,10 @@ class AbsenceReasonCommandService(
                 ?: throw AbsenceReasonNotFoundException()
 
         absenceReason.ensureEditable()
+        val notifyStaff = absenceReason.status == AbsenceReasonStatus.REJECTED
         absenceReason.resubmit(command.contents)
         saveWithImages(absenceReason, command.memberId, command.imageIds)
+        if (notifyStaff) publishSubmission(session, command.memberId)
     }
 
     /**
@@ -117,7 +121,7 @@ class AbsenceReasonCommandService(
     /** 승인 시 출석을 인정결석([AttendanceStatus.EXCUSED_ABSENT])으로 바꾸고, 반려 시 출석은 그대로 둔다. */
     @TrackMemberBadges
     fun reviewAbsenceReason(command: AbsenceReasonReviewCommand) {
-        lockSession(command.sessionId)
+        val session = lockSession(command.sessionId)
 
         val absenceReason =
             absenceReasonPersistencePort
@@ -142,6 +146,9 @@ class AbsenceReasonCommandService(
         }
 
         absenceReasonPersistencePort.save(absenceReason)
+        eventPublisher.publishEvent(
+            AbsenceReasonReviewedEvent(command.sessionId, command.memberId, session.week, command.approved),
+        )
     }
 
     private fun AbsenceReason.ensureEditable() {

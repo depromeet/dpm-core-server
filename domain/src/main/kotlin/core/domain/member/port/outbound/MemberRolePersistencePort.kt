@@ -1,9 +1,13 @@
 package core.domain.member.port.outbound
 
+import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberRole
+import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberRoleAssignment
 
 interface MemberRolePersistencePort {
+    fun findAttendanceStaffIds(cohortId: CohortId): List<MemberId>
+
     fun save(memberRole: MemberRole)
 
     /** 현재 기수와 기수 없는 타입 역할만 교체한다. null은 미배정이며 실제 변경한 멤버 ID를 반환한다. */

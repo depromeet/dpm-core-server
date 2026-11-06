@@ -27,7 +27,11 @@ import core.domain.image.vo.ImageId
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
+import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
+import core.domain.notification.event.AbsenceReasonReviewedEvent
+import core.domain.notification.event.AbsenceReasonSubmittedEvent
+import core.domain.notification.port.outbound.NotificationPersistencePort
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.AttendancePolicy
@@ -45,11 +49,15 @@ import org.springframework.jdbc.support.GeneratedKeyHolder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.event.TransactionalEventListener
+import org.springframework.transaction.support.TransactionTemplate
 import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Callable
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadLocalRandom
@@ -68,6 +76,14 @@ class AbsenceReasonImageMySqlIntegrationTest {
     @Autowired lateinit var queryService: AbsenceReasonQueryService
 
     @Autowired lateinit var attendanceCommand: AttendanceCommandService
+
+    @Autowired lateinit var memberRoles: MemberRolePersistencePort
+
+    @Autowired lateinit var notifications: NotificationPersistencePort
+
+    @Autowired lateinit var events: CommittedAbsenceReasonEvents
+
+    @Autowired lateinit var transactionManager: PlatformTransactionManager
 
     @Autowired lateinit var storage: FakeImageStoragePort
 
@@ -306,6 +322,70 @@ class AbsenceReasonImageMySqlIntegrationTest {
         }
     }
 
+    @Test
+    fun `검토 대기 진입과 심사 결과마다 커밋된 알림 이벤트가 한 번만 발생한다`() {
+        val session = newSession()
+        val member = newMember()
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = member, status = AttendanceStatus.ABSENT))
+        submit(session, member, "사유", null)
+        submit(session, member, "사유", null)
+        update(session, member, "편집", null)
+        review(session, member, false)
+        review(session, member, false)
+        update(session, member, "보완", null)
+        submit(session, member, "보완", null)
+        TransactionTemplate(transactionManager).executeWithoutResult { tx ->
+            review(session, member, true)
+            tx.setRollbackOnly()
+        }
+        assertThat(reasonStatus(session, member)).isEqualTo("PENDING")
+        assertThat(events.reviews.filter { it.memberId == member }.map { it.approved }).containsExactly(false)
+        assertThat(runConcurrently(2) { review(session, member, true) }).allMatch { it.isSuccess }
+        assertThat(events.submissions.filter { it.memberId == member }.map { it.sessionId })
+            .containsExactly(session.id, session.id)
+        assertThat(events.reviews.filter { it.memberId == member }.map { it.approved }).containsExactly(false, true)
+    }
+
+    @Test
+    fun `같은 기수의 활성 운영진과 코어만 수신하고 비대상자와 공유하는 기기는 제외한다`() {
+        val cohort = newSession().cohortId
+        val otherCohort = newSession().cohortId
+        val (organizer, core, graduate, deeper, inactive) = List(5) { newMember() }
+        val staffRole = 901
+        val coreRole = 902
+        jdbcTemplate.update("insert into roles (role_id, name) values (?, 'ORGANIZER'), (?, 'CORE')", staffRole, coreRole)
+        listOf(organizer, core, graduate, deeper, inactive).forEach { member ->
+            jdbcTemplate.update(
+                "insert into members (member_id, name, signup_email, part, status, created_at) values (?, '디퍼', ?, 'SERVER', ?, now(6))",
+                member.value,
+                "${member.value}@example.test",
+                if (member == inactive) "INACTIVE" else "ACTIVE",
+            )
+            jdbcTemplate.update(
+                "insert into member_cohorts (member_id, cohort_id) values (?, ?)",
+                member.value,
+                if (member == graduate) otherCohort.value else cohort.value,
+            )
+        }
+        listOf(organizer to staffRole, organizer to coreRole, core to coreRole, graduate to staffRole, inactive to coreRole)
+            .forEach { (member, role) ->
+                jdbcTemplate.update(
+                    "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, ?, now(6))",
+                    member.value,
+                    role,
+                    if (member == graduate) otherCohort.value else cohort.value,
+                )
+            }
+        val recipients = memberRoles.findAttendanceStaffIds(cohort)
+        assertThat(recipients).containsExactlyInAnyOrder(organizer, core)
+
+        listOf(organizer to "staff", core to "staff", core to "core-only", core to "mixed", deeper to "mixed").forEach { (member, token) ->
+            jdbcTemplate.update("insert into notification_tokens (member_id, token, created_at) values (?, ?, now(6))", member.value, token)
+        }
+        assertThat(notifications.findTokensForRecipients(recipients)).containsExactlyInAnyOrder("staff", "core-only")
+        assertThat(notifications.findTokensForRecipients(listOf(core))).containsExactly("core-only")
+    }
+
     private fun review(
         session: Session,
         member: MemberId,
@@ -483,5 +563,21 @@ class AbsenceReasonImageMySqlIntegrationTest {
         @JvmStatic
         @DynamicPropertySource
         fun mysqlProperties(registry: DynamicPropertyRegistry) = AttendanceConcurrencyMySqlIntegrationTest.mysqlProperties(registry)
+    }
+}
+
+/** 실제 트랜잭션 경계에서 전달된 이벤트만 관찰한다. */
+class CommittedAbsenceReasonEvents {
+    val submissions = CopyOnWriteArrayList<AbsenceReasonSubmittedEvent>()
+    val reviews = CopyOnWriteArrayList<AbsenceReasonReviewedEvent>()
+
+    @TransactionalEventListener
+    fun onSubmitted(event: AbsenceReasonSubmittedEvent) {
+        submissions.add(event)
+    }
+
+    @TransactionalEventListener
+    fun onReviewed(event: AbsenceReasonReviewedEvent) {
+        reviews.add(event)
     }
 }

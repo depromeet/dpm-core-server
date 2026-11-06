@@ -78,7 +78,17 @@ enum class NotificationMessageType(
     ABSENCE_REASON_SUBMITTED(
         title = "새로운 결석 사유서가 제출됐어요.",
         bodyTemplate = "{name}님이 {week}주차 결석 사유서를 제출했어요.",
-        description = "디퍼가 결석 사유서 제출 시 운영진 알림",
+        description = "결석 사유서 제출 시 운영진·코어 알림",
+    ),
+    ABSENCE_REASON_APPROVED(
+        title = "결석 사유서가 승인됐어요.",
+        bodyTemplate = "{week}주차 세션의 출석이 인정결석으로 변경됐어요.",
+        description = "결석 사유서 승인 시 제출자 알림",
+    ),
+    ABSENCE_REASON_REJECTED(
+        title = "결석 사유서가 반려됐어요.",
+        bodyTemplate = "{week}주차 세션의 결석 사유서를 확인해주세요.",
+        description = "결석 사유서 반려 시 제출자 알림",
     ),
     SESSION_FEEDBACK_OPENED(
         title = "세션 피드백이 시작됐어요.",
