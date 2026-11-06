@@ -1,7 +1,9 @@
 package core.application.attendance.application.service
 
 import core.application.attendance.application.exception.AttendanceNotFoundException
+import core.application.attendance.application.exception.OrganizerCannotRecordAttendanceException
 import core.application.member.application.service.TrackMemberBadges
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.AttendanceClosedException
 import core.application.session.application.exception.CheckedAttendanceException
@@ -15,6 +17,7 @@ import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.vo.AttendanceResult
+import core.domain.attendance.vo.RecordedAttendance
 import core.domain.cohort.vo.CohortId
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
@@ -26,6 +29,7 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /**
  * 잠금 순서는 세션 행 -> 출석 행이다. 인증과 자동 결석은 세션 공유 잠금으로 서로 동시에 진행하고
@@ -38,15 +42,21 @@ class AttendanceCommandService(
     private val attendancePersistencePort: AttendancePersistencePort,
     private val sessionPersistencePort: SessionPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val memberAccessService: MemberAccessService,
     private val sessionValidator: SessionValidator,
     private val clock: Clock,
 ) {
     /**
      * 마감 전에 접수된 요청은 자동 결석이 먼저 저장됐어도 정상 판정으로 저장한다.
-     * 조건부 UPDATE 가 실패하면(다른 요청이 먼저 저장) 이미 출석 오류다.
+     * 늦은 참여를 재시도하면 최초 등록 시각을 반환한다.
+     * 운영진(ORGANIZER/CORE/MASTER)은 웹 출석 인증을 할 수 없다.
      */
     @TrackMemberBadges
-    fun attendSession(command: AttendanceRecordCommand): AttendanceStatus {
+    fun attendSession(command: AttendanceRecordCommand): RecordedAttendance {
+        if (memberAccessService.isAdmin(command.memberId)) {
+            throw OrganizerCannotRecordAttendanceException()
+        }
+
         val session =
             sessionPersistencePort.findSessionByIdForShare(command.sessionId.value)
                 ?: throw SessionNotFoundException()
@@ -57,7 +67,14 @@ class AttendanceCommandService(
                 ?: throw AttendanceNotFoundException()
 
         if (attendance.isAlreadyUpdated()) throw AttendanceAlreadyDecidedException()
-        if (!attendance.canRecordAttendance()) throw CheckedAttendanceException()
+        if (!attendance.canRecordAttendance()) {
+            val lateParticipatedAt = attendance.registeredAbsenceTime()
+            if (lateParticipatedAt != null && session.isLateParticipationOpenAt(command.attendedAt)) {
+                sessionValidator.validateInputCode(session, command.attendanceCode)
+                return RecordedAttendance(AttendanceStatus.ABSENT, lateParticipatedAt)
+            }
+            throw CheckedAttendanceException()
+        }
 
         sessionValidator.validateInputCode(session, command.attendanceCode)
 
@@ -69,10 +86,29 @@ class AttendanceCommandService(
             }
 
         val attendanceId = attendance.id?.value ?: throw AttendanceNotFoundException()
-        val recorded = attendancePersistencePort.recordAttendanceIfAllowed(attendanceId, status, command.attendedAt)
-        if (!recorded) throw CheckedAttendanceException()
-
-        return status
+        // MySQL TIMESTAMP(6)에 저장되는 최초 시각을 재시도 응답에서도 그대로 반환한다.
+        val attendedAt =
+            if (status == AttendanceStatus.ABSENT) {
+                command.attendedAt.truncatedTo(
+                    ChronoUnit.MICROS,
+                )
+            } else {
+                command.attendedAt
+            }
+        if (attendancePersistencePort.recordAttendanceIfAllowed(attendanceId, status, attendedAt)) {
+            return RecordedAttendance(status, attendedAt)
+        }
+        if (status == AttendanceStatus.ABSENT) {
+            val firstRegistration =
+                attendancePersistencePort.findAttendanceBy(
+                    command.sessionId.value,
+                    command.memberId.value,
+                )?.registeredAbsenceTime()
+            if (firstRegistration != null) {
+                return RecordedAttendance(AttendanceStatus.ABSENT, firstRegistration)
+            }
+        }
+        throw CheckedAttendanceException()
     }
 
     /** 운영진 변경. 출석 인증 시각(attendedAt)은 지운다. */

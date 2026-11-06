@@ -6,9 +6,11 @@ import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
 import core.application.attendance.application.service.AbsenceReasonCommandService
 import core.application.attendance.application.service.AbsenceReasonQueryService
+import core.application.attendance.application.service.AttendanceCommandService
 import core.application.attendance.presentation.response.AbsenceReasonImageInfo
 import core.application.common.exception.BusinessException
 import core.application.image.FakeImageStoragePort
+import core.application.member.application.service.access.MemberAccessService
 import core.application.support.MutableClock
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
@@ -25,7 +27,11 @@ import core.domain.image.vo.ImageId
 import core.domain.member.aggregate.Member
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.inbound.MemberQueryUseCase
+import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
+import core.domain.notification.event.AbsenceReasonReviewedEvent
+import core.domain.notification.event.AbsenceReasonSubmittedEvent
+import core.domain.notification.port.outbound.NotificationPersistencePort
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
 import core.domain.session.vo.AttendancePolicy
@@ -43,11 +49,15 @@ import org.springframework.jdbc.support.GeneratedKeyHolder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.event.TransactionalEventListener
+import org.springframework.transaction.support.TransactionTemplate
 import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Callable
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadLocalRandom
@@ -65,6 +75,16 @@ class AbsenceReasonImageMySqlIntegrationTest {
 
     @Autowired lateinit var queryService: AbsenceReasonQueryService
 
+    @Autowired lateinit var attendanceCommand: AttendanceCommandService
+
+    @Autowired lateinit var memberRoles: MemberRolePersistencePort
+
+    @Autowired lateinit var notifications: NotificationPersistencePort
+
+    @Autowired lateinit var events: CommittedAbsenceReasonEvents
+
+    @Autowired lateinit var transactionManager: PlatformTransactionManager
+
     @Autowired lateinit var storage: FakeImageStoragePort
 
     @Autowired lateinit var cohortPort: CohortPersistencePort
@@ -80,6 +100,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
     @Autowired lateinit var clock: MutableClock
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
+
+    @MockitoBean lateinit var memberAccessService: MemberAccessService
 
     @Test
     fun `생략은 기존 첨부 유지, 빈 목록은 해제, 값은 순서대로 교체하며 같은 이미지로 순서만 바꿀 수 있다`() {
@@ -211,58 +233,184 @@ class AbsenceReasonImageMySqlIntegrationTest {
     }
 
     @Test
-    fun `제출하면 바로 승인되고 미인증과 결석은 인정결석이 되며 출석은 그대로이고 출석 행이 없어도 제출된다`() {
+    fun `제출은 출석을 그대로 두고 출석 행이 없으면 승인을 롤백한다`() {
         val session = newSession()
-        val (pending, absent, present, noRow) = List(4) { newMember() }
-        attendancePort.save(Attendance(sessionId = session.id!!, memberId = pending, status = AttendanceStatus.PENDING))
-        attendancePort.save(Attendance(sessionId = session.id!!, memberId = absent, status = AttendanceStatus.ABSENT))
-        attendancePort.save(Attendance(sessionId = session.id!!, memberId = present, status = AttendanceStatus.PRESENT))
-
-        listOf(pending, absent, present, noRow).forEach { submit(session, it, "사유", null) }
-
-        assertThat(attendanceStatus(session, pending)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
-        assertThat(attendanceStatus(session, absent)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
-        assertThat(attendanceStatus(session, present)).isEqualTo(AttendanceStatus.PRESENT)
-        assertThat(listOf(pending, absent, present, noRow).map { reasonStatus(session, it) }).containsOnly("APPROVED")
+        AttendanceStatus.entries.forEach { status ->
+            val member = newMember()
+            attendancePort.save(Attendance(sessionId = session.id!!, memberId = member, status = status))
+            submit(session, member, "사유", null)
+            assertThat(attendanceStatus(session, member)).isEqualTo(status)
+            assertThat(queryService.getMyAbsenceReason(session.id!!, member)!!.status).isEqualTo("PENDING")
+            assertThat(queryService.getSessionAbsenceReasons(session.id!!).reasons.single { it.memberId == member.value }.status)
+                .isEqualTo("PENDING")
+            commandService.deleteAbsenceReason(session.id!!, member)
+            assertThat(attendanceStatus(session, member)).isEqualTo(status)
+        }
+        val noRow = newMember()
+        submit(session, noRow, "사유", null)
+        assertThatThrownBy { review(session, noRow, true) }.isInstanceOf(BusinessException::class.java)
+        assertThat(reasonStatus(session, noRow)).isEqualTo("PENDING")
     }
 
     @Test
-    fun `반려된 사유서를 수정하면 다시 승인되고 인정결석이 된다`() {
-        val member = newMember()
+    fun `반려와 수정은 지각을 보존하고 승인 후에는 변경할 수 없다`() {
         val session = newSession()
-        attendancePort.save(Attendance(sessionId = session.id!!, memberId = member, status = AttendanceStatus.ABSENT))
-        submit(session, member, "사유", null)
-        commandService.reviewAbsenceReason(AbsenceReasonReviewCommand(session.id!!, member, approved = false))
-        // 운영진이 반려 후 출석을 결석으로 바꾼 상황
-        attendancePort.updateStatusByAdmin(session.id!!.value, listOf(member.value), AttendanceStatus.ABSENT, clock.instant())
-
-        update(session, member, "보완한 사유", null)
-
+        val member = newMember()
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = member, status = AttendanceStatus.LATE))
+        submit(session, member, "첫 사유", null)
+        review(session, member, false)
+        review(session, member, false)
+        assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.LATE)
+        assertThat(reasonStatus(session, member)).isEqualTo("REJECTED")
+        update(session, member, "보완", null)
+        assertThat(reasonStatus(session, member)).isEqualTo("PENDING")
+        assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.LATE)
+        review(session, member, true)
+        review(session, member, true)
+        listOf<() -> Unit>(
+            { update(session, member, "수정", null) },
+            { submit(session, member, "재제출", null) },
+            { commandService.deleteAbsenceReason(session.id!!, member) },
+            { review(session, member, false) },
+        ).forEach { action -> assertThatThrownBy { action() }.isInstanceOf(BusinessException::class.java) }
+        assertThat(queryService.getMyAbsenceReason(session.id!!, member)!!.contents).isEqualTo("보완")
         assertThat(reasonStatus(session, member)).isEqualTo("APPROVED")
         assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
     }
 
     @Test
-    fun `삭제하면 인정결석이 마감 전에는 미인증으로, 마감 후에는 자동 결석으로 돌아간다`() {
-        val (beforeClose, afterClose) = List(2) { newMember() }
+    fun `승인과 마감 배치가 동시에 실행돼도 인정결석이 남고 검토 중 미출석은 자동 결석이 된다`() {
         val session = newSession()
-        listOf(beforeClose, afterClose).forEach {
+        val (reviewed, pending) = List(2) { newMember() }
+        listOf(reviewed, pending).forEach {
             attendancePort.save(Attendance(sessionId = session.id!!, memberId = it, status = AttendanceStatus.PENDING))
             submit(session, it, "사유", null)
         }
-
-        commandService.deleteAbsenceReason(session.id!!, beforeClose)
-        val original = clock.now
-        try {
-            clock.now = session.attendancePolicy.absentStart
-            commandService.deleteAbsenceReason(session.id!!, afterClose)
-        } finally {
-            clock.now = original
-        }
-
-        assertThat(attendanceRow(session, beforeClose)).isEqualTo(Triple("PENDING", false, false))
-        assertThat(attendanceRow(session, afterClose)).isEqualTo(Triple("ABSENT", false, true))
+        val results =
+            runConcurrently(3) { index ->
+                if (index == 0) {
+                    attendanceCommand.closeExpiredAttendances(session.id!!, session.attendancePolicy.absentStart)
+                } else {
+                    review(session, reviewed, true)
+                }
+            }
+        assertThat(results).allMatch { it.isSuccess }
+        assertThat(reasonStatus(session, reviewed)).isEqualTo("APPROVED")
+        assertThat(attendanceStatus(session, reviewed)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(reasonStatus(session, pending)).isEqualTo("PENDING")
+        assertThat(attendanceRow(session, pending)).isEqualTo(Triple("ABSENT", false, true))
+        review(session, pending, true)
+        assertThat(attendanceStatus(session, pending)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(attendanceCommand.closeExpiredAttendances(session.id!!, session.attendancePolicy.absentStart)).isZero()
     }
+
+    @Test
+    fun `승인과 반려가 동시에 도착하면 한 결정만 반영된다`() {
+        val session = newSession()
+        val member = newMember()
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = member, status = AttendanceStatus.ABSENT))
+        submit(session, member, "사유", null)
+        val results = runConcurrently(2) { index -> review(session, member, index == 0) }
+        assertThat(results.count { it.isSuccess }).isEqualTo(1)
+        assertThat(results.single { it.isFailure }.exceptionOrNull()).isInstanceOf(BusinessException::class.java)
+        if (results.first().isSuccess) {
+            assertThat(reasonStatus(session, member)).isEqualTo("APPROVED")
+            assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        } else {
+            assertThat(reasonStatus(session, member)).isEqualTo("REJECTED")
+            assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.ABSENT)
+        }
+    }
+
+    @Test
+    fun `검토 대기 진입과 심사 결과마다 커밋된 알림 이벤트가 한 번만 발생한다`() {
+        val session = newSession()
+        val member = newMember()
+        attendancePort.save(Attendance(sessionId = session.id!!, memberId = member, status = AttendanceStatus.ABSENT))
+        submit(session, member, "사유", null)
+        submit(session, member, "사유", null)
+        update(session, member, "편집", null)
+        review(session, member, false)
+        review(session, member, false)
+        update(session, member, "보완", null)
+        submit(session, member, "보완", null)
+        TransactionTemplate(transactionManager).executeWithoutResult { tx ->
+            review(session, member, true)
+            tx.setRollbackOnly()
+        }
+        assertThat(reasonStatus(session, member)).isEqualTo("PENDING")
+        assertThat(events.reviews.filter { it.memberId == member }.map { it.approved }).containsExactly(false)
+        assertThat(runConcurrently(2) { review(session, member, true) }).allMatch { it.isSuccess }
+        assertThat(events.submissions.filter { it.memberId == member }.map { it.sessionId })
+            .containsExactly(session.id, session.id)
+        assertThat(events.reviews.filter { it.memberId == member }.map { it.approved }).containsExactly(false, true)
+    }
+
+    @Test
+    fun `같은 기수의 활성 운영진과 코어만 수신하고 비대상자와 공유하는 기기는 제외한다`() {
+        val cohort = newSession().cohortId
+        val otherCohort = newSession().cohortId
+        val (organizer, core, graduate, deeper, inactive) = List(5) { newMember() }
+        val legacyOrganizer = newMember()
+        val suspendedCore = newMember()
+        jdbcTemplate.update("update cohorts set is_active = true where cohort_id = ?", cohort.value)
+        val staffRole = 901
+        val coreRole = 902
+        jdbcTemplate.update("insert into roles (role_id, name) values (?, 'ORGANIZER'), (?, 'CORE')", staffRole, coreRole)
+        listOf(organizer, core, graduate, deeper, inactive, legacyOrganizer, suspendedCore).forEach { member ->
+            jdbcTemplate.update(
+                "insert into members (member_id, name, signup_email, part, status, created_at) values (?, '디퍼', ?, 'SERVER', ?, now(6))",
+                member.value,
+                "${member.value}@example.test",
+                if (member == inactive) "INACTIVE" else "ACTIVE",
+            )
+            jdbcTemplate.update(
+                "insert into member_cohorts (member_id, cohort_id) values (?, ?)",
+                member.value,
+                if (member == graduate) otherCohort.value else cohort.value,
+            )
+        }
+        listOf(organizer to staffRole, organizer to coreRole, core to coreRole, graduate to staffRole, inactive to coreRole)
+            .forEach { (member, role) ->
+                jdbcTemplate.update(
+                    "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, ?, now(6))",
+                    member.value,
+                    role,
+                    if (member == graduate) otherCohort.value else cohort.value,
+                )
+            }
+        listOf(legacyOrganizer to staffRole, suspendedCore to coreRole, graduate to coreRole).forEach { (member, role) ->
+            jdbcTemplate.update(
+                "insert into member_roles (member_id, role_id, cohort_id, granted_at) values (?, ?, null, now(6))",
+                member.value,
+                role,
+            )
+        }
+        jdbcTemplate.update(
+            """
+            insert into member_cohort_activities (member_id, cohort_id, status, created_at, updated_at)
+            select member_id, cohort_id, if(member_id = ?, 'SUSPENDED', 'ACTIVE'), now(6), now(6)
+            from member_cohorts where cohort_id in (?, ?)
+            """.trimIndent(),
+            suspendedCore.value,
+            cohort.value,
+            otherCohort.value,
+        )
+        val recipients = memberRoles.findAttendanceStaffIds(cohort)
+        assertThat(recipients).containsExactlyInAnyOrder(organizer, core, legacyOrganizer)
+
+        listOf(organizer to "staff", core to "staff", core to "core-only", core to "mixed", deeper to "mixed").forEach { (member, token) ->
+            jdbcTemplate.update("insert into notification_tokens (member_id, token, created_at) values (?, ?, now(6))", member.value, token)
+        }
+        assertThat(notifications.findTokensForRecipients(recipients)).containsExactlyInAnyOrder("staff", "core-only")
+        assertThat(notifications.findTokensForRecipients(listOf(core))).containsExactly("core-only")
+    }
+
+    private fun review(
+        session: Session,
+        member: MemberId,
+        approved: Boolean,
+    ) = commandService.reviewAbsenceReason(AbsenceReasonReviewCommand(session.id!!, member, approved))
 
     @Test
     fun `운영진 목록은 사유서별 imageIds 와 파일명을 순서대로, 없으면 빈 목록으로 준다`() {
@@ -435,5 +583,21 @@ class AbsenceReasonImageMySqlIntegrationTest {
         @JvmStatic
         @DynamicPropertySource
         fun mysqlProperties(registry: DynamicPropertyRegistry) = AttendanceConcurrencyMySqlIntegrationTest.mysqlProperties(registry)
+    }
+}
+
+/** 실제 트랜잭션 경계에서 전달된 이벤트만 관찰한다. */
+class CommittedAbsenceReasonEvents {
+    val submissions = CopyOnWriteArrayList<AbsenceReasonSubmittedEvent>()
+    val reviews = CopyOnWriteArrayList<AbsenceReasonReviewedEvent>()
+
+    @TransactionalEventListener
+    fun onSubmitted(event: AbsenceReasonSubmittedEvent) {
+        submissions.add(event)
+    }
+
+    @TransactionalEventListener
+    fun onReviewed(event: AbsenceReasonReviewedEvent) {
+        reviews.add(event)
     }
 }

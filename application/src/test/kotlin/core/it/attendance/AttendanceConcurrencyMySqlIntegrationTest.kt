@@ -2,6 +2,7 @@ package core.it.attendance
 
 import core.application.attendance.application.service.AttendanceAutoAbsenceService
 import core.application.attendance.application.service.AttendanceCommandService
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
 import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.service.SessionCommandService
@@ -82,6 +83,8 @@ class AttendanceConcurrencyMySqlIntegrationTest {
 
     @MockitoBean lateinit var memberQueryUseCase: MemberQueryUseCase
 
+    @MockitoBean lateinit var memberAccessService: MemberAccessService
+
     @MockitoBean lateinit var sentSessionNotificationCommandUseCase: SentSessionNotificationCommandUseCase
 
     @MockitoBean lateinit var feedbackForms: SessionFeedbackFormCommandService
@@ -93,6 +96,34 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     @BeforeEach
     fun resetClock() {
         clock.now = Instant.parse("2026-10-01T03:00:00Z")
+    }
+
+    @Test
+    fun `19시 직전 늦은 참여 등록은 동시 재시도와 자동 결석이 겹쳐도 최초 기록을 보존한다`() {
+        val daytime = AttendanceTimeOffsets.DEFAULT.resolveFor(Instant.parse("2026-10-10T04:00:00Z"))
+        val session = newSession(sessionTimes = daytime)
+        val deadline = Instant.parse("2026-10-10T10:00:00Z")
+        addAttendance(session, memberId = 1L)
+        addAttendance(session, memberId = 2L)
+
+        val results =
+            runConcurrently(8) { index ->
+                if (index == 0) {
+                    attendanceCommandService.closeExpiredAttendances(session.id!!, deadline)
+                } else {
+                    assertThat(attend(session, 1L, deadline.minusMillis(index.toLong()))).isEqualTo(AttendanceStatus.ABSENT)
+                }
+            }
+        results.forEach { it.getOrThrow() }
+        val first = attendancePort.findAttendanceBy(session.id!!.value, 1L)!!
+        assertThat(first.lateParticipatedAt).isBetween(deadline.minusMillis(7), deadline.minusMillis(1))
+        assertThat(first.attendedAt).isEqualTo(first.lateParticipatedAt)
+        assertThat(first.isSessionFeedbackEligible()).isTrue()
+        assertThat(attend(session, 1L, deadline.minusNanos(1000))).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(attendancePort.findAttendanceBy(session.id!!.value, 1L)!!.lateParticipatedAt).isEqualTo(first.lateParticipatedAt)
+        val absent = attendancePort.findAttendanceBy(session.id!!.value, 2L)!!
+        assertThat(absent.status).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(absent.isSessionFeedbackEligible()).isFalse()
     }
 
     @Test
@@ -170,6 +201,30 @@ class AttendanceConcurrencyMySqlIntegrationTest {
             assertThat(row.attendedAt).isNull()
             assertThat(row.updatedAt).isNotNull()
         }
+    }
+
+    @Test
+    fun `정책 변경으로 결석이 된 출석과 지각만 기존 인증 시각으로 피드백 자격을 유지한다`() {
+        val session = newSession()
+        val presentAt = sessionStart.plusSeconds(60)
+        val lateAt = sessionStart.plus(Duration.ofMinutes(20))
+        addAttendance(session, memberId = 1L)
+        addAttendance(session, memberId = 2L)
+        addAttendance(session, memberId = 3L, status = AttendanceStatus.ABSENT, attendedAt = lateAt)
+        assertThat(attend(session, 1L, presentAt)).isEqualTo(AttendanceStatus.PRESENT)
+        assertThat(attend(session, 2L, lateAt)).isEqualTo(AttendanceStatus.LATE)
+
+        sessionCommandService.updateSession(updateCommand(session, sessionStart.minusSeconds(60), sessionStart))
+
+        for ((member, registeredAt) in listOf(1L to presentAt, 2L to lateAt)) {
+            val row = attendancePort.findAttendanceBy(session.id!!.value, member)!!
+            assertThat(row.status).isEqualTo(AttendanceStatus.ABSENT)
+            assertThat(row.lateParticipatedAt).isEqualTo(registeredAt)
+            assertThat(row.isSessionFeedbackEligible()).isTrue()
+        }
+        val legacy = attendancePort.findAttendanceBy(session.id!!.value, 3L)!!
+        assertThat(legacy.lateParticipatedAt).isNull()
+        assertThat(legacy.isSessionFeedbackEligible()).isFalse()
     }
 
     @Test
@@ -559,7 +614,7 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         session: Session,
         memberId: Long,
         at: Instant,
-    ): AttendanceStatus = attendanceCommandService.attendSession(AttendanceRecordCommand(session.id!!, MemberId(memberId), at, CODE))
+    ): AttendanceStatus = attendanceCommandService.attendSession(AttendanceRecordCommand(session.id!!, MemberId(memberId), at, CODE)).status
 
     private fun updateCommand(
         session: Session,

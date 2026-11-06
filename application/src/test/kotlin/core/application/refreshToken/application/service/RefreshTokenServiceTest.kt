@@ -105,6 +105,8 @@ class RefreshTokenServiceTest {
 
         val result = service.reissue(request, MockHttpServletResponse())
 
+        assertThat(provider.getSessionIdentity(result.accessToken))
+            .isEqualTo(APPLE_LOGIN.copy(sessionTokenHash = TokenHasher.sha256Hex(result.refreshToken)))
         assertThat(provider.getLoginIdentity(result.accessToken)).isEqualTo(APPLE_LOGIN)
         assertThat(provider.getLoginIdentity(result.refreshToken)).isEqualTo(APPLE_LOGIN)
     }
@@ -445,6 +447,35 @@ class RefreshTokenServiceTest {
         )
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = [true, false])
+    fun `해제 전 회전한 토큰은 유예 시간 안에서만 후속 세션을 로그아웃한다`(withinGrace: Boolean) {
+        val now = Instant.now()
+        val current =
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = "current",
+                issuedAt = now,
+                expiresAt = now.plusSeconds(60),
+                rotatedAt = if (withinGrace) now else now.minusSeconds(RefreshToken.GRACE_SECONDS + 1),
+                successorTokenHash = "next",
+            )
+        val next =
+            RefreshToken(
+                memberId = memberId,
+                tokenHash = "next",
+                issuedAt = now,
+                expiresAt = now.plusSeconds(60),
+                continuationMemberId = memberId.value,
+            )
+        val other = stored("other")
+        val store = FakeRefreshTokenPersistencePort(current, next, other)
+        RefreshTokenInvalidateService(store).destroyByTokenHash(current.tokenHash)
+        assertThat(store.findByTokenHash(current.tokenHash)).isNull()
+        assertThat(store.findByTokenHash(next.tokenHash)).isEqualTo(if (withinGrace) null else next)
+        assertThat(store.findByTokenHash(other.tokenHash)).isEqualTo(other)
+    }
+
     private fun createProvider(): JwtTokenProvider = JwtTokenProvider(TEST_TOKEN_PROPERTIES, StubRoleQueryUseCase())
 
     private fun testSecurityProperties(): SecurityProperties =
@@ -495,6 +526,13 @@ private class FakeRefreshTokenPersistencePort(
         successorTokenHash: String,
     ) {
         findByTokenHash(tokenHash)!!.successorTokenHash = successorTokenHash
+    }
+
+    override fun grantContinuation(
+        tokenHash: String,
+        memberId: Long,
+    ) {
+        findByTokenHash(tokenHash)!!.continuationMemberId = memberId
     }
 
     override fun deleteByTokenHash(tokenHash: String) {

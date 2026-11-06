@@ -25,7 +25,7 @@ class MergedMemberResolverTest {
         `when`(tokens.validateToken("old")).thenReturn(true)
         `when`(tokens.getMemberId("old")).thenReturn(1)
         `when`(tokens.getIssuedAt("old")).thenReturn(now.minusSeconds(10))
-        `when`(tokens.getLoginIdentity("old")).thenReturn(LoginIdentity(method, 7))
+        `when`(tokens.getSessionIdentity("old")).thenReturn(LoginIdentity(method, 7))
         `when`(merges.findTarget(1)).thenReturn(MemberMergeTarget(2, now))
         `when`(members.isLoginAvailable(2)).thenReturn(true)
         `when`(identities.isValid(2, LoginIdentity(method, 7))).thenReturn(true)

@@ -3,6 +3,7 @@ package core.application.session.application.service
 import core.application.attendance.application.service.AttendanceQueryService
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.presentation.mapper.SessionMapper
 import core.application.session.presentation.response.NextSessionHomeResponse
@@ -16,6 +17,7 @@ import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
 import core.domain.session.enums.NextSessionHomeStatus
+import core.domain.session.enums.SessionAttendanceStatus
 import core.domain.session.port.inbound.command.SessionAttendancePolicyCommand
 import core.domain.session.port.inbound.query.SessionSelectorQueryModel
 import core.domain.session.port.inbound.query.SessionWeekQueryModel
@@ -35,6 +37,7 @@ class SessionQueryService(
     private val sessionPersistencePort: SessionPersistencePort,
     private val attendanceQueryService: AttendanceQueryService,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val memberAccessService: MemberAccessService,
     private val clock: Clock,
 ) {
     fun getNextSessionHome(memberId: MemberId): NextSessionHomeResponse {
@@ -42,6 +45,7 @@ class SessionQueryService(
         val memberCohortId = member.latestCohortId()
         val memberCohortValue = member.latestCohortValue()
         val activeCohortId = cohortQueryUseCase.findActiveCohortId()
+        val isAdmin = memberAccessService.isAdmin(memberId)
 
         if (memberCohortId == null || activeCohortId == null || memberCohortId != activeCohortId) {
             return NextSessionHomeResponse(
@@ -60,7 +64,7 @@ class SessionQueryService(
             NextSessionHomeResponse(
                 status = NextSessionHomeStatus.AVAILABLE,
                 cohortValue = memberCohortValue,
-                session = SessionMapper.toNextSessionResponse(nextSession),
+                session = SessionMapper.toNextSessionResponse(nextSession, isAdmin),
             )
         } else {
             NextSessionHomeResponse(
@@ -70,6 +74,8 @@ class SessionQueryService(
             )
         }
     }
+
+    fun canRecordAttendance(memberId: MemberId): Boolean = !memberAccessService.isAdmin(memberId)
 
     fun getAllCurrentCohortSessions(): List<Session> {
         val cohortId = cohortQueryUseCase.getLatestCohortId()
@@ -110,15 +116,18 @@ class SessionQueryService(
     /**
      * 현재 활성 기수 세션을 일시, ID 오름차순으로 준다. 주차는 표시용이라 정렬에 쓰지 않는다.
      * 출석 인증 상태는 한 번 읽은 현재 시각으로 모든 세션을 판단한다.
+     * 운영진(ORGANIZER/CORE/MASTER)은 IN_PROGRESS 를 CLOSED 로 내려 출석 배너가 뜨지 않게 한다.
      */
-    fun getSessionSelector(): List<SessionSelectorQueryModel> {
+    fun getSessionSelector(memberId: MemberId? = null): List<SessionSelectorQueryModel> {
         val cohortId = cohortQueryUseCase.getLatestCohortId()
         val now = clock.instant()
+        val hideInProgress = memberId != null && memberAccessService.isAdmin(memberId)
 
         return sessionPersistencePort
             .findAllCohortSessions(cohortId.value)
             .sortedWith(compareBy<Session>({ it.date }, { it.id!!.value }))
             .map {
+                val status = it.attendanceStatusAt(now)
                 SessionSelectorQueryModel(
                     sessionId = it.id!!,
                     week = it.week,
@@ -126,7 +135,12 @@ class SessionQueryService(
                     eventName = it.eventName,
                     place = it.place,
                     isOnline = it.isOnline,
-                    attendanceStatus = it.attendanceStatusAt(now),
+                    attendanceStatus =
+                        if (hideInProgress && status == SessionAttendanceStatus.IN_PROGRESS) {
+                            SessionAttendanceStatus.CLOSED
+                        } else {
+                            status
+                        },
                 )
             }
     }

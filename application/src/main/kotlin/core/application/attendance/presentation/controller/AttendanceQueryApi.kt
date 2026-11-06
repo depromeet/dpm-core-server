@@ -25,6 +25,7 @@ interface AttendanceQueryApi {
         summary = "세션 전체 출석 명단 조회 (운영진)",
         description =
             "현재 활성 기수 세션의 출석 명단을 필터와 페이지 없이 전부 조회합니다. " +
+                "대상은 해당 기수 DEEPER만이며 signupEmail 이 @dpm.test 인 QA 계정은 제외합니다(로그인·마이페이지는 가능). " +
                 "이름, 상태, 팀, 파트, 내 팀 필터는 프론트에서 하며 내 팀은 myTeamNumber(현재 기수 팀, 없으면 null)로 고릅니다. " +
                 "totalElements 는 members 전체 인원(결석·미인증 포함)입니다. " +
                 "상태별 인원은 이 명단으로 프론트에서 계산합니다. " +
@@ -98,11 +99,11 @@ interface AttendanceQueryApi {
     @Operation(
         summary = "사람별 출석 조회",
         description =
-            "현재 활성 기수에 소속된 멤버 전원(출석 기록이 없어도 포함)의 수료 판정을 페이지 없이 조회합니다. " +
+            "현재 활성 기수 DEEPER(출석 기록이 없어도 포함, signupEmail @dpm.test 제외)의 수료 판정을 페이지 없이 조회합니다. " +
                 "teams 로 현재 기수 최신 배정 팀 번호를 여러 개 고를 수 있으며(teams=1&teams=2 또는 teams=1,2), 없거나 비면 전원입니다. " +
                 "이름, 상태, 파트, 내 팀 필터와 필터별 인원 수 계산은 프론트에서 합니다. " +
                 "myTeamNumber 는 조회한 운영진의 현재 기수 팀 번호이며 없으면 null 입니다. " +
-                "totalElements 는 teams 와 무관하게 현재 기수에 소속된 삭제되지 않은 멤버 전체 수입니다" +
+                "totalElements 는 teams 와 무관하게 현재 기수 DEEPER(삭제되지 않음, QA 제외) 수입니다" +
                 "(출석 기록이 없거나 팀이 없는 멤버 포함). " +
                 "members 는 팀 번호(팀 없음은 마지막), 이름, ID 순이고 팀이 없는 멤버의 teamNumber 는 0 입니다. " +
                 "members[].attendanceStatus 는 조회 시점에 계산한 수료 판정(NORMAL/AT_RISK/IMPOSSIBLE)이며 " +
@@ -227,17 +228,19 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "세션별 나의 출석 상세 조회",
-        description = "세션별 나의 출석을 조회합니다.",
+        description = "지각 마감 후 attendance.canRegisterLateParticipation이 true이면 코드 입력 버튼을 열어주세요. " +
+            "등록에 성공하거나 세션 당일 19:00(한국 시간)이 되면 false입니다.",
     )
     @ApiResponses(
         value = [
             ApiResponse(
                 responseCode = "200",
                 description = "세션별 나의 출석 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
+                        schema = Schema(ref = "#/components/schemas/CustomResponseMyDetailAttendanceBySessionResponse"),
                         examples = [
                             ExampleObject(
                                 name = "세션별 나의 출석 조회 성공 응답",
@@ -245,11 +248,12 @@ interface AttendanceQueryApi {
                                     {
                                         "status": "OK",
                                         "message": "요청에 성공했습니다",
-                                        "code": "G000",
+                                        "code": "GLOBAL-200-01",
                                         "data": {
                                             "attendance": {
                                                 "status": "PRESENT",
-                                                "attendedAt": "2025-08-09T14:05:12.000000"
+                                                "attendedAt": "2025-08-09T14:05:12.000000",
+                                                "canRegisterLateParticipation": false
                                             },
                                             "session": {
                                                 "week": 1,

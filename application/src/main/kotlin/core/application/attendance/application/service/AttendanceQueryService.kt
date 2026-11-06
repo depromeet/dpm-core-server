@@ -10,6 +10,7 @@ import core.application.attendance.presentation.response.MemberDetailAttendanceC
 import core.application.attendance.presentation.response.MyDetailAttendanceBySessionResponse
 import core.application.attendance.presentation.response.SessionRosterResponse
 import core.application.member.application.exception.MemberNotFoundException
+import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.port.inbound.query.GetDetailAttendanceBySessionQuery
@@ -27,6 +28,7 @@ import core.domain.session.vo.SessionId
 import core.domain.team.vo.TeamNumber
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 
 @Service
 @Transactional(readOnly = true)
@@ -36,9 +38,11 @@ class AttendanceQueryService(
     private val cohortQueryUseCase: CohortQueryUseCase,
     private val sessionPersistencePort: SessionPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
+    private val memberAccessService: MemberAccessService,
+    private val clock: Clock,
 ) {
     /**
-     * 현재 활성 기수 세션의 전체 출석 명단. 필터와 페이지 없이 준다.
+     * 현재 활성 기수 세션의 DEEPER 출석 명단(`@dpm.test` 제외). 필터와 페이지 없이 준다.
      * 없거나 삭제됐거나 다른 기수의 세션이면 404 다. (SessionQueryService 가 이 서비스를 의존하므로 세션은 포트로 읽는다.)
      */
     fun getSessionRoster(
@@ -62,8 +66,8 @@ class AttendanceQueryService(
     }
 
     /**
-     * 현재 활성 기수 소속 멤버 전원(출석 기록이 없어도 포함)의 수료 판정. 페이지 없이 주고 팀 필터만 받는다.
-     * 정렬(팀, 이름, ID)은 조회 결과 그대로다. totalElements 는 팀 필터와 무관한 기수 전체 소속 멤버 수다.
+     * 현재 활성 기수 DEEPER(출석 기록이 없어도 포함, `@dpm.test` 제외)의 수료 판정. 페이지 없이 주고 팀 필터만 받는다.
+     * 정렬(팀, 이름, ID)은 조회 결과 그대로다. totalElements 는 팀 필터와 무관한 기수 DEEPER 수다.
      */
     fun getMemberAttendances(query: GetMemberAttendancesQuery): MemberAttendancesResponse {
         val cohortId = cohortQueryUseCase.getActiveCohortId().value
@@ -165,7 +169,13 @@ class AttendanceQueryService(
                 .findMyDetailAttendanceBySession(query)
                 ?: throw AttendanceNotFoundException()
 
-        return AttendanceMapper.toMyDetailAttendanceBySessionResponse(myAttendanceQueryResult)
+        val canRegisterLateParticipation =
+            myAttendanceQueryResult.isLateParticipationAvailableAt(clock.instant()) &&
+                !memberAccessService.isAdmin(query.memberId)
+        return AttendanceMapper.toMyDetailAttendanceBySessionResponse(
+            myAttendanceQueryResult,
+            canRegisterLateParticipation,
+        )
     }
 
     fun getAttendancesBySessionId(sessionId: SessionId): List<Attendance> =

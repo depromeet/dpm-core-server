@@ -27,7 +27,9 @@ interface SessionQueryApi {
         description =
             "로그인 멤버 기수 기준으로 홈 세션 카드 상태를 조회합니다. " +
                 "AVAILABLE(다음 세션 있음) / NOT_REGISTERED(활성 기수·세션 미등록) / " +
-                "COHORT_ENDED(기수 종료). 로그인만 있으면 되고 read:session 권한은 필요 없다 " +
+                "COHORT_ENDED(기수 종료). lateParticipationDeadline은 세션 당일 19:00(KST)입니다. " +
+                "운영진(ORGANIZER/CORE/MASTER)은 session.canRecordAttendance=false. " +
+                "로그인만 있으면 되고 read:session 권한은 필요 없다 " +
                 "(과거 기수 유저도 COHORT_ENDED를 받을 수 있게).",
     )
     @ApiResponses(
@@ -60,7 +62,9 @@ interface SessionQueryApi {
                                                 "attendanceStart": "2026-10-10T14:00:00",
                                                 "lateStart": "2026-10-10T14:10:00",
                                                 "absentStart": "2026-10-10T14:20:00",
-                                                "attendanceCode": "3821"
+                                                "lateParticipationDeadline": "2026-10-10T19:00:00",
+                                                "attendanceCode": "",
+                                                "canRecordAttendance": true
                                             }
                                         }
                                     }
@@ -116,54 +120,19 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 목록 조회 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "세션 목록 조회 성공 응답",
-                                value = """
-                                    {
-                                        "status": "OK",
-                                        "message": "요청에 성공했습니다",
-                                        "code": "GLOBAL-200-01",
-                                        "data": {
-                                            "sessions": [
-                                                {
-                                                    "id": 1,
-                                                    "week": 1,
-                                                    "name": "디프만 19기 OT",
-                                                    "date": "2026-10-10T14:00:00",
-                                                    "place": "공덕 프론트원",
-                                                    "isOnline": false,
-                                                    "feedback": {
-                                                        "status": "IN_PROGRESS",
-                                                        "endAt": "2026-10-13T18:00:00",
-                                                        "canSubmit": true
-                                                    }
-                                                },
-                                                {
-                                                    "id": 2,
-                                                    "week": 2,
-                                                    "name": "미니 디프콘",
-                                                    "date": "2026-10-17T14:00:00",
-                                                    "place": null,
-                                                    "isOnline": true,
-                                                    "feedback": null
-                                                }
-                                            ]
-                                        }
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
-                ],
+                description = "세션 목록 조회 성공 (CustomResponse<SessionListResponse>)",
+                useReturnTypeSchema = true,
             ),
-            ApiResponse(responseCode = "401", description = "인증 토큰이 유효하지 않음"),
-            ApiResponse(responseCode = "403", description = "세션 조회 권한 없음 또는 비로그인 (GLOBAL-403-01)"),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증 토큰이 유효하지 않음",
+                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "403",
+                description = "세션 조회 권한 없음 또는 비로그인 (GLOBAL-403-01)",
+                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            ),
         ],
     )
     fun getAllSessions(): CustomResponse<SessionListResponse>
@@ -220,7 +189,9 @@ interface SessionQueryApi {
 
     @Operation(
         summary = "(디퍼)세션 상세 조회",
-        description = "세션 ID를 통해 세션에 대한 디퍼의 상세 정보를 조회합니다.",
+        description =
+            "세션 ID를 통해 세션에 대한 디퍼의 상세 정보를 조회합니다. " +
+                "canRegisterLateParticipation은 조회 시점의 늦은 참여 등록 가능 여부입니다. 운영진은 false입니다.",
     )
     @ApiResponses(
         value = [
@@ -250,7 +221,8 @@ interface SessionQueryApi {
                                         "lateStart": "2026-03-14T14:30:00",
                                         "absentStart": "2026-03-14T14:35:00",
                                         "attendanceStatus": "PENDING",
-                                        "attendedAt": null
+                                        "attendedAt": null,
+                                        "canRecordAttendance": true
                                       }
                                     }
                                 """,
@@ -355,7 +327,9 @@ interface SessionQueryApi {
             "현재 활성 기수의 세션을 세션 일시 오름차순, 같으면 세션 ID 오름차순으로 조회합니다. " +
                 "week 는 표시용이며 정렬에 쓰지 않습니다. 이전/다음 세션 이동은 이 목록의 순서를 사용합니다. " +
                 "attendanceStatus 는 서버 현재 시각 기준 출석 인증 상태로, 출석 시작 전 NOT_STARTED, " +
-                "출석 시작부터 인증 마감(결석 시작) 전까지 IN_PROGRESS(지각 구간 포함), 마감 정각부터 CLOSED 입니다. " +
+                "출석 시작부터 인증 마감(결석 시작) 전까지 IN_PROGRESS(지각 구간 포함), 마감 정각부터 CLOSED입니다. " +
+                "이후 늦은 참여 가능 여부는 개인 세션 상세의 canRegisterLateParticipation을 사용합니다. " +
+                "운영진(ORGANIZER/CORE/MASTER)은 IN_PROGRESS 대신 CLOSED 와 canRecordAttendance=false 를 받아 출석 배너가 뜨지 않는다. " +
                 "기존 GET /v1/sessions/weeks(id, week, date, ID 순)는 그대로 둡니다. " +
                 "로그인만 있으면 되고 read:session 권한은 필요 없다(GUEST·승인 대기 유저도 홈 진입용).",
     )
@@ -394,7 +368,8 @@ interface SessionQueryApi {
                                                 "eventName": "2주차 세션",
                                                 "place": "온라인",
                                                 "isOnline": true,
-                                                "attendanceStatus": "NOT_STARTED"
+                                                "attendanceStatus": "NOT_STARTED",
+                                                "canRecordAttendance": true
                                               }
                                             ]
                                         }
@@ -407,7 +382,7 @@ interface SessionQueryApi {
             ),
         ],
     )
-    fun getSessionSelector(): CustomResponse<SessionSelectorResponse>
+    fun getSessionSelector(memberId: MemberId): CustomResponse<SessionSelectorResponse>
 
     @Operation(
         summary = "세션 시간 수정 시 출석 상태 변경 대상 조회",

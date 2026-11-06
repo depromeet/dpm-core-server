@@ -12,5 +12,10 @@ data class NextSessionResponse(
     val attendanceStart: LocalDateTime,
     val lateStart: LocalDateTime,
     val absentStart: LocalDateTime,
+    /** 세션 당일 19:00 KST. 이 시각부터 늦은 참여 등록을 닫는다. */
+    val lateParticipationDeadline: LocalDateTime,
+    /** 운영진에게만 코드를 제공한다. 디퍼 응답은 빈 문자열이다. */
     val attendanceCode: String,
+    /** 운영진(ORGANIZER/CORE/MASTER)은 false. 디퍼 출석 배너·인증 CTA 노출에 쓴다. */
+    val canRecordAttendance: Boolean = true,
 )

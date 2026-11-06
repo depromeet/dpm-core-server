@@ -11,4 +11,6 @@ import core.domain.member.enums.LoginMethod
 data class LoginIdentity(
     val method: LoginMethod,
     val accountId: Long,
+    /** 인증된 요청에서만 채워지는 리프레시 세션 식별자. 로그인 수단 자체와는 별도로 검증한다. */
+    val sessionTokenHash: String? = null,
 )

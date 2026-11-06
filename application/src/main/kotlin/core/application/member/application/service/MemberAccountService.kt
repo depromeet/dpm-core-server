@@ -83,7 +83,11 @@ class MemberAccountService(
                 MemberExceptionCode.MEMBER_LAST_LOGIN_ACCOUNT,
             )
         }
-        // Deleted OAuth IDs are never reused: access and refresh validation reject this identity immediately.
+        if (identity != null && identity.method != LoginMethod.EMAIL && identity.accountId == oauthId &&
+            !identities.preserveCurrentSession(memberId, identity)
+        ) {
+            throw MemberAccountException(MemberExceptionCode.MEMBER_ACCOUNT_REAUTH_REQUIRED)
+        }
         accounts.deleteOAuth(memberId, oauthId)
         return get(memberId)
     }

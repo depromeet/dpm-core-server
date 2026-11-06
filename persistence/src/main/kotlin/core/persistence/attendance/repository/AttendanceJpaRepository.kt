@@ -21,7 +21,8 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :status, a.attendedAt = :attendedAt, a.autoAbsentAt = null " +
+        "update AttendanceEntity a set a.status = :status, a.attendedAt = :attendedAt, " +
+            "a.lateParticipatedAt = :lateParticipatedAt, a.autoAbsentAt = null " +
             "where a.id = :attendanceId " +
             "and a.deletedAt is null " +
             "and a.attendedAt is null " +
@@ -32,6 +33,7 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         @Param("attendanceId") attendanceId: Long,
         @Param("status") status: String,
         @Param("attendedAt") attendedAt: Instant,
+        @Param("lateParticipatedAt") lateParticipatedAt: Instant?,
     ): Int
 
     /** 운영진 변경. 운영진이 정한 상태라 출석 인증 시각과 자동 결석 표지를 지운다. */
@@ -39,7 +41,8 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
         "update AttendanceEntity a " +
-            "set a.status = :status, a.attendedAt = null, a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
+            "set a.status = :status, a.attendedAt = null, a.lateParticipatedAt = null, " +
+            "a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
             "where a.sessionId = :sessionId " +
             "and a.memberId in :memberIds " +
             "and a.deletedAt is null",
@@ -49,41 +52,6 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         @Param("memberIds") memberIds: Collection<Long>,
         @Param("status") status: String,
         @Param("updatedAt") updatedAt: Instant,
-    ): Int
-
-    /** 결석 사유서 제출. 미인증(PENDING)이나 결석만 인정결석으로 바꾸고 출석·지각은 그대로 둔다. */
-    @Transactional
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(
-        "update AttendanceEntity a " +
-            "set a.status = 'EXCUSED_ABSENT', a.attendedAt = null, a.updatedAt = :updatedAt, a.autoAbsentAt = null " +
-            "where a.sessionId = :sessionId " +
-            "and a.memberId = :memberId " +
-            "and a.status in ('PENDING', 'ABSENT') " +
-            "and a.deletedAt is null",
-    )
-    fun excuseAbsence(
-        @Param("sessionId") sessionId: Long,
-        @Param("memberId") memberId: Long,
-        @Param("updatedAt") updatedAt: Instant,
-    ): Int
-
-    /** 결석 사유서 삭제. 인정결석만 사유서가 없었을 때의 상태로 되돌리고 운영진 변경 표시를 지운다. */
-    @Transactional
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(
-        "update AttendanceEntity a " +
-            "set a.status = :status, a.attendedAt = null, a.updatedAt = null, a.autoAbsentAt = :autoAbsentAt " +
-            "where a.sessionId = :sessionId " +
-            "and a.memberId = :memberId " +
-            "and a.status = 'EXCUSED_ABSENT' " +
-            "and a.deletedAt is null",
-    )
-    fun releaseExcusedAbsence(
-        @Param("sessionId") sessionId: Long,
-        @Param("memberId") memberId: Long,
-        @Param("status") status: String,
-        @Param("autoAbsentAt") autoAbsentAt: Instant?,
     ): Int
 
     @Query(
@@ -100,7 +68,9 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        "update AttendanceEntity a set a.status = :newStatus, a.autoAbsentAt = null " +
+        "update AttendanceEntity a set a.status = :newStatus, a.autoAbsentAt = null, " +
+            "a.lateParticipatedAt = case when :expectedStatus in ('PRESENT', 'LATE') and :newStatus = 'ABSENT' " +
+            "then a.attendedAt else a.lateParticipatedAt end " +
             "where a.id = :attendanceId " +
             "and a.status = :expectedStatus " +
             "and a.attendedAt is not null " +

@@ -16,4 +16,6 @@ data class MemberManagementQueryModel(
     val teamNumber: Int,
     val updatedAt: Instant?,
     val loginMethod: LoginMethod? = null,
+    /** 가입 이메일. 목록에서 `@dpm.test` QA 제외에 쓴다(표시용 email과 다를 수 있음). */
+    val signupEmail: String? = null,
 )

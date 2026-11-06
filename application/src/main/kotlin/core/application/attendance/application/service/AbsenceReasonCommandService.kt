@@ -3,12 +3,14 @@ package core.application.attendance.application.service
 import core.application.attendance.application.exception.AbsenceReasonImageAlreadyAttachedException
 import core.application.attendance.application.exception.AbsenceReasonNotFoundException
 import core.application.attendance.application.exception.AbsenceReasonRequiredException
+import core.application.attendance.application.exception.AbsenceReasonReviewConflictException
 import core.application.attendance.application.exception.AbsenceReasonTooLongException
 import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
 import core.application.member.application.service.TrackMemberBadges
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.absencereason.aggregate.AbsenceReason
+import core.domain.absencereason.enums.AbsenceReasonStatus
 import core.domain.absencereason.port.inbound.command.AbsenceReasonReviewCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
@@ -17,11 +19,11 @@ import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
-import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.image.port.outbound.ImagePersistencePort
 import core.domain.image.vo.ImageId
 import core.domain.member.port.inbound.MemberQueryUseCase
 import core.domain.member.vo.MemberId
+import core.domain.notification.event.AbsenceReasonReviewedEvent
 import core.domain.notification.event.AbsenceReasonSubmittedEvent
 import core.domain.session.aggregate.Session
 import core.domain.session.port.outbound.SessionPersistencePort
@@ -29,7 +31,6 @@ import core.domain.session.vo.SessionId
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Clock
 
 /** 모든 변경은 세션 행 쓰기 잠금을 먼저 잡는다(잠금 순서 세션 -> 출석 -> 사유서). */
 @Service
@@ -41,12 +42,10 @@ class AbsenceReasonCommandService(
     private val sessionPersistencePort: SessionPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
     private val attendanceCommandService: AttendanceCommandService,
-    private val attendancePersistencePort: AttendancePersistencePort,
     private val eventPublisher: ApplicationEventPublisher,
-    private val clock: Clock,
 ) {
     /**
-     * 사유서를 저장(이미 있으면 재제출)하면서 바로 승인하고 출석을 인정결석으로 바꾼다.
+     * 사유서를 검토 대기로 저장한다. 출석 상태는 운영진이 승인할 때 변경한다.
      * 커밋 후 운영진 알림 이벤트를 발행한다.
      */
     @TrackMemberBadges
@@ -55,83 +54,83 @@ class AbsenceReasonCommandService(
 
         val session: Session = lockSession(command.sessionId)
 
-        val absenceReason: AbsenceReason =
-            absenceReasonPersistencePort
-                .findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
-                ?.apply { resubmit(command.contents) }
-                ?: AbsenceReason.create(command)
+        val existing =
+            absenceReasonPersistencePort.findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
+        val notifyStaff = existing?.status != AbsenceReasonStatus.PENDING
+        existing?.ensureEditable()
+        val reason = existing?.apply { resubmit(command.contents) } ?: AbsenceReason.create(command)
+        saveWithImages(reason, command.memberId, command.imageIds)
+        if (notifyStaff) publishSubmission(session, command.memberId)
+    }
 
-        saveWithImages(absenceReason, command.memberId, command.imageIds)
-        excuseAbsence(command.sessionId, command.memberId)
-
-        val submitter = memberQueryUseCase.getMemberById(command.memberId)
-
+    private fun publishSubmission(
+        session: Session,
+        memberId: MemberId,
+    ) {
+        val submitter = memberQueryUseCase.getMemberById(memberId)
         eventPublisher.publishEvent(
             AbsenceReasonSubmittedEvent(
                 cohortId = session.cohortId,
-                sessionId = command.sessionId,
-                memberId = command.memberId,
+                sessionId = requireNotNull(session.id),
+                memberId = memberId,
                 submitterName = submitter.name,
                 week = session.week,
             ),
         )
     }
 
-    /** 본인 사유서를 수정하고 다시 승인한다. 반려됐던 사유서도 인정결석으로 바뀐다. 없으면 [AbsenceReasonNotFoundException]. */
+    /** 본인의 검토 대기·반려 사유서를 수정하고 다시 검토 대기로 둔다. */
     @TrackMemberBadges
     fun updateAbsenceReason(command: AbsenceReportUpdateCommand) {
         validateRequest(command.contents, command.imageIds)
 
-        lockSession(command.sessionId)
+        val session = lockSession(command.sessionId)
 
         val absenceReason =
             absenceReasonPersistencePort
                 .findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
                 ?: throw AbsenceReasonNotFoundException()
 
+        absenceReason.ensureEditable()
+        val notifyStaff = absenceReason.status == AbsenceReasonStatus.REJECTED
         absenceReason.resubmit(command.contents)
         saveWithImages(absenceReason, command.memberId, command.imageIds)
-        excuseAbsence(command.sessionId, command.memberId)
+        if (notifyStaff) publishSubmission(session, command.memberId)
     }
 
     /**
-     * 첨부 링크와 함께 삭제하고 인정결석을 사유서가 없었을 때의 상태로 되돌린다(마감 전 PENDING, 마감 후 자동 결석).
-     * 삭제된 세션의 사유서도 지울 수 있도록 세션이 없으면 잠금과 출석 변경 없이 진행한다.
+     * 검토 대기·반려 사유서와 첨부 링크를 삭제한다. 삭제된 세션의 사유서도 지울 수 있다.
      */
     @TrackMemberBadges
     fun deleteAbsenceReason(
         sessionId: SessionId,
         memberId: MemberId,
     ) {
-        val session = sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)
+        sessionPersistencePort.findSessionByIdForUpdate(sessionId.value)
 
         val absenceReason =
             absenceReasonPersistencePort
                 .findBySessionIdAndMemberId(sessionId.value, memberId.value)
                 ?: throw AbsenceReasonNotFoundException()
 
+        absenceReason.ensureEditable()
         absenceReason.id?.let { absenceReasonImagePersistencePort.deleteAll(it.value) }
         absenceReasonPersistencePort.delete(absenceReason)
-
-        if (session != null) {
-            val now = clock.instant()
-            attendancePersistencePort.releaseExcusedAbsence(
-                sessionId = sessionId.value,
-                memberId = memberId.value,
-                closedAt = now.takeIf { session.isAttendanceClosedAt(it) },
-            )
-        }
     }
 
     /** 승인 시 출석을 인정결석([AttendanceStatus.EXCUSED_ABSENT])으로 바꾸고, 반려 시 출석은 그대로 둔다. */
     @TrackMemberBadges
     fun reviewAbsenceReason(command: AbsenceReasonReviewCommand) {
-        lockSession(command.sessionId)
+        val session = lockSession(command.sessionId)
 
         val absenceReason =
             absenceReasonPersistencePort
                 .findBySessionIdAndMemberId(command.sessionId.value, command.memberId.value)
                 ?: throw AbsenceReasonNotFoundException()
+
+        val decision = if (command.approved) AbsenceReasonStatus.APPROVED else AbsenceReasonStatus.REJECTED
+        if (absenceReason.status == decision) return
+        if (absenceReason.status != AbsenceReasonStatus.PENDING) throw AbsenceReasonReviewConflictException()
 
         if (command.approved) {
             absenceReason.approve()
@@ -147,14 +146,13 @@ class AbsenceReasonCommandService(
         }
 
         absenceReasonPersistencePort.save(absenceReason)
+        eventPublisher.publishEvent(
+            AbsenceReasonReviewedEvent(command.sessionId, command.memberId, session.week, command.approved),
+        )
     }
 
-    /** 출석·지각은 그대로 두고, 출석 행이 없어도 사유서 제출은 막지 않는다. */
-    private fun excuseAbsence(
-        sessionId: SessionId,
-        memberId: MemberId,
-    ) {
-        attendancePersistencePort.excuseAbsence(sessionId.value, memberId.value, clock.instant())
+    private fun AbsenceReason.ensureEditable() {
+        if (status == AbsenceReasonStatus.APPROVED) throw AbsenceReasonReviewConflictException()
     }
 
     private fun lockSession(sessionId: SessionId): Session =

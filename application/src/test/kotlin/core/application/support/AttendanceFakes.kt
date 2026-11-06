@@ -36,6 +36,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         var updatedAt: Instant? = null,
         var deletedAt: Instant? = null,
         var autoAbsentAt: Instant? = null,
+        var lateParticipatedAt: Instant? = null,
     ) {
         fun toDomain(): Attendance =
             Attendance(
@@ -47,6 +48,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 updatedAt = updatedAt,
                 deletedAt = deletedAt,
                 autoAbsentAt = autoAbsentAt,
+                lateParticipatedAt = lateParticipatedAt,
             )
     }
 
@@ -62,9 +64,11 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         updatedAt: Instant? = null,
         deletedAt: Instant? = null,
         autoAbsentAt: Instant? = null,
+        lateParticipatedAt: Instant? = null,
     ): Long {
         val id = sequence.incrementAndGet()
-        rows[id] = Row(id, sessionId, memberId, status, attendedAt, updatedAt, deletedAt, autoAbsentAt)
+        rows[id] =
+            Row(id, sessionId, memberId, status, attendedAt, updatedAt, deletedAt, autoAbsentAt, lateParticipatedAt)
         return id
     }
 
@@ -99,6 +103,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 updatedAt = attendance.updatedAt,
                 deletedAt = attendance.deletedAt,
                 autoAbsentAt = attendance.autoAbsentAt,
+                lateParticipatedAt = attendance.lateParticipatedAt,
             )
     }
 
@@ -113,6 +118,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
                 it.updatedAt,
                 it.deletedAt,
                 it.autoAbsentAt,
+                it.lateParticipatedAt,
             )
         }
     }
@@ -142,6 +148,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         if (!allowed) return false
         row.status = status
         row.attendedAt = attendedAt
+        row.lateParticipatedAt = attendedAt.takeIf { status == AttendanceStatus.ABSENT }
         row.autoAbsentAt = null
         return true
     }
@@ -158,48 +165,9 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         targets.forEach {
             it.status = status
             it.attendedAt = null
+            it.lateParticipatedAt = null
             it.updatedAt = updatedAt
             it.autoAbsentAt = null
-        }
-        return targets.size
-    }
-
-    @Synchronized
-    override fun excuseAbsence(
-        sessionId: Long,
-        memberId: Long,
-        updatedAt: Instant,
-    ): Int {
-        val targets =
-            rows.values.filter {
-                it.sessionId == sessionId && it.memberId == memberId && it.deletedAt == null &&
-                    it.status in setOf(AttendanceStatus.PENDING, AttendanceStatus.ABSENT)
-            }
-        targets.forEach {
-            it.status = AttendanceStatus.EXCUSED_ABSENT
-            it.attendedAt = null
-            it.updatedAt = updatedAt
-            it.autoAbsentAt = null
-        }
-        return targets.size
-    }
-
-    @Synchronized
-    override fun releaseExcusedAbsence(
-        sessionId: Long,
-        memberId: Long,
-        closedAt: Instant?,
-    ): Int {
-        val targets =
-            rows.values.filter {
-                it.sessionId == sessionId && it.memberId == memberId && it.deletedAt == null &&
-                    it.status == AttendanceStatus.EXCUSED_ABSENT
-            }
-        targets.forEach {
-            it.status = if (closedAt == null) AttendanceStatus.PENDING else AttendanceStatus.ABSENT
-            it.attendedAt = null
-            it.updatedAt = null
-            it.autoAbsentAt = closedAt
         }
         return targets.size
     }
@@ -225,8 +193,11 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         val allowed =
             row.status == expectedStatus && row.attendedAt != null && row.updatedAt == null && row.deletedAt == null
         if (!allowed) return false
-        row.status = newStatus
-        row.autoAbsentAt = null
+        val attendance = row.toDomain()
+        attendance.applyPolicyStatus(newStatus)
+        row.status = attendance.status
+        row.autoAbsentAt = attendance.autoAbsentAt
+        row.lateParticipatedAt = attendance.lateParticipatedAt
         return true
     }
 
@@ -328,8 +299,10 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         cohortId: Long,
     ): List<MemberSessionAttendanceQueryModel> = memberSessions[memberId to cohortId].orEmpty()
 
+    val mySessionAttendances = mutableMapOf<GetMyAttendanceBySessionQuery, MyDetailAttendanceQueryModel>()
+
     override fun findMyDetailAttendanceBySession(query: GetMyAttendanceBySessionQuery): MyDetailAttendanceQueryModel? =
-        throw UnsupportedOperationException()
+        mySessionAttendances[query]
 }
 
 /** 세션 저장소 가짜 구현. 조회마다 사본을 돌려줘 저장하지 않은 변경이 새지 않도록 한다. */
