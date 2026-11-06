@@ -39,9 +39,23 @@ class SessionMapperTest {
         val manual = attendance(updatedAt = Instant.parse("2026-09-05T06:00:00Z"))
         val untouched = attendance(updatedAt = null)
 
-        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, manual).attendedAt).isNull()
-        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, untouched).attendedAt)
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, manual, attendedAt).attendedAt).isNull()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, untouched, attendedAt).attendedAt)
             .isEqualTo(LocalDateTime.parse("2026-09-05T13:58:21"))
+    }
+
+    @Test
+    fun `늦은 참여는 본인 미인증 행에만 열리고 한국 시간 19시 정각에 닫힌다`() {
+        val pending = Attendance(sessionId = SessionId(1L), memberId = MemberId(1L), status = AttendanceStatus.PENDING)
+        val cutoff = Instant.parse("2026-09-05T10:00:00Z")
+        val before = cutoff.minusSeconds(1)
+        val detail = SessionMapper.toSessionDetailForDeeperResponse(session, pending, before)
+
+        assertThat(detail.lateParticipationDeadline).isEqualTo(LocalDateTime.parse("2026-09-05T19:00:00"))
+        assertThat(detail.canRegisterLateParticipation).isTrue()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, pending, cutoff).canRegisterLateParticipation).isFalse()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, pending, before, false).canRegisterLateParticipation).isFalse()
+        assertThat(SessionMapper.toSessionDetailForDeeperResponse(session, attendance(null), before).canRegisterLateParticipation).isFalse()
     }
 
     private fun attendance(updatedAt: Instant?) =

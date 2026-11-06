@@ -31,6 +31,40 @@ class AttendanceCommandServiceTest {
     private val sessionId = session.id!!
 
     @Test
+    fun `지각 마감부터 당일 19시 전까지만 유효한 코드로 결석 참여를 기록한다`() {
+        val daytime = AttendanceTimeOffsets.DEFAULT.resolveFor(Instant.parse("2026-10-10T04:00:00Z"))
+        val daytimeSession = fixture.createSession(cohortId, daytime)
+        val deadline = Instant.parse("2026-10-10T10:00:00Z")
+        val registered = fixture.addAttendance(daytimeSession, memberId = 1L)
+        val unregistered = fixture.addAttendance(daytimeSession, memberId = 2L)
+
+        fun record(
+            member: Long,
+            at: Instant,
+            code: String = CODE,
+        ) = fixture.attendanceCommandService.attendSession(AttendanceRecordCommand(daytimeSession.id!!, MemberId(member), at, code))
+
+        assertThatThrownBy { record(1L, daytime.absentStart, "0000") }.isInstanceOf(InvalidAttendanceCodeException::class.java)
+        assertThat(fixture.attendances.row(registered).lateParticipatedAt).isNull()
+        val first = record(1L, daytime.absentStart.plusNanos(123))
+        assertThat(first.status).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(first.attendedAt).isEqualTo(daytime.absentStart)
+        assertThat(record(1L, deadline.minusNanos(1))).isEqualTo(first)
+        assertThatThrownBy { record(1L, deadline.minusNanos(1), "0000") }.isInstanceOf(InvalidAttendanceCodeException::class.java)
+        assertThat(fixture.attendances.row(registered).lateParticipatedAt).isEqualTo(daytime.absentStart)
+        for (closed in listOf(deadline, deadline.plusSeconds(86_400))) {
+            assertThatThrownBy { record(2L, closed) }.isInstanceOf(AttendanceClosedException::class.java)
+        }
+        assertThat(fixture.attendances.row(unregistered).lateParticipatedAt).isNull()
+
+        fixture.attendanceCommandService.updateAttendanceStatus(
+            AttendanceStatusUpdateCommand(daytimeSession.id!!, MemberId(1L), AttendanceStatus.ABSENT),
+        )
+        assertThat(fixture.attendances.row(registered).toDomain().isSessionFeedbackEligible()).isFalse()
+        assertThatThrownBy { record(1L, deadline.minusNanos(1)) }.isInstanceOf(AttendanceAlreadyDecidedException::class.java)
+    }
+
+    @Test
     fun `경계 시각에 맞춰 출석과 지각으로 요청 시각을 저장한다`() {
         val cases =
             listOf(
@@ -254,7 +288,7 @@ class AttendanceCommandServiceTest {
                 attendedAt = at,
                 attendanceCode = code,
             ),
-        )
+        ).status
 
     private fun updateCommandFor(
         session: Session,

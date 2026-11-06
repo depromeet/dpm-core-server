@@ -27,7 +27,8 @@ interface SessionQueryApi {
         description =
             "로그인 멤버 기수 기준으로 홈 세션 카드 상태를 조회합니다. " +
                 "AVAILABLE(다음 세션 있음) / NOT_REGISTERED(활성 기수·세션 미등록) / " +
-                "COHORT_ENDED(기수 종료). 운영진(ORGANIZER/CORE/MASTER)은 session.canRecordAttendance=false. " +
+                "COHORT_ENDED(기수 종료). lateParticipationDeadline은 세션 당일 19:00(KST)입니다. " +
+                "운영진(ORGANIZER/CORE/MASTER)은 session.canRecordAttendance=false. " +
                 "로그인만 있으면 되고 read:session 권한은 필요 없다 " +
                 "(과거 기수 유저도 COHORT_ENDED를 받을 수 있게).",
     )
@@ -189,7 +190,7 @@ interface SessionQueryApi {
         summary = "(디퍼)세션 상세 조회",
         description =
             "세션 ID를 통해 세션에 대한 디퍼의 상세 정보를 조회합니다. " +
-                "운영진(ORGANIZER/CORE/MASTER)은 canRecordAttendance=false.",
+                "canRegisterLateParticipation은 조회 시점의 늦은 참여 등록 가능 여부입니다. 운영진은 false입니다.",
     )
     @ApiResponses(
         value = [
@@ -325,7 +326,8 @@ interface SessionQueryApi {
             "현재 활성 기수의 세션을 세션 일시 오름차순, 같으면 세션 ID 오름차순으로 조회합니다. " +
                 "week 는 표시용이며 정렬에 쓰지 않습니다. 이전/다음 세션 이동은 이 목록의 순서를 사용합니다. " +
                 "attendanceStatus 는 서버 현재 시각 기준 출석 인증 상태로, 출석 시작 전 NOT_STARTED, " +
-                "출석 시작부터 인증 마감(결석 시작) 전까지 IN_PROGRESS(지각 구간 포함), 마감 정각부터 CLOSED 입니다. " +
+                "출석 시작부터 인증 마감(결석 시작) 전까지 IN_PROGRESS(지각 구간 포함), 마감 정각부터 CLOSED입니다. " +
+                "이후 늦은 참여 가능 여부는 개인 세션 상세의 canRegisterLateParticipation을 사용합니다. " +
                 "운영진(ORGANIZER/CORE/MASTER)은 IN_PROGRESS 대신 CLOSED 와 canRecordAttendance=false 를 받아 출석 배너가 뜨지 않는다. " +
                 "기존 GET /v1/sessions/weeks(id, week, date, ID 순)는 그대로 둡니다. " +
                 "로그인만 있으면 되고 read:session 권한은 필요 없다(GUEST·승인 대기 유저도 홈 진입용).",

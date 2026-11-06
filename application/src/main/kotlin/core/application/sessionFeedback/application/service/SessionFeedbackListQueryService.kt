@@ -2,7 +2,6 @@ package core.application.sessionFeedback.application.service
 
 import core.application.common.converter.TimeMapper.instantToLocalDateTime
 import core.application.sessionFeedback.presentation.response.SessionListFeedbackResponse
-import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.session.aggregate.Session
@@ -65,8 +64,7 @@ class SessionFeedbackListQueryService(
         if (status != SessionFeedbackStatus.IN_PROGRESS) return false
 
         val attendance = attendancePersistencePort.findAttendanceBy(sessionId, memberId.value) ?: return false
-        val isTarget = attendance.status == AttendanceStatus.PRESENT || attendance.status == AttendanceStatus.LATE
-        if (!isTarget) return false
+        if (!attendance.isSessionFeedbackEligible()) return false
 
         return !feedbackPersistencePort.existsBySessionIdAndMemberId(sessionId, memberId.value)
     }

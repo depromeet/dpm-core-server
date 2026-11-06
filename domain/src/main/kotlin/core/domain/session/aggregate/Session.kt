@@ -10,6 +10,7 @@ import core.domain.session.vo.AttendancePolicy
 import core.domain.session.vo.SessionAttendanceTimes
 import core.domain.session.vo.SessionId
 import java.time.Instant
+import java.time.ZoneId
 import kotlin.random.Random
 
 /**
@@ -50,6 +51,15 @@ class Session(
 
     fun attend(attendedAt: Instant): AttendanceResult = determineAttendanceStatus(attendedAt)
 
+    fun lateParticipationDeadline(): Instant = lateParticipationDeadline(date)
+
+    fun isLateParticipationOpenAt(now: Instant): Boolean =
+        isLateParticipationOpenAt(
+            date,
+            attendancePolicy.absentStart,
+            now,
+        )
+
     fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
     /** 마감 시각 정각부터 마감이다. */
@@ -67,7 +77,7 @@ class Session(
      * 현재 시각을 기준으로 출석 상태를 결정하고 해당 상태를 sealed class 의 형태로 반환합니다.
      *
      * 디프만 출석 도메인 정책에 의거, 출석 시작 전 상태는 저장하지 않습니다.
-     * 경계 시각은 다음 구간에 포함됩니다(지각 시작 정각은 LATE, 마감 정각부터 Closed).
+     * 경계 시각은 다음 구간에 포함됩니다(지각 시작 정각은 LATE, 지각 마감 정각부터 당일 19시 전까지는 ABSENT).
      *
      * @param now 현재 시각
      * @author LeeHanEum
@@ -79,6 +89,7 @@ class Session(
             now.isBefore(attendancePolicy.attendanceStart) -> AttendanceResult.TooEarly
             now.isBefore(attendancePolicy.lateStart) -> AttendanceResult.Success(AttendanceStatus.PRESENT)
             now.isBefore(attendancePolicy.absentStart) -> AttendanceResult.Success(AttendanceStatus.LATE)
+            isLateParticipationOpenAt(now) -> AttendanceResult.Success(AttendanceStatus.ABSENT)
             else -> AttendanceResult.Closed
         }
 
@@ -118,6 +129,20 @@ class Session(
     }
 
     companion object {
+        private val SESSION_ZONE = ZoneId.of("Asia/Seoul")
+
+        private fun lateParticipationDeadline(date: Instant): Instant =
+            date.atZone(SESSION_ZONE).toLocalDate().atTime(19, 0).atZone(SESSION_ZONE).toInstant()
+
+        fun isLateParticipationOpenAt(
+            date: Instant,
+            absentStart: Instant,
+            now: Instant,
+        ): Boolean =
+            !now.isBefore(absentStart) &&
+                now.atZone(SESSION_ZONE).toLocalDate() == date.atZone(SESSION_ZONE).toLocalDate() &&
+                now.isBefore(lateParticipationDeadline(date))
+
         /** [attendanceTimes] 는 기본값/입력값으로 확정된 시각이다. 커맨드의 nullable 시각은 쓰지 않는다. */
         fun create(
             command: SessionCreateCommand,

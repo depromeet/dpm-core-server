@@ -99,6 +99,34 @@ class AttendanceConcurrencyMySqlIntegrationTest {
     }
 
     @Test
+    fun `19시 직전 늦은 참여 등록은 동시 재시도와 자동 결석이 겹쳐도 최초 기록을 보존한다`() {
+        val daytime = AttendanceTimeOffsets.DEFAULT.resolveFor(Instant.parse("2026-10-10T04:00:00Z"))
+        val session = newSession(sessionTimes = daytime)
+        val deadline = Instant.parse("2026-10-10T10:00:00Z")
+        addAttendance(session, memberId = 1L)
+        addAttendance(session, memberId = 2L)
+
+        val results =
+            runConcurrently(8) { index ->
+                if (index == 0) {
+                    attendanceCommandService.closeExpiredAttendances(session.id!!, deadline)
+                } else {
+                    assertThat(attend(session, 1L, deadline.minusMillis(index.toLong()))).isEqualTo(AttendanceStatus.ABSENT)
+                }
+            }
+        results.forEach { it.getOrThrow() }
+        val first = attendancePort.findAttendanceBy(session.id!!.value, 1L)!!
+        assertThat(first.lateParticipatedAt).isBetween(deadline.minusMillis(7), deadline.minusMillis(1))
+        assertThat(first.attendedAt).isEqualTo(first.lateParticipatedAt)
+        assertThat(first.isSessionFeedbackEligible()).isTrue()
+        assertThat(attend(session, 1L, deadline.minusNanos(1000))).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(attendancePort.findAttendanceBy(session.id!!.value, 1L)!!.lateParticipatedAt).isEqualTo(first.lateParticipatedAt)
+        val absent = attendancePort.findAttendanceBy(session.id!!.value, 2L)!!
+        assertThat(absent.status).isEqualTo(AttendanceStatus.ABSENT)
+        assertThat(absent.isSessionFeedbackEligible()).isFalse()
+    }
+
+    @Test
     fun `같은 멤버의 동시 인증은 정확히 하나만 저장된다`() {
         val session = newSession()
         addAttendance(session, memberId = 1L)
@@ -562,7 +590,7 @@ class AttendanceConcurrencyMySqlIntegrationTest {
         session: Session,
         memberId: Long,
         at: Instant,
-    ): AttendanceStatus = attendanceCommandService.attendSession(AttendanceRecordCommand(session.id!!, MemberId(memberId), at, CODE))
+    ): AttendanceStatus = attendanceCommandService.attendSession(AttendanceRecordCommand(session.id!!, MemberId(memberId), at, CODE)).status
 
     private fun updateCommand(
         session: Session,

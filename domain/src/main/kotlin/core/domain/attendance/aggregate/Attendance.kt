@@ -21,6 +21,7 @@ class Attendance(
     updatedAt: Instant? = null,
     deletedAt: Instant? = null,
     autoAbsentAt: Instant? = null,
+    lateParticipatedAt: Instant? = null,
 ) {
     var status: AttendanceStatus = status
         private set
@@ -28,6 +29,14 @@ class Attendance(
     /** 자동 결석 출처 표지. 자동 결석에서만 기록하고 인증/운영진 변경/재개 시 지운다. 기능 도입 전 기록은 null. */
     var autoAbsentAt: Instant? = autoAbsentAt
         private set
+
+    var lateParticipatedAt: Instant? = lateParticipatedAt
+        private set
+
+    fun registeredAbsenceTime(): Instant? = lateParticipatedAt?.takeIf { status == AttendanceStatus.ABSENT }
+
+    fun isSessionFeedbackEligible(): Boolean =
+        status == AttendanceStatus.PRESENT || status == AttendanceStatus.LATE || registeredAbsenceTime() != null
 
     var attendedAt: Instant? = attendedAt
         private set
@@ -76,6 +85,7 @@ class Attendance(
     ) {
         this.status = status
         this.attendedAt = attendedAt
+        this.lateParticipatedAt = attendedAt.takeIf { status == AttendanceStatus.ABSENT }
         this.autoAbsentAt = null
     }
 
@@ -86,6 +96,7 @@ class Attendance(
     ) {
         this.status = newStatus
         this.attendedAt = null
+        this.lateParticipatedAt = null
         this.updatedAt = updatedAt
         this.autoAbsentAt = null
     }
