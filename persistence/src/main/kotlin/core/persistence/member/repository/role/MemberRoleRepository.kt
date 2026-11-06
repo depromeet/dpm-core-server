@@ -2,13 +2,16 @@ package core.persistence.member.repository.role
 
 import core.domain.cohort.vo.CohortId
 import core.domain.member.aggregate.MemberRole
+import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberRolePersistencePort
 import core.domain.member.vo.MemberId
 import core.domain.member.vo.MemberRoleAssignment
 import org.jooq.DSLContext
+import org.jooq.dsl.tables.references.COHORTS
 import org.jooq.dsl.tables.references.MEMBERS
 import org.jooq.dsl.tables.references.MEMBER_COHORTS
+import org.jooq.dsl.tables.references.MEMBER_COHORT_ACTIVITIES
 import org.jooq.dsl.tables.references.MEMBER_ROLES
 import org.jooq.dsl.tables.references.ROLES
 import org.jooq.impl.DSL
@@ -27,9 +30,16 @@ class MemberRoleRepository(
             .join(ROLES).on(ROLES.ROLE_ID.eq(MEMBER_ROLES.ROLE_ID))
             .join(MEMBERS).on(MEMBERS.MEMBER_ID.eq(MEMBER_ROLES.MEMBER_ID))
             .join(MEMBER_COHORTS).on(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID))
+            .join(COHORTS).on(COHORTS.COHORT_ID.eq(MEMBER_COHORTS.COHORT_ID))
+            .join(MEMBER_COHORT_ACTIVITIES).on(
+                MEMBER_COHORT_ACTIVITIES.MEMBER_ID.eq(MEMBERS.MEMBER_ID),
+                MEMBER_COHORT_ACTIVITIES.COHORT_ID.eq(MEMBER_COHORTS.COHORT_ID),
+            )
             .where(
                 MEMBER_COHORTS.COHORT_ID.eq(cohortId.value),
-                COHORT_ID_FIELD.eq(cohortId.value),
+                COHORTS.IS_ACTIVE.isTrue,
+                MEMBER_COHORT_ACTIVITIES.STATUS.eq(MemberActivityStatus.ACTIVE.name),
+                COHORT_ID_FIELD.eq(cohortId.value).or(COHORT_ID_FIELD.isNull),
                 ROLES.NAME.`in`("ORGANIZER", "CORE"),
                 MEMBER_ROLES.DELETED_AT.isNull,
                 MEMBERS.DELETED_AT.isNull,

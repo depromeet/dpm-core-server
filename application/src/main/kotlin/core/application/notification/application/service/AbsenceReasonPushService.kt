@@ -26,7 +26,7 @@ class AbsenceReasonPushService(
         val (title, body) = type.formatWithTitle(variables)
         val payload = NotificationCommandService.mergePushData(type, data)
         for (batch in targets.chunked(100)) {
-            val tickets = expo.sendBatch(batch, title, body, payload, ExpoPriority.NORMAL)
+            val tickets = expo.sendBatch(batch, title, body, payload, ExpoPriority.NORMAL, retryTransport = false)
             // Expo returns tickets in request order. Only explicitly rate-limited devices can be retried safely.
             val throttled =
                 batch.filterIndexed { index, _ ->
@@ -42,7 +42,15 @@ class AbsenceReasonPushService(
                     logger.warn("Absence push retry interrupted: type={}, pending={}", type, throttled.size)
                     return
                 }
-                val retried = expo.sendBatch(throttled, title, body, payload, ExpoPriority.NORMAL)
+                val retried =
+                    expo.sendBatch(
+                        throttled,
+                        title,
+                        body,
+                        payload,
+                        ExpoPriority.NORMAL,
+                        retryTransport = false,
+                    )
                 failures -= retried.count { it?.status == "ok" }
             }
             if (failures > 0) {
