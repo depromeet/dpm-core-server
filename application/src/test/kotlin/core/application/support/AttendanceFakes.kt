@@ -341,7 +341,10 @@ class FakeSessionPersistencePort(
 
     @Synchronized
     override fun findAllCohortSessions(cohortId: Long): List<Session> =
-        sessions.values.filter { it.cohortId.value == cohortId && it.deletedAt == null }.map { copyOf(it) }
+        sessions.values
+            .filter { it.cohortId.value == cohortId && it.deletedAt == null }
+            .sortedWith(compareBy({ it.week }, { it.date }, { it.id!!.value }))
+            .map { copyOf(it) }
 
     @Synchronized
     override fun existsByCohortIdAndDateRange(

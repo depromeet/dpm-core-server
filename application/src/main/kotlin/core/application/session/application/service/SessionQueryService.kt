@@ -77,6 +77,7 @@ class SessionQueryService(
 
     fun canRecordAttendance(memberId: MemberId): Boolean = !memberAccessService.isAdmin(memberId)
 
+    /** 현재 활성 기수 세션. 정렬은 persistence 의 주차→일시→ID 오름차순. */
     fun getAllCurrentCohortSessions(): List<Session> {
         val cohortId = cohortQueryUseCase.getLatestCohortId()
 
