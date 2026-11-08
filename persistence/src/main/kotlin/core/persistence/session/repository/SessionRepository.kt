@@ -28,7 +28,9 @@ class SessionRepository(
             ?.toDomain()
 
     override fun findAllCohortSessions(cohortId: Long): List<Session> =
-        sessionJpaRepository.findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId).map { it.toDomain() }
+        sessionJpaRepository
+            .findAllByCohortIdAndDeletedAtIsNullOrderByWeekAscDateAscIdAsc(cohortId)
+            .map { it.toDomain() }
 
     override fun existsByCohortIdAndDateRange(
         cohortId: Long,

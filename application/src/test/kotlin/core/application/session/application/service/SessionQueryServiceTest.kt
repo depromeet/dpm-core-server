@@ -83,7 +83,7 @@ class SessionQueryServiceTest {
     }
 
     @Test
-    fun `v1 은 기존처럼 ID 순, v3 는 주차와 무관하게 일시 다음 ID 순이고 둘 다 현재 활성 기수만 준다`() {
+    fun `목록·주차 API 는 주차 순, v3 셀렉터는 일시 다음 ID 순이고 둘 다 현재 활성 기수만 준다`() {
         // 주차 순서와 일시 순서가 어긋나고, 같은 일시가 둘이다
         val laterButWeek1 = saveSession(week = 1, date = now.plus(Duration.ofDays(7)))
         val earlierButWeek3 = saveSession(week = 3, date = now, eventName = "네트워킹", place = "온라인", isOnline = true)
@@ -91,11 +91,15 @@ class SessionQueryServiceTest {
         val sameDateHigherId = saveSession(week = 2, date = now.plus(Duration.ofDays(1)))
         saveSession(week = 1, date = now.minus(Duration.ofDays(1)), cohort = CohortId(cohortId.value + 100))
 
-        val legacy = fixture.sessionQueryService.getSessionWeeks()
+        val list = fixture.sessionQueryService.getAllCurrentCohortSessions()
+        val weeks = fixture.sessionQueryService.getSessionWeeks()
         val selector = fixture.sessionQueryService.getSessionSelector()
 
-        assertThat(legacy.map { it.sessionId })
-            .containsExactly(laterButWeek1.id, earlierButWeek3.id, sameDateLowerId.id, sameDateHigherId.id)
+        // week asc → date asc → id asc
+        assertThat(list.map { it.id })
+            .containsExactly(laterButWeek1.id, sameDateHigherId.id, earlierButWeek3.id, sameDateLowerId.id)
+        assertThat(weeks.map { it.sessionId })
+            .containsExactly(laterButWeek1.id, sameDateHigherId.id, earlierButWeek3.id, sameDateLowerId.id)
         assertThat(selector.map { it.sessionId })
             .containsExactly(earlierButWeek3.id, sameDateLowerId.id, sameDateHigherId.id, laterButWeek1.id)
         val first = selector.first()
