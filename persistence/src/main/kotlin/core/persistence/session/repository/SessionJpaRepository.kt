@@ -14,7 +14,7 @@ interface SessionJpaRepository : JpaRepository<SessionEntity, Long> {
         startOfToday: Instant,
     ): SessionEntity?
 
-    fun findAllByCohortIdAndDeletedAtIsNullOrderByIdAsc(cohortId: Long): List<SessionEntity>
+    fun findAllByCohortIdAndDeletedAtIsNullOrderByWeekAscDateAscIdAsc(cohortId: Long): List<SessionEntity>
 
     @Query(
         "select case when count(s) > 0 then true else false end from SessionEntity s " +
