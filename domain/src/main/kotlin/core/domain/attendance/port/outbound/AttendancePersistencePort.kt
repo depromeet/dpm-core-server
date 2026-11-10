@@ -81,12 +81,12 @@ interface AttendancePersistencePort {
         attendedAt: Instant,
     ): Boolean
 
-    /** 상태와 updatedAt 을 바꾸고 attendedAt 과 자동 결석 표지를 지운다. 갱신한 행 수를 반환한다. */
+    /** 상태와 수동 수정 표지를 저장한다. 명시적으로 재인증을 여는 경우에는 updatedAt을 null로 지정한다. */
     fun updateStatusByAdmin(
         sessionId: Long,
         memberIds: List<Long>,
         status: AttendanceStatus,
-        updatedAt: Instant,
+        updatedAt: Instant?,
     ): Int
 
     /** 지정한 멤버들 중 삭제되지 않은 출석 행이 있는 멤버 수 */

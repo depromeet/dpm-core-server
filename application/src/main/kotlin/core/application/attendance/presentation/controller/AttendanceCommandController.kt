@@ -148,6 +148,8 @@ class AttendanceCommandController(
                 sessionId = sessionId,
                 memberId = memberId,
                 approved = request.approved,
+                expectedReviewVersion = request.expectedReviewVersion,
+                finalAttendanceStatus = request.finalAttendanceStatus,
             ),
         )
 
