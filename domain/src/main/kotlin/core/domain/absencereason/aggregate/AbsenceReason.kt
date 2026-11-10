@@ -60,6 +60,7 @@ class AbsenceReason(
         this.updatedAt = nextUpdatedAt()
     }
 
+    /** 심사 결과가 이전 상태로 돌아오거나 시스템 시각이 뒤로 가도 이전 심사 버전을 재사용하지 않는다. */
     private fun nextUpdatedAt(): Instant {
         val now = Instant.now().truncatedTo(ChronoUnit.MICROS)
         // MySQL TIMESTAMP(6) 정밀도에서도 연속 변경의 버전이 항상 달라지도록 한다.
