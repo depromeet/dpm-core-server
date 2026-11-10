@@ -320,9 +320,15 @@ class AbsenceReasonImageMySqlIntegrationTest {
             }
             val beforeDeadline = session.lateParticipationDeadline().minusSeconds(1)
             clock.now = beforeDeadline
-            commandService.reviewAbsenceReason(
-                AbsenceReasonReviewCommand(sessionId, openMember, false, reviewVersion(session, openMember), AttendanceStatus.PENDING),
-            )
+            val reopen =
+                AbsenceReasonReviewCommand(sessionId, openMember, false, reviewVersion(session, openMember), AttendanceStatus.PENDING)
+            assertThatThrownBy { commandService.reviewAbsenceReason(reopen) }
+                .matches { it is BusinessException && it.getCode() == AttendanceExceptionCode.ATTENDANCE_REOPEN_CLOSED }
+            assertThat(reasonStatus(session, openMember)).isEqualTo("APPROVED")
+            assertThat(attendanceStatus(session, openMember)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+
+            jdbcTemplate.update("update cohorts set is_active = true where cohort_id = ?", session.cohortId.value)
+            commandService.reviewAbsenceReason(reopen)
             assertThat(reasonStatus(session, openMember)).isEqualTo("REJECTED")
             assertThat(attendanceRow(session, openMember)).isEqualTo(Triple("PENDING", false, false))
             val recorded = attendanceCommand.attendSession(AttendanceRecordCommand(sessionId, openMember, beforeDeadline, "4321"))
@@ -344,6 +350,7 @@ class AbsenceReasonImageMySqlIntegrationTest {
             assertThat(attendanceStatus(session, closedMember)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
             assertThat(events.reviews.filter { it.memberId == closedMember }.map { it.approved }).containsExactly(true)
         } finally {
+            jdbcTemplate.update("update cohorts set is_active = false where cohort_id = ?", session.cohortId.value)
             clock.now = previousClock
         }
     }

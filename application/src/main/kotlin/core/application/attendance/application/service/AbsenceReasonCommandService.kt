@@ -19,6 +19,7 @@ import core.domain.absencereason.port.outbound.AbsenceReasonImageConflictExcepti
 import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
+import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.image.port.outbound.ImagePersistencePort
 import core.domain.image.vo.ImageId
 import core.domain.member.port.inbound.MemberQueryUseCase
@@ -40,6 +41,7 @@ class AbsenceReasonCommandService(
     private val absenceReasonImagePersistencePort: AbsenceReasonImagePersistencePort,
     private val imagePersistencePort: ImagePersistencePort,
     private val sessionPersistencePort: SessionPersistencePort,
+    private val cohortPersistencePort: CohortPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
     private val attendanceCommandService: AttendanceCommandService,
     private val eventPublisher: ApplicationEventPublisher,
@@ -147,6 +149,11 @@ class AbsenceReasonCommandService(
         }
 
         val newAttendance = if (command.approved) AttendanceStatus.EXCUSED_ABSENT else attendanceStatus
+        if (newAttendance == AttendanceStatus.PENDING &&
+            cohortPersistencePort.findById(session.cohortId)?.isActive != true
+        ) {
+            throw BusinessException(AttendanceExceptionCode.ATTENDANCE_REOPEN_CLOSED)
+        }
         if (newAttendance != null) {
             attendanceCommandService.updateAttendanceAfterReview(session, command.memberId, newAttendance)
         }

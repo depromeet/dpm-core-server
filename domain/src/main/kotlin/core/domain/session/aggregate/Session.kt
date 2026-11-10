@@ -60,11 +60,14 @@ class Session(
             now,
         )
 
-    /** 운영진이 코드 입력을 다시 열 수 있는 시간. 세션 당일의 출석 시작부터 19시 직전까지다. */
-    fun canReopenAttendanceAt(now: Instant): Boolean =
-        now.atZone(SESSION_ZONE).toLocalDate() == date.atZone(SESSION_ZONE).toLocalDate() &&
-            now.isBefore(lateParticipationDeadline()) &&
+    /** 19시 배치로 마감 가능한 세션에서, 당일 출석 시작부터 19시 직전까지 인증을 다시 열 수 있다. */
+    fun canReopenAttendanceAt(now: Instant): Boolean {
+        val deadline = lateParticipationDeadline()
+        return !attendancePolicy.absentStart.isAfter(deadline) &&
+            now.atZone(SESSION_ZONE).toLocalDate() == date.atZone(SESSION_ZONE).toLocalDate() &&
+            now.isBefore(deadline) &&
             attend(now) is AttendanceResult.Success
+    }
 
     fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 

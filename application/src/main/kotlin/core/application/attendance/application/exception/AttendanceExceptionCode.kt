@@ -27,7 +27,7 @@ enum class AttendanceExceptionCode(
         "ATTENDANCE-409-05",
         "결석 사유서의 심사 상태가 변경되었습니다. 다시 조회해주세요",
     ),
-    ATTENDANCE_REOPEN_CLOSED(HttpStatus.CONFLICT, "ATTENDANCE-409-06", "출석 코드 인증을 다시 열 수 있는 시간이 아닙니다"),
+    ATTENDANCE_REOPEN_CLOSED(HttpStatus.CONFLICT, "ATTENDANCE-409-06", "이 세션의 출석 코드 인증을 다시 열 수 없습니다"),
     ABSENCE_REASON_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE-404-02", "결석 사유서를 찾을 수 없습니다"),
     ORGANIZER_CANNOT_RECORD_ATTENDANCE(
         HttpStatus.FORBIDDEN,
