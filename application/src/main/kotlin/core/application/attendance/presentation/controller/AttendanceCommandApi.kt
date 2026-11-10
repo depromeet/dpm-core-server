@@ -349,7 +349,8 @@ interface AttendanceCommandApi {
             "최초 승인 시 인정결석으로 변경하고, 최초 반려 시 기존 출석 상태를 유지합니다. " +
                 "이미 심사한 사유서를 정정할 때는 사유서 조회 응답의 reviewVersion을 expectedReviewVersion에 넣으세요. " +
                 "승인에서 반려로 정정할 때는 finalAttendanceStatus를 지정합니다. " +
-                "PENDING은 세션 당일 출석 인증이 열린 시간에 19시 전까지만 선택할 수 있으며 디퍼가 다시 인증할 수 있습니다. " +
+                "활성 기수이고 지각 인정 마감이 19시 이내인 세션에 한해 PENDING을 선택해 디퍼의 인증을 다시 열 수 있습니다. " +
+                "선택 가능 시간은 세션 당일 출석 인증 시작부터 19시 전까지입니다. " +
                 "반려에서 승인으로 정정하면 인정결석으로 바뀝니다.",
         requestBody =
             RequestBody(
@@ -399,7 +400,7 @@ interface AttendanceCommandApi {
             ApiResponse(responseCode = "400", description = "ATTENDANCE-400-06 승인 취소 출석 상태 누락 또는 잘못된 상태 지정"),
             ApiResponse(
                 responseCode = "409",
-                description = "ATTENDANCE-409-03 버전 없이 심사 정정, ATTENDANCE-409-05 이미 바뀐 사유서, ATTENDANCE-409-06 재인증 시간 종료",
+                description = "ATTENDANCE-409-03 버전 없이 심사 정정, ATTENDANCE-409-05 이미 바뀐 사유서, ATTENDANCE-409-06 재인증 불가",
             ),
         ],
     )
