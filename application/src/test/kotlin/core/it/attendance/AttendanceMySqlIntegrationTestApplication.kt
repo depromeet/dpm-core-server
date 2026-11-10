@@ -9,6 +9,7 @@ import core.application.common.configuration.JooqDslConfig
 import core.application.session.application.service.SessionCommandService
 import core.application.session.application.validator.SessionValidator
 import core.application.support.MutableClock
+import core.persistence.absencereason.repository.AbsenceReasonRepository
 import core.persistence.attendance.repository.AttendanceRepository
 import core.persistence.cohort.repository.CohortRepository
 import core.persistence.session.repository.SessionRepository
@@ -31,6 +32,7 @@ import java.time.Instant
     JooqDslConfig::class,
     SessionCreateEventListener::class,
     AttendanceRepository::class,
+    AbsenceReasonRepository::class,
     SessionRepository::class,
     CohortRepository::class,
     SessionValidator::class,

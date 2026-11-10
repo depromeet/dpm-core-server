@@ -19,4 +19,6 @@ data class SessionAbsenceReasonItem(
     val images: List<AbsenceReasonImageInfo>,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?,
+    @field:Schema(description = "심사 정정 요청의 expectedReviewVersion에 그대로 전달할 값")
+    val reviewVersion: String,
 )

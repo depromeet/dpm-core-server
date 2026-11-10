@@ -6,6 +6,7 @@ import core.domain.absencereason.vo.AbsenceReasonId
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /**
  * 결석 사유서(AbsenceReason) 도메인 모델
@@ -34,6 +35,10 @@ class AbsenceReason(
     var updatedAt: Instant? = updatedAt
         private set
 
+    /** 조회 시점 이후 다시 승인·반려·재제출된 사유서에는 예전 요청을 적용하지 않는다. */
+    val reviewVersion: String
+        get() = "${requireNotNull(id).value}:$status:${updatedAt ?: createdAt}"
+
     /**
      * 사유서를 재제출합니다. [AbsenceReasonStatus.PENDING] 상태로 돌아갑니다.
      *
@@ -42,17 +47,24 @@ class AbsenceReason(
     fun resubmit(contents: String) {
         this.contents = contents
         this.status = AbsenceReasonStatus.PENDING
-        this.updatedAt = Instant.now()
+        this.updatedAt = nextUpdatedAt()
     }
 
     fun approve() {
         this.status = AbsenceReasonStatus.APPROVED
-        this.updatedAt = Instant.now()
+        this.updatedAt = nextUpdatedAt()
     }
 
     fun reject() {
         this.status = AbsenceReasonStatus.REJECTED
-        this.updatedAt = Instant.now()
+        this.updatedAt = nextUpdatedAt()
+    }
+
+    private fun nextUpdatedAt(): Instant {
+        val now = Instant.now().truncatedTo(ChronoUnit.MICROS)
+        // MySQL TIMESTAMP(6) 정밀도에서도 연속 변경의 버전이 항상 달라지도록 한다.
+        val previous = (updatedAt ?: createdAt)?.truncatedTo(ChronoUnit.MICROS) ?: return now
+        return maxOf(now, previous.plus(1, ChronoUnit.MICROS))
     }
 
     override fun equals(other: Any?): Boolean {

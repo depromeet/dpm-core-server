@@ -10,4 +10,10 @@ interface AbsenceReasonJpaRepository : JpaRepository<AbsenceReasonEntity, Long> 
     ): AbsenceReasonEntity?
 
     fun findAllBySessionId(sessionId: Long): List<AbsenceReasonEntity>
+
+    fun existsBySessionIdAndMemberIdInAndStatus(
+        sessionId: Long,
+        memberIds: Collection<Long>,
+        status: String,
+    ): Boolean
 }

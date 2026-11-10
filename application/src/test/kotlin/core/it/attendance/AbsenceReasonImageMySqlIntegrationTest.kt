@@ -17,6 +17,8 @@ import core.domain.absencereason.port.inbound.command.AbsenceReportCreateCommand
 import core.domain.absencereason.port.inbound.command.AbsenceReportUpdateCommand
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
+import core.domain.attendance.port.inbound.command.AttendanceRecordCommand
+import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.outbound.CohortPersistencePort
@@ -279,6 +281,101 @@ class AbsenceReasonImageMySqlIntegrationTest {
     }
 
     @Test
+    fun `같은 심사 버전의 동시 정정은 한 번만 적용되고 승인 반려가 왕복해도 이전 요청은 거절한다`() {
+        val session = newSession()
+        val member = newMember()
+        val sessionId = requireNotNull(session.id)
+        attendancePort.save(Attendance(sessionId = sessionId, memberId = member, status = AttendanceStatus.ABSENT))
+        submit(session, member, "사유", null)
+        review(session, member, true)
+        val previous = reviewVersion(session, member)
+        val correction = AbsenceReasonReviewCommand(sessionId, member, false, previous, AttendanceStatus.ABSENT)
+
+        val results = runConcurrently(2) { commandService.reviewAbsenceReason(correction) }
+        assertThat(results.count { it.isSuccess }).isEqualTo(1)
+        assertThat((results.single { it.isFailure }.exceptionOrNull() as BusinessException).getCode())
+            .isEqualTo(AttendanceExceptionCode.ABSENCE_REASON_REVIEW_VERSION_CONFLICT)
+        assertThat(reasonStatus(session, member)).isEqualTo("REJECTED")
+        assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.ABSENT)
+
+        commandService.reviewAbsenceReason(AbsenceReasonReviewCommand(sessionId, member, true, reviewVersion(session, member)))
+        assertThatThrownBy { commandService.reviewAbsenceReason(correction) }
+            .matches { it is BusinessException && it.getCode() == AttendanceExceptionCode.ABSENCE_REASON_REVIEW_VERSION_CONFLICT }
+        assertThat(reasonStatus(session, member)).isEqualTo("APPROVED")
+        assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(events.reviews.filter { it.memberId == member }.map { it.approved }).containsExactly(true, false, true)
+    }
+
+    @Test
+    fun `승인 취소로 인증을 다시 열면 코드 인증이 가능하고 당일 19시에는 정정 전체가 거절된다`() {
+        val session = newSession(Instant.parse("2026-10-10T04:00:00Z"))
+        val (openMember, closedMember) = List(2) { newMember() }
+        val sessionId = requireNotNull(session.id)
+        val previousClock = clock.instant()
+        try {
+            listOf(openMember, closedMember).forEach { member ->
+                attendancePort.save(Attendance(sessionId = sessionId, memberId = member, status = AttendanceStatus.ABSENT))
+                submit(session, member, "사유", null)
+                review(session, member, true)
+            }
+            val beforeDeadline = session.lateParticipationDeadline().minusSeconds(1)
+            clock.now = beforeDeadline
+            commandService.reviewAbsenceReason(
+                AbsenceReasonReviewCommand(sessionId, openMember, false, reviewVersion(session, openMember), AttendanceStatus.PENDING),
+            )
+            assertThat(reasonStatus(session, openMember)).isEqualTo("REJECTED")
+            assertThat(attendanceRow(session, openMember)).isEqualTo(Triple("PENDING", false, false))
+            val recorded = attendanceCommand.attendSession(AttendanceRecordCommand(sessionId, openMember, beforeDeadline, "4321"))
+            assertThat(recorded.status).isEqualTo(AttendanceStatus.ABSENT)
+            assertThat(attendancePort.findAttendanceBy(sessionId.value, openMember.value)?.lateParticipatedAt).isEqualTo(beforeDeadline)
+
+            clock.now = session.lateParticipationDeadline()
+            val closedCorrection =
+                AbsenceReasonReviewCommand(
+                    sessionId,
+                    closedMember,
+                    false,
+                    reviewVersion(session, closedMember),
+                    AttendanceStatus.PENDING,
+                )
+            assertThatThrownBy { commandService.reviewAbsenceReason(closedCorrection) }
+                .matches { it is BusinessException && it.getCode() == AttendanceExceptionCode.ATTENDANCE_REOPEN_CLOSED }
+            assertThat(reasonStatus(session, closedMember)).isEqualTo("APPROVED")
+            assertThat(attendanceStatus(session, closedMember)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+            assertThat(events.reviews.filter { it.memberId == closedMember }.map { it.approved }).containsExactly(true)
+        } finally {
+            clock.now = previousClock
+        }
+    }
+
+    @Test
+    fun `승인된 사유서와 충돌하는 단건과 일괄 변경은 다른 대상도 수정하지 않는다`() {
+        val session = newSession()
+        val (reviewed, other) = List(2) { newMember() }
+        val sessionId = requireNotNull(session.id)
+        listOf(reviewed, other).forEach { member ->
+            attendancePort.save(Attendance(sessionId = sessionId, memberId = member, status = AttendanceStatus.PENDING))
+        }
+        submit(session, reviewed, "사유", null)
+        review(session, reviewed, true)
+
+        assertThatThrownBy {
+            attendanceCommand.updateAttendanceStatus(AttendanceStatusUpdateCommand(sessionId, reviewed, AttendanceStatus.PENDING))
+        }.matches { it is BusinessException && it.getCode() == AttendanceExceptionCode.APPROVED_ABSENCE_REASON_ATTENDANCE_CONFLICT }
+        assertThatThrownBy {
+            attendanceCommand.updateAttendanceStatusBulk(sessionId, AttendanceStatus.ABSENT, listOf(other, reviewed))
+        }.matches { it is BusinessException && it.getCode() == AttendanceExceptionCode.APPROVED_ABSENCE_REASON_ATTENDANCE_CONFLICT }
+        assertThat(reasonStatus(session, reviewed)).isEqualTo("APPROVED")
+        assertThat(attendanceStatus(session, reviewed)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
+        assertThat(attendanceStatus(session, other)).isEqualTo(AttendanceStatus.PENDING)
+    }
+
+    private fun reviewVersion(
+        session: Session,
+        member: MemberId,
+    ): String = queryService.getSessionAbsenceReasons(requireNotNull(session.id)).reasons.single { it.memberId == member.value }.reviewVersion
+
+    @Test
     fun `승인과 마감 배치가 동시에 실행돼도 인정결석이 남고 검토 중 미출석은 자동 결석이 된다`() {
         val session = newSession()
         val (reviewed, pending) = List(2) { newMember() }
@@ -524,9 +621,8 @@ class AbsenceReasonImageMySqlIntegrationTest {
         return ImageId(keyHolder.key!!.toLong())
     }
 
-    private fun newSession(): Session {
+    private fun newSession(start: Instant = Instant.parse("2026-10-10T10:00:00Z")): Session {
         val cohortId = cohortPort.save(Cohort(value = "it583-" + UUID.randomUUID().toString().substring(0, 8))).id!!
-        val start = Instant.parse("2026-10-10T10:00:00Z")
         return sessionPort.save(
             Session(
                 cohortId = cohortId,
