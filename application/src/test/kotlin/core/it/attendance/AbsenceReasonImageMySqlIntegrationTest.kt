@@ -280,6 +280,7 @@ class AbsenceReasonImageMySqlIntegrationTest {
         assertThat(attendanceStatus(session, member)).isEqualTo(AttendanceStatus.EXCUSED_ABSENT)
     }
 
+    /** 승인 상태가 다시 같아져도 예전 버전으로 번복할 수 없고, 커밋된 결정만 알림을 만든다. */
     @Test
     fun `같은 심사 버전의 동시 정정은 한 번만 적용되고 승인 반려가 왕복해도 이전 요청은 거절한다`() {
         val session = newSession()
@@ -306,6 +307,7 @@ class AbsenceReasonImageMySqlIntegrationTest {
         assertThat(events.reviews.filter { it.memberId == member }.map { it.approved }).containsExactly(true, false, true)
     }
 
+    /** 상태 저장뿐 아니라 실제 코드 입력을 확인하고, 거절된 요청이 기존 승인과 출석을 보존하는지 검사한다. */
     @Test
     fun `승인 취소로 인증을 다시 열면 코드 인증이 가능하고 당일 19시에는 정정 전체가 거절된다`() {
         val session = newSession(Instant.parse("2026-10-10T04:00:00Z"))
@@ -355,6 +357,7 @@ class AbsenceReasonImageMySqlIntegrationTest {
         }
     }
 
+    /** 일괄 요청에서 충돌 대상 앞에 정상 대상을 넣어, 일부만 먼저 저장되는 경로도 확인한다. */
     @Test
     fun `승인된 사유서와 충돌하는 단건과 일괄 변경은 다른 대상도 수정하지 않는다`() {
         val session = newSession()

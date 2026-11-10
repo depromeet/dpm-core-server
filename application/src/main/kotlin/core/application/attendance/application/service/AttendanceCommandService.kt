@@ -150,6 +150,7 @@ class AttendanceCommandService(
         )
     }
 
+    /** 세션 쓰기 잠금 아래에서 검사한다. 대상에 승인된 사유서가 있으면 인정결석 외 상태로의 수정 요청 전체를 거절한다. */
     private fun ensureCompatibleWithApprovedReason(
         sessionId: SessionId,
         memberIds: List<Long>,
@@ -176,6 +177,7 @@ class AttendanceCommandService(
         setAttendanceStatus(requireNotNull(session.id), memberId, status, now.takeUnless { reopen })
     }
 
+    /** 기존 출석 행을 갱신한다. [updatedAt]이 null이면 수동 확정을 풀어 코드 인증을 다시 허용한다. */
     private fun setAttendanceStatus(
         sessionId: SessionId,
         memberId: MemberId,
