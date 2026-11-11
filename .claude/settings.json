@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "FILE=${CLAUDE_TOOL_INPUT_FILE_PATH:-}; if [[ \"$FILE\" == */CLAUDE.md || \"$FILE\" == */.claude/skills/*.md ]]; then echo '[Lesson Guard] CLAUDE.md 또는 skills를 직접 수정하려 합니다. /lesson 흐름을 거쳤나요? 아니라면 Deny로 중단하세요.'; fi; true",
+        "description": "CLAUDE.md·skills 직접 수정 시 /lesson 흐름 확인 알림"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "FILE=${CLAUDE_TOOL_INPUT_FILE_PATH:-}; [[ \"$FILE\" == *.kt ]] && cd /Users/gimsujin/Desktop/dpm-core/dpm-core-server && ./gradlew ktlintFormat -q 2>/dev/null || true",
+        "description": "ktlint 포맷 (Kotlin 파일 수정 시)"
+      }
+    ],
+    "Stop": [
+      {
+        "command": "echo '[Lesson Loop] 이번 세션에 교정 사항이 있었다면 /lesson 으로 규칙화를 고려하세요. 없으면 무시.'",
+        "description": "세션 종료 시 /lesson 사용 상기"
+      }
+    ]
+  }
+}

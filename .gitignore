@@ -59,7 +59,6 @@ secrets/
 .DS_Store
 
 # IDE / agent 로컬 설정
-.claude/
 CLAUDE.local.md
 .cursor/*
 # 프로젝트 공유 스킬만 추적
