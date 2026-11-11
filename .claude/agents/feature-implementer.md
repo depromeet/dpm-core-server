@@ -30,15 +30,28 @@ git checkout -b feat/<설명> develop
 
 ## 구현 순서
 
-아래 순서를 반드시 지킨다. 레이어 역방향 의존이 생기지 않도록.
+레이어 의존 방향을 지키되, 병렬 처리로 속도를 높인다.
 
 ```
-1. entity      → JPA @Entity
-2. domain      → 도메인 객체 + PersistencePort 인터페이스
-3. persistence → PersistencePort 구현체 + JpaRepository
-4. application → Service + Controller + Api
-5. test        → 단위 → 계약 → 통합
-6. db          → db/pending/ SQL 파일
+Step 1 (순차): entity → domain → persistence  ← 의존 방향 때문에 순서 필요
+Step 2 (병렬): application 파일들을 code-writer로 동시에 작성
+Step 3 (병렬): 테스트 파일들을 test-writer로 동시에 작성
+              + doc-writer로 PR 본문·SQL 헤더 동시에 작성
+Step 4 (순차): DB 마이그레이션 SQL 작성 및 로컬 적용 확인
+```
+
+### 병렬 호출 예시
+
+```
+# Step 2: application 레이어 — 도메인별 병렬
+Agent(code-writer): AttendanceCommandService 작성
+Agent(code-writer): AttendanceQueryService 작성      ← 동시에
+Agent(code-writer): AttendanceCommandController + Api 작성  ← 동시에
+
+# Step 3: 테스트 + 문서 병렬
+Agent(test-writer): AttendanceCommandServiceTest (단위) 작성
+Agent(test-writer): AttendanceApiV3ContractTest (계약) 작성  ← 동시에
+Agent(doc-writer):  PR 본문 초안 작성                         ← 동시에
 ```
 
 ---
