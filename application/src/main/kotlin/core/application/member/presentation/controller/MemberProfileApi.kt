@@ -20,7 +20,8 @@ interface MemberProfileApi {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "조회 성공 (CustomResponse<MemberProfileResponse>)"),
+            ApiResponse(responseCode = "200", description = "조회 성공 (CustomResponse<MemberProfileResponse>)",
+                useReturnTypeSchema = true,),
             ApiResponse(responseCode = "401", description = "인증되지 않았거나 탈퇴한 회원"),
             ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음 (MEMBER-404-01)"),
         ],
@@ -38,7 +39,8 @@ interface MemberProfileApi {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "입력 완료 또는 동일 값 유지 (CustomResponse<MemberProfileResponse>)"),
+            ApiResponse(responseCode = "200", description = "입력 완료 또는 동일 값 유지 (CustomResponse<MemberProfileResponse>)",
+                useReturnTypeSchema = true,),
             ApiResponse(responseCode = "400", description = "필수 입력 누락 또는 잘못된 이름/파트 (MEMBER-400-41, MEMBER-400-05)"),
             ApiResponse(responseCode = "401", description = "인증되지 않았거나 탈퇴한 회원"),
             ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음 (MEMBER-404-01)"),

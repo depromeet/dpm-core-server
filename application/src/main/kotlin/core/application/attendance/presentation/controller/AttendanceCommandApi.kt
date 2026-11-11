@@ -56,6 +56,7 @@ interface AttendanceCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "ABSENT도 등록 성공입니다. 결석 횟수에는 포함되지만 피드백을 작성할 수 있습니다.",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
@@ -145,6 +146,7 @@ interface AttendanceCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "출석 상태 갱신 성공",
+                useReturnTypeSchema = true,
             ),
         ],
     )
@@ -189,6 +191,7 @@ interface AttendanceCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "출석 상태 일괄 갱신 성공",
+                useReturnTypeSchema = true,
             ),
         ],
     )
@@ -241,6 +244,7 @@ interface AttendanceCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "결석 사유 제출 성공",
+                useReturnTypeSchema = true,
             ),
             ApiResponse(responseCode = "400", description = ABSENCE_REASON_400_DESCRIPTION),
             ApiResponse(responseCode = "404", description = "SESSION-404-01 세션 없음"),
@@ -298,6 +302,7 @@ interface AttendanceCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "결석 사유 수정 성공",
+                useReturnTypeSchema = true,
             ),
             ApiResponse(responseCode = "400", description = ABSENCE_REASON_400_DESCRIPTION),
             ApiResponse(
@@ -327,6 +332,7 @@ interface AttendanceCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "결석 사유 삭제 성공",
+                useReturnTypeSchema = true,
             ),
             ApiResponse(
                 responseCode = "404",

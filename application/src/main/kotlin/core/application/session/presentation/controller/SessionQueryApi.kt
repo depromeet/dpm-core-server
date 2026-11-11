@@ -36,11 +36,11 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "홈 다음 세션 조회 성공",
+                description = "홈 다음 세션 조회 성공 (CustomResponse<NextSessionHomeResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "AVAILABLE",
@@ -104,7 +104,11 @@ interface SessionQueryApi {
                     ),
                 ],
             ),
-            ApiResponse(responseCode = "401", description = "비로그인"),
+            ApiResponse(
+                responseCode = "401",
+                description = "비로그인",
+                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            ),
         ],
     )
     fun getNextSession(memberId: MemberId): CustomResponse<NextSessionHomeResponse>
@@ -145,11 +149,11 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 상세 조회 성공",
+                description = "세션 상세 조회 성공 (CustomResponse<SessionDetailResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "세션 상세 조회 성공 응답 (피드백 ON)",
@@ -197,11 +201,11 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "(디퍼)세션 상세 조회 성공",
+                description = "(디퍼)세션 상세 조회 성공 (CustomResponse<SessionDetailForDeeperResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "(디퍼)세션 상세 조회 성공 응답",
@@ -246,11 +250,11 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 출석시간 조회 성공",
+                description = "세션 출석시간 조회 성공 (CustomResponse<AttendanceTimeResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "세션 출석시간 조회 성공 응답",
@@ -283,11 +287,11 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 주차 조회 성공",
+                description = "세션 주차 조회 성공 (CustomResponse<SessionWeeksResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "세션 주차 조회 성공 응답",
@@ -337,11 +341,11 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 선택 목록 조회 성공",
+                description = "세션 선택 목록 조회 성공 (CustomResponse<SessionSelectorResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "세션 선택 목록 조회 성공 응답",
@@ -392,11 +396,11 @@ interface SessionQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 시간 수정 시 출석 상태 변경 대상 조회 성공",
+                description = "세션 시간 수정 시 출석 상태 변경 대상 조회 성공 (CustomResponse<SessionPolicyUpdateTargetResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "세션 시간 수정 시 출석 상태 변경 대상 조회 성공 응답",

@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -22,10 +21,10 @@ interface AfterPartyQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 초대 태그 목록",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "회식 초대 태그 목록 조회 성공 응답",
@@ -64,10 +63,10 @@ interface AfterPartyQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 조사 목록",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "회식 참여 조사 목록 조회 성공 응답",
@@ -115,10 +114,10 @@ interface AfterPartyQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 조사 상세 조회",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "회식 참여 조사 상세 조회 성공 응답",

@@ -9,11 +9,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Tag(name = "Cohort Admin", description = "활성 기수 관리 API")
 interface CohortAdminApi {
-    @ApiResponse(responseCode = "200", description = "활성 기수 조회 성공")
+    @ApiResponse(responseCode = "200", description = "활성 기수 조회 성공",
+                useReturnTypeSchema = true,)
     @Operation(summary = "활성 기수 조회", description = "현재 is_active=true인 기수를 조회합니다.")
     fun getActiveCohort(): CustomResponse<CohortNumberResponse>
 
-    @ApiResponse(responseCode = "200", description = "활성 기수 전환 성공")
+    @ApiResponse(responseCode = "200", description = "활성 기수 전환 성공",
+                useReturnTypeSchema = true,)
     @Operation(
         summary = "활성 기수 전환",
         description =

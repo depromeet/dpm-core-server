@@ -42,10 +42,10 @@ interface AttendanceQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "세션 전체 출석 명단 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "세션 전체 출석 명단 조회 성공 응답",
@@ -114,10 +114,10 @@ interface AttendanceQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "사람별 출석 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "사람별 출석 조회 성공 응답",
@@ -179,10 +179,10 @@ interface AttendanceQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "세션별 개인 출석 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "세션별 개인 출석 조회 성공 응답",
@@ -285,10 +285,10 @@ interface AttendanceQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "사람별 출석 상세 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "사람별 출석 상세 조회 성공 응답",
@@ -381,10 +381,10 @@ interface AttendanceQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "나의 출석 리스트 상세 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "나의 출석 리스트 상세 조회 성공 응답",
@@ -477,6 +477,7 @@ interface AttendanceQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "내 결석 사유서 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
@@ -527,6 +528,7 @@ interface AttendanceQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "세션 결석 사유서 목록 조회 성공",
+                useReturnTypeSchema = true,
             ),
         ],
     )
