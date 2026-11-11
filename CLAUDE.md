@@ -55,6 +55,8 @@ codegen → (jOOQ 클래스 생성, build 의존만)
 | `.claude/skills/api-design.md` | API 작성 패턴 |
 | `.claude/skills/git-workflow.md` | 커밋·PR 규칙 |
 | `.claude/skills/testing-patterns.md` | 테스트 작성 규칙 + 다기수 시나리오 |
+| `.claude/skills/codebase-map.md` | 모듈·패키지·주요 클래스 위치 |
+| `.claude/skills/dev-commands.md` | Gradle 커맨드, 테스트 실행, jOOQ 재생성 |
 
 ## 빌드 환경
 

@@ -1,5 +1,11 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "command": "LESSONS=$(grep -v '^#\\|^$\\|^---\\|^형식\\|^교정' /Users/gimsujin/Desktop/dpm-core/dpm-core-server/.claude/memory/project.md 2>/dev/null | grep '^- ' | tail -10); if [ -n \"$LESSONS\" ]; then echo '[Session Context] 최근 교정 사항:'; echo \"$LESSONS\"; fi; true",
+        "description": "세션 시작 시 project.md 최근 교정 사항 에코"
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
