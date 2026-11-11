@@ -46,6 +46,14 @@ codegen → (jOOQ 클래스 생성, build 의존만)
 - 계약: `*ContractTest` — 경로·권한·응답 필드 검증.
 - 다기수 시나리오 체크리스트 포함. 상세: `.claude/skills/testing-patterns.md`
 
+## 미사용 도메인 (무시)
+
+아래 도메인은 현재 사용하지 않는다. 코드 리뷰·감사·테스트 작성 등 모든 작업에서 고려 대상에서 제외.
+
+- `afterParty` — `application/src/main/kotlin/core/application/afterParty/`
+- `bill` — `application/src/main/kotlin/core/application/bill/`
+- `gathering` — `application/src/main/kotlin/core/application/gathering/`
+
 ## 스킬 목록
 
 | 스킬 | 용도 |
