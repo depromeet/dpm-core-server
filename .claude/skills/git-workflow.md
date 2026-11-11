@@ -5,6 +5,20 @@ description: dpm-core-server 커밋 타입 기준, 브랜치 네이밍, PR 본�
 
 # 커밋 · PR 규칙
 
+## 기본 워크플로
+
+저장소에 남길 변경을 하면 로컬에만 두지 말고 아래 순서로 끝낸다.
+
+1. **브랜치** — `develop` 기준 작업 브랜치 (이미 브랜치면 유지)
+2. **커밋** — 관련 파일만 스테이징 (시크릿·덤프·로컬 가이드 제외)
+3. **푸시** — `git push -u origin HEAD`
+4. **PR** — base `develop` 으로 PR 생성, URL 전달
+
+사용자가 "커밋만", "PR 올리지 마", "로컬만"이라고 **명시할 때만** PR을 생략한다.  
+"적용해줘 / 수정해줘"만 있으면 **커밋 + PR까지** 하는 것이 기본이다.
+
+---
+
 ## 커밋 메시지
 
 ```
@@ -42,10 +56,13 @@ chore/<짧은-설명>
 
 ## PR 흐름
 
-1. 이슈 먼저 생성 → PR Summary에 `Closes #이슈번호` 연결.
-2. PR 베이스: `develop`.
-3. `main`/`master` force push 금지.
-4. 비긴급 머지 금지 기간 있을 수 있음 — 확인 후 작업.
+1. 이슈를 새로 파거나 기존 이슈에 묶는 작업이면 **이슈를 먼저** 만든다.
+2. PR Summary에 반드시 closing keyword로 연결: `Closes #이슈번호`
+   - `#123`만 쓰면 링크만 되고 이슈가 닫히지 않는다. `Closes` / `Fixes` / `Resolves` 사용.
+   - `develop`으로 머지될 때 이슈가 닫힌다.
+   - 이슈 없이 작은 수정만이면 이슈는 생략해도 된다.
+3. PR 베이스: `develop`.
+4. `main`/`master` force push 금지.
 
 ---
 
@@ -83,6 +100,7 @@ chore/<짧은-설명>
 ## 넣지 말 것
 
 - Figma 링크
+- Breaking change 전용 섹션
 - `Made with Cursor` / `Co-authored-by Cursor`
 - `.md` / `.mdc` / `.github` 가이드 파일을 기능 PR에 같이 커밋
 - 스크린샷 이미지 파일을 브랜치에 커밋 (GitHub 드래그 첨부 사용)
