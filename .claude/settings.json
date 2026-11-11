@@ -5,6 +5,11 @@
         "matcher": "Edit|Write",
         "command": "FILE=${CLAUDE_TOOL_INPUT_FILE_PATH:-}; if [[ \"$FILE\" == */CLAUDE.md || \"$FILE\" == */.claude/skills/*.md ]]; then echo '[Lesson Guard] CLAUDE.md 또는 skills를 직접 수정하려 합니다. /lesson 흐름을 거쳤나요? 아니라면 Deny로 중단하세요.'; fi; true",
         "description": "CLAUDE.md·skills 직접 수정 시 /lesson 흐름 확인 알림"
+      },
+      {
+        "matcher": "Bash",
+        "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'gh pr create' && echo '[Multi-Cohort Check] PR 생성 전 다기수·다역할 영향도를 확인하세요.\n  체크리스트: .claude/skills/multi-cohort-scenarios.md\n  페르소나: P-GUEST-OLD / P-DEEPER / P-ORGANIZER / P-MULTI / P-GUEST-ORG-OLD' || true; true",
+        "description": "PR 생성 전 multi-cohort 시나리오 체크리스트 상기"
       }
     ],
     "PostToolUse": [
