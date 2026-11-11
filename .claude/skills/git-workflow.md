@@ -62,6 +62,41 @@ chore/<짧은-설명>
    - 이슈 없이 작은 수정만이면 이슈는 생략해도 된다.
 3. PR 베이스: `develop`.
 4. `main`/`master` force push 금지.
+5. PR 생성 시 **label**과 **assignee**를 반드시 지정한다.
+
+---
+
+## Label
+
+커밋 타입과 대응하는 레이블을 선택한다.
+
+| 레이블 | 커밋 타입 | 사용 기준 |
+|---|---|---|
+| `✨ Feature` | `feat` | 새 기능 추가 |
+| `🐞 Bugfix` | `fix` | 버그 수정·핫픽스 |
+| `🔨 Refactor` | `refactor` | 동작 변경 없는 코드 개선 |
+| `📑 Docs` | `docs` / `chore` | 문서, 설정, 의존성 변경 |
+| `🔀 Deploy` | `ci` | 릴리스·운영 배포·CD 파이프라인 |
+| `🙋 Suggestion` | — | 논의·제안이 필요한 PR |
+
+`gh pr create` 시:
+```bash
+gh pr create --label "✨ Feature" ...
+```
+
+여러 개 가능: `--label "✨ Feature" --label "📑 Docs"`
+
+---
+
+## Assignee
+
+PR 작성자 본인을 assignee로 지정한다.
+
+```bash
+gh pr create --assignee "@me" ...
+```
+
+리뷰어 지정이 필요하면 `--reviewer <github-username>` 추가.
 
 ---
 
