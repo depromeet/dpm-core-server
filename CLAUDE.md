@@ -30,7 +30,6 @@ codegen → (jOOQ 클래스 생성, build 의존만)
 - 타입: `feat` / `fix` / `refactor` / `docs` / `test` / `chore` / `ci`
 - PR 베이스 브랜치: `develop`
 - PR 본문 필수 섹션: Summary(Closes #번호) / Tasks / API(변경 시) / ETC
-- `Co-authored-by: Cursor` / `Made with Cursor` 절대 금지 (`AGENTS.md` 참조)
 - 상세: `.claude/skills/git-workflow.md`
 
 ## 도메인 핵심 상태값

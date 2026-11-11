@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: dpm-core-server 커밋 타입 기준, 브랜치 네이밍, PR 본문 구조, 금지 항목(Cursor co-author 등).
+description: dpm-core-server 커밋 타입 기준, 브랜치 네이밍, PR 본문 구조, 금지 항목.
 ---
 
 # 커밋 · PR 규칙
@@ -37,7 +37,6 @@ description: dpm-core-server 커밋 타입 기준, 브랜치 네이밍, PR 본�
 
 규칙:
 - 본문이 필요한 경우 빈 줄로 구분.
-- `Co-authored-by: Cursor` / `Made with Cursor` 절대 추가 금지 (`AGENTS.md` 참조).
 
 ---
 
@@ -101,7 +100,6 @@ chore/<짧은-설명>
 
 - Figma 링크
 - Breaking change 전용 섹션
-- `Made with Cursor` / `Co-authored-by Cursor`
 - `.md` / `.mdc` / `.github` 가이드 파일을 기능 PR에 같이 커밋
 - 스크린샷 이미지 파일을 브랜치에 커밋 (GitHub 드래그 첨부 사용)
 
