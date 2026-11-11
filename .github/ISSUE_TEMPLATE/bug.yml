@@ -1,6 +1,6 @@
-name: "🐞 Bug"
+name: "🐞 Bugfix"
 description: '버그가 발생했나요?'
-labels: "🐞 Bug"
+labels: "🐞 Bugfix"
 body:
   - type: textarea
     attributes:
