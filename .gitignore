@@ -60,7 +60,11 @@ secrets/
 
 # IDE / agent 로컬 설정
 .claude/
-.cursor/
+CLAUDE.local.md
+.cursor/*
+# 프로젝트 공유 스킬만 추적
+!.cursor/skills/
+!.cursor/skills/**/
 
 # Superpowers plans (로컬 작업 문서)
 docs/superpowers/
