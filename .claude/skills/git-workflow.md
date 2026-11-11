@@ -12,7 +12,7 @@ description: dpm-core-server 커밋 타입 기준, 브랜치 네이밍, PR 본�
 1. **브랜치** — `develop` 기준 작업 브랜치 (이미 브랜치면 유지)
 2. **커밋** — 관련 파일만 스테이징 (시크릿·덤프·로컬 가이드 제외)
 3. **푸시** — `git push -u origin HEAD`
-4. **PR** — base `develop` 으로 PR 생성, URL 전달
+4. **PR** — base `develop`, assignee `@me`, reviewer `hwistlezz` · `cowboysj`, label 지정 후 PR 생성, URL 전달
 
 사용자가 "커밋만", "PR 올리지 마", "로컬만"이라고 **명시할 때만** PR을 생략한다.  
 "적용해줘 / 수정해줘"만 있으면 **커밋 + PR까지** 하는 것이 기본이다.
