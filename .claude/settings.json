@@ -2,7 +2,7 @@
   "hooks": {
     "SessionStart": [
       {
-        "command": "LESSONS=$(grep -v '^#\\|^$\\|^---\\|^형식\\|^교정' /Users/gimsujin/Desktop/dpm-core/dpm-core-server/.claude/memory/project.md 2>/dev/null | grep '^- ' | tail -10); if [ -n \"$LESSONS\" ]; then echo '[Session Context] 최근 교정 사항:'; echo \"$LESSONS\"; fi; true",
+        "command": "ROOT=$(git rev-parse --show-toplevel 2>/dev/null); LESSONS=$(grep -v '^#\\|^$\\|^---\\|^형식\\|^교정' \"$ROOT/.claude/memory/project.md\" 2>/dev/null | grep '^- ' | tail -10); if [ -n \"$LESSONS\" ]; then echo '[Session Context] 최근 교정 사항:'; echo \"$LESSONS\"; fi; true",
         "description": "세션 시작 시 project.md 최근 교정 사항 에코"
       }
     ],
@@ -21,7 +21,7 @@
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "FILE=${CLAUDE_TOOL_INPUT_FILE_PATH:-}; [[ \"$FILE\" == *.kt ]] && cd /Users/gimsujin/Desktop/dpm-core/dpm-core-server && ./gradlew ktlintFormat -q 2>/dev/null || true",
+        "command": "FILE=${CLAUDE_TOOL_INPUT_FILE_PATH:-}; [[ \"$FILE\" == *.kt ]] && cd \"$(git rev-parse --show-toplevel)\" && ./gradlew ktlintFormat -q 2>/dev/null || true",
         "description": "ktlint 포맷 (Kotlin 파일 수정 시)"
       }
     ],
