@@ -17,7 +17,8 @@ interface MemberApprovalWelcomeApi {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "확인 완료 또는 이미 확인함"),
+            ApiResponse(responseCode = "200", description = "확인 완료 또는 이미 확인함",
+                useReturnTypeSchema = true,),
             ApiResponse(responseCode = "401", description = "인증되지 않았거나 탈퇴한 회원"),
             ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음 (MEMBER-404-01)"),
             ApiResponse(responseCode = "409", description = "승인 전 회원 (MEMBER-409-71)"),

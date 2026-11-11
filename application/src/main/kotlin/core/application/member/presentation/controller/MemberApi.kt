@@ -55,10 +55,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버 이름 해시 형식 검증 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "멤버 이름 해시 형식 검증 성공 응답",
@@ -112,10 +112,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "Apple 로그인 멤버 프로필 수정 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "Apple 멤버 프로필 수정 성공 응답",
@@ -144,10 +144,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "Apple 로그인 숨김 이메일 멤버 조회 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "Apple 숨김 이메일 멤버 조회 성공 응답",
@@ -182,10 +182,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "로그인 한 멤버 조회 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "로그인 한 멤버 조회 성공 응답",
@@ -237,10 +237,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버 목록 조회 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "멤버 목록 조회 응답 예시",
@@ -293,10 +293,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "회원 탈퇴 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "회원 탈퇴 성공 응답",
@@ -375,10 +375,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버 데이터 주입 및 승인 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
             ),
         ],
     )
@@ -411,7 +411,8 @@ interface MemberApi {
                 ],
             ),
     )
-    @ApiResponse(responseCode = "200", description = "화이트리스트 체크 및 승인 성공")
+    @ApiResponse(responseCode = "200", description = "화이트리스트 체크 및 승인 성공",
+                useReturnTypeSchema = true,)
     fun checkWhiteList(request: WhiteListCheckRequest): CustomResponse<Void>
 
     @Operation(
@@ -445,10 +446,10 @@ interface MemberApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버 상태 변경 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
             ),
         ],
     )

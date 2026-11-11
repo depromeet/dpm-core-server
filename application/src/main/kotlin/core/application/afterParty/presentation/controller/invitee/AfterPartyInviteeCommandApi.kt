@@ -13,6 +13,7 @@ interface AfterPartyInviteeCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 여부 제출 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "회식 참여 여부 제출 API",
