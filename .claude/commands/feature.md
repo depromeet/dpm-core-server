@@ -1,105 +1,88 @@
 ---
 name: feature
-description: 요구사항을 받아 질문 → 계획 → 구현 → PR까지 자동으로 진행하는 피처 개발 워크플로우.
+description: 요구사항을 받아 검토→구현→리뷰→PR까지 멀티 에이전트로 자동 진행하는 피처 개발 워크플로우.
 ---
 
 # /feature — 피처 개발 워크플로우
 
-사용자가 요구사항을 주면 스스로 파악 가능한 것은 파악하고, 꼭 필요한 것만 물어본 뒤 PR까지 진행한다.
-
----
-
-## 1단계: 요구사항 파악
-
-요구사항에서 아래 항목을 먼저 스스로 추론한다.
-
-**스스로 파악할 것:**
-- 도메인 — 요구사항 키워드로 추론 (출석/세션/피드백/기수/멤버 등)
-- 영향 레이어 — API 추가인지 도메인 로직인지 DB인지
-- 다기수 영향 — 복수 기수 멤버가 접근하는 데이터인지
-- DB 변경 필요 여부 — 신규 컬럼·테이블 필요 여부
-
-**Figma URL이 있으면:**
-Figma MCP(`mcp__figma__get_figma_data`)로 해당 프레임을 열어 UI 구조·필드·상태를 분석한 뒤 요구사항으로 변환한다.
-
----
-
-## 2단계: 질문 (꼭 필요한 것만)
-
-추론이 불확실한 항목만 한 번에 모아서 묻는다. 항목별로 나눠서 여러 번 묻지 않는다.
-
-**반드시 묻는 항목 (추론 불가):**
+세 에이전트가 순서대로 실행된다:
 
 ```
-📋 확인이 필요합니다:
-
-1. git worktree를 따서 작업할까요? (병렬 작업 중이라면 필요)
-   → 예라면 워크트리 경로를 지정해주세요. (예: ~/worktrees/feature-xxx)
-   → 현재 실행 중인 서버가 있다면 포트 충돌을 피하기 위해 포트를 조정합니다.
-
-2. PR까지 올릴까요, 아니면 로컬 커밋까지만 할까요?
-
-[추론이 불확실한 항목만 추가]
+feature-planner     (검토)  → 요구사항 분석, 질문, 계획 수립
+feature-implementer (구현)  → 헥사고날 준수, 테스트, DB 마이그레이션
+springboot-kotlin-reviewer (리뷰) → 아키텍처·다기수·도메인·보안 검토
 ```
 
 ---
 
-## 3단계: 계획 제시 → 승인
+## 실행 흐름
 
-답변을 받은 뒤 구현 계획을 보여준다.
+### Phase 1 — feature-planner 실행
 
-```
-📐 구현 계획:
+`feature-planner` 에이전트를 호출한다.
 
-브랜치: feat/<짧은-설명>
-도메인: <파악한 도메인>
+에이전트가 하는 일:
+- Figma URL이 있으면 Figma MCP로 UI 분석 → 요구사항 추출
+- 도메인·영향 레이어·다기수 여부·DB 변경 필요 여부 스스로 추론
+- 추론 불가한 것만 사용자에게 질문 (worktree 여부, PR 여부 포함)
+- 구현 계획 출력 (파일 목록, API 스펙, 테스트 케이스, 다기수 시나리오, DB 변경)
 
-[생성·수정할 파일 목록]
-- domain/.../Xxx.kt                  — 도메인 객체·Port
-- application/.../XxxCommandService.kt
-- application/.../XxxQueryService.kt
-- application/.../XxxCommandController.kt + XxxCommandApi.kt
-- persistence/.../XxxRepository.kt
-- entity/.../XxxEntity.kt            — (필요 시)
-- db/pending/YYMMDDHHMM_설명.sql      — (DB 변경 있을 때)
-
-[테스트 파일]
-- application/src/test/.../XxxCommandServiceTest.kt
-- application/src/test/.../core/it/XxxMySqlIntegrationTest.kt  — (통합 필요 시)
-
-진행할까요? (y / 수정 사항)
-```
-
-사용자가 `y` 또는 별다른 수정 없이 답하면 구현 시작.
+사용자가 계획을 승인(`y`)하면 Phase 2로 진행.  
+수정 요청이 있으면 계획을 반영한 뒤 재승인.
 
 ---
 
-## 4단계: 구현
+### Phase 2 — feature-implementer 실행
 
-아래 순서로 진행한다.
+승인된 계획을 `feature-implementer` 에이전트에 전달한다.
 
-1. **브랜치 생성** (worktree 여부에 따라)
-   - worktree: `.claude/skills/git-worktree.md` 참조
-   - 일반: `git checkout -b feat/<설명> develop`
+에이전트가 하는 일:
+- worktree/브랜치 생성 (계획에 따라)
+- domain → persistence → application 순으로 구현
+- 단위 테스트 (Fake 포트 패턴)
+- 계약 테스트 (신규 API)
+- 통합 테스트 (복잡한 쿼리, 다기수 시나리오)
+- DB 마이그레이션 SQL 작성 (변경 있을 때)
+- ktlint 자동 포맷 (PostToolUse 훅)
 
-2. **도메인 → 퍼시스턴스 → 애플리케이션 순으로 구현**
-   - 헥사고날 규칙 준수 (`.claude/skills/hexagonal-arch.md`)
-   - API 작성 패턴 준수 (`.claude/skills/api-design.md`)
-
-3. **DB 변경이 있으면** `db/pending/` 에 SQL 파일 작성
-   - `.claude/skills/db-migration.md` 참조
-
-4. **테스트 작성** (`.claude/skills/testing-patterns.md`)
-
-5. **다기수 영향이 있으면** `.claude/skills/multi-cohort-scenarios.md` 체크리스트 확인
+완료 후 구현 파일 목록을 요약해서 출력.
 
 ---
 
-## 5단계: PR 생성
+### Phase 3 — springboot-kotlin-reviewer 실행
 
-PR까지 올리기로 했다면:
+구현 파일 목록을 `springboot-kotlin-reviewer` 에이전트에 전달한다.
+
+에이전트가 검토하는 항목:
+- 헥사고날 아키텍처 위반 (레이어 의존 방향, Port 우회)
+- 다기수 시나리오 누락 (activeCohortId 필터, 이전 기수 접근 차단)
+- 도메인 상태 전이 오류 (PENDING → EXCUSED_ABSENT 직접 전환 등)
+- Kotlin 관용구 (`!!`, `var`, sealed class else 분기)
+- 트랜잭션·동시성 (전파 범위, 낙관적/비관적 락)
+- 보안 (`@PreAuthorize` 누락, SQL Injection)
+- 테스트 커버리지 누락
+
+**결과에 따른 분기:**
+
+🔴 BLOCK 이슈 있음
+→ feature-implementer에게 이슈 목록 전달해서 재작업
+→ 재작업 완료 후 springboot-kotlin-reviewer 재실행
+
+🟡 WARN 이하만 있음
+→ WARN 목록을 사용자에게 보여주고 계속 진행 여부 확인
+→ 확인 후 Phase 4로 진행
+
+---
+
+### Phase 4 — 커밋 · PR 생성
+
+PR까지 올리기로 한 경우:
 
 ```bash
+git add <구현 파일들>
+git commit -m "<type>: <설명>"
+git push -u origin HEAD
+
 gh pr create \
   --base develop \
   --assignee "@me" \
@@ -110,12 +93,21 @@ gh pr create \
   --body "..."
 ```
 
-PR 본문은 `.claude/skills/git-workflow.md` 의 PR 본문 구조 참조.
+PR 본문: `.claude/skills/git-workflow.md` 의 PR 본문 구조 사용.
+
+로컬 커밋까지만인 경우: 커밋 후 PR 생성 생략.
 
 ---
 
-## 하지 말 것
+## 참조 스킬
 
-- 추론 가능한 것을 질문하지 않는다 (도메인, 레이어 등).
-- 질문을 여러 번으로 나눠서 하지 않는다 — 한 번에 모은다.
-- 승인 없이 구현을 시작하지 않는다.
+| 단계 | 참조 |
+|---|---|
+| 아키텍처 판단 | `.claude/skills/hexagonal-arch.md` |
+| 도메인 상태값 | `.claude/skills/domain-model.md` |
+| API 작성 | `.claude/skills/api-design.md` |
+| 다기수 시나리오 | `.claude/skills/multi-cohort-scenarios.md` |
+| 테스트 패턴 | `.claude/skills/testing-patterns.md` |
+| DB 마이그레이션 | `.claude/skills/db-migration.md` |
+| Worktree | `.claude/skills/git-worktree.md` |
+| 커밋·PR | `.claude/skills/git-workflow.md` |
