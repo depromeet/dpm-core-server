@@ -12,7 +12,9 @@ description: dpm-core-server 커밋 타입 기준, 브랜치 네이밍, PR 본�
 1. **브랜치** — `develop` 기준 작업 브랜치 (이미 브랜치면 유지)
 2. **커밋** — 관련 파일만 스테이징 (시크릿·덤프·로컬 가이드 제외)
 3. **푸시** — `git push -u origin HEAD`
-4. **PR** — base `develop`, assignee `@me`, reviewer `hwistlezz` · `cowboysj`, label 지정 후 PR 생성, URL 전달
+4. **PR** — base `develop`. **사이드바/gh 플래그**로 assignee·reviewer·label 지정 후 PR 생성, URL 전달
+   - `--assignee "@me"` / `--reviewer hwistlezz --reviewer cowboysj` / `--label "커밋 타입에 맞는 레이블"`
+   - 본문에 reviewer·assignee `@멘션` 하지 않는다
 
 사용자가 "커밋만", "PR 올리지 마", "로컬만"이라고 **명시할 때만** PR을 생략한다.  
 "적용해줘 / 수정해줘"만 있으면 **커밋 + PR까지** 하는 것이 기본이다.
@@ -88,19 +90,29 @@ gh pr create --label "✨ Feature" ...
 
 ---
 
-## Assignee
+## Reviewer · Assignee · Label
 
-PR 작성자 본인을 assignee로 지정한다.
-
-```bash
-gh pr create --assignee "@me" ...
-```
-
-리뷰어는 `hwistlezz`, `cowboysj` 두 명을 항상 지정한다.
+Reviewer / Assignee / Label은 **반드시** `gh pr create` 플래그 또는 GitHub 사이드바로 지정한다.  
+PR 본문에 `@멘션`으로 넣지 않는다.
 
 ```bash
-gh pr create --assignee "@me" --reviewer hwistlezz --reviewer cowboysj ...
+# 기본 형태
+gh pr create \
+  --base develop \
+  --assignee "@me" \
+  --reviewer hwistlezz \
+  --reviewer cowboysj \
+  --label "✨ Feature" \
+  --title "feat: ..." \
+  --body "..."
+
+# 작성자가 hwistlezz 또는 cowboysj 인 경우
+# → 본인은 reviewer로 요청 불가 → 나머지 한 명만
+gh pr create --assignee "@me" --reviewer cowboysj --label "🐞 Bugfix" ...
 ```
+
+고정 Reviewer: `hwistlezz`, `cowboysj`  
+Assignee: `@me` (항상 본인)
 
 ---
 
@@ -137,6 +149,8 @@ gh pr create --assignee "@me" --reviewer hwistlezz --reviewer cowboysj ...
 
 ## 넣지 말 것
 
+- **Reviewer / Assignee `@멘션`** — `gh --reviewer` / `--assignee` 플래그 또는 사이드바로만
+- **"리뷰어 후보: @xxx"** 같은 문구 — PR 본문에 절대 포함 금지
 - Figma 링크
 - Breaking change 전용 섹션
 - `.md` / `.mdc` / `.github` 가이드 파일을 기능 PR에 같이 커밋
