@@ -5,7 +5,6 @@ import core.application.refreshToken.presentation.response.TokenResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
@@ -23,10 +22,10 @@ interface ReissueApi {
     @ApiResponse(
         responseCode = "200",
         description = "토큰 재발급 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "토큰 재발급 성공 응답",

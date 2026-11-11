@@ -6,7 +6,6 @@ import core.domain.gathering.vo.GatheringId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Positive
@@ -18,10 +17,10 @@ interface GatheringApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식별 멤버 참여 여부 조회 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "회식별 멤버 참여 여부 조회 성공 응답",

@@ -65,10 +65,10 @@ interface SessionFeedbackCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "제출 성공 (data 없음)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "성공",
