@@ -5,7 +5,6 @@ import core.application.common.exception.CustomResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -23,10 +22,10 @@ interface BillAccountQueryApi {
             ApiResponse(
                 responseCode = "200",
                 description = "정산 계좌 정보 조회 성공",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "정산 계좌 정보 조회 성공 응답",

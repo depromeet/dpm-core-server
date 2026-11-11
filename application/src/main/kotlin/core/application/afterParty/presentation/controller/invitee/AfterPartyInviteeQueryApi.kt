@@ -6,7 +6,6 @@ import core.domain.afterParty.vo.AfterPartyId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -16,10 +15,10 @@ interface AfterPartyInviteeQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 초대자 목록 조회",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "회식 초대자 목록 조회 성공 응답",

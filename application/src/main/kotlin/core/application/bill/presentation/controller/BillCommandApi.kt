@@ -9,14 +9,11 @@ import core.application.common.exception.CustomResponse
 import core.domain.bill.vo.BillId
 import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.media.Content
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
-import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
 @Tag(name = "Bill", description = "정산 API")
 @Deprecated("정산 API는 현재 사용되지 않으며, 향후 회식 API로 대체될 예정입니다.")
@@ -32,6 +29,7 @@ interface BillCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "정산 추가 성공",
+                useReturnTypeSchema = true,
             ),
         ],
     )
@@ -50,6 +48,7 @@ interface BillCommandApi {
             ApiResponse(
                 responseCode = "200",
                 description = "정산 참여 마감 성공",
+                useReturnTypeSchema = true,
             ),
         ],
     )
@@ -61,13 +60,8 @@ interface BillCommandApi {
     )
     @ApiResponse(
         responseCode = "204",
-        description = "정산서 조회 처리",
-        content = [
-            Content(
-                mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
-            ),
-        ],
+        description = "정산서 조회 처리 (CustomResponse<Void>)",
+        useReturnTypeSchema = true,
     )
     fun markBillAsChecked(
         @Positive billId: BillId,
@@ -81,13 +75,8 @@ interface BillCommandApi {
     )
     @ApiResponse(
         responseCode = "204",
-        description = "정산 참여 응답 제출 응답 처리",
-        content = [
-            Content(
-                mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
-            ),
-        ],
+        description = "정산 참여 응답 제출 응답 처리 (CustomResponse<Void>)",
+        useReturnTypeSchema = true,
     )
     fun submitBillParticipationConfirm(
         @Positive billId: BillId,
@@ -97,6 +86,7 @@ interface BillCommandApi {
     @ApiResponse(
         responseCode = "204",
         description = "정산(각 회식) 참여",
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "정산의 각 회식에 대해 참여 저장",
@@ -118,6 +108,7 @@ interface BillCommandApi {
             ApiResponse(
                 responseCode = "204",
                 description = "개별 멤버 정산 입금 상태 변경 성공",
+                useReturnTypeSchema = true,
             ),
         ],
     )
@@ -137,6 +128,7 @@ interface BillCommandApi {
             ApiResponse(
                 responseCode = "204",
                 description = "복수 멤버 정산 입금 상태 변경 성공",
+                useReturnTypeSchema = true,
             ),
         ],
     )

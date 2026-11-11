@@ -14,7 +14,6 @@ import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -25,10 +24,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "푸시 토큰 등록 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "푸시 토큰 등록 성공 응답",
@@ -53,10 +52,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "푸시 토큰 삭제 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "푸시 토큰 삭제 성공 응답",
@@ -81,10 +80,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "모든 푸시 토큰 삭제 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "모든 푸시 토큰 삭제 성공 응답",
@@ -108,10 +107,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "Expo 커스텀 알림 테스트 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "Expo 커스텀 알림 성공 응답",
@@ -133,10 +132,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "Expo 알림 테스트 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "Expo 알림 성공 응답",
@@ -181,10 +180,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "알림 타입 목록 조회 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "알림 타입 목록 조회 성공 응답",
@@ -214,10 +213,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "태그 기반 Expo 커스텀 알림 테스트 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "태그 기반 Expo 커스텀 알림 성공 응답",
@@ -268,10 +267,10 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "태그 기반 Expo 알림 테스트 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "태그 기반 Expo 알림 성공 응답",

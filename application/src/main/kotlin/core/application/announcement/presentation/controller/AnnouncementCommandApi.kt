@@ -16,6 +16,7 @@ interface AnnouncementCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 추가 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "공지/과제 추가 API",
@@ -29,6 +30,7 @@ interface AnnouncementCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 읽음 처리 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "공지/과제 읽음 처리 API",
@@ -42,6 +44,7 @@ interface AnnouncementCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "과제 제출 상태 변경 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "과제 제출 상태 변경 API",
@@ -55,6 +58,7 @@ interface AnnouncementCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 삭제 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "공지/과제 삭제 API",
@@ -68,6 +72,7 @@ interface AnnouncementCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 수정 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "공지/과제 수정 API",
@@ -82,6 +87,7 @@ interface AnnouncementCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 리마인드 알림 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "공지/과제 리마인드 알림 API",
@@ -92,6 +98,7 @@ interface AnnouncementCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "지정된 디퍼들에게 공지/과제 리마인드 알림 성공",
+                useReturnTypeSchema = true,
     )
     @Operation(
         summary = "지정된 디퍼들에게 공지/과제 리마인드 알림 API",

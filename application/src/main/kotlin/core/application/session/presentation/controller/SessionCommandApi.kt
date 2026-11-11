@@ -71,21 +71,18 @@ interface SessionCommandApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 추가 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
-                    ),
-                ],
+                description = "세션 추가 성공 (CustomResponse<Void>)",
+                useReturnTypeSchema = true,
             ),
             ApiResponse(
                 responseCode = "400",
                 description = "SESSION-400-08 출석 시각 순서 오류, SESSION-400-09 출석 시각 일부만 입력",
+                content = [Content(schema = Schema(implementation = CustomResponse::class))],
             ),
             ApiResponse(
                 responseCode = "409",
                 description = "SESSION-409-01 같은 기수·같은 날짜(KST) 세션이 이미 있음",
+                content = [Content(schema = Schema(implementation = CustomResponse::class))],
             ),
         ],
     )
@@ -153,17 +150,13 @@ interface SessionCommandApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 수정 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
-                    ),
-                ],
+                description = "세션 수정 성공 (CustomResponse<Void>)",
+                useReturnTypeSchema = true,
             ),
             ApiResponse(
                 responseCode = "409",
                 description = "SESSION-409-01 같은 기수·같은 날짜(KST)에 다른 세션이 이미 있음",
+                content = [Content(schema = Schema(implementation = CustomResponse::class))],
             ),
         ],
     )
@@ -177,13 +170,8 @@ interface SessionCommandApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "세션 삭제 성공",
-                content = [
-                    Content(
-                        mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
-                    ),
-                ],
+                description = "세션 삭제 성공 (CustomResponse<Void>)",
+                useReturnTypeSchema = true,
             ),
         ],
     )

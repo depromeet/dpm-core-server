@@ -5,7 +5,6 @@ import core.application.member.presentation.response.MemberPartsResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
@@ -14,10 +13,10 @@ interface MemberPartApi {
     @ApiResponse(
         responseCode = "200",
         description = "파트 선택지 조회 성공",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = "application/json",
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "파트 선택지 조회 성공 응답",

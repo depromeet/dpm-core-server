@@ -10,7 +10,6 @@ import core.domain.member.vo.MemberId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -20,10 +19,10 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 목록",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "공지/과제 목록 조회 성공 응답",
@@ -61,10 +60,10 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 상세",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "공지/과제 상세 조회 성공 응답",
@@ -107,10 +106,10 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버들 공지/과제 읽음 여부 조회 상세",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "멤버들 공지/과제 읽음 여부 조회 성공 응답",
@@ -164,10 +163,10 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버들 과제 제출 현황 조회",
+                useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
-                schema = Schema(implementation = CustomResponse::class),
                 examples = [
                     ExampleObject(
                         name = "멤버들 과제 제출 상태 현황 성공 응답",

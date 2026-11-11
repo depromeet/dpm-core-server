@@ -8,7 +8,6 @@ import core.domain.session.vo.SessionId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -28,11 +27,11 @@ interface SessionFeedbackQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "진입 성공 (상태 화면도 200)",
+                description = "진입 성공 (CustomResponse<SessionFeedbackMyResponse>, 상태 화면도 200)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "AVAILABLE",
@@ -115,11 +114,11 @@ interface SessionFeedbackQueryApi {
         value = [
             ApiResponse(
                 responseCode = "200",
-                description = "조회 성공",
+                description = "조회 성공 (CustomResponse<SessionFeedbackPendingResponse>)",
+                useReturnTypeSchema = true,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = CustomResponse::class),
                         examples = [
                             ExampleObject(
                                 name = "작성 가능 세션 있음",
