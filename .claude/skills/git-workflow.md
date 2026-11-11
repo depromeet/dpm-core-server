@@ -96,7 +96,11 @@ PR 작성자 본인을 assignee로 지정한다.
 gh pr create --assignee "@me" ...
 ```
 
-리뷰어 지정이 필요하면 `--reviewer <github-username>` 추가.
+리뷰어는 `hwistlezz`, `cowboysj` 두 명을 항상 지정한다.
+
+```bash
+gh pr create --assignee "@me" --reviewer hwistlezz --reviewer cowboysj ...
+```
 
 ---
 
