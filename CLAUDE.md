@@ -64,6 +64,11 @@ codegen → (jOOQ 클래스 생성, build 의존만)
 - jOOQ + JPA 혼용 (신규 조회 쿼리는 jOOQ 선호)
 - QA 계정 필터: `@dpm.test` 도메인 집계·통계 쿼리에서 제외
 
+## 코드 리뷰
+
+Spring Boot + Kotlin PR 리뷰가 필요하면 `.claude/agents/springboot-kotlin-reviewer.md` 에이전트를 호출한다.  
+체크 항목: 헥사고날 위반, Kotlin 관용구, 트랜잭션·동시성, 도메인 상태 전이 오류, 보안.
+
 ## 학습 루프
 
 교정 후 재발 방지할 규칙은 `/lesson` 으로 제안. 승인 없이 CLAUDE.md·skills에 직접 쓰지 말 것.  
