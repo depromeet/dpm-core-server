@@ -79,6 +79,7 @@ class AbsenceReasonQueryService(
                         images = reasonImageIds.map { AbsenceReasonImageInfo(it.value, fileNames[it]) },
                         createdAt = instantToLocalDateTime(reason.createdAt),
                         updatedAt = instantToLocalDateTime(reason.updatedAt),
+                        reviewVersion = reason.reviewVersion,
                     )
                 }
 

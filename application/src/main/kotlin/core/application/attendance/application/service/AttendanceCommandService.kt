@@ -1,7 +1,9 @@
 package core.application.attendance.application.service
 
+import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.AttendanceNotFoundException
 import core.application.attendance.application.exception.OrganizerCannotRecordAttendanceException
+import core.application.common.exception.BusinessException
 import core.application.member.application.service.TrackMemberBadges
 import core.application.member.application.service.access.MemberAccessService
 import core.application.session.application.exception.AttendanceAlreadyDecidedException
@@ -10,6 +12,7 @@ import core.application.session.application.exception.CheckedAttendanceException
 import core.application.session.application.exception.SessionNotFoundException
 import core.application.session.application.exception.TooEarlyAttendanceException
 import core.application.session.application.validator.SessionValidator
+import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.attendance.aggregate.Attendance
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.attendance.port.inbound.command.AttendanceCreateCommand
@@ -45,6 +48,7 @@ class AttendanceCommandService(
     private val memberAccessService: MemberAccessService,
     private val sessionValidator: SessionValidator,
     private val clock: Clock,
+    private val absenceReasonPersistencePort: AbsenceReasonPersistencePort,
 ) {
     /**
      * 마감 전에 접수된 요청은 자동 결석이 먼저 저장됐어도 정상 판정으로 저장한다.
@@ -117,14 +121,8 @@ class AttendanceCommandService(
         sessionPersistencePort.findSessionByIdForUpdate(command.sessionId.value)
             ?: throw SessionNotFoundException()
 
-        val updated =
-            attendancePersistencePort.updateStatusByAdmin(
-                sessionId = command.sessionId.value,
-                memberIds = listOf(command.memberId.value),
-                status = command.attendanceStatus,
-                updatedAt = clock.instant(),
-            )
-        if (updated == 0) throw AttendanceNotFoundException()
+        ensureCompatibleWithApprovedReason(command.sessionId, listOf(command.memberId.value), command.attendanceStatus)
+        setAttendanceStatus(command.sessionId, command.memberId, command.attendanceStatus, clock.instant())
     }
 
     /** 대상 중 하나라도 출석 기록이 없으면 아무것도 바꾸지 않는다. */
@@ -140,6 +138,7 @@ class AttendanceCommandService(
         val targetMemberIds = memberIds.map { it.value }.distinct().sorted()
         if (targetMemberIds.isEmpty()) return
 
+        ensureCompatibleWithApprovedReason(sessionId, targetMemberIds, attendanceStatus)
         val existingCount = attendancePersistencePort.countActiveAttendances(sessionId.value, targetMemberIds)
         if (existingCount != targetMemberIds.size) throw AttendanceNotFoundException()
 
@@ -149,6 +148,50 @@ class AttendanceCommandService(
             status = attendanceStatus,
             updatedAt = clock.instant(),
         )
+    }
+
+    /** 세션 쓰기 잠금 아래에서 검사한다. 대상에 승인된 사유서가 있으면 인정결석 외 상태로의 수정 요청 전체를 거절한다. */
+    private fun ensureCompatibleWithApprovedReason(
+        sessionId: SessionId,
+        memberIds: List<Long>,
+        status: AttendanceStatus,
+    ) {
+        if (status == AttendanceStatus.EXCUSED_ABSENT) return
+        if (absenceReasonPersistencePort.existsApproved(sessionId.value, memberIds)) {
+            throw BusinessException(AttendanceExceptionCode.APPROVED_ABSENCE_REASON_ATTENDANCE_CONFLICT)
+        }
+    }
+
+    /** 심사 서비스가 세션 쓰기 잠금을 잡은 상태에서 사유서와 함께 변경한다. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    fun updateAttendanceAfterReview(
+        session: Session,
+        memberId: MemberId,
+        status: AttendanceStatus,
+    ) {
+        val now = clock.instant()
+        val reopen = status == AttendanceStatus.PENDING
+        if (reopen && !session.canReopenAttendanceAt(now)) {
+            throw BusinessException(AttendanceExceptionCode.ATTENDANCE_REOPEN_CLOSED)
+        }
+        setAttendanceStatus(requireNotNull(session.id), memberId, status, now.takeUnless { reopen })
+    }
+
+    /** 기존 출석 행을 갱신한다. [updatedAt]이 null이면 수동 확정을 풀어 코드 인증을 다시 허용한다. */
+    private fun setAttendanceStatus(
+        sessionId: SessionId,
+        memberId: MemberId,
+        status: AttendanceStatus,
+        updatedAt: Instant?,
+    ) {
+        val updated =
+            attendancePersistencePort.updateStatusByAdmin(
+                sessionId = sessionId.value,
+                memberIds = listOf(memberId.value),
+                status = status,
+                updatedAt = updatedAt,
+            )
+        if (updated == 0) throw AttendanceNotFoundException()
     }
 
     /** 호출자가 세션 쓰기 잠금을 잡은 트랜잭션이어야 한다. 운영진 변경 기록은 보호하고 updatedAt 을 남기지 않는다. */

@@ -60,6 +60,15 @@ class Session(
             now,
         )
 
+    /** 19시 배치로 마감 가능한 세션에서, 당일 출석 시작부터 19시 직전까지 인증을 다시 열 수 있다. */
+    fun canReopenAttendanceAt(now: Instant): Boolean {
+        val deadline = lateParticipationDeadline()
+        return !attendancePolicy.absentStart.isAfter(deadline) &&
+            now.atZone(SESSION_ZONE).toLocalDate() == date.atZone(SESSION_ZONE).toLocalDate() &&
+            now.isBefore(deadline) &&
+            attend(now) is AttendanceResult.Success
+    }
+
     fun isInvalidInputCode(inputCode: String) = inputCode != attendancePolicy.attendanceCode
 
     /** 마감 시각 정각부터 마감이다. */

@@ -52,4 +52,29 @@ class SessionAttendanceBoundaryTest {
         assertThat(session.isAttendanceClosedAt(times.absentStart.minusNanos(1))).isFalse()
         assertThat(session.isAttendanceClosedAt(times.absentStart)).isTrue()
     }
+
+    @Test
+    fun `19시 마감 세션은 직전까지 재인증을 열 수 있고 19시 이후 마감 세션은 열 수 없다`() {
+        val deadline = session.lateParticipationDeadline()
+
+        fun sessionWithCutoff(cutoff: Instant) =
+            Session(
+                cohortId = CohortId(18L),
+                date = deadline.minusSeconds(1_800),
+                week = 1,
+                place = "온라인",
+                eventName = "세션",
+                attendancePolicy =
+                    AttendancePolicy(
+                        attendanceStart = deadline.minusSeconds(1_800),
+                        lateStart = deadline.minusSeconds(900),
+                        absentStart = cutoff,
+                        attendanceCode = "1234",
+                    ),
+            )
+
+        assertThat(sessionWithCutoff(deadline).canReopenAttendanceAt(deadline.minusSeconds(1))).isTrue()
+        assertThat(sessionWithCutoff(deadline).canReopenAttendanceAt(deadline)).isFalse()
+        assertThat(sessionWithCutoff(deadline.plusSeconds(1)).canReopenAttendanceAt(deadline.minusSeconds(1))).isFalse()
+    }
 }
