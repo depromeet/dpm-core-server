@@ -154,19 +154,9 @@ P-MULTI         → 현재 기수 기준 정상 응답
 
 ---
 
-## Dev 환경 테스트 계정 (비밀번호: `TestDPM1234!`)
+## Dev 환경 테스트 계정
 
-| 페르소나 | email | memberId |
-|---|---|---|
-| P-GUEST-OLD (17기 DEEPER) | test17.user@dpm.test | 21971 |
-| P-GUEST-ORG-OLD (18기 ORGANIZER) | test18.organizer@dpm.test | 21972 |
-| P-DEEPER (19기 DEEPER) | test19.user@dpm.test | 21973 |
-| P-ORGANIZER (19기 ORGANIZER) | test19.organizer@dpm.test | 21974 |
-| P-MULTI (17기+19기 DEEPER) | test1719.user@dpm.test | 21975 |
-
-관리자 계정: `master@example.com / Dpmcore1!`  
-로그인: `POST /login/email`  
-토큰 재발급: `POST /reissue`
+계정 정보(이메일·비밀번호·memberId)는 `CLAUDE.local.md` 에 보관한다 (gitignore됨).
 
 ---
 
