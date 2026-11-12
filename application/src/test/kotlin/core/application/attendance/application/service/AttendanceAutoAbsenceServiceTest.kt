@@ -293,5 +293,6 @@ class AttendanceAutoAbsenceServiceTest {
             memberAccessService = fixture.memberAccessService,
             sessionValidator = fixture.sessionValidator,
             clock = fixture.clock,
+            absenceReasonPersistencePort = fixture.absenceReasons,
         )
 }

@@ -496,11 +496,12 @@ class AttendanceRepository(
             lateParticipatedAt = attendedAt.takeIf { status == AttendanceStatus.ABSENT },
         ) == 1
 
+    /** 대상의 인증 기록을 지우고 운영진 상태를 저장한다. 재인증을 열 때는 [updatedAt]도 비운다. */
     override fun updateStatusByAdmin(
         sessionId: Long,
         memberIds: List<Long>,
         status: AttendanceStatus,
-        updatedAt: Instant,
+        updatedAt: Instant?,
     ): Int {
         if (memberIds.isEmpty()) return 0
         // 단일 UPDATE 라 행 잠금은 (session_id, member_id) 인덱스 순서로 잡힌다. 자동 결석 UPDATE 와 같은 순서다.

@@ -16,6 +16,18 @@ enum class AttendanceExceptionCode(
     ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE-404-01", "출석을 찾을 수 없습니다"),
     ABSENCE_REASON_IMAGE_ALREADY_ATTACHED(HttpStatus.CONFLICT, "ATTENDANCE-409-02", "이미 다른 결석 사유서에 첨부된 이미지입니다"),
     ABSENCE_REASON_REVIEW_CONFLICT(HttpStatus.CONFLICT, "ATTENDANCE-409-03", "검토가 완료된 결석 사유서입니다"),
+    INVALID_ABSENCE_REASON_CORRECTION(HttpStatus.BAD_REQUEST, "ATTENDANCE-400-06", "심사 정정에 필요한 출석 상태를 확인해주세요"),
+    APPROVED_ABSENCE_REASON_ATTENDANCE_CONFLICT(
+        HttpStatus.CONFLICT,
+        "ATTENDANCE-409-04",
+        "승인된 결석 사유서는 심사 정정에서 출석과 함께 변경해주세요",
+    ),
+    ABSENCE_REASON_REVIEW_VERSION_CONFLICT(
+        HttpStatus.CONFLICT,
+        "ATTENDANCE-409-05",
+        "결석 사유서의 심사 상태가 변경되었습니다. 다시 조회해주세요",
+    ),
+    ATTENDANCE_REOPEN_CLOSED(HttpStatus.CONFLICT, "ATTENDANCE-409-06", "이 세션의 출석 코드 인증을 다시 열 수 없습니다"),
     ABSENCE_REASON_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE-404-02", "결석 사유서를 찾을 수 없습니다"),
     ORGANIZER_CANNOT_RECORD_ATTENDANCE(
         HttpStatus.FORBIDDEN,

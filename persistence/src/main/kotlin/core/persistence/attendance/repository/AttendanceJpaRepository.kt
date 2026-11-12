@@ -51,7 +51,7 @@ interface AttendanceJpaRepository : JpaRepository<AttendanceEntity, Long> {
         @Param("sessionId") sessionId: Long,
         @Param("memberIds") memberIds: Collection<Long>,
         @Param("status") status: String,
-        @Param("updatedAt") updatedAt: Instant,
+        @Param("updatedAt") updatedAt: Instant?,
     ): Int
 
     @Query(

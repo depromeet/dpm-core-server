@@ -1,5 +1,6 @@
 package core.domain.absencereason.port.inbound.command
 
+import core.domain.attendance.enums.AttendanceStatus
 import core.domain.member.vo.MemberId
 import core.domain.session.vo.SessionId
 
@@ -12,4 +13,6 @@ data class AbsenceReasonReviewCommand(
     val sessionId: SessionId,
     val memberId: MemberId,
     val approved: Boolean,
+    val expectedReviewVersion: String? = null,
+    val finalAttendanceStatus: AttendanceStatus? = null,
 )

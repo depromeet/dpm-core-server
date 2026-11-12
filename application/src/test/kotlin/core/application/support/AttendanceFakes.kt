@@ -158,7 +158,7 @@ class FakeAttendancePersistencePort : AttendancePersistencePort {
         sessionId: Long,
         memberIds: List<Long>,
         status: AttendanceStatus,
-        updatedAt: Instant,
+        updatedAt: Instant?,
     ): Int {
         val targets =
             rows.values.filter { it.sessionId == sessionId && it.memberId in memberIds && it.deletedAt == null }

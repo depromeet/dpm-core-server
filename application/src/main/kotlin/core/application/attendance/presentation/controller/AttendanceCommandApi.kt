@@ -118,7 +118,8 @@ interface AttendanceCommandApi {
             "출석 상태를 갱신합니다. " +
                 "attendanceStatus 는 PENDING, PRESENT, LATE, ABSENT, EXCUSED_ABSENT 중 하나이며 " +
                 "그 밖의 값은 400(GLOBAL-400-01)입니다. " +
-                "저장된 출석 인증 시각은 지우지 않으며 명단에서는 isManuallyUpdated 로 표시됩니다.",
+                "수정 시 기존 출석 인증 시각을 지우고 명단에서 isManuallyUpdated로 표시합니다. " +
+                "승인된 사유서가 있으면 인정결석 이외의 상태는 심사 정정에서 변경하세요.",
         requestBody =
             RequestBody(
                 description = "출석 상태 갱신 요청",
@@ -148,6 +149,7 @@ interface AttendanceCommandApi {
                 description = "출석 상태 갱신 성공",
                 useReturnTypeSchema = true,
             ),
+            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-04 승인된 사유서와 충돌"),
         ],
     )
     fun updateAttendance(
@@ -162,7 +164,7 @@ interface AttendanceCommandApi {
             "여러 명 멤버의 출석 상태를 한 번에 갱신합니다. " +
                 "attendanceStatus 는 PENDING, PRESENT, LATE, ABSENT, EXCUSED_ABSENT 중 하나이며 " +
                 "그 밖의 값은 400(GLOBAL-400-01)입니다. " +
-                "대상 중 하나라도 출석 기록이 없으면 아무것도 바꾸지 않습니다.",
+                "출석 기록이 없는 대상이나 승인된 사유서와 충돌하는 대상이 있으면 아무것도 바꾸지 않습니다.",
         requestBody =
             RequestBody(
                 description = "출석 상태 일괄 갱신 요청",
@@ -193,6 +195,7 @@ interface AttendanceCommandApi {
                 description = "출석 상태 일괄 갱신 성공",
                 useReturnTypeSchema = true,
             ),
+            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-04 승인된 사유서와 충돌"),
         ],
     )
     fun updateAttendanceBulk(
@@ -347,16 +350,22 @@ interface AttendanceCommandApi {
     ): CustomResponse<Void>
 
     @Operation(
-        summary = "결석 사유 검토 (운영진)",
+        summary = "결석 사유 검토·정정 (운영진)",
         description =
-            "운영진이 검토 대기(PENDING) 사유서를 승인하거나 반려합니다. 같은 결정을 반복하면 기존 결과를 반환합니다. " +
-                "승인 버튼은 approved=true, 반려 버튼은 approved=false로 이 API를 호출하세요. " +
-                "승인하면 인정결석이 됩니다. 반려하면 기존 출석 상태를 유지하고 디퍼가 사유서를 다시 제출할 수 있습니다. " +
-                "출석 수동 변경 API만 호출하면 사유서는 검토 대기 상태로 남습니다.",
+            "최초 승인 시 인정결석으로 변경하고, 최초 반려 시 기존 출석 상태를 유지합니다. " +
+                "이미 심사한 사유서를 정정할 때는 사유서 조회 응답의 reviewVersion을 expectedReviewVersion에 넣으세요. " +
+                "승인에서 반려로 정정할 때는 finalAttendanceStatus를 지정합니다. " +
+                "활성 기수이고 지각 인정 마감이 19시 이내인 세션에 한해 PENDING을 선택해 디퍼의 인증을 다시 열 수 있습니다. " +
+                "선택 가능 시간은 세션 당일 출석 인증 시작부터 19시 전까지입니다. " +
+                "반려에서 승인으로 정정하면 인정결석으로 바뀝니다.",
         requestBody =
             RequestBody(
-                description = "심사 결과가 바뀌면 제출자에게 ABSENCE_REASON_APPROVED 또는 ABSENCE_REASON_REJECTED 푸시를 보냅니다. " +
-                    "푸시 데이터에는 sessionId가 있습니다. 같은 결정을 다시 요청해도 알림은 한 번만 요청합니다.",
+                description =
+                    "심사 결과가 실제로 바뀌면 제출자에게 ABSENCE_REASON_APPROVED 또는 ABSENCE_REASON_REJECTED 푸시를 보냅니다. " +
+                        "이전 reviewVersion으로 요청하면 ATTENDANCE-409-05를 반환합니다. " +
+                        "정정 응답을 받지 못하고 같은 요청을 다시 보내도 이 오류가 날 수 있습니다. " +
+                        "사유서와 출석을 다시 조회해 원하는 결과가 이미 반영됐는지 확인하세요. " +
+                        "추가 정정이 필요하면 최신 상태를 확인한 뒤 새 reviewVersion으로 요청하세요.",
                 required = true,
                 content = [
                     Content(
@@ -368,6 +377,16 @@ interface AttendanceCommandApi {
                                 value = """
                                     {
                                         "approved": true
+                                    }
+                                """,
+                            ),
+                            ExampleObject(
+                                name = "승인에서 반려로 정정",
+                                value = """
+                                    {
+                                        "approved": false,
+                                        "expectedReviewVersion": "123:APPROVED:2026-11-07T06:00:00Z",
+                                        "finalAttendanceStatus": "ABSENT"
                                     }
                                 """,
                             ),
@@ -387,7 +406,11 @@ interface AttendanceCommandApi {
                 responseCode = "404",
                 description = "SESSION-404-01 세션 없음, ATTENDANCE-404-01 승인할 출석 기록 없음, ATTENDANCE-404-02 사유서 없음",
             ),
-            ApiResponse(responseCode = "409", description = "ATTENDANCE-409-03 이전 검토 결과와 다른 결정"),
+            ApiResponse(responseCode = "400", description = "ATTENDANCE-400-06 승인 취소 출석 상태 누락 또는 잘못된 상태 지정"),
+            ApiResponse(
+                responseCode = "409",
+                description = "ATTENDANCE-409-03 버전 없이 심사 정정, ATTENDANCE-409-05 이미 바뀐 사유서, ATTENDANCE-409-06 재인증 불가",
+            ),
         ],
     )
     fun reviewAbsenceReport(

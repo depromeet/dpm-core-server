@@ -10,6 +10,7 @@ import core.application.session.application.service.SessionCommandService
 import core.application.session.application.service.SessionQueryService
 import core.application.session.application.validator.SessionValidator
 import core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
+import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
 import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.vo.CohortId
@@ -36,6 +37,8 @@ class AttendanceTestFixture(
     val events: MutableList<Any> = Collections.synchronizedList(mutableListOf())
     val memberQueryUseCase: MemberQueryUseCase = mock(MemberQueryUseCase::class.java)
     val memberAccessService: MemberAccessService = mock(MemberAccessService::class.java)
+
+    val absenceReasons: AbsenceReasonPersistencePort = mock(AbsenceReasonPersistencePort::class.java)
 
     val sessionValidator = SessionValidator()
     val cohortQueryService = CohortQueryService(cohorts)
@@ -69,6 +72,7 @@ class AttendanceTestFixture(
             memberAccessService = memberAccessService,
             sessionValidator = sessionValidator,
             clock = clock,
+            absenceReasonPersistencePort = absenceReasons,
         )
 
     val sessionFeedbackFormCommandService =

@@ -7,6 +7,7 @@ import core.application.attendance.application.exception.AbsenceReasonReviewConf
 import core.application.attendance.application.exception.AbsenceReasonTooLongException
 import core.application.attendance.application.exception.AttendanceExceptionCode
 import core.application.attendance.application.exception.InvalidAbsenceReasonImageException
+import core.application.common.exception.BusinessException
 import core.application.member.application.service.TrackMemberBadges
 import core.application.session.application.exception.SessionNotFoundException
 import core.domain.absencereason.aggregate.AbsenceReason
@@ -18,7 +19,7 @@ import core.domain.absencereason.port.outbound.AbsenceReasonImageConflictExcepti
 import core.domain.absencereason.port.outbound.AbsenceReasonImagePersistencePort
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.domain.attendance.enums.AttendanceStatus
-import core.domain.attendance.port.inbound.command.AttendanceStatusUpdateCommand
+import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.image.port.outbound.ImagePersistencePort
 import core.domain.image.vo.ImageId
 import core.domain.member.port.inbound.MemberQueryUseCase
@@ -40,6 +41,7 @@ class AbsenceReasonCommandService(
     private val absenceReasonImagePersistencePort: AbsenceReasonImagePersistencePort,
     private val imagePersistencePort: ImagePersistencePort,
     private val sessionPersistencePort: SessionPersistencePort,
+    private val cohortPersistencePort: CohortPersistencePort,
     private val memberQueryUseCase: MemberQueryUseCase,
     private val attendanceCommandService: AttendanceCommandService,
     private val eventPublisher: ApplicationEventPublisher,
@@ -118,7 +120,7 @@ class AbsenceReasonCommandService(
         absenceReasonPersistencePort.delete(absenceReason)
     }
 
-    /** 승인 시 출석을 인정결석([AttendanceStatus.EXCUSED_ABSENT])으로 바꾸고, 반려 시 출석은 그대로 둔다. */
+    /** 최초 심사 또는 이전 결과의 정정. 출석·사유서 변경은 동일 트랜잭션에서 처리한다. */
     @TrackMemberBadges
     fun reviewAbsenceReason(command: AbsenceReasonReviewCommand) {
         val session = lockSession(command.sessionId)
@@ -129,21 +131,33 @@ class AbsenceReasonCommandService(
                 ?: throw AbsenceReasonNotFoundException()
 
         val decision = if (command.approved) AbsenceReasonStatus.APPROVED else AbsenceReasonStatus.REJECTED
-        if (absenceReason.status == decision) return
-        if (absenceReason.status != AbsenceReasonStatus.PENDING) throw AbsenceReasonReviewConflictException()
-
-        if (command.approved) {
-            absenceReason.approve()
-            attendanceCommandService.updateAttendanceStatus(
-                AttendanceStatusUpdateCommand(
-                    sessionId = command.sessionId,
-                    memberId = command.memberId,
-                    attendanceStatus = AttendanceStatus.EXCUSED_ABSENT,
-                ),
-            )
-        } else {
-            absenceReason.reject()
+        val expectedVersion = command.expectedReviewVersion
+        if (expectedVersion != null && expectedVersion != absenceReason.reviewVersion) {
+            throw BusinessException(AttendanceExceptionCode.ABSENCE_REASON_REVIEW_VERSION_CONFLICT)
         }
+        val attendanceStatus = command.finalAttendanceStatus
+        val reversesApproval = absenceReason.status == AbsenceReasonStatus.APPROVED && !command.approved
+        if (attendanceStatus != null && (!reversesApproval || attendanceStatus == AttendanceStatus.EXCUSED_ABSENT)) {
+            throw BusinessException(AttendanceExceptionCode.INVALID_ABSENCE_REASON_CORRECTION)
+        }
+        if (absenceReason.status == decision) return
+        if (absenceReason.status != AbsenceReasonStatus.PENDING && expectedVersion == null) {
+            throw AbsenceReasonReviewConflictException()
+        }
+        if (reversesApproval && attendanceStatus == null) {
+            throw BusinessException(AttendanceExceptionCode.INVALID_ABSENCE_REASON_CORRECTION)
+        }
+
+        val newAttendance = if (command.approved) AttendanceStatus.EXCUSED_ABSENT else attendanceStatus
+        if (newAttendance == AttendanceStatus.PENDING &&
+            cohortPersistencePort.findById(session.cohortId)?.isActive != true
+        ) {
+            throw BusinessException(AttendanceExceptionCode.ATTENDANCE_REOPEN_CLOSED)
+        }
+        if (newAttendance != null) {
+            attendanceCommandService.updateAttendanceAfterReview(session, command.memberId, newAttendance)
+        }
+        if (command.approved) absenceReason.approve() else absenceReason.reject()
 
         absenceReasonPersistencePort.save(absenceReason)
         eventPublisher.publishEvent(

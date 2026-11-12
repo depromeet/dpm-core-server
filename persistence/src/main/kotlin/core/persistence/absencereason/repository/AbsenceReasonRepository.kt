@@ -1,6 +1,7 @@
 package core.persistence.absencereason.repository
 
 import core.domain.absencereason.aggregate.AbsenceReason
+import core.domain.absencereason.enums.AbsenceReasonStatus
 import core.domain.absencereason.port.outbound.AbsenceReasonPersistencePort
 import core.entity.absencereason.AbsenceReasonEntity
 import org.springframework.stereotype.Repository
@@ -24,6 +25,16 @@ class AbsenceReasonRepository(
         absenceReasonJpaRepository
             .findAllBySessionId(sessionId)
             .map { it.toDomain() }
+
+    override fun existsApproved(
+        sessionId: Long,
+        memberIds: Collection<Long>,
+    ): Boolean =
+        absenceReasonJpaRepository.existsBySessionIdAndMemberIdInAndStatus(
+            sessionId,
+            memberIds,
+            AbsenceReasonStatus.APPROVED.name,
+        )
 
     override fun delete(absenceReason: AbsenceReason) {
         val id = absenceReason.id?.value ?: return
