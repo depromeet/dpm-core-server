@@ -356,7 +356,10 @@ interface AttendanceCommandApi {
             RequestBody(
                 description =
                     "심사 결과가 실제로 바뀌면 제출자에게 ABSENCE_REASON_APPROVED 또는 ABSENCE_REASON_REJECTED 푸시를 보냅니다. " +
-                        "이전 reviewVersion으로 재시도하면 409이며 다시 조회해야 합니다.",
+                        "이전 reviewVersion으로 요청하면 ATTENDANCE-409-05를 반환합니다. " +
+                        "정정 응답을 받지 못하고 같은 요청을 다시 보내도 이 오류가 날 수 있습니다. " +
+                        "사유서와 출석을 다시 조회해 원하는 결과가 이미 반영됐는지 확인하세요. " +
+                        "추가 정정이 필요하면 최신 상태를 확인한 뒤 새 reviewVersion으로 요청하세요.",
                 required = true,
                 content = [
                     Content(
