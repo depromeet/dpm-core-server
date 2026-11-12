@@ -25,7 +25,13 @@ data class MemberManagementRequest(
                 "SUSPENDED=활동 정지, ENDED=기수 종료, INACTIVE=ENDED의 호환용 별칭",
     )
     val activityStatuses: List<ActivityStatus?>? = null,
-    @field:Schema(description = "운영진·코어 제외. 기본 true")
+    @field:Schema(
+        description =
+            "멤버 타입 다중 선택. DEEPER=디퍼, ORGANIZER=운영진, CORE=코어, UNASSIGNED=타입 미배정. " +
+                "지정하면 excludeStaff보다 우선합니다. 생략하거나 빈 리스트면 excludeStaff 기준으로 조회합니다",
+    )
+    val memberTypes: List<MemberType?>? = null,
+    @field:Schema(description = "운영진·코어 제외. 기본 true. memberTypes를 지정하면 무시하며 어드민 전환 후 제거 예정")
     val excludeStaff: Boolean = true,
     @field:Schema(description = "true이면 승인 멤버 중 파트·팀·타입이 하나라도 미배정인 멤버만 조회")
     val missingInformationOnly: Boolean = false,
@@ -37,16 +43,20 @@ data class MemberManagementRequest(
     @field:Max(100)
     val size: Int = 20,
 ) {
-    @get:AssertTrue(message = "파트·팀 번호·활동 상태 필터 값이 올바르지 않습니다.")
+    @get:AssertTrue(message = "파트·팀 번호·활동 상태·멤버 타입 필터 값이 올바르지 않습니다.")
     @get:JsonIgnore
     @get:Schema(hidden = true)
     val isFilterValuesValid: Boolean
         get() =
             parts.orEmpty().all { value -> value == "UNASSIGNED" || MemberPart.entries.any { it.name == value } } &&
                 teamNumbers.orEmpty().all { it != null && it >= 0 } &&
-                activityStatuses.orEmpty().all { it != null }
+                activityStatuses.orEmpty().all { it != null } &&
+                memberTypes.orEmpty().all { it != null }
 
     enum class ApprovalStatus { PENDING, APPROVED }
 
     enum class ActivityStatus { NORMAL, AT_RISK, SUSPENDED, ENDED, INACTIVE }
+
+    /** 목록 응답의 memberType 값과 같은 이름을 쓴다. */
+    enum class MemberType { DEEPER, ORGANIZER, CORE, UNASSIGNED }
 }
