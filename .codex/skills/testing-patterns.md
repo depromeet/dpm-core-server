@@ -131,9 +131,10 @@ class XxxMySqlIntegrationTest {
 ### 실행 방법
 
 ```bash
-DPM_IT_MYSQL_URL='jdbc:mysql://127.0.0.1:3307/dpm_it' \
-DPM_IT_MYSQL_USERNAME=root \
-DPM_IT_MYSQL_PASSWORD=it \
+# 실제 연결 정보는 CLAUDE.local.md 참고
+DPM_IT_MYSQL_URL='...' \
+DPM_IT_MYSQL_USERNAME='...' \
+DPM_IT_MYSQL_PASSWORD='...' \
 ./gradlew :application:mysqlIntegrationTest
 ```
 
@@ -304,17 +305,9 @@ P-DEEPER / P-ORGANIZER / P-MULTI → AVAILABLE (세션 있을 때)
 - [ ] 출석 상태 의존 API라면 PENDING 케이스를 처리했는가?
 - [ ] 피드백 관련 API라면 form=null(피드백 미개설) 케이스를 처리했는가?
 
-### Dev 환경 테스트 계정 (비밀번호: `TestDPM1234!`)
+### Dev 환경 테스트 계정
 
-| 페르소나 | email | memberId |
-|---|---|---|
-| P-GUEST-OLD (17기 DEEPER) | test17.user@dpm.test | 21971 |
-| P-GUEST-ORG-OLD (18기 ORGANIZER) | test18.organizer@dpm.test | 21972 |
-| P-DEEPER (19기 DEEPER) | test19.user@dpm.test | 21973 |
-| P-ORGANIZER (19기 ORGANIZER) | test19.organizer@dpm.test | 21974 |
-| P-MULTI (17기+19기 DEEPER) | test1719.user@dpm.test | 21975 |
-
-관리자: `master@example.com / Dpmcore1!` · 로그인: `POST /login/email`
+> 계정 정보(이메일, 비밀번호, memberId)는 `CLAUDE.local.md` 참고.
 
 ### 과거 발견 버그 패턴
 
