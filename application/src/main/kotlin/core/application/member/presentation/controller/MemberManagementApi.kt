@@ -21,8 +21,9 @@ interface MemberManagementApi {
                 "이름·파트 수정은 순서에 영향을 주지 않습니다. 승인(APPROVED) 목록은 닉네임, 회원 ID 오름차순입니다. " +
                 "필터·정렬 후 페이지를 나누며 페이지는 1부터 시작합니다. " +
                 "parts·teamNumbers·activityStatuses·memberTypes는 반복 파라미터 또는 쉼표로 여러 값을 전달합니다. " +
-                "memberTypes를 지정하면 excludeStaff보다 우선하며, 둘 다 생략하면 디퍼와 타입 미배정 회원을 조회합니다. " +
-                "같은 필터 안에서는 OR, 필터 사이는 AND이며 생략하거나 빈 리스트면 적용하지 않습니다. " +
+                "같은 필터 안에서는 OR, 필터 사이는 AND입니다. parts·teamNumbers·activityStatuses는 " +
+                "생략하거나 빈 리스트면 적용하지 않습니다. memberTypes를 지정하면 excludeStaff보다 우선하며, " +
+                "생략하거나 빈 리스트면 excludeStaff 기준으로 조회해 기본값에서는 디퍼와 타입 미배정 회원만 조회합니다. " +
                 "활동 상태는 activityStatus로 구분하며 SUSPENDED/ENDED는 수료 위험 인원에서 제외합니다. INACTIVE 필터는 " +
                 "ENDED의 호환 별칭입니다. 중복 의심은 탭·검색·필터 적용 전 관리 대상 중 닉네임과 파트가 같은 다른 회원이 있으면 " +
                 "true입니다.",

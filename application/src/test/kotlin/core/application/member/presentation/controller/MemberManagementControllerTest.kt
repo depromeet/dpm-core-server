@@ -189,12 +189,14 @@ class MemberManagementControllerTest {
                 .param("parts", "")
                 .param("teamNumbers", "")
                 .param("activityStatuses", "")
+                .param("memberTypes", "")
                 .param("page", Int.MAX_VALUE.toString()),
         ).andExpect(status().isOk)
         val request = mockingDetails(service).invocations.single().arguments.single() as MemberManagementRequest
         assertThat(request.parts).isNullOrEmpty()
         assertThat(request.teamNumbers).isNullOrEmpty()
         assertThat(request.activityStatuses).isNullOrEmpty()
+        assertThat(request.memberTypes).isNullOrEmpty()
         assertThat(request.page).isEqualTo(Int.MAX_VALUE)
     }
 
@@ -208,7 +210,7 @@ class MemberManagementControllerTest {
 
     @Test
     fun `잘못된 페이지 크기와 필터를 400으로 반환한다`() {
-        listOf("page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "memberTypes" to "MASTER", "memberTypes" to "GUEST", "memberTypes" to "DEEPER,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
+        listOf("page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "memberTypes" to "MASTER", "memberTypes" to "GUEST", "memberTypes" to "deeper", "memberTypes" to "DEEPER,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
             mvc.perform(authenticated("read:member").param(key, value))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))

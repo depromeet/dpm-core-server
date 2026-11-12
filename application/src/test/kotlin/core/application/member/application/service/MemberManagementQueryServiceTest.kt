@@ -220,10 +220,17 @@ class MemberManagementQueryServiceTest {
         val response = service.getOverview(request)
         assertThat(response.totalElements).isEqualTo(3)
         assertThat(response.members.single().memberId).isEqualTo(2L)
-        assertThat(response.summary.totalMemberCount).isEqualTo(5)
-        assertThat(response.summary.organizerCount).isEqualTo(1)
+        assertThat(response.summary).isEqualTo(service.getOverview(MemberManagementRequest()).summary)
         assertThat(service.getOverview(request.copy(page = 3)).members.single().memberId).isEqualTo(3L)
         assertThat(service.getOverview(request.copy(page = 4)).members).isEmpty()
+    }
+
+    @Test
+    fun `미승인 탭에서 네 타입을 모두 고르면 운영진 코어 포함 조회와 같은 범위다`() {
+        val all = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, memberTypes = MemberType.entries))
+        val legacy = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, excludeStaff = false))
+        assertThat(all.members.map { it.memberId }).containsExactlyElementsOf(legacy.members.map { it.memberId }).isNotEmpty()
+        assertThat(all.totalElements).isEqualTo(legacy.totalElements)
     }
 
     @Test
