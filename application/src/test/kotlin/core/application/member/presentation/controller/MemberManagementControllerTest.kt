@@ -9,6 +9,7 @@ import core.application.member.application.service.MemberManagementCommandServic
 import core.application.member.application.service.MemberManagementQueryService
 import core.application.member.presentation.request.MemberManagementRequest
 import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
+import core.application.member.presentation.request.MemberManagementRequest.MemberType
 import core.application.member.presentation.response.MemberManagementResponse
 import core.application.member.presentation.response.MemberOverviewResponse
 import core.domain.attendance.enums.AttendanceGraduationStatus
@@ -113,7 +114,7 @@ class MemberManagementControllerTest {
         assertThat(properties["duplicateSuspected"]!!.nullable == true).isFalse()
         assertThat(legacy["MemberSummary"]!!.properties).doesNotContainKeys("email", "signupEmail", "duplicateSuspected")
         val requestProperties = ModelConverters.getInstance().readAll(MemberManagementRequest::class.java)["MemberManagementRequest"]!!.properties
-        assertThat(requestProperties).containsKeys("parts", "teamNumbers", "activityStatuses")
+        assertThat(requestProperties).containsKeys("parts", "teamNumbers", "activityStatuses", "memberTypes")
             .doesNotContainKeys("part", "teamNumber", "status", "filterValuesValid", "isFilterValuesValid")
         assertThat(ObjectMapper().writeValueAsString(MemberManagementRequest())).doesNotContain("FilterValuesValid", "filterValuesValid")
     }
@@ -168,6 +169,20 @@ class MemberManagementControllerTest {
     }
 
     @Test
+    fun `멤버 타입을 반복 파라미터와 쉼표로 전달하고 생략하면 기존 기본값을 유지한다`() {
+        mvc.perform(authenticated("read:member").param("memberTypes", "ORGANIZER", "CORE")).andExpect(status().isOk)
+        mvc.perform(authenticated("read:member").param("memberTypes", "DEEPER,UNASSIGNED")).andExpect(status().isOk)
+        mvc.perform(authenticated("read:member")).andExpect(status().isOk)
+        val requests = mockingDetails(service).invocations.map { it.arguments.single() as MemberManagementRequest }
+        assertThat(requests.map { it.memberTypes }).containsExactly(
+            listOf(MemberType.ORGANIZER, MemberType.CORE),
+            listOf(MemberType.DEEPER, MemberType.UNASSIGNED),
+            null,
+        )
+        assertThat(requests.last().excludeStaff).isTrue()
+    }
+
+    @Test
     fun `빈 필터와 최대 페이지 값도 정상적으로 바인딩한다`() {
         mvc.perform(
             authenticated("read:member")
@@ -193,7 +208,7 @@ class MemberManagementControllerTest {
 
     @Test
     fun `잘못된 페이지 크기와 필터를 400으로 반환한다`() {
-        listOf("page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
+        listOf("page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "memberTypes" to "MASTER", "memberTypes" to "GUEST", "memberTypes" to "DEEPER,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
             mvc.perform(authenticated("read:member").param(key, value))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))

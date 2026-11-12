@@ -6,6 +6,7 @@ import core.application.member.application.service.role.CurrentCohortRoleResolve
 import core.application.member.presentation.request.MemberManagementRequest
 import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
 import core.application.member.presentation.request.MemberManagementRequest.ApprovalStatus
+import core.application.member.presentation.request.MemberManagementRequest.MemberType
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
@@ -194,6 +195,35 @@ class MemberManagementQueryServiceTest {
         assertThat(result.members.single().memberType).isEqualTo("UNASSIGNED")
         assertThat(result.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
         assertThat(service.getOverview(MemberManagementRequest(excludeStaff = false)).members).hasSize(5)
+    }
+
+    @Test
+    fun `멤버 타입은 선택한 값끼리 OR로 거르고 excludeStaff보다 우선한다`() {
+        fun ids(request: MemberManagementRequest) = service.getOverview(request).members.map { it.memberId }
+
+        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.ORGANIZER)))).containsExactly(4L)
+        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.ORGANIZER, MemberType.CORE)))).containsExactly(3L, 4L)
+        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.UNASSIGNED)))).containsExactly(5L)
+        // 디퍼와 미배정 선택은 기존 기본 조회(운영진·코어 제외)와 같은 범위다.
+        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.DEEPER, MemberType.UNASSIGNED))))
+            .isEqualTo(ids(MemberManagementRequest()))
+        // 네 타입을 모두 고르면 excludeStaff=false와 같은 범위다.
+        assertThat(ids(MemberManagementRequest(memberTypes = MemberType.entries)))
+            .isEqualTo(ids(MemberManagementRequest(excludeStaff = false)))
+        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.CORE), excludeStaff = true))).containsExactly(3L)
+        assertThat(ids(MemberManagementRequest(memberTypes = emptyList()))).containsExactly(1L, 2L, 5L)
+    }
+
+    @Test
+    fun `멤버 타입 필터를 적용한 뒤 페이지를 나누고 요약은 필터와 무관하다`() {
+        val request = MemberManagementRequest(memberTypes = listOf(MemberType.DEEPER, MemberType.CORE), page = 2, size = 1)
+        val response = service.getOverview(request)
+        assertThat(response.totalElements).isEqualTo(3)
+        assertThat(response.members.single().memberId).isEqualTo(2L)
+        assertThat(response.summary.totalMemberCount).isEqualTo(5)
+        assertThat(response.summary.organizerCount).isEqualTo(1)
+        assertThat(service.getOverview(request.copy(page = 3)).members.single().memberId).isEqualTo(3L)
+        assertThat(service.getOverview(request.copy(page = 4)).members).isEmpty()
     }
 
     @Test
