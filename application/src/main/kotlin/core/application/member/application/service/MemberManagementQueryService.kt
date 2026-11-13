@@ -1,5 +1,6 @@
 package core.application.member.application.service
 
+import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.member.presentation.request.MemberManagementRequest
 import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
 import core.application.member.presentation.request.MemberManagementRequest.ApprovalStatus
@@ -9,6 +10,8 @@ import core.application.member.presentation.response.MemberManagementResponse.Su
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -19,11 +22,12 @@ import org.springframework.transaction.annotation.Transactional
 class MemberManagementQueryService(
     private val targets: MemberManagementTargetQueryService,
     private val cohorts: CohortQueryUseCase,
+    private val cohortPersistencePort: CohortPersistencePort,
     private val members: MemberPersistencePort,
 ) {
     @Transactional(readOnly = true)
     fun getOverview(request: MemberManagementRequest): MemberManagementResponse {
-        val cohortId = cohorts.getActiveCohortId().value
+        val cohortId = resolveCohortId(request.cohortId)
         val allMembers = targets.findAll(cohortId)
         val ordering =
             if (request.approvalStatus == ApprovalStatus.PENDING) {
@@ -118,6 +122,12 @@ class MemberManagementQueryService(
             lastUpdatedAt = allMembers.mapNotNull { it.updatedAt }.maxOrNull(),
             members = filtered.drop(offset).take(request.size),
         )
+    }
+
+    /** 생략하면 활성 기수, 지정하면 존재하는 기수만 허용한다. 소속·팀·역할·활동 상태는 이 기수 기준으로 계산한다. */
+    private fun resolveCohortId(requested: Long?): Long {
+        if (requested == null) return cohorts.getActiveCohortId().value
+        return cohortPersistencePort.findById(CohortId(requested))?.id?.value ?: throw CohortNotFoundException()
     }
 
     private companion object {

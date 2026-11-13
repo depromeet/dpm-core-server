@@ -1,6 +1,7 @@
 package core.application.member.application.service
 
 import core.application.attendance.application.service.AttendanceGraduationEvaluator
+import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.cohort.application.service.CohortQueryService
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.application.member.presentation.request.MemberManagementRequest
@@ -11,7 +12,9 @@ import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.attendance.port.outbound.query.AttendanceSummaryQueryModel
 import core.domain.attendance.port.outbound.query.MemberAttendanceQueryModel
+import core.domain.cohort.aggregate.Cohort
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberPart
 import core.domain.member.enums.MemberStatus
@@ -24,8 +27,11 @@ import core.domain.team.vo.TeamNumber
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
 import java.time.Instant
@@ -37,7 +43,8 @@ class MemberManagementQueryServiceTest {
     private val cohorts = mock(CohortQueryUseCase::class.java)
     private val activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java)
     private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles, activities)
-    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities), cohorts, members)
+    private val cohortPort = mock(CohortPersistencePort::class.java)
+    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities), cohorts, cohortPort, members)
     private val updatedAt = Instant.parse("2026-10-06T02:00:00Z")
     private val source =
         listOf(
@@ -388,6 +395,42 @@ class MemberManagementQueryServiceTest {
         verify(roles).findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })
         verify(attendance).findMemberAttendances(19, emptyList())
         verifyNoMoreInteractions(cohorts, members, roles, attendance)
+        verifyNoInteractions(cohortPort)
+    }
+
+    @Test
+    fun `과거 기수를 지정하면 그 기수의 소속 팀 역할 활동 상태와 요약으로 조회한다`() {
+        val past = source.map { if (it.cohortId == 19L) it.copy(cohortId = 18) else it }
+        `when`(cohortPort.findById(CohortId(18))).thenReturn(Cohort(id = CohortId(18), value = "18"))
+        `when`(members.findManagementMembers(18)).thenReturn(past)
+        `when`(activities.findAll(past.map { it.memberId }, 18)).thenReturn(
+            past.filter { it.status != MemberStatus.PENDING }.associate {
+                it.memberId to core.domain.member.port.outbound.MemberCohortActivity(it.memberId, 18, core.domain.member.enums.MemberActivityStatus.ENDED)
+            },
+        )
+
+        val response = service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false))
+
+        assertThat(response.cohortId).isEqualTo(18)
+        // 19기 역할은 18기 조회에서 유효하지 않고, 18기 운영진 역할만 운영진으로 보인다.
+        assertThat(response.members.associate { it.memberId to it.memberType })
+            .containsExactlyInAnyOrderEntriesOf(mapOf(1L to "ORGANIZER", 2L to "UNASSIGNED", 3L to "UNASSIGNED", 4L to "UNASSIGNED", 5L to "UNASSIGNED"))
+        assertThat(response.members.map { it.activityStatus }).containsOnly(core.domain.member.enums.MemberActivityStatus.ENDED)
+        // 18기 세션 출석이 없으면 수료는 미평가다.
+        assertThat(response.members.map { it.graduationStatus }).containsOnlyNulls()
+        assertThat(response.summary.totalMemberCount).isEqualTo(5)
+        assertThat(response.summary.organizerCount).isEqualTo(1)
+        assertThat(response.summary.deeperCount).isZero()
+        assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, memberTypes = listOf(MemberType.ORGANIZER))).members.map { it.memberId })
+            .containsExactly(1L)
+        verify(attendance, org.mockito.Mockito.atLeastOnce()).findMemberAttendances(18, emptyList())
+        verify(cohorts, never()).getActiveCohortId()
+    }
+
+    @Test
+    fun `없는 기수를 지정하면 404 예외로 거절하고 회원을 조회하지 않는다`() {
+        assertThrows<CohortNotFoundException> { service.getOverview(MemberManagementRequest(cohortId = 999)) }
+        verifyNoInteractions(members, roles, attendance)
     }
 
     @Test
