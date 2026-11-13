@@ -10,6 +10,7 @@ import core.application.common.exception.CustomResponse
 import core.application.security.annotation.CurrentMemberId
 import core.domain.announcement.vo.AnnouncementId
 import core.domain.member.vo.MemberId
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 class AnnouncementCommandController(
     val announcementCommandService: AnnouncementCommandService,
 ) : AnnouncementCommandApi {
+    @PreAuthorize("hasAuthority('update:member')")
     @PostMapping
     override fun createAnnouncement(
         @RequestBody
@@ -45,6 +47,7 @@ class AnnouncementCommandController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{announcementId}/mark-as-read")
     override fun markAsRead(
         @CurrentMemberId
@@ -59,6 +62,7 @@ class AnnouncementCommandController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("hasAuthority('update:member')")
     @PatchMapping("/{announcementId}/assignment-status")
     override fun updateSubmitStatus(
         @PathVariable
@@ -75,6 +79,7 @@ class AnnouncementCommandController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("hasAuthority('update:member')")
     @DeleteMapping("/{announcementId}")
     override fun deleteAnnouncement(
         @PathVariable
@@ -86,6 +91,7 @@ class AnnouncementCommandController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("hasAuthority('update:member')")
     @PatchMapping("/{announcementId}")
     override fun updateAnnouncement(
         @PathVariable
@@ -110,6 +116,7 @@ class AnnouncementCommandController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("hasAuthority('update:member')")
     @PostMapping("/{announcementId}/remind-notification")
     override fun remindNotification(
         @PathVariable announcementId: AnnouncementId,
@@ -118,6 +125,7 @@ class AnnouncementCommandController(
         return CustomResponse.ok()
     }
 
+    @PreAuthorize("hasAuthority('update:member')")
     @PostMapping("/{announcementId}/remind-notification-to-members")
     override fun remindNotificationToMembers(
         @PathVariable announcementId: AnnouncementId,
