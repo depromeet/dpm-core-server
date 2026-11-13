@@ -17,7 +17,7 @@ interface MemberBadgeApi {
     @Operation(
         summary = "멤버 관리 NEW 조회",
         description =
-            "read:member 권한으로 현재 기수의 미승인(PENDING), 정보 미입력(INCOMPLETE), 수료 위험(AT_RISK) 카드 상태를 조회합니다. " +
+            "update:member 권한(운영진·코어)으로 현재 기수의 미승인(PENDING), 정보 미입력(INCOMPLETE), 수료 위험(AT_RISK) 카드 상태를 조회합니다. " +
                 "카드 대상에 신규 진입하거나 재진입한 회원이 있으면 NEW를 표시합니다. 대상 이탈만으로 NEW를 생성하지 않습니다. " +
                 "동일 인원 수에서 대상이 바뀌어도 새 진입을 반영합니다. 위험 카드에는 수료 위험·불가를 모두 포함합니다. " +
                 "운영진 전체가 확인 상태를 공유하며 검색·필터나 조회만으로 해제하지 않습니다. " +
@@ -27,7 +27,7 @@ interface MemberBadgeApi {
         ApiResponse(responseCode = "200", description = "현재 기수 카드별 NEW 상태", useReturnTypeSchema = true),
         ApiResponse(
             responseCode = "403",
-            description = "멤버 조회 권한 없음",
+            description = "멤버 관리 권한 없음",
             content = [Content(schema = Schema(implementation = CustomResponse::class))],
         ),
         ApiResponse(
@@ -41,7 +41,7 @@ interface MemberBadgeApi {
     @Operation(
         summary = "멤버 관리 NEW 확인",
         description =
-            "read:member 권한이 필요합니다. 카드 클릭 시 조회 응답의 cohortId와 해당 카드 version을 전달합니다. " +
+            "update:member 권한(운영진·코어)이 필요합니다. 카드 클릭 시 조회 응답의 cohortId와 해당 카드 version을 전달합니다. " +
                 "한 운영진이 확인하면 해당 버전까지 모든 운영진에게 해제됩니다. 오래된 버전이나 반복 확인은 " +
                 "이미 확인한 상태를 되돌리거나 더 최근의 NEW를 지우지 않습니다. 확인 후 최신 카드 상태를 반환합니다. " +
                 "존재할 수 없는 미래 버전은 400, 현재 기수와 다른 cohortId는 409로 거절하며 다시 조회해야 합니다. " +
@@ -56,7 +56,7 @@ interface MemberBadgeApi {
         ),
         ApiResponse(
             responseCode = "403",
-            description = "멤버 조회 권한 없음",
+            description = "멤버 관리 권한 없음",
             content = [Content(schema = Schema(implementation = CustomResponse::class))],
         ),
         ApiResponse(

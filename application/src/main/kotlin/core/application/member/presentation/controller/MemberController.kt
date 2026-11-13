@@ -78,7 +78,7 @@ class MemberController(
             ),
         )
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:member')")
     @GetMapping("/v1/members/apple/hidden-email")
     override fun getAppleHiddenEmailMembers(): CustomResponse<AppleHiddenEmailMembersResponse> =
         CustomResponse.ok(
@@ -96,7 +96,7 @@ class MemberController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:member')")
     @GetMapping("/v1/members/overview")
     override fun getMembersOverview(
         @RequestParam(required = false) latest: Boolean?,

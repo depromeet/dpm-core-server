@@ -23,11 +23,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestController
 @RequestMapping("/v3/members/badges")
 class MemberBadgeController(private val service: MemberBadgeService) : MemberBadgeApi {
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:member')")
     @GetMapping
     override fun getBadges(): CustomResponse<MemberBadgesResponse> = CustomResponse.ok(service.getBadges())
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:member')")
     @PostMapping("/{card}/acknowledgement")
     override fun acknowledge(
         @PathVariable card: MemberBadgeCard,
