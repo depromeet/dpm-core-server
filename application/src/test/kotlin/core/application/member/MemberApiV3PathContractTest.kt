@@ -33,9 +33,9 @@ class MemberApiV3PathContractTest {
             .containsExactlyInAnyOrder(
                 "POST /v1/members/name/hash-type/validation permitAll()",
                 "POST /v1/members/apple/profile isAuthenticated()",
-                "GET /v1/members/apple/hidden-email hasAuthority('read:member')",
+                "GET /v1/members/apple/hidden-email hasAuthority('update:member')",
                 "GET /v3/members/me permitAll()",
-                "GET /v1/members/overview hasAuthority('read:member')",
+                "GET /v1/members/overview hasAuthority('update:member')",
                 "PATCH /v1/members/withdraw isAuthenticated()",
                 "DELETE /v1/members/{memberId}/hard-delete hasAuthority('delete:member')",
                 "PATCH /v1/members/init hasAuthority('update:member')",

@@ -3,6 +3,7 @@ package core.application.member.presentation.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import core.application.common.configuration.SwaggerConfig
 import core.application.common.exception.GlobalExceptionHandler
+import core.application.member.application.service.MemberActivityService
 import core.application.member.application.service.MemberAdmissionService
 import core.application.member.application.service.MemberBadgeService
 import core.application.member.application.service.MemberDeletionService
@@ -13,6 +14,8 @@ import core.application.member.presentation.response.MemberBadgeResponse
 import core.application.member.presentation.response.MemberBadgesResponse
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.domain.authorization.vo.RoleType
+import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.port.outbound.query.MemberApprovalTarget
@@ -87,7 +90,7 @@ class MemberManagementContractControllerTest {
         `when`(members.hardDeleteById(MemberId(1))).thenReturn(emptyList())
         `when`(members.hardDeleteById(MemberId(2))).thenReturn(emptyList())
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19))))
-        `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.INACTIVE, setOf(18))))
+        `when`(members.lockApprovalTargets(listOf(1, 2))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet()), MemberApprovalTarget(2, MemberStatus.INACTIVE, setOf(18, 19))))
         mvc =
             MockMvcBuilders.webAppContextSetup(context)
                 .addFilters<org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder>(context.getBean("springSecurityFilterChain", Filter::class.java))
@@ -96,12 +99,19 @@ class MemberManagementContractControllerTest {
 
     @Test
     fun `NEW 조회와 확인은 서비스를 호출하고 상태를 반환한다`() {
-        mvc.perform(authenticated(get("/v3/members/badges"), "read:member"))
+        mvc.perform(authenticated(get("/v3/members/badges"), "update:member"))
             .andExpect(status().isOk).andExpect(jsonPath("$.data.cohortId").value(19))
             .andExpect(jsonPath("$.data.cards[0].hasNew").value(true))
-        mvc.perform(authenticated(json(post(BADGE_PATH), BADGE_BODY), "read:member"))
+        mvc.perform(authenticated(json(post(BADGE_PATH), BADGE_BODY), "update:member"))
             .andExpect(status().isOk).andExpect(jsonPath("$.data.hasNew").value(false))
         verify(badgeService).acknowledge(MemberBadgeCard.PENDING, 19, 3)
+    }
+
+    @Test
+    fun `디퍼도 가진 조회 권한만으로는 NEW 조회와 확인을 할 수 없다`() {
+        mvc.perform(authenticated(get("/v3/members/badges"), "read:member")).andExpect(status().isForbidden)
+        mvc.perform(authenticated(json(post(BADGE_PATH), BADGE_BODY), "read:member")).andExpect(status().isForbidden)
+        verifyNoInteractions(badgeService)
     }
 
     @Test
@@ -175,10 +185,10 @@ class MemberManagementContractControllerTest {
             """{"cohortId":19,"version":null}""",
             """{"cohortId":19,"version":"1"}""",
         ).forEach { body ->
-            mvc.perform(authenticated(json(post(BADGE_PATH), body), "read:member"))
+            mvc.perform(authenticated(json(post(BADGE_PATH), body), "update:member"))
                 .andExpect(status().isBadRequest)
         }
-        mvc.perform(authenticated(json(post("/v3/members/badges/UNKNOWN/acknowledgement"), BADGE_BODY), "read:member"))
+        mvc.perform(authenticated(json(post("/v3/members/badges/UNKNOWN/acknowledgement"), BADGE_BODY), "update:member"))
             .andExpect(status().isBadRequest)
     }
 
@@ -231,6 +241,16 @@ class MemberManagementContractControllerTest {
             .andExpect(status().isOk).andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
         verify(members).softDeleteMembers(listOf(1))
         verify(members).hardDeleteById(MemberId(2))
+    }
+
+    @Test
+    fun `지난 기수에만 속한 승인 회원 삭제는 409 MEMBER-409-73으로 전체 취소한다`() {
+        `when`(members.lockApprovalTargets(listOf(1, 5))).thenReturn(
+            listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(19)), MemberApprovalTarget(5, MemberStatus.ACTIVE, setOf(18))),
+        )
+        mvc.perform(authenticated(json(delete("/v3/members/bulk"), """{"memberIds":[1,5]}"""), "delete:member", actorMemberId = 3))
+            .andExpect(status().isConflict).andExpect(jsonPath("$.code").value("MEMBER-409-73"))
+        verify(members, org.mockito.Mockito.never()).hardDeleteById(MemberId(1))
     }
 
     @Test
@@ -355,6 +375,12 @@ class MemberManagementContractControllerTest {
         @Bean fun members(): MemberPersistencePort = mock(MemberPersistencePort::class.java)
 
         @Bean fun access(): MemberAccessService = mock(MemberAccessService::class.java)
+
+        @Bean
+        fun activities(): MemberActivityService = mock(MemberActivityService::class.java)
+
+        @Bean
+        fun cohorts(): CohortQueryUseCase = mock(CohortQueryUseCase::class.java).also { `when`(it.findActiveCohortId()).thenReturn(CohortId(19)) }
 
         override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
             resolvers.add(CurrentMemberIdArgumentResolver())

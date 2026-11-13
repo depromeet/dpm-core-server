@@ -64,7 +64,7 @@ class NotificationController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:authorization')")
     @PostMapping("/custom-test")
     override fun testSendNotification(
         @RequestBody notificationRequest: NotificationRequest,
@@ -78,7 +78,7 @@ class NotificationController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:authorization')")
     @PostMapping("/type-test")
     override fun testSendMessageTypeNotification(
         @RequestBody messageTypeNotificationRequest: MessageTypeNotificationRequest,
@@ -92,14 +92,14 @@ class NotificationController(
         return CustomResponse.ok()
     }
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:authorization')")
     @GetMapping("/types")
     override fun getNotificationTypes(): CustomResponse<List<NotificationTypeResponse>> {
         val types = NotificationMessageType.entries.map { NotificationTypeResponse.from(it) }
         return CustomResponse.ok(types)
     }
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:authorization')")
     @PostMapping("/custom-test/by-tag")
     override fun testSendNotificationByTags(
         @RequestBody request: TagBasedNotificationRequest,
@@ -114,7 +114,7 @@ class NotificationController(
         return CustomResponse.ok(TagBasedNotificationResponse(targetMemberCount = targetCount))
     }
 
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:authorization')")
     @PostMapping("/type-test/by-tag")
     override fun testSendMessageTypeNotificationByTags(
         @RequestBody request: TagBasedMessageTypeNotificationRequest,
