@@ -97,7 +97,7 @@ interface AttendanceQueryApi {
     ): CustomResponse<SessionRosterResponse>
 
     @Operation(
-        summary = "사람별 출석 조회",
+        summary = "사람별 출석 조회 (운영진)",
         description =
             "현재 활성 기수 DEEPER(출석 기록이 없어도 포함, signupEmail @dpm.test 제외)의 수료 판정을 페이지 없이 조회합니다. " +
                 "teams 로 현재 기수 최신 배정 팀 번호를 여러 개 고를 수 있으며(teams=1&teams=2 또는 teams=1,2), 없거나 비면 전원입니다. " +
@@ -167,7 +167,7 @@ interface AttendanceQueryApi {
     ): CustomResponse<MemberAttendancesResponse>
 
     @Operation(
-        summary = "세션별 개인 출석 상세 조회",
+        summary = "세션별 개인 출석 상세 조회 (운영진)",
         description =
             "세션별 개인 출석을 조회합니다. member.attendanceStatus 는 사람별 출석 조회와 같은 집계로 계산한 그 세션 기수의 수료 판정입니다. " +
                 "같은 세션에 살아 있는 기록이 여러 개면 attendance_id 가 가장 큰 기록을 씁니다. " +

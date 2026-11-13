@@ -126,7 +126,7 @@ interface NotificationApi {
             ),
         ],
     )
-    @Operation(summary = "Expo 커스텀 알림 테스트 API", description = "Expo 커스텀 알림을 테스트합니다.")
+    @Operation(summary = "Expo 커스텀 알림 테스트 API (코어)", description = "Expo 커스텀 알림을 테스트합니다.")
     fun testSendNotification(notificationRequest: NotificationRequest): CustomResponse<Void>
 
     @ApiResponse(
@@ -151,7 +151,7 @@ interface NotificationApi {
             ),
         ],
     )
-    @Operation(summary = "Expo 알림 테스트 API", description = "Expo 알림을 테스트합니다.")
+    @Operation(summary = "Expo 알림 테스트 API (코어)", description = "Expo 알림을 테스트합니다.")
     fun testSendMessageTypeNotification(
         @RequestBody(
             content = [
@@ -207,7 +207,7 @@ interface NotificationApi {
             ),
         ],
     )
-    @Operation(summary = "알림 타입 목록 조회 API", description = "모든 알림 타입(NotificationMessage)을 조회합니다.")
+    @Operation(summary = "알림 타입 목록 조회 API (코어)", description = "모든 알림 타입(NotificationMessage)을 조회합니다.")
     fun getNotificationTypes(): CustomResponse<List<NotificationTypeResponse>>
 
     @ApiResponse(
@@ -236,7 +236,7 @@ interface NotificationApi {
         ],
     )
     @Operation(
-        summary = "태그 기반 Expo 커스텀 알림 테스트 API",
+        summary = "태그 기반 Expo 커스텀 알림 테스트 API (코어)",
         description = "지정한 태그(코호트/권한)에 해당하는 멤버들에게 커스텀 알림을 발송합니다.",
     )
     fun testSendNotificationByTags(
@@ -290,7 +290,7 @@ interface NotificationApi {
         ],
     )
     @Operation(
-        summary = "태그 기반 Expo 알림 테스트 API",
+        summary = "태그 기반 Expo 알림 테스트 API (코어)",
         description = "지정한 태그(코호트/권한)에 해당하는 멤버들에게 메시지 타입 알림을 발송합니다.",
     )
     fun testSendMessageTypeNotificationByTags(

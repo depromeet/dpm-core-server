@@ -74,6 +74,9 @@ class MemberManagementControllerTest {
     fun `익명 및 조회 권한 없는 요청을 거절하고 서비스 호출을 막는다`() {
         mvc.perform(get(PATH)).andExpect(status().isForbidden)
         mvc.perform(authenticated("read:attendance")).andExpect(status().isForbidden)
+        // 디퍼도 가진 조회 권한만으로는 다른 회원의 이메일이 포함된 관리 목록을 볼 수 없다.
+        mvc.perform(authenticatedRequest(PATH, "read:member", "create:attendance", "read:attendance", "read:session"))
+            .andExpect(status().isForbidden)
         verifyNoInteractions(service)
     }
 
@@ -84,7 +87,7 @@ class MemberManagementControllerTest {
         val response = MemberManagementResponse(19, MemberManagementResponse.Summary(2, 2, 0, 0, 0, 0, 0), 2, 1, 20, null, listOf(member, missingEmail))
         `when`(service.getOverview(MemberManagementRequest())).thenReturn(response)
         val result =
-            mvc.perform(authenticated("read:member"))
+            mvc.perform(authenticated("update:member"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
                 .andExpect(jsonPath("$.data.totalElements").value(2))
@@ -121,7 +124,7 @@ class MemberManagementControllerTest {
 
     @Test
     fun `수료 필터의 후행 빈 값은 Spring 바인딩에서 null 원소가 된다`() {
-        mvc.perform(authenticated("read:member").param("graduationStatuses", "NORMAL,"))
+        mvc.perform(authenticated("update:member").param("graduationStatuses", "NORMAL,"))
             .andExpect(status().isOk)
         val request = mockingDetails(service).invocations.single().arguments.single() as MemberManagementRequest
         assertThat(request.graduationStatuses).containsExactly(AttendanceGraduationStatus.NORMAL, null)
@@ -130,7 +133,7 @@ class MemberManagementControllerTest {
     @Test
     fun `공통 파트와 팀 선택지를 목록의 파트와 팀 번호 필터로 전달한다`() {
         `when`(cohorts.getActiveCohortTeams()).thenReturn(listOf(CohortTeamQueryModel(id = 42, number = 3)))
-        val authorities = arrayOf("read:member", "update:attendance")
+        val authorities = arrayOf("update:member", "update:attendance")
         val mapper = ObjectMapper()
         val parts =
             mvc.perform(authenticatedRequest("/v3/members/parts", *authorities))
@@ -157,7 +160,7 @@ class MemberManagementControllerTest {
     @Test
     fun `여러 필터 값을 반복 파라미터와 쉼표로 전달한다`() {
         mvc.perform(
-            authenticated("read:member")
+            authenticated("update:member")
                 .param("parts", "WEB", "DESIGN")
                 .param("teamNumbers", "0,3")
                 .param("activityStatuses", "NORMAL", "INACTIVE"),
@@ -170,9 +173,9 @@ class MemberManagementControllerTest {
 
     @Test
     fun `멤버 타입을 반복 파라미터와 쉼표로 전달하고 생략하면 기존 기본값을 유지한다`() {
-        mvc.perform(authenticated("read:member").param("memberTypes", "ORGANIZER", "CORE")).andExpect(status().isOk)
-        mvc.perform(authenticated("read:member").param("memberTypes", "DEEPER,UNASSIGNED")).andExpect(status().isOk)
-        mvc.perform(authenticated("read:member")).andExpect(status().isOk)
+        mvc.perform(authenticated("update:member").param("memberTypes", "ORGANIZER", "CORE")).andExpect(status().isOk)
+        mvc.perform(authenticated("update:member").param("memberTypes", "DEEPER,UNASSIGNED")).andExpect(status().isOk)
+        mvc.perform(authenticated("update:member")).andExpect(status().isOk)
         val requests = mockingDetails(service).invocations.map { it.arguments.single() as MemberManagementRequest }
         assertThat(requests.map { it.memberTypes }).containsExactly(
             listOf(MemberType.ORGANIZER, MemberType.CORE),
@@ -185,7 +188,7 @@ class MemberManagementControllerTest {
     @Test
     fun `빈 필터와 최대 페이지 값도 정상적으로 바인딩한다`() {
         mvc.perform(
-            authenticated("read:member")
+            authenticated("update:member")
                 .param("parts", "")
                 .param("teamNumbers", "")
                 .param("activityStatuses", "")
@@ -202,16 +205,16 @@ class MemberManagementControllerTest {
 
     @Test
     fun `목록 조회 권한만으로 공통 선택지 조회 권한을 대신하지 않는다`() {
-        mvc.perform(authenticated("read:member")).andExpect(status().isOk)
-        mvc.perform(authenticatedRequest("/v3/members/parts", "read:member")).andExpect(status().isForbidden)
-        mvc.perform(authenticatedRequest("/v3/cohorts/current/teams", "read:member")).andExpect(status().isForbidden)
+        mvc.perform(authenticated("update:member")).andExpect(status().isOk)
+        mvc.perform(authenticatedRequest("/v3/members/parts", "update:member")).andExpect(status().isForbidden)
+        mvc.perform(authenticatedRequest("/v3/cohorts/current/teams", "update:member")).andExpect(status().isForbidden)
         verifyNoInteractions(cohorts)
     }
 
     @Test
     fun `잘못된 페이지 크기와 필터를 400으로 반환한다`() {
         listOf("page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "memberTypes" to "MASTER", "memberTypes" to "GUEST", "memberTypes" to "deeper", "memberTypes" to "DEEPER,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
-            mvc.perform(authenticated("read:member").param(key, value))
+            mvc.perform(authenticated("update:member").param(key, value))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))
         }
