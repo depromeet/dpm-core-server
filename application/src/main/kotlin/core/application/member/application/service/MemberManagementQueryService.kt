@@ -1,5 +1,6 @@
 package core.application.member.application.service
 
+import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.member.presentation.request.MemberManagementRequest
 import core.application.member.presentation.request.MemberManagementRequest.ActivityStatus
 import core.application.member.presentation.request.MemberManagementRequest.ApprovalStatus
@@ -9,6 +10,8 @@ import core.application.member.presentation.response.MemberManagementResponse.Su
 import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.port.outbound.CohortPersistencePort
+import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
@@ -19,12 +22,14 @@ import org.springframework.transaction.annotation.Transactional
 class MemberManagementQueryService(
     private val targets: MemberManagementTargetQueryService,
     private val cohorts: CohortQueryUseCase,
+    private val cohortPersistencePort: CohortPersistencePort,
     private val members: MemberPersistencePort,
 ) {
     @Transactional(readOnly = true)
     fun getOverview(request: MemberManagementRequest): MemberManagementResponse {
-        val cohortId = cohorts.getActiveCohortId().value
-        val allMembers = targets.findAll(cohortId)
+        val activeCohortId = cohorts.getActiveCohortId().value
+        val cohortId = request.cohortId?.let(::requireExistingCohort) ?: activeCohortId
+        val allMembers = targets.findAll(cohortId, activeCohortId)
         val ordering =
             if (request.approvalStatus == ApprovalStatus.PENDING) {
                 val requestTimes =
@@ -118,6 +123,12 @@ class MemberManagementQueryService(
             lastUpdatedAt = allMembers.mapNotNull { it.updatedAt }.maxOrNull(),
             members = filtered.drop(offset).take(request.size),
         )
+    }
+
+    /** 지정한 기수가 있어야 조회한다. 소속·팀·역할·활동 상태는 이 기수 기준으로 계산한다. */
+    private fun requireExistingCohort(requested: Long): Long {
+        cohortPersistencePort.findById(CohortId(requested)) ?: throw CohortNotFoundException()
+        return requested
     }
 
     private companion object {
