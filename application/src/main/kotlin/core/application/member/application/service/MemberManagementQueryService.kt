@@ -27,8 +27,9 @@ class MemberManagementQueryService(
 ) {
     @Transactional(readOnly = true)
     fun getOverview(request: MemberManagementRequest): MemberManagementResponse {
-        val cohortId = resolveCohortId(request.cohortId)
-        val allMembers = targets.findAll(cohortId)
+        val activeCohortId = cohorts.getActiveCohortId().value
+        val cohortId = request.cohortId?.let(::requireExistingCohort) ?: activeCohortId
+        val allMembers = targets.findAll(cohortId, activeCohortId)
         val ordering =
             if (request.approvalStatus == ApprovalStatus.PENDING) {
                 val requestTimes =
@@ -124,10 +125,10 @@ class MemberManagementQueryService(
         )
     }
 
-    /** 생략하면 활성 기수, 지정하면 존재하는 기수만 허용한다. 소속·팀·역할·활동 상태는 이 기수 기준으로 계산한다. */
-    private fun resolveCohortId(requested: Long?): Long {
-        if (requested == null) return cohorts.getActiveCohortId().value
-        return cohortPersistencePort.findById(CohortId(requested))?.id?.value ?: throw CohortNotFoundException()
+    /** 지정한 기수가 있어야 조회한다. 소속·팀·역할·활동 상태는 이 기수 기준으로 계산한다. */
+    private fun requireExistingCohort(requested: Long): Long {
+        cohortPersistencePort.findById(CohortId(requested)) ?: throw CohortNotFoundException()
+        return requested
     }
 
     private companion object {
