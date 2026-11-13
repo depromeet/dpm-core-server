@@ -15,10 +15,12 @@ interface MemberManagementApi {
         description =
             "cohortId 기수(생략 시 활성 기수)의 승인 회원과 가입 대기자를 조회합니다. cohortId가 1 미만이면 400, " +
                 "없는 기수는 404(COHORT-404-1)입니다. 팀 번호·멤버 타입·활동 상태와 요약은 조회한 기수 기준이며 " +
-                "응답 cohortId도 조회한 기수입니다. 과거 기수의 수료 상태는 판정하지 않고 COMPLETED로 표시하므로 " +
-                "수료 위험 필터와 graduationRiskCount는 0건입니다. status와 updatedAt은 기수별 값이 아닌 회원 전체 값이며, " +
-                "탈퇴·반려·삭제된 회원은 과거 기수에서도 제외합니다. 가입 대기자는 승인 가능한 활성 기수 소속이거나 " +
-                "기수 소속이 없는 회원이며 cohortId와 관계없이 같습니다. 멤버 수정은 활성 기수만 가능하므로 " +
+                "응답 cohortId도 조회한 기수입니다. 과거 기수의 출석 집계 대상(DEEPER)은 수료를 판정하지 않고 " +
+                "COMPLETED로 표시하므로 graduationStatuses의 NORMAL·AT_RISK·IMPOSSIBLE 필터와 " +
+                "graduationRiskCount는 0건입니다. 그 밖의 타입은 활성 기수와 같이 null입니다. " +
+                "status와 updatedAt은 기수별 값이 아닌 회원 전체 값이며, 탈퇴·반려·삭제된 회원은 과거 기수에서도 제외합니다. " +
+                "가입 대기자 대상은 승인 가능한 활성 기수 소속이거나 기수 소속이 없는 회원으로 cohortId와 관계없이 같습니다. " +
+                "멤버 수정은 활성 기수만 가능하므로 " +
                 "과거 기수 목록은 조회 전용입니다. PENDING 회원은 이름·파트 제출을 완료한 경우만 포함합니다. " +
                 "signupEmail 이 @dpm.test 인 QA 계정은 목록·요약에서 제외합니다(로그인·마이페이지는 가능). " +
                 "요약은 검색·필터와 무관하며 " +

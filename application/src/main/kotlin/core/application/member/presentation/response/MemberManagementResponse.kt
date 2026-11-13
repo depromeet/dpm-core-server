@@ -60,8 +60,8 @@ data class MemberManagementResponse(
         val missingInformation: Boolean,
         @field:Schema(
             description =
-                "활성 기수 승인 회원은 출석 기록이 없어도 0건으로 판정(NORMAL), 과거 기수 회원은 COMPLETED. " +
-                    "미승인·기수 미소속은 null",
+                "출석 집계 대상(DEEPER) 승인 회원만 표시. 활성 기수는 출석 기록이 없어도 0건으로 판정(NORMAL), " +
+                    "과거 기수는 COMPLETED. 그 밖의 타입·미승인·기수 미소속은 null",
             nullable = true,
         )
         val graduationStatus: AttendanceGraduationStatus?,
