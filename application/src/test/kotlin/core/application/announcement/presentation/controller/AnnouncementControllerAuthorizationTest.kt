@@ -48,21 +48,21 @@ class AnnouncementControllerAuthorizationTest {
     }
 
     @Test
-    fun `비로그인 요청은 공지 목록 회원 현황 조회와 리마인드 푸시를 할 수 없다`() {
+    fun `비로그인 요청은 회원 현황 조회 리마인드 푸시 삭제를 할 수 없다`() {
         SecurityContextHolder.getContext().authentication =
             AnonymousAuthenticationToken("key", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"))
 
+        // 로그인 회원 ID 인자가 없는 API는 권한 단계에서 403이다.
         listOf(
-            get("/v1/announcements"),
             get("/v1/announcements/1/mark-as-read/members"),
             get("/v1/announcements/1/assignment-status"),
             post("/v1/announcements/1/remind-notification"),
-            delete("/v1/announcements/1"),
         ).forEach { request ->
-            // 로그인 회원 ID가 필요한 API는 인자 단계에서 401, 나머지는 권한 단계에서 403으로 거절된다.
-            mockMvc.perform(request).andExpect(status().is4xxClientError)
+            mockMvc.perform(request).andExpect(status().isForbidden).andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
         }
-        mockMvc.perform(get("/v1/announcements")).andExpect(status().isForbidden).andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        // 로그인 회원 ID 인자가 있는 API는 인자 단계에서 401이다.
+        mockMvc.perform(delete("/v1/announcements/1")).andExpect(status().isUnauthorized)
+        mockMvc.perform(get("/v1/announcements/1")).andExpect(status().isUnauthorized)
         verifyNoInteractions(commandService, queryService)
     }
 
