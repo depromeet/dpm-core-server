@@ -10,6 +10,11 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Size
 
 data class MemberManagementRequest(
+    @field:Schema(
+        description =
+            "조회할 기수 ID. GET /v1/cohorts의 cohortId이며 기수 번호가 아닙니다. 생략하면 활성 기수를 조회합니다",
+    )
+    val cohortId: Long? = null,
     @field:Schema(description = "승인 탭. APPROVED는 ACTIVE/INACTIVE를 포함")
     val approvalStatus: ApprovalStatus = ApprovalStatus.APPROVED,
     @field:Schema(description = "닉네임 또는 관리 목록에 표시하는 이메일 부분 검색. 앞뒤 공백 무시, 대소문자 구분 없음")
