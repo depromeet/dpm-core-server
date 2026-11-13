@@ -9,7 +9,7 @@ import java.time.Instant
 
 data class MemberManagementResponse(
     val cohortId: Long,
-    @field:Schema(description = "검색·필터와 무관한 현재 기수 현황")
+    @field:Schema(description = "검색·필터와 무관한 조회 기수 현황")
     val summary: Summary,
     @field:Schema(description = "검색·필터 적용 후 목록 전체 수")
     val totalElements: Int,
@@ -21,16 +21,16 @@ data class MemberManagementResponse(
 ) {
     @Schema(name = "MemberManagementTotals")
     data class Summary(
-        @field:Schema(description = "제목 옆 현재 기수 승인 회원 수. 타입 미배정 포함, 가입 대기자 제외")
+        @field:Schema(description = "제목 옆 조회 기수 승인 회원 수. 타입 미배정 포함, 가입 대기자 제외")
         val totalMemberCount: Int,
         val deeperCount: Int,
         val organizerCount: Int,
         val coreCount: Int,
-        @field:Schema(description = "현재 기수 또는 기수 없는 가입 대기자")
+        @field:Schema(description = "활성 기수 소속 또는 기수 없는 가입 대기자. 조회 기수와 무관")
         val pendingCount: Int,
         @field:Schema(description = "승인 멤버 중 파트·팀·타입 하나라도 미배정인 인원")
         val missingInformationCount: Int,
-        @field:Schema(description = "현재 기수 활동 ACTIVE 멤버 중 AT_RISK와 IMPOSSIBLE의 합계")
+        @field:Schema(description = "조회 기수 활동 ACTIVE 멤버 중 AT_RISK와 IMPOSSIBLE의 합계. 과거 기수는 0")
         val graduationRiskCount: Int,
     )
 
@@ -58,7 +58,12 @@ data class MemberManagementResponse(
         val teamNumber: Int,
         val status: MemberStatus,
         val missingInformation: Boolean,
-        @field:Schema(description = "현재 기수 승인 회원은 출석 기록이 없어도 0건으로 판정(NORMAL). 미승인·기수 미소속은 null", nullable = true)
+        @field:Schema(
+            description =
+                "활성 기수 승인 회원은 출석 기록이 없어도 0건으로 판정(NORMAL), 과거 기수 회원은 COMPLETED. " +
+                    "미승인·기수 미소속은 null",
+            nullable = true,
+        )
         val graduationStatus: AttendanceGraduationStatus?,
         @field:Schema(description = "관리 대상 중 앞뒤 공백을 제외한 닉네임과 실제 파트가 같은 다른 회원 존재 여부. 대소문자 구분, 빈 닉네임·미배정 파트 제외")
         val duplicateSuspected: Boolean,

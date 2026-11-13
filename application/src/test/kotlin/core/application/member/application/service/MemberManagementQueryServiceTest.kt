@@ -29,7 +29,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
@@ -400,14 +399,7 @@ class MemberManagementQueryServiceTest {
 
     @Test
     fun `과거 기수를 지정하면 그 기수의 소속 팀 역할 활동 상태와 요약으로 조회한다`() {
-        val past = source.map { if (it.cohortId == 19L) it.copy(cohortId = 18) else it }
-        `when`(cohortPort.findById(CohortId(18))).thenReturn(Cohort(id = CohortId(18), value = "18"))
-        `when`(members.findManagementMembers(18)).thenReturn(past)
-        `when`(activities.findAll(past.map { it.memberId }, 18)).thenReturn(
-            past.filter { it.status != MemberStatus.PENDING }.associate {
-                it.memberId to core.domain.member.port.outbound.MemberCohortActivity(it.memberId, 18, core.domain.member.enums.MemberActivityStatus.ENDED)
-            },
-        )
+        stubPastCohort()
 
         val response = service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false))
 
@@ -416,15 +408,43 @@ class MemberManagementQueryServiceTest {
         assertThat(response.members.associate { it.memberId to it.memberType })
             .containsExactlyInAnyOrderEntriesOf(mapOf(1L to "ORGANIZER", 2L to "UNASSIGNED", 3L to "UNASSIGNED", 4L to "UNASSIGNED", 5L to "UNASSIGNED"))
         assertThat(response.members.map { it.activityStatus }).containsOnly(core.domain.member.enums.MemberActivityStatus.ENDED)
-        // 18기 세션 출석이 없으면 수료는 미평가다.
-        assertThat(response.members.map { it.graduationStatus }).containsOnlyNulls()
         assertThat(response.summary.totalMemberCount).isEqualTo(5)
         assertThat(response.summary.organizerCount).isEqualTo(1)
         assertThat(response.summary.deeperCount).isZero()
         assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, memberTypes = listOf(MemberType.ORGANIZER))).members.map { it.memberId })
             .containsExactly(1L)
-        verify(attendance, org.mockito.Mockito.atLeastOnce()).findMemberAttendances(18, emptyList())
-        verify(cohorts, never()).getActiveCohortId()
+        // 승인 회원은 조회 기수, 가입 대기자는 활성 기수 기준으로 조회한다.
+        verify(members, org.mockito.Mockito.atLeastOnce()).findManagementMembers(18, 19)
+    }
+
+    @Test
+    fun `과거 기수 수료 상태는 판정하지 않고 COMPLETED로 두어 위험 필터와 요약이 0건이다`() {
+        stubPastCohort()
+        // 2번은 18기 결석 5회라 판정했다면 수료 불가가 되는 회원이다.
+        `when`(attendance.findMemberAttendances(18, emptyList())).thenReturn(
+            listOf(attendanceRow(1), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5)),
+        )
+
+        val response = service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false))
+
+        assertThat(response.members.map { it.graduationStatus }).containsOnly(AttendanceGraduationStatus.COMPLETED)
+        assertThat(response.summary.graduationRiskCount).isZero()
+        assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.IMPOSSIBLE))).totalElements)
+            .isZero()
+        assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.COMPLETED))).totalElements)
+            .isEqualTo(5)
+        // 활성 기수는 기존처럼 출석으로 판정한다.
+        assertThat(service.getOverview(MemberManagementRequest(excludeStaff = false)).members.map { it.graduationStatus })
+            .doesNotContain(AttendanceGraduationStatus.COMPLETED)
+    }
+
+    @Test
+    fun `가입 대기 탭은 활성 기수 기준이라 과거 기수를 지정해도 같은 목록과 수다`() {
+        stubPastCohort()
+        val current = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
+        val past = service.getOverview(MemberManagementRequest(cohortId = 18, approvalStatus = ApprovalStatus.PENDING))
+        assertThat(past.members.map { it.memberId }).isEqualTo(current.members.map { it.memberId }).containsExactly(6L, 7L)
+        assertThat(past.summary.pendingCount).isEqualTo(current.summary.pendingCount)
     }
 
     @Test
@@ -459,6 +479,18 @@ class MemberManagementQueryServiceTest {
         updatedAt,
         signupEmail = "user$id@example.com",
     )
+
+    /** 18기를 과거 기수로 조회할 때의 저장소 결과. 활성 기수 대기자는 18기 소속이 아니라 cohortId가 비어 있다. */
+    private fun stubPastCohort() {
+        val past = source.map { if (it.status != MemberStatus.PENDING) it.copy(cohortId = 18) else it.copy(cohortId = null) }
+        `when`(cohortPort.findById(CohortId(18))).thenReturn(Cohort(id = CohortId(18), value = "18"))
+        `when`(members.findManagementMembers(18, 19)).thenReturn(past)
+        `when`(activities.findAll(past.map { it.memberId }, 18)).thenReturn(
+            past.filter { it.status != MemberStatus.PENDING }.associate {
+                it.memberId to core.domain.member.port.outbound.MemberCohortActivity(it.memberId, 18, core.domain.member.enums.MemberActivityStatus.ENDED)
+            },
+        )
+    }
 
     private fun role(
         name: String,

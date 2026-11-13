@@ -12,8 +12,10 @@ import jakarta.validation.constraints.Size
 data class MemberManagementRequest(
     @field:Schema(
         description =
-            "조회할 기수 ID. GET /v1/cohorts의 cohortId이며 기수 번호가 아닙니다. 생략하면 활성 기수를 조회합니다",
+            "조회할 기수 ID. GET /v1/cohorts의 cohortId이며 기수 번호가 아닙니다. 생략하면 활성 기수를 조회합니다. " +
+                "1 미만은 400, 없는 기수는 404",
     )
+    @field:Min(1)
     val cohortId: Long? = null,
     @field:Schema(description = "승인 탭. APPROVED는 ACTIVE/INACTIVE를 포함")
     val approvalStatus: ApprovalStatus = ApprovalStatus.APPROVED,

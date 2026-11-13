@@ -3,6 +3,7 @@ package core.application.member.application.service
 import core.application.attendance.application.service.AttendanceGraduationEvaluator
 import core.application.member.application.service.role.CurrentCohortRoleResolver
 import core.application.member.presentation.response.MemberManagementResponse.MemberSummary
+import core.domain.attendance.enums.AttendanceGraduationStatus
 import core.domain.attendance.port.outbound.AttendancePersistencePort
 import core.domain.authorization.vo.RoleType
 import core.domain.member.constant.TestAccountEmails
@@ -21,8 +22,18 @@ class MemberManagementTargetQueryService(
     private val graduationEvaluator: AttendanceGraduationEvaluator,
     private val activities: MemberActivityPersistencePort,
 ) {
-    fun findAll(cohortId: Long): List<MemberSummary> {
-        val source = members.findManagementMembers(cohortId).filterNot { TestAccountEmails.matches(it.signupEmail) }
+    /**
+     * [cohortId] 기수의 관리 대상을 계산한다. 가입 대기자는 [activeCohortId] 기준으로 고정한다.
+     * 활성 기수가 아닌 기수는 활동을 마친 기수라 수료 상태를 판정하지 않고 [AttendanceGraduationStatus.COMPLETED]로 둔다.
+     */
+    fun findAll(
+        cohortId: Long,
+        activeCohortId: Long = cohortId,
+    ): List<MemberSummary> {
+        val isActiveCohort = cohortId == activeCohortId
+        val source =
+            members.findManagementMembers(cohortId, pendingCohortId = activeCohortId)
+                .filterNot { TestAccountEmails.matches(it.signupEmail) }
         val memberIds = source.map { it.memberId }
         val assignments = roles.findActiveRoleAssignmentsByMemberIds(memberIds)
         val activityByMember = activities.findAll(memberIds, cohortId)
@@ -54,9 +65,9 @@ class MemberManagementTargetQueryService(
                 missingInformation =
                     approved && (member.part == null || member.teamNumber == 0 || type == UNASSIGNED),
                 graduationStatus =
-                    attendanceSummaries[member.memberId]?.takeIf { approved && member.cohortId == cohortId }?.let(
-                        graduationEvaluator::evaluate,
-                    ),
+                    attendanceSummaries[member.memberId]?.takeIf { approved && member.cohortId == cohortId }?.let {
+                        if (isActiveCohort) graduationEvaluator.evaluate(it) else AttendanceGraduationStatus.COMPLETED
+                    },
                 duplicateSuspected = duplicateCounts.getOrDefault(member.name.trim() to member.part, 0) > 1,
                 updatedAt = member.updatedAt,
                 activityStatus = activityByMember[member.memberId]?.status,
