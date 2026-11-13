@@ -1,5 +1,6 @@
 package core.application.member.application.service
 
+import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.common.exception.BusinessException
 import core.application.common.exception.GlobalExceptionCode
 import core.application.member.application.exception.MemberExceptionCode
@@ -23,7 +24,8 @@ class MemberDeletionService(
 ) {
     /**
      * 운영진 삭제. 가입 대기자는 소프트 삭제하고, 승인 회원은 활성 기수 소속일 때만 영구 삭제한다.
-     * 지난 기수에만 속한 승인 회원은 출석·역할 기록까지 사라지므로 거절하고 MASTER 영구 삭제로만 처리한다.
+     * 활성 기수 소속이 아닌 승인 회원(지난 기수 회원, 기수 소속 없는 레거시 회원)은 출석·역할 기록까지 사라지므로 거절하고
+     * MASTER 영구 삭제로만 처리한다. 활성 기수가 없으면 다른 관리 쓰기와 같이 승인 회원 삭제를 거절한다.
      */
     @TrackMemberBadges
     fun delete(
@@ -50,8 +52,12 @@ class MemberDeletionService(
             targets.filter {
                 it.status == MemberStatus.ACTIVE || it.status == MemberStatus.INACTIVE
             }
-        if (approvedTargets.any { activeCohortId == null || activeCohortId !in it.cohortIds }) {
-            throw BusinessException(MemberExceptionCode.MEMBER_PAST_COHORT_DELETION_NOT_ALLOWED)
+        if (approvedTargets.isNotEmpty()) {
+            // 다른 관리 쓰기와 같이 활성 기수가 없으면 승인 회원은 다루지 않는다.
+            if (activeCohortId == null) throw CohortNotFoundException()
+            if (approvedTargets.any { activeCohortId !in it.cohortIds }) {
+                throw BusinessException(MemberExceptionCode.MEMBER_PAST_COHORT_DELETION_NOT_ALLOWED)
+            }
         }
         val approvedIds = approvedTargets.map { it.memberId }
         val blockedMemberIds = members.findSharedRecordOwnerIds(approvedIds)

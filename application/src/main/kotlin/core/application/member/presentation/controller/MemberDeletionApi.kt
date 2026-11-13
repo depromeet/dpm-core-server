@@ -17,8 +17,9 @@ interface MemberDeletionApi {
         description =
             "delete:member 권한이 필요합니다. ACTIVE·INACTIVE 회원은 로그인 수단·세션과 개인 연결 데이터를 영구 삭제합니다. " +
                 "PENDING·REJECTED 회원은 기존처럼 소프트 삭제합니다. 본인 계정은 삭제할 수 없습니다. " +
-                "승인 회원은 활성 기수 소속일 때만 삭제하며, 지난 기수에만 속한 회원은 MEMBER-409-73으로 거절합니다. " +
-                "지난 기수 회원 영구 삭제는 MASTER 전용 DELETE /v3/members/{memberId}/purge를 사용합니다. " +
+                "승인 회원은 활성 기수 소속일 때만 삭제하며, 활성 기수 소속이 아닌 승인 회원(지난 기수 회원, 기수 소속 없는 회원)은 " +
+                "MEMBER-409-73으로 거절합니다(data 없음). 활성 기수가 없으면 승인 회원 삭제는 COHORT-404-1입니다. " +
+                "이런 회원의 영구 삭제는 MASTER 전용 DELETE /v3/members/{memberId}/purge를 사용합니다. " +
                 "작성한 공지(과제 포함), 주최한 회식·정산·모임이 있으면 MEMBER-409-72로 차단합니다. " +
                 "타인 기록과 병합 감사 이력은 유지합니다. 삭제된 회원 재요청은 404입니다.",
     )
@@ -30,7 +31,7 @@ interface MemberDeletionApi {
             responseCode = "409",
             description =
                 "MEMBER-409-72: 공유 기록 소유자가 포함되어 전체 취소. data.blockedMemberIds는 요청 대상 중 삭제 불가 ID 전체(오름차순). " +
-                    "MEMBER-409-73: 지난 기수에만 속한 승인 회원이 포함되어 전체 취소",
+                    "MEMBER-409-73: 활성 기수 소속이 아닌 승인 회원이 포함되어 전체 취소(data 없음). 72보다 먼저 판정",
             content = [
                 Content(
                     mediaType = "application/json",
@@ -49,7 +50,7 @@ interface MemberDeletionApi {
         summary = "멤버 일괄 삭제",
         description =
             "단건과 같은 상태별 삭제 규칙을 적용합니다. 모든 대상을 한 트랜잭션으로 처리하며 " +
-                "공유 기록 소유자, 지난 기수에만 속한 승인 회원, 본인, 없는 회원이나 이미 삭제된 회원이 포함되면 전체 취소합니다.",
+                "공유 기록 소유자, 활성 기수 소속이 아닌 승인 회원, 본인, 없는 회원이나 이미 삭제된 회원이 포함되면 전체 취소합니다.",
     )
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "일괄 삭제 완료", useReturnTypeSchema = true),
@@ -59,7 +60,7 @@ interface MemberDeletionApi {
             responseCode = "409",
             description =
                 "MEMBER-409-72: 공유 기록 소유자가 포함되어 전체 취소. data.blockedMemberIds는 요청 대상 중 삭제 불가 ID 전체(오름차순). " +
-                    "MEMBER-409-73: 지난 기수에만 속한 승인 회원이 포함되어 전체 취소",
+                    "MEMBER-409-73: 활성 기수 소속이 아닌 승인 회원이 포함되어 전체 취소(data 없음). 72보다 먼저 판정",
             content = [
                 Content(
                     mediaType = "application/json",

@@ -39,7 +39,7 @@ enum class MemberExceptionCode(
     MEMBER_PAST_COHORT_DELETION_NOT_ALLOWED(
         HttpStatus.CONFLICT,
         "MEMBER-409-73",
-        "지난 기수 회원은 삭제할 수 없습니다. 영구 삭제가 필요하면 MASTER에게 요청해주세요",
+        "활성 기수 회원이 아니면 운영진 삭제로 지울 수 없습니다",
     ),
     MEMBER_OAUTH_CONFLICT(HttpStatus.CONFLICT, "MEMBER-409-21", "로그인 수단이 충돌하거나 소유 계정이 변경되었습니다. 다시 로그인해주세요"),
     INVALID_MEMBER_BADGE_VERSION(HttpStatus.BAD_REQUEST, "MEMBER-400-31", "NEW 확인 버전이 올바르지 않습니다"),
