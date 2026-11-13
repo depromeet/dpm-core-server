@@ -32,8 +32,15 @@ interface MemberPersistencePort {
     /** 회원의 삭제 상태와 기수 소속을 최신 상태로 읽는다. 쓰기 트랜잭션에서 ID 순서로 잠근다. */
     fun lockApprovalTargets(memberIds: List<Long>): List<MemberApprovalTarget>
 
-    /** 현재 기수 소속 또는 어느 기수에도 속하지 않은 PENDING. 삭제/탈퇴 회원은 제외한다. */
-    fun findManagementMembers(cohortId: Long): List<MemberManagementQueryModel>
+    /**
+     * [cohortId] 기수 소속 승인 회원과, [pendingCohortId] 기수 소속이거나 어느 기수에도 속하지 않은 PENDING.
+     * 가입 대기자는 승인 가능한 범위인 활성 기수 기준으로 고정할 때 [pendingCohortId]에 활성 기수를 넘긴다.
+     * 삭제/탈퇴 회원은 제외한다.
+     */
+    fun findManagementMembers(
+        cohortId: Long,
+        pendingCohortId: Long = cohortId,
+    ): List<MemberManagementQueryModel>
 
     /** 미승인 회원의 최신 재신청 시각, 재신청 이력이 없으면 최초 생성 시각을 일괄 조회한다. */
     fun findPendingRequestTimes(memberIds: List<Long>): Map<Long, Instant>

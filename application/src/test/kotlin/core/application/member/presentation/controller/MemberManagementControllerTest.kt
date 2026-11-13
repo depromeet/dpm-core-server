@@ -1,6 +1,7 @@
 package core.application.member.presentation.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.cohort.application.service.CohortCommandService
 import core.application.cohort.application.service.CohortQueryService
 import core.application.cohort.presentation.controller.CohortController
@@ -117,7 +118,7 @@ class MemberManagementControllerTest {
         assertThat(properties["duplicateSuspected"]!!.nullable == true).isFalse()
         assertThat(legacy["MemberSummary"]!!.properties).doesNotContainKeys("email", "signupEmail", "duplicateSuspected")
         val requestProperties = ModelConverters.getInstance().readAll(MemberManagementRequest::class.java)["MemberManagementRequest"]!!.properties
-        assertThat(requestProperties).containsKeys("parts", "teamNumbers", "activityStatuses", "memberTypes")
+        assertThat(requestProperties).containsKeys("cohortId", "parts", "teamNumbers", "activityStatuses", "memberTypes")
             .doesNotContainKeys("part", "teamNumber", "status", "filterValuesValid", "isFilterValuesValid")
         assertThat(ObjectMapper().writeValueAsString(MemberManagementRequest())).doesNotContain("FilterValuesValid", "filterValuesValid")
     }
@@ -172,6 +173,23 @@ class MemberManagementControllerTest {
     }
 
     @Test
+    fun `기수 ID를 전달하고 생략하면 null로 두어 활성 기수를 조회한다`() {
+        mvc.perform(authenticated("update:member").param("cohortId", "2")).andExpect(status().isOk)
+        mvc.perform(authenticated("update:member")).andExpect(status().isOk)
+        val requests = mockingDetails(service).invocations.map { it.arguments.single() as MemberManagementRequest }
+        assertThat(requests.map { it.cohortId }).containsExactly(2L, null)
+    }
+
+    @Test
+    fun `없는 기수는 404 COHORT-404-1로 응답한다`() {
+        // 이 요청 값에만 반응하도록 정확한 요청으로 지정해 다른 테스트에 영향을 주지 않는다.
+        `when`(service.getOverview(MemberManagementRequest(cohortId = 999))).thenThrow(CohortNotFoundException())
+        mvc.perform(authenticated("update:member").param("cohortId", "999"))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.code").value("COHORT-404-1"))
+    }
+
+    @Test
     fun `멤버 타입을 반복 파라미터와 쉼표로 전달하고 생략하면 기존 기본값을 유지한다`() {
         mvc.perform(authenticated("update:member").param("memberTypes", "ORGANIZER", "CORE")).andExpect(status().isOk)
         mvc.perform(authenticated("update:member").param("memberTypes", "DEEPER,UNASSIGNED")).andExpect(status().isOk)
@@ -213,7 +231,7 @@ class MemberManagementControllerTest {
 
     @Test
     fun `잘못된 페이지 크기와 필터를 400으로 반환한다`() {
-        listOf("page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "memberTypes" to "MASTER", "memberTypes" to "GUEST", "memberTypes" to "deeper", "memberTypes" to "DEEPER,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
+        listOf("cohortId" to "not-a-number", "cohortId" to "0", "cohortId" to "-1", "page" to "0", "size" to "101", "parts" to "MASTER", "parts" to "WEB,", "parts" to " ", "activityStatuses" to "WITHDRAWN", "activityStatuses" to "NORMAL,", "memberTypes" to "MASTER", "memberTypes" to "GUEST", "memberTypes" to "deeper", "memberTypes" to "DEEPER,", "teamNumbers" to "-1", "teamNumbers" to "0,", "teamNumbers" to "not-a-number", "approvalStatus" to "UNKNOWN", "graduationStatuses" to "UNKNOWN", "page" to "not-a-number").forEach { (key, value) ->
             mvc.perform(authenticated("update:member").param(key, value))
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("GLOBAL-400-01"))

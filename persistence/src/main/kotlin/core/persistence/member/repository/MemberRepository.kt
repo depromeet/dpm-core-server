@@ -161,11 +161,22 @@ class MemberRepository(
         }
     }
 
-    override fun findManagementMembers(cohortId: Long): List<MemberManagementQueryModel> {
+    override fun findManagementMembers(
+        cohortId: Long,
+        pendingCohortId: Long,
+    ): List<MemberManagementQueryModel> {
         val isCurrentCohort =
             exists(
                 selectOne().from(MEMBER_COHORTS)
                     .where(MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID), MEMBER_COHORTS.COHORT_ID.eq(cohortId)),
+            )
+        val isPendingCohort =
+            exists(
+                selectOne().from(MEMBER_COHORTS)
+                    .where(
+                        MEMBER_COHORTS.MEMBER_ID.eq(MEMBERS.MEMBER_ID),
+                        MEMBER_COHORTS.COHORT_ID.eq(pendingCohortId),
+                    ),
             )
         val hasNoCohort =
             DSL.notExists(
@@ -228,7 +239,11 @@ class MemberRepository(
         ).from(MEMBERS)
             .where(MEMBERS.DELETED_AT.isNull)
             .and(MEMBERS.STATUS.`in`(MemberStatus.ACTIVE.name, MemberStatus.INACTIVE.name, MemberStatus.PENDING.name))
-            .and(isCurrentCohort.or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name).and(hasNoCohort)))
+            // 승인 회원은 조회 기수, 가입 대기자는 승인 가능한 기수(pendingCohortId) 소속이거나 소속이 없을 때만 포함한다.
+            .and(
+                MEMBERS.STATUS.ne(MemberStatus.PENDING.name).and(isCurrentCohort)
+                    .or(MEMBERS.STATUS.eq(MemberStatus.PENDING.name).and(isPendingCohort.or(hasNoCohort))),
+            )
             .and(MEMBERS.STATUS.ne(MemberStatus.PENDING.name).or(MEMBERS.PROFILE_COMPLETED_AT.isNotNull))
             .and(notTestAccountEmail())
             .fetch { record ->
