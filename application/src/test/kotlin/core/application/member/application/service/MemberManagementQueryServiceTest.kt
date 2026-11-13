@@ -420,19 +420,24 @@ class MemberManagementQueryServiceTest {
     @Test
     fun `과거 기수 수료 상태는 판정하지 않고 COMPLETED로 두어 위험 필터와 요약이 0건이다`() {
         stubPastCohort()
+        // 출석 집계는 그 기수 DEEPER만 돌려준다. 1번은 18기 운영진이라 행이 없다.
         // 2번은 18기 결석 5회라 판정했다면 수료 불가가 되는 회원이다.
         `when`(attendance.findMemberAttendances(18, emptyList())).thenReturn(
-            listOf(attendanceRow(1), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5)),
+            listOf(attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5)),
         )
 
         val response = service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false))
 
-        assertThat(response.members.map { it.graduationStatus }).containsOnly(AttendanceGraduationStatus.COMPLETED)
+        assertThat(response.members.associate { it.memberId to it.graduationStatus }).containsExactlyInAnyOrderEntriesOf(
+            mapOf(1L to null, 2L to AttendanceGraduationStatus.COMPLETED, 3L to AttendanceGraduationStatus.COMPLETED, 4L to AttendanceGraduationStatus.COMPLETED, 5L to AttendanceGraduationStatus.COMPLETED),
+        )
         assertThat(response.summary.graduationRiskCount).isZero()
-        assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.IMPOSSIBLE))).totalElements)
-            .isZero()
+        listOf(AttendanceGraduationStatus.NORMAL, AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE).forEach { status ->
+            assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false, graduationStatuses = listOf(status))).totalElements)
+                .isZero()
+        }
         assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.COMPLETED))).totalElements)
-            .isEqualTo(5)
+            .isEqualTo(4)
         // 활성 기수는 기존처럼 출석으로 판정한다.
         assertThat(service.getOverview(MemberManagementRequest(excludeStaff = false)).members.map { it.graduationStatus })
             .doesNotContain(AttendanceGraduationStatus.COMPLETED)
