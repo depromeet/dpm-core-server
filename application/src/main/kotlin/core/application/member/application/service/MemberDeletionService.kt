@@ -5,6 +5,7 @@ import core.application.common.exception.GlobalExceptionCode
 import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
 import core.application.member.application.exception.MemberSharedRecordsException
+import core.domain.cohort.port.inbound.CohortQueryUseCase
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberPersistencePort
 import core.domain.member.vo.MemberId
@@ -16,8 +17,14 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
 class MemberDeletionService(
     private val members: MemberPersistencePort,
+    private val activities: MemberActivityService,
+    private val cohorts: CohortQueryUseCase,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
+    /**
+     * 운영진 삭제. 가입 대기자는 소프트 삭제하고, 승인 회원은 활성 기수 소속일 때만 영구 삭제한다.
+     * 지난 기수에만 속한 승인 회원은 출석·역할 기록까지 사라지므로 거절하고 MASTER 영구 삭제로만 처리한다.
+     */
     @TrackMemberBadges
     fun delete(
         memberIds: List<Long?>,
@@ -32,15 +39,21 @@ class MemberDeletionService(
             throw BusinessException(MemberExceptionCode.MEMBER_SELF_DELETION_NOT_ALLOWED)
         }
         val ids = memberIds.filterNotNull().sorted()
-        // 승인 및 관리 수정과 같은 회원 행을 같은 순서로 잠근다.
+        // 기수 전환·관리 수정과 같은 기수 → 회원 순서로 잠가, 확인하는 동안 활성 기수가 바뀌지 않게 한다.
+        activities.lockCohortChanges()
+        val activeCohortId = cohorts.findActiveCohortId()?.value
         val targets = members.lockApprovalTargets(ids)
         if (targets.map { it.memberId } != ids || targets.any { it.isDeleted || it.status == MemberStatus.WITHDRAWN }) {
             throw MemberNotFoundException()
         }
-        val approvedIds =
+        val approvedTargets =
             targets.filter {
                 it.status == MemberStatus.ACTIVE || it.status == MemberStatus.INACTIVE
-            }.map { it.memberId }
+            }
+        if (approvedTargets.any { activeCohortId == null || activeCohortId !in it.cohortIds }) {
+            throw BusinessException(MemberExceptionCode.MEMBER_PAST_COHORT_DELETION_NOT_ALLOWED)
+        }
+        val approvedIds = approvedTargets.map { it.memberId }
         val blockedMemberIds = members.findSharedRecordOwnerIds(approvedIds)
         if (blockedMemberIds.isNotEmpty()) {
             throw MemberSharedRecordsException(blockedMemberIds)
