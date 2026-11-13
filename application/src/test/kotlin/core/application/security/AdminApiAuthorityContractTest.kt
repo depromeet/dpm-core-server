@@ -20,6 +20,7 @@ class AdminApiAuthorityContractTest {
         val prefix =
             AnnotatedElementUtils.findMergedAnnotation(controller, RequestMapping::class.java)?.path?.firstOrNull().orEmpty()
         return controller.declaredMethods
+            .filterNot { it.isSynthetic || it.isBridge }
             .mapNotNull { method ->
                 val mapping =
                     AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping::class.java) ?: return@mapNotNull null

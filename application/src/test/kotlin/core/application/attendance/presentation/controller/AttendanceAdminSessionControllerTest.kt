@@ -209,6 +209,16 @@ class AttendanceAdminSessionControllerTest {
     }
 
     @Test
+    fun `세션별 개인 출석 상세는 출석 수정 권한이 있어야 해서 디퍼 권한으로는 다른 회원을 볼 수 없다`() {
+        loginAs(1L, "read:attendance", "create:attendance")
+        mockMvc
+            .perform(get("/v3/sessions/3/attendances/2"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        verifyNoInteractions(queryService)
+    }
+
+    @Test
     fun `사람별 목록 응답은 members, null 인 myTeamNumber, totalElements 만 주고 팀 없음은 0 이다`() {
         loginAs(1L, "update:attendance")
         given(queryService.getMemberAttendances(GetMemberAttendancesQuery(MemberId(1), null))).willReturn(
