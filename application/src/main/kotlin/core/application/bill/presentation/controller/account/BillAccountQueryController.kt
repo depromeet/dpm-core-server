@@ -17,7 +17,7 @@ class BillAccountQueryController(
     private val billAccountQueryService: BillAccountQueryService,
 ) : BillAccountQueryApi {
     // TODO: BillAccount가 Bill 애그리거트의 하위 도메인이라 API를 애그리거트 루트 단으로 올리는 것에 대하여 논의 필요
-    @PreAuthorize("!hasRole('ROLE_GUEST')")
+    @PreAuthorize("hasAuthority('read:bill')")
     @GetMapping("/{billAccountId}")
     override fun getBillAccount(
         @PathVariable("billAccountId")

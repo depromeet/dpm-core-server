@@ -96,7 +96,7 @@ interface AnnouncementQueryApi {
     )
     @Operation(
         summary = "공지/과제 상세 조회 API",
-        description = "공지/과제 상세 내용을 조회합니다",
+        description = "공지/과제 상세 내용을 조회합니다. 로그인이 필요하며 없으면 401(GLOBAL-401-01)입니다.",
     )
     fun getAnnouncementDetail(
         announcementId: AnnouncementId,
@@ -153,8 +153,8 @@ interface AnnouncementQueryApi {
         ],
     )
     @Operation(
-        summary = "멤버들 공지/과제 읽음 여부 조회 API",
-        description = "멤버 별로 공지/과제 읽음 여부를 조회합니다",
+        summary = "멤버들 공지/과제 읽음 여부 조회 API (운영진)",
+        description = "멤버 별로 공지/과제 읽음 여부를 조회합니다. update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun getAnnouncementReadMemberList(
         announcementId: AnnouncementId,
@@ -196,8 +196,8 @@ interface AnnouncementQueryApi {
         ],
     )
     @Operation(
-        summary = "멤버들 과제 제출 현황 조회 API",
-        description = "멤버 별로 과제 제출 현황를 조회합니다",
+        summary = "멤버들 과제 제출 현황 조회 API (운영진)",
+        description = "멤버 별로 과제 제출 현황를 조회합니다. update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun getAssignmentStatusMemberList(
         announcementId: AnnouncementId,
