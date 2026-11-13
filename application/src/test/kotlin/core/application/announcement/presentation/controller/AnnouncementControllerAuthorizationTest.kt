@@ -2,6 +2,7 @@ package core.application.announcement.presentation.controller
 
 import core.application.announcement.application.service.AnnouncementCommandService
 import core.application.announcement.application.service.AnnouncementQueryService
+import core.application.announcement.presentation.response.AnnouncementListResponse
 import core.application.common.exception.GlobalExceptionHandler
 import core.application.security.resolver.CurrentMemberIdArgumentResolver
 import core.domain.announcement.vo.AnnouncementId
@@ -12,6 +13,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.`when`
 import org.springframework.aop.framework.ProxyFactory
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -64,6 +66,15 @@ class AnnouncementControllerAuthorizationTest {
         mockMvc.perform(delete("/v1/announcements/1")).andExpect(status().isUnauthorized)
         mockMvc.perform(get("/v1/announcements/1")).andExpect(status().isUnauthorized)
         verifyNoInteractions(commandService, queryService)
+    }
+
+    @Test
+    fun `비로그인 요청도 공지 목록은 조회한다`() {
+        SecurityContextHolder.getContext().authentication =
+            AnonymousAuthenticationToken("key", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"))
+        `when`(queryService.getAllAnnouncements()).thenReturn(AnnouncementListResponse(0, emptyList()))
+        mockMvc.perform(get("/v1/announcements")).andExpect(status().isOk)
+        verify(queryService).getAllAnnouncements()
     }
 
     @Test
