@@ -1,5 +1,6 @@
 package core.application.member.application.service
 
+import core.application.cohort.application.exception.CohortNotFoundException
 import core.application.common.exception.BusinessException
 import core.application.member.application.exception.MemberExceptionCode
 import core.application.member.application.exception.MemberNotFoundException
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
@@ -149,19 +151,31 @@ class MemberDeletionServiceTest {
     fun `활성 기수가 없으면 승인 회원은 거절하고 가입 대기자는 삭제한다`() {
         `when`(cohorts.findActiveCohortId()).thenReturn(null)
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.ACTIVE, setOf(18L))))
-        assertThatThrownBy { service.delete(listOf(1), 99) }
-            .hasMessage(MemberExceptionCode.MEMBER_PAST_COHORT_DELETION_NOT_ALLOWED.message)
+        assertThrows<CohortNotFoundException> { service.delete(listOf(1), 99) }
+        verify(members, never()).findSharedRecordOwnerIds(listOf(1))
+        verify(members, never()).hardDeleteById(MemberId(1))
         `when`(members.lockApprovalTargets(listOf(2))).thenReturn(listOf(MemberApprovalTarget(2, MemberStatus.PENDING, emptySet())))
         service.delete(listOf(2), 99)
         verify(members).softDeleteMembers(listOf(2))
     }
 
     @Test
+    fun `기수 소속이 없는 레거시 승인 회원도 운영진 삭제로 지울 수 없다`() {
+        `when`(members.lockApprovalTargets(listOf(6))).thenReturn(listOf(MemberApprovalTarget(6, MemberStatus.ACTIVE, emptySet())))
+        assertThatThrownBy { service.delete(listOf(6), 99) }
+            .hasMessage(MemberExceptionCode.MEMBER_PAST_COHORT_DELETION_NOT_ALLOWED.message)
+        verify(members, never()).hardDeleteById(MemberId(6))
+        verifyNoInteractions(events)
+    }
+
+    @Test
     fun `기수 잠금을 회원 잠금보다 먼저 잡는다`() {
         `when`(members.lockApprovalTargets(listOf(1))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.PENDING, emptySet())))
         service.delete(listOf(1), 99)
-        val order = inOrder(activities, members)
+        // 기수를 잠근 뒤에 활성 기수를 읽어야 확인하는 동안 기수가 바뀌지 않는다.
+        val order = inOrder(activities, cohorts, members)
         order.verify(activities).lockCohortChanges()
+        order.verify(cohorts).findActiveCohortId()
         order.verify(members).lockApprovalTargets(listOf(1))
     }
 
