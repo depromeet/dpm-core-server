@@ -28,7 +28,7 @@ class MemberManagementController(
     private val queryService: MemberManagementQueryService,
     private val commandService: MemberManagementCommandService,
 ) : MemberManagementApi {
-    @PreAuthorize("hasAuthority('read:member')")
+    @PreAuthorize("hasAuthority('update:member')")
     @GetMapping("/overview")
     override fun getOverview(
         @Valid @ModelAttribute request: MemberManagementRequest,

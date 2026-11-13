@@ -174,7 +174,7 @@ interface MemberApi {
         ],
     )
     @Operation(
-        summary = "Apple 로그인 숨김 이메일 멤버 조회 API",
+        summary = "Apple 로그인 숨김 이메일 멤버 조회 API (운영진)",
         description = "Apple 로그인 유저 중 name이 UUID 또는 해시 형태인 멤버만 조회합니다.",
     )
     fun getAppleHiddenEmailMembers(): CustomResponse<AppleHiddenEmailMembersResponse>
@@ -279,7 +279,7 @@ interface MemberApi {
         ],
     )
     @Operation(
-        summary = "멤버 목록 조회 API",
+        summary = "멤버 목록 조회 API (운영진)",
         description = "최신 기수 포함 여부로 멤버 목록을 조회합니다. latest를 전달하지 않으면 전체 멤버를 조회합니다.",
     )
     fun getMembersOverview(

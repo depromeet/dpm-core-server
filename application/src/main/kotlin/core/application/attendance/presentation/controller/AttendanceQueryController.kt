@@ -36,7 +36,7 @@ class AttendanceQueryController(
     ): CustomResponse<SessionRosterResponse> =
         CustomResponse.ok(attendanceQueryService.getSessionRoster(sessionId, memberId))
 
-    @PreAuthorize("hasAuthority('create:attendance')")
+    @PreAuthorize("hasAuthority('update:attendance')")
     @GetMapping("/v3/members/attendances")
     override fun getMemberAttendances(
         @CurrentMemberId memberId: MemberId,
@@ -53,7 +53,7 @@ class AttendanceQueryController(
         return CustomResponse.ok(response)
     }
 
-    @PreAuthorize("hasAuthority('create:attendance')")
+    @PreAuthorize("hasAuthority('update:attendance')")
     @GetMapping("/v3/sessions/{sessionId}/attendances/{memberId}")
     override fun getAttendanceBySessionIdAndMemberId(
         @PathVariable sessionId: SessionId,

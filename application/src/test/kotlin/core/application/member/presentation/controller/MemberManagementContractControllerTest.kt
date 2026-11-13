@@ -96,12 +96,19 @@ class MemberManagementContractControllerTest {
 
     @Test
     fun `NEW 조회와 확인은 서비스를 호출하고 상태를 반환한다`() {
-        mvc.perform(authenticated(get("/v3/members/badges"), "read:member"))
+        mvc.perform(authenticated(get("/v3/members/badges"), "update:member"))
             .andExpect(status().isOk).andExpect(jsonPath("$.data.cohortId").value(19))
             .andExpect(jsonPath("$.data.cards[0].hasNew").value(true))
-        mvc.perform(authenticated(json(post(BADGE_PATH), BADGE_BODY), "read:member"))
+        mvc.perform(authenticated(json(post(BADGE_PATH), BADGE_BODY), "update:member"))
             .andExpect(status().isOk).andExpect(jsonPath("$.data.hasNew").value(false))
         verify(badgeService).acknowledge(MemberBadgeCard.PENDING, 19, 3)
+    }
+
+    @Test
+    fun `디퍼도 가진 조회 권한만으로는 NEW 조회와 확인을 할 수 없다`() {
+        mvc.perform(authenticated(get("/v3/members/badges"), "read:member")).andExpect(status().isForbidden)
+        mvc.perform(authenticated(json(post(BADGE_PATH), BADGE_BODY), "read:member")).andExpect(status().isForbidden)
+        verifyNoInteractions(badgeService)
     }
 
     @Test
@@ -175,10 +182,10 @@ class MemberManagementContractControllerTest {
             """{"cohortId":19,"version":null}""",
             """{"cohortId":19,"version":"1"}""",
         ).forEach { body ->
-            mvc.perform(authenticated(json(post(BADGE_PATH), body), "read:member"))
+            mvc.perform(authenticated(json(post(BADGE_PATH), body), "update:member"))
                 .andExpect(status().isBadRequest)
         }
-        mvc.perform(authenticated(json(post("/v3/members/badges/UNKNOWN/acknowledgement"), BADGE_BODY), "read:member"))
+        mvc.perform(authenticated(json(post("/v3/members/badges/UNKNOWN/acknowledgement"), BADGE_BODY), "update:member"))
             .andExpect(status().isBadRequest)
     }
 
