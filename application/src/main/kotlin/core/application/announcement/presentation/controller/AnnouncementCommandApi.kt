@@ -19,8 +19,8 @@ interface AnnouncementCommandApi {
                 useReturnTypeSchema = true,
     )
     @Operation(
-        summary = "공지/과제 추가 API",
-        description = "공지나 과제를 작성하는 API입니다",
+        summary = "공지/과제 추가 API (운영진)",
+        description = "공지나 과제를 작성하는 API입니다. update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun createAnnouncement(
         createAnnouncementRequest: CreateAnnouncementRequest,
@@ -34,7 +34,7 @@ interface AnnouncementCommandApi {
     )
     @Operation(
         summary = "공지/과제 읽음 처리 API",
-        description = "공지나 과제를 읽음 처리하는 API입니다",
+        description = "공지나 과제를 읽음 처리하는 API입니다. 로그인이 필요하며 없으면 401(GLOBAL-401-01)입니다.",
     )
     fun markAsRead(
         memberId: MemberId,
@@ -47,8 +47,8 @@ interface AnnouncementCommandApi {
                 useReturnTypeSchema = true,
     )
     @Operation(
-        summary = "과제 제출 상태 변경 API",
-        description = "과제 제출 상태를 변경하는 API입니다",
+        summary = "과제 제출 상태 변경 API (운영진)",
+        description = "과제 제출 상태를 변경하는 API입니다. update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun updateSubmitStatus(
         announcementId: AnnouncementId,
@@ -61,8 +61,8 @@ interface AnnouncementCommandApi {
                 useReturnTypeSchema = true,
     )
     @Operation(
-        summary = "공지/과제 삭제 API",
-        description = "공지나 과제를 삭제하는 API입니다",
+        summary = "공지/과제 삭제 API (운영진)",
+        description = "공지나 과제를 삭제하는 API입니다. update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun deleteAnnouncement(
         announcementId: AnnouncementId,
@@ -75,8 +75,8 @@ interface AnnouncementCommandApi {
                 useReturnTypeSchema = true,
     )
     @Operation(
-        summary = "공지/과제 수정 API",
-        description = "공지나 과제를 수정하는 API입니다",
+        summary = "공지/과제 수정 API (운영진)",
+        description = "공지나 과제를 수정하는 API입니다. update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun updateAnnouncement(
         announcementId: AnnouncementId,
@@ -90,8 +90,8 @@ interface AnnouncementCommandApi {
                 useReturnTypeSchema = true,
     )
     @Operation(
-        summary = "공지/과제 리마인드 알림 API",
-        description = "공지나 과제의 리마인드 알림을 발송하는 API입니다",
+        summary = "공지/과제 리마인드 알림 API (운영진)",
+        description = "공지나 과제의 리마인드 알림을 발송하는 API입니다. update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun remindNotification(announcementId: AnnouncementId): CustomResponse<Void>
 
@@ -101,8 +101,10 @@ interface AnnouncementCommandApi {
                 useReturnTypeSchema = true,
     )
     @Operation(
-        summary = "지정된 디퍼들에게 공지/과제 리마인드 알림 API",
-        description = "지정된 디퍼들에게 공지나 과제의 리마인드 알림을 발송하는 API입니다",
+        summary = "지정된 디퍼들에게 공지/과제 리마인드 알림 API (운영진)",
+        description =
+            "지정된 디퍼들에게 공지나 과제의 리마인드 알림을 발송하는 API입니다." +
+                " update:member 권한(운영진·코어)이 필요하며 없으면 403(GLOBAL-403-01)입니다.",
     )
     fun remindNotificationToMembers(
         announcementId: AnnouncementId,
