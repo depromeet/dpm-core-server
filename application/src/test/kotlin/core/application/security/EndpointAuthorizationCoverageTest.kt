@@ -23,8 +23,9 @@ class EndpointAuthorizationCoverageTest {
             .map { Class.forName(it.beanClassName) }
             .flatMap { controller ->
                 val classGuard = AnnotatedElementUtils.findMergedAnnotation(controller, PreAuthorize::class.java)
-                val prefix =
-                    AnnotatedElementUtils.findMergedAnnotation(controller, RequestMapping::class.java)?.path?.firstOrNull().orEmpty()
+                val prefixes =
+                    AnnotatedElementUtils.findMergedAnnotation(controller, RequestMapping::class.java)?.path
+                        ?.takeIf { it.isNotEmpty() } ?: arrayOf("")
                 controller.declaredMethods
                     .filterNot { it.isSynthetic || it.isBridge }
                     .mapNotNull { method ->
@@ -32,15 +33,28 @@ class EndpointAuthorizationCoverageTest {
                         val guard = AnnotatedElementUtils.findMergedAnnotation(method, PreAuthorize::class.java) ?: classGuard
                         if (mapping == null || isRestricted(guard?.value)) return@mapNotNull null
                         val paths = mapping.path.ifEmpty { arrayOf("") }
-                        paths.map { "${mapping.method.joinToString(",")} $prefix$it" }
+                        prefixes.flatMap { prefix -> paths.map { "${mapping.method.joinToString(",")} $prefix$it" } }
                     }.flatten()
             }.toSet()
     }
 
-    /** 권한이 없거나 permitAll()·부정 조건처럼 사실상 누구나 통과하는 선언은 공개로 본다. */
+    /**
+     * 로그인 또는 특정 권한을 요구하는 형태만 보호로 인정한다.
+     * permitAll()·부정 조건·or 조합처럼 누구나 통과할 수 있는 선언은 공개로 보고 허용 목록에서 관리한다.
+     */
     private fun isRestricted(expression: String?): Boolean {
         val value = expression?.trim() ?: return false
-        return value != "permitAll()" && !value.startsWith("!")
+        // and 가 or 보다 먼저 묶이므로 괄호 밖 or 가 있으면 앞의 권한 없이도 통과할 수 있다.
+        return RESTRICTING_EXPRESSION.matches(value) && !withoutParentheses(value).contains(" or ")
+    }
+
+    private fun withoutParentheses(expression: String): String {
+        var value = expression
+        while (true) {
+            val next = value.replace(Regex("""\([^()]*\)"""), "")
+            if (next == value) return value
+            value = next
+        }
     }
 
     @Test
@@ -49,6 +63,10 @@ class EndpointAuthorizationCoverageTest {
     }
 
     private companion object {
+        /** 로그인 또는 특정 권한이 반드시 필요한 형태. 뒤에 and 로 조건을 더 붙이는 것은 허용한다(A and B 는 A 없이 통과할 수 없다). */
+        val RESTRICTING_EXPRESSION =
+            Regex("""(isAuthenticated\(\)|hasAuthority\('[a-z_]+:[a-z_]+'\))( and .+)?""")
+
         /** 의도한 공개 API. 추가할 때는 개인정보를 주거나 다른 회원에게 영향을 주지 않는지 확인한다. */
         val PUBLIC_ENDPOINTS =
             setOf(
@@ -62,6 +80,7 @@ class EndpointAuthorizationCoverageTest {
                 "GET /login/apple",
                 "POST /v1/members/login/auth/apple",
                 "POST /v1/auth/kakao/native",
+                "POST /api/v1/auth/kakao/native",
                 "GET /v1/reissue",
                 // 로그인 전 화면에서 쓰는 기수 정보와 입력값만 판정하는 검증
                 "GET /v1/cohort",

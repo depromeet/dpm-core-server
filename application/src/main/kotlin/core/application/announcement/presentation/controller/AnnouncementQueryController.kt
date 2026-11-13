@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.RestController
 class AnnouncementQueryController(
     val announcementQueryService: AnnouncementQueryService,
 ) : AnnouncementQueryApi {
-    // 디프만 앱 홈이 서버 렌더링에서 토큰 없이 미리 불러온다. 활성 기수 공지 목록만 주고 회원 정보는 없다.
+    // 디프만 앱 홈이 서버 렌더링에서 미리 불러오며, 액세스 토큰 쿠키가 없으면 토큰 없이 호출된다.
+    // 활성 기수 공지 목록과 읽음 수만 주고 회원 정보는 없다.
     @PreAuthorize("permitAll()")
     @GetMapping
     override fun getAnnouncementList(): CustomResponse<AnnouncementListResponse> =
