@@ -175,7 +175,7 @@ class AttendanceAdminSessionControllerTest {
     }
 
     @Test
-    fun `사람별 목록은 출석 생성 권한이 있어야 하고 팀 필터만 받으며 예전 필터와 페이지 파라미터는 무시한다`() {
+    fun `사람별 목록은 출석 수정 권한이 있어야 하고 팀 필터만 받으며 예전 필터와 페이지 파라미터는 무시한다`() {
         loginAs(1L, "read:attendance")
         mockMvc
             .perform(get("/v3/members/attendances"))
@@ -183,7 +183,15 @@ class AttendanceAdminSessionControllerTest {
             .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
         verifyNoInteractions(queryService)
 
-        loginAs(1L, "create:attendance")
+        // 디퍼도 가진 출석 생성 권한만으로는 다른 회원의 출석 현황을 볼 수 없다.
+        loginAs(1L, "read:attendance", "create:attendance")
+        mockMvc
+            .perform(get("/v3/members/attendances"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        verifyNoInteractions(queryService)
+
+        loginAs(1L, "update:attendance")
         mockMvc.perform(get("/v3/members/attendances").param("teams", "1", "2")).andExpect(status().isOk)
         mockMvc.perform(get("/v3/members/attendances").param("teams", "1,2")).andExpect(status().isOk)
         verify(queryService, times(2)).getMemberAttendances(GetMemberAttendancesQuery(MemberId(1), listOf(1, 2)))
@@ -201,8 +209,18 @@ class AttendanceAdminSessionControllerTest {
     }
 
     @Test
+    fun `세션별 개인 출석 상세는 출석 수정 권한이 있어야 해서 디퍼 권한으로는 다른 회원을 볼 수 없다`() {
+        loginAs(1L, "read:attendance", "create:attendance")
+        mockMvc
+            .perform(get("/v3/sessions/3/attendances/2"))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("GLOBAL-403-01"))
+        verifyNoInteractions(queryService)
+    }
+
+    @Test
     fun `사람별 목록 응답은 members, null 인 myTeamNumber, totalElements 만 주고 팀 없음은 0 이다`() {
-        loginAs(1L, "create:attendance")
+        loginAs(1L, "update:attendance")
         given(queryService.getMemberAttendances(GetMemberAttendancesQuery(MemberId(1), null))).willReturn(
             MemberAttendancesResponse(
                 members =
