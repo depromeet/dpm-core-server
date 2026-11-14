@@ -8,9 +8,11 @@ import core.domain.session.vo.SessionId
 import core.entity.session.SessionEntity
 import org.jooq.DSLContext
 import org.jooq.dsl.tables.references.SESSIONS
+import org.jooq.impl.SQLDataType
 import org.springframework.stereotype.Repository
 import java.time.Instant
-import java.time.ZoneId
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Repository
 class SessionRepository(
@@ -62,35 +64,52 @@ class SessionRepository(
             .findIdsToAutoClose(cohortId.value, absentStartTo)
             .map { SessionId(it) }
 
+    /**
+     * JPA는 Instant를 `datetime`에 UTC wall clock으로 저장한다.
+     * jOOQ가 connection TZ(Asia/Seoul)로 Instant를 바인딩·매핑하면 출석 알림이 9시간 앞서 나간다.
+     * API(JPA)와 동일하게 datetime 숫자를 UTC Instant로 해석한다.
+     */
     override fun findSessionsWithAttendanceStartTimeBetween(
         cohortId: CohortId,
         startTime: Instant,
         endTime: Instant,
-    ): List<Session> =
-        dsl
+    ): List<Session> {
+        val attendanceStart = SESSIONS.ATTENDANCE_START.coerce(SQLDataType.LOCALDATETIME(6))
+        val sessionDate = SESSIONS.DATE.coerce(SQLDataType.LOCALDATETIME(6))
+        val startUtc = toUtcLocalDateTime(startTime)
+        val endUtc = toUtcLocalDateTime(endTime)
+
+        return dsl
             .selectFrom(SESSIONS)
             .where(SESSIONS.COHORT_ID.eq(cohortId.value))
-            .and(SESSIONS.ATTENDANCE_START.ge(startTime))
-            .and(SESSIONS.ATTENDANCE_START.le(endTime))
+            .and(attendanceStart.ge(startUtc))
+            .and(attendanceStart.le(endUtc))
             .and(SESSIONS.DELETED_AT.isNull)
             .fetch()
             .map { record ->
                 Session(
                     id = SessionId(record.sessionId!!),
                     cohortId = CohortId(record.cohortId!!),
-                    date = record.date!!,
+                    date = toUtcInstant(record.get(sessionDate)!!),
                     week = record.week!!,
                     place = record.place!!,
                     eventName = record.eventName!!,
                     isOnline = record.isOnline!!,
                     attendancePolicy =
                         AttendancePolicy(
-                            attendanceStart = record.attendanceStart!!,
-                            lateStart = record.lateStart!!.atZone(ZoneId.of("UTC")).toInstant(),
-                            absentStart = record.absentStart!!.atZone(ZoneId.of("UTC")).toInstant(),
+                            attendanceStart = toUtcInstant(record.get(attendanceStart)!!),
+                            lateStart = toUtcInstant(record.lateStart!!),
+                            absentStart = toUtcInstant(record.absentStart!!),
                             attendanceCode = record.attendanceCode!!,
                         ),
-                    deletedAt = record.deletedAt?.atZone(ZoneId.of("UTC"))?.toInstant(),
+                    deletedAt = record.deletedAt?.let(::toUtcInstant),
                 )
             }
+    }
+
+    private fun toUtcLocalDateTime(instant: Instant): LocalDateTime =
+        LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
+
+    private fun toUtcInstant(localDateTime: LocalDateTime): Instant =
+        localDateTime.atZone(ZoneOffset.UTC).toInstant()
 }
