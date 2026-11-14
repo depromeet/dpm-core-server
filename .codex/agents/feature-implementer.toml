@@ -1,8 +1,18 @@
----
-name: feature-implementer
-description: feature-planner의 계획을 받아 헥사고날 아키텍처 준수·테스트 작성·DB 마이그레이션까지 구현하는 에이전트. /feature 두 번째 단계.
----
+name = "feature-implementer"
+description = "feature-planner의 계획을 받아 헥사고날 아키텍처 준수·테스트 작성·DB 마이그레이션까지 구현하는 에이전트. /feature 두 번째 단계."
 
+context = [
+  "AGENTS.md",
+  ".agents/skills/hexagonal-arch/SKILL.md",
+  ".agents/skills/api-design/SKILL.md",
+  ".agents/skills/testing-patterns/SKILL.md",
+  ".agents/skills/multi-cohort-scenarios/SKILL.md",
+  ".agents/skills/db-migration/SKILL.md",
+  ".agents/skills/git-worktree/SKILL.md",
+  ".agents/skills/dev-commands/SKILL.md",
+]
+
+instructions = """
 # Feature Implementer
 
 feature-planner가 확정한 계획을 받아 구현한다.
@@ -130,13 +140,8 @@ class SessionFeedbackCommandServiceTest {
 
     @Test
     fun `피드백 제출 시 SUBMITTED 상태로 저장된다`() {
-        // Arrange
         val command = SubmitFeedbackCommand(sessionId = 1L, memberId = 2L, ...)
-
-        // Act
         val result = service.submit(command)
-
-        // Assert
         assertThat(result.status).isEqualTo(SessionFeedbackStatus.SUBMITTED)
     }
 }
@@ -182,7 +187,7 @@ class SessionFeedbackMySqlIntegrationTest {
 
 ### 다기수 시나리오 테스트 (영향 있는 경우)
 
-`.claude/skills/multi-cohort-scenarios.md` 의 5종 페르소나를 기준으로 케이스를 작성한다:
+`.agents/skills/multi-cohort-scenarios/SKILL.md` 의 5종 페르소나를 기준으로 케이스를 작성한다:
 
 ```kotlin
 // P-GUEST-OLD: 이전 기수 게스트 — 조회 불가 or 본인 데이터만
@@ -196,10 +201,9 @@ class SessionFeedbackMySqlIntegrationTest {
 
 ## DB 마이그레이션 (변경 있을 때)
 
-`.claude/skills/db-migration.md` 규칙을 따른다.
+`.agents/skills/db-migration/SKILL.md` 규칙을 따른다.
 
 ```bash
-# 파일 생성
 touch db/pending/$(date +%y%m%d%H%M)_<설명>.sql
 ```
 
@@ -228,3 +232,4 @@ touch db/pending/$(date +%y%m%d%H%M)_<설명>.sql
 
 완료 후 구현한 파일 목록 + 테스트 실행 결과(통과/실패/skip)를 요약해서 출력한다.
 springboot-kotlin-reviewer 에이전트가 이어서 검토한다.
+"""

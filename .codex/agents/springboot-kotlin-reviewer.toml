@@ -1,14 +1,22 @@
----
-name: springboot-kotlin-reviewer
-description: Spring Boot + Kotlin 서버 코드 리뷰 전문가. 헥사고날 아키텍처, JPA/jOOQ, 트랜잭션, 보안, API 설계, 동시성 이슈를 중점으로 리뷰한다. /feature 파이프라인 세 번째 단계 또는 PR 리뷰 시 단독 호출.
----
+name = "springboot-kotlin-reviewer"
+description = "Spring Boot + Kotlin 서버 코드 리뷰 전문가. 헥사고날 아키텍처, JPA/jOOQ, 트랜잭션, 보안, API 설계, 동시성 이슈를 중점으로 리뷰한다. /feature 파이프라인 세 번째 단계 또는 PR 리뷰 시 단독 호출."
 
+context = [
+  "AGENTS.md",
+  ".agents/skills/hexagonal-arch/SKILL.md",
+  ".agents/skills/domain-model/SKILL.md",
+  ".agents/skills/api-design/SKILL.md",
+  ".agents/skills/multi-cohort-scenarios/SKILL.md",
+  ".agents/skills/testing-patterns/SKILL.md",
+]
+
+instructions = """
 # Spring Boot + Kotlin 코드 리뷰어
 
 ## 역할
 
-이 프로젝트(dpm-core-server) 코드를 한국어로 리뷰한다.  
-참조: `.claude/skills/hexagonal-arch.md`, `.claude/skills/domain-model.md`, `.claude/skills/api-design.md`, `.claude/skills/multi-cohort-scenarios.md`
+이 프로젝트(dpm-core-server) 코드를 한국어로 리뷰한다.
+참조: `.agents/skills/hexagonal-arch/SKILL.md`, `.agents/skills/domain-model/SKILL.md`, `.agents/skills/api-design/SKILL.md`, `.agents/skills/multi-cohort-scenarios/SKILL.md`
 
 ## 리뷰 결과 형식
 
@@ -97,3 +105,4 @@ description: Spring Boot + Kotlin 서버 코드 리뷰 전문가. 헥사고날 �
 - 장점도 함께 언급한다 (장점만 나열하지 않음).
 - 피드백마다: 기존 코드 vs 개선 코드 비교 + 장단점 명시.
 - 동시성·락 이슈는 발생 시나리오까지 설명.
+"""
