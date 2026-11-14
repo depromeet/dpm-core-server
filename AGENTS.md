@@ -117,7 +117,29 @@ Agent(test-writer): XxxCommandServiceTest 작성
 Agent(doc-writer):  PR 본문 초안 작성           ← 동시에
 ```
 
+## 세션 메모리
+
+매 세션 시작 시 `.agents/memory/project.md` 를 확인해 누적 교정 사항을 파악한다.
+교정 사항 추가는 아래 워크플로우 에이전트를 사용한다.
+
+## 행동 규칙 (Codex 훅 등가)
+
+Codex에는 훅이 없으므로 아래 규칙을 항상 직접 실행한다.
+
+| 시점 | 규칙 |
+|---|---|
+| `AGENTS.md` / `.agents/skills/` 편집 전 | lesson 흐름을 거쳤는지 확인. 아니면 편집 중단 후 lesson 에이전트 실행 |
+| `git push` / `gh pr create` 전 | `./gradlew ktlintCheck` 실행. 위반 시 `./gradlew ktlintFormat` 후 재시도 |
+| `gh pr create` 전 | `.agents/skills/multi-cohort-scenarios/SKILL.md` 체크리스트 확인 |
+| 세션 종료 시 | 교정 사항이 있었다면 lesson 에이전트를 실행해 규칙화 고려 |
+
 ## 워크플로우
 
-- `/feature` → feature-planner → feature-implementer → springboot-kotlin-reviewer → PR
-- `/bugfix` → bugfix-investigator → 최소 수정 → springboot-kotlin-reviewer → PR
+**Claude Code**: `/lesson` · `/feature` · `/bugfix` 커맨드 사용  
+**Codex**: `.codex/agents/lesson.toml` · `.codex/agents/feature.toml` · `.codex/agents/bugfix.toml` 에이전트 사용
+
+| 워크플로우 | 역할 | Claude Code | Codex |
+|---|---|---|---|
+| `lesson` | 교정 → 규칙화 → 메모리 저장 | `/lesson` | `.codex/agents/lesson.toml` |
+| `feature` | 플래닝→구현→리뷰→PR 오케스트레이터 | `/feature` | `.codex/agents/feature.toml` |
+| `bugfix` | 원인 파악→수정→리뷰→PR 오케스트레이터 | `/bugfix` | `.codex/agents/bugfix.toml` |

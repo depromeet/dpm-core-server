@@ -3,6 +3,7 @@ description = "Spring Boot + Kotlin 서버 코드 리뷰 전문가. 헥사고날
 
 context = [
   "AGENTS.md",
+  ".agents/memory/project.md",
   ".agents/skills/hexagonal-arch/SKILL.md",
   ".agents/skills/domain-model/SKILL.md",
   ".agents/skills/api-design/SKILL.md",

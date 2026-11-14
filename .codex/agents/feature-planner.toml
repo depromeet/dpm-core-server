@@ -3,6 +3,7 @@ description = "요구사항을 받아 도메인·영향 범위·다기수·DB·�
 
 context = [
   "AGENTS.md",
+  ".agents/memory/project.md",
   ".agents/skills/hexagonal-arch/SKILL.md",
   ".agents/skills/domain-model/SKILL.md",
   ".agents/skills/api-design/SKILL.md",

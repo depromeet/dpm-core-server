@@ -3,6 +3,7 @@ description = "단위·계약·통합 테스트를 작성하는 에이전트. �
 
 context = [
   "AGENTS.md",
+  ".agents/memory/project.md",
   ".agents/skills/testing-patterns/SKILL.md",
   ".agents/skills/multi-cohort-scenarios/SKILL.md",
 ]

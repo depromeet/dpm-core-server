@@ -1,0 +1,150 @@
+name = "lesson"
+description = "교정 사항을 재발 방지 규칙으로 변환하고 .agents/memory/ 또는 AGENTS.md / .agents/skills/ 에 저장한다. 교정 신호 감지 시 먼저 묻는다. Claude Code의 /lesson 커맨드와 동일하게 동작."
+
+context = [
+  "AGENTS.md",
+  ".agents/memory/project.md",
+  ".agents/skills/hexagonal-arch/SKILL.md",
+  ".agents/skills/domain-model/SKILL.md",
+  ".agents/skills/api-design/SKILL.md",
+  ".agents/skills/testing-patterns/SKILL.md",
+  ".agents/skills/git-workflow/SKILL.md",
+  ".agents/skills/db-migration/SKILL.md",
+]
+
+instructions = """
+# Lesson Agent
+
+교정 사항을 재발 방지 규칙으로 만든다. 세 가지 방식으로 시작된다:
+
+1. 사용자가 직접 "lesson" 호출
+2. AI가 같은 실수를 두 번 반복한 직후 AI가 먼저 제안
+3. **사용자의 말에서 교정 신호를 감지하면 AI가 묻는다** ← 핵심 흐름
+
+---
+
+## 교정 신호 감지
+
+사용자가 직접 호출하지 않아도 아래 패턴이 보이면 짧게 묻는다:
+
+- "아니, 그게 아니라 / 그렇게 하는 게 아니야"
+- "틀렸어 / 잘못됐어 / 그게 맞아?"
+- "그렇게 하면 안 돼 / 그러면 안 되잖아"
+- "다시 해 / 그건 아니고"
+- "내가 말했잖아 / 전에도 얘기했는데"
+- "항상 그렇게 해 / 앞으로는 ~하게"
+
+**감지 시 한 줄로만 묻는다:**
+
+```
+규칙으로 남겨둘까요? (y / n)
+```
+
+- `y` → 1단계부터 진행
+- `n` 또는 무응답·다른 말 → 넘어감 (재촉 금지)
+
+**감지하지 않을 것:**
+- 오타·변수명·파일명 수정 요청
+- 단순 "다시 해줘" (방향 수정 없는 재시도)
+- 코드 스타일 취향 차이
+
+---
+
+## 실행 흐름
+
+### 1단계: 규칙 한 줄 도출
+
+```
+✗ [잘못한 것] → ✓ [올바른 것]
+```
+
+일회성 오타·변수명 수정은 여기서 종료.
+
+### 2단계: 기존 규칙 충돌 확인
+
+다음 파일에서 비슷한 규칙 확인:
+- `AGENTS.md`
+- `.agents/memory/project.md`
+- 관련 `.agents/skills/*/SKILL.md`
+
+겹치면 "기존 규칙 X와 충돌합니다 — 덮어쓸까요 / 병합할까요 / 패스할까요?" 묻는다.
+
+### 3단계: 저장 위치 선택
+
+```
+📌 규칙 후보:
+✗ [잘못한 것] → ✓ [올바른 것]
+
+어디에 저장할까요?
+  a) .agents/memory/local.md  — 비공유·개인 메모 (gitignore)
+  b) AGENTS.md                — 팀 공유 규칙 (커밋 대상)
+  c) 스킬 승격                — .agents/skills/<이름>/SKILL.md
+  d) 패스                     — 저장 안 함
+```
+
+### 4단계: 저장
+
+**a → `.agents/memory/local.md` append:**
+```
+- YYYY-MM-DD: ✗ [잘못한 것] → ✓ [올바른 것]
+```
+
+**b → `AGENTS.md` 관련 섹션에 한 줄 추가.**
+섹션이 없으면 "## 교정 규칙" 생성 후 추가.
+
+**c → 관련 `.agents/skills/<이름>/SKILL.md` 에 추가.**
+어느 스킬인지 모르면 묻는다. 스킬이 없으면 새로 만들지 확인한다.
+
+**d → 종료.**
+
+**a/b/c 모두 — `.agents/memory/project.md` 에도 이력 추가 (d는 제외):**
+```
+- YYYY-MM-DD: ✗ [잘못한 것] → ✓ [올바른 것]
+```
+
+---
+
+## 판단 기준
+
+| 상황 | 선택 |
+|---|---|
+| 이 프로젝트 고유, 팀원도 알아야 함 | **b** (AGENTS.md) |
+| 헥사고날·API·테스트 등 패턴 계열 규칙 | **c** (관련 스킬) |
+| 개인 발견·아직 팀 합의 전·로컬 경로 | **a** (.agents/memory/local.md) |
+| 맥락 없이 한 번 실수, 재발 가능성 낮음 | **d** (패스) |
+
+---
+
+## 대화 예시
+
+```
+사용자: 아니, 그렇게 하면 안 되잖아. application에서 Entity 직접 쓰면
+
+Codex:  규칙으로 남겨둘까요? (y / n)
+
+사용자: y
+
+Codex:  📌 규칙 후보:
+        ✗ application 레이어에서 JPA Entity 직접 참조 → ✓ Port 인터페이스만 의존
+
+        어디에 저장할까요?
+          a) .agents/memory/local.md  — 비공유·개인 메모 (gitignore)
+          b) AGENTS.md                — 팀 공유 규칙 (커밋 대상)
+          c) 스킬 승격                — .agents/skills/hexagonal-arch/SKILL.md
+          d) 패스                     — 저장 안 함
+
+사용자: c
+
+Codex:  .agents/skills/hexagonal-arch/SKILL.md 에 추가했습니다.
+        .agents/memory/project.md 이력도 업데이트했습니다.
+```
+
+---
+
+## 하지 말 것
+
+- 승인 없이 AGENTS.md·skills에 직접 쓰지 않는다.
+- 오타·변수명 수정은 lesson을 열지 않는다.
+- 규칙은 한 줄 원칙.
+- 저장 후 커밋까지 자동으로 하지 않는다 (사용자가 원할 때만).
+"""

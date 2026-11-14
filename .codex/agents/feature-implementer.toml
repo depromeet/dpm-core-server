@@ -3,6 +3,7 @@ description = "feature-planner의 계획을 받아 헥사고날 아키텍처 준
 
 context = [
   "AGENTS.md",
+  ".agents/memory/project.md",
   ".agents/skills/hexagonal-arch/SKILL.md",
   ".agents/skills/api-design/SKILL.md",
   ".agents/skills/testing-patterns/SKILL.md",

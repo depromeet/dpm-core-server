@@ -93,7 +93,7 @@ description: 교정 사항을 practice 규칙으로 변환하고 저장 위치�
 - 2026-01-15: ✗ PR base를 main으로 → ✓ develop으로
 ```
 
-> ⚠️ 비공유 교훈은 `CLAUDE.local.md` 에 저장한다. `.claude/memory/project.md` 는 git tracked 이므로 커밋 시 함께 올라가 "비공유" 보장이 되지 않는다.
+> ⚠️ 비공유 교훈은 `CLAUDE.local.md` 에 저장한다. `.agents/memory/project.md` 는 git tracked 이므로 커밋 시 함께 올라가 "비공유" 보장이 되지 않는다.
 
 **b 선택 → `CLAUDE.md` 관련 섹션에 한 줄 추가.**  
 섹션이 없으면 "## 교정 규칙" 생성 후 추가.

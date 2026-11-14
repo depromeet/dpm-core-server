@@ -3,6 +3,7 @@ description = "버그 증상을 받아 원인 파일·라인을 빠르게 특정
 
 context = [
   "AGENTS.md",
+  ".agents/memory/project.md",
   ".agents/skills/hexagonal-arch/SKILL.md",
   ".agents/skills/domain-model/SKILL.md",
   ".agents/skills/multi-cohort-scenarios/SKILL.md",
