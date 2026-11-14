@@ -31,11 +31,14 @@ codegen → (jOOQ 클래스 생성, build 의존만)
 
 ## API 작성 규칙
 
-- 응답은 `CustomResponse<T>` 래핑 필수. `CustomResponse.ok(data)` 사용.
+- 응답은 `CustomResponse<T>` 래핑 필수. 데이터 반환 `CustomResponse.ok(data)` / `created(data)`, 본문 없음은 `CustomResponse.noContent()`.
 - Controller 구현체 / Api 인터페이스(Swagger) 파일 분리. `*Api.kt` + `*Controller.kt`.
-- 인증: `@PreAuthorize("hasAuthority('permission:name')")` + `@CurrentMemberId Long memberId`
+- 인증: `@PreAuthorize("hasAuthority('permission:name')")` + `@CurrentMemberId memberId: MemberId`
 - 에러코드 형식: `도메인-HTTP상태코드-순번` (예: `ATTENDANCE-403-01`)
-- URL: `/v3/` 신규 기준. `/v1/` 은 레거시(src/ 모듈) 호환용.
+- URL 버전 정책:
+  - `/v3/` 는 신규 표준. 신규 엔드포인트는 전부 `/v3/`로 시작.
+  - `/v1/` · `/v2/` 는 application 모듈에서 현재 운영 중. 레거시 아님.
+  - DTO·파라미터 변경 시 버전을 올리고 기존 버전은 유지한 채 배포 → 프론트 작업 완료 후 삭제.
 - 상세: `.codex/skills/api-design.md`
 
 ## 커밋 · PR
@@ -50,7 +53,7 @@ codegen → (jOOQ 클래스 생성, build 의존만)
 
 출석: `PENDING` → `PRESENT` / `LATE` / `ABSENT` / `EXCUSED_ABSENT`
 피드백: `AVAILABLE` / `BEFORE_START` / `SUBMITTED` / `EXPIRED` / `ATTENDANCE_INCOMPLETE` / `NOT_TARGET`
-결석사유서 제출 → 즉시 `EXCUSED_ABSENT` (반려해도 출석 상태는 유지됨)
+결석 사유서는 제출·재제출하면 `PENDING`으로 저장하고 출석은 그대로 둔다. 운영진이 승인하면 출석을 `EXCUSED_ABSENT`로 바꾸고, 반려하면 출석을 유지한다. 승인된 사유서는 디퍼가 수정·삭제할 수 없다.
 상세: `.codex/skills/domain-model.md`
 
 ## 테스트 패턴
