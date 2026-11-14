@@ -138,7 +138,7 @@ DPM_IT_MYSQL_PASSWORD='...' \
 ./gradlew :application:mysqlIntegrationTest
 ```
 
-기본 `./gradlew test`에 포함되지 않는다. CI에서 별도 job으로 실행.
+기본 `./gradlew test`에 포함되지 않는다. 현재 CI에서도 실행하지 않으므로 **PR 올리기 전 수동 실행** 필요. 환경변수가 없으면 `@EnabledIfEnvironmentVariable` 로 silently skip되어 실행된 것처럼 보일 수 있다.
 
 ### 동시성 테스트 패턴
 
@@ -146,16 +146,32 @@ DPM_IT_MYSQL_PASSWORD='...' \
 val latch = CountDownLatch(threadCount)
 val executor = Executors.newFixedThreadPool(threadCount)
 
-val futures = (1..threadCount).map {
-    executor.submit(Callable {
-        latch.countDown()
-        latch.await()   // 동시 출발
-        service.attend(command)
-    })
-}
+try {
+    val futures = (1..threadCount).map {
+        executor.submit(Callable {
+            latch.countDown()
+            latch.await()   // 동시 출발
+            service.attend(command)
+        })
+    }
 
-val results = futures.map { runCatching { it.get(5, TimeUnit.SECONDS) } }
-assertThat(results.count { it.isSuccess }).isEqualTo(1)   // 한 명만 성공
+    val results = futures.map { runCatching { it.get(5, TimeUnit.SECONDS) } }
+
+    // 성공한 결과 수만 세면 타임아웃·데드락이 "실패"로 분류되어 테스트가 통과할 수 있음.
+    // → 실패 원인을 명시적으로 검증한다.
+    val successes = results.count { it.isSuccess }
+    val businessFailures = results.count {
+        it.exceptionOrNull() is DuplicateAttendanceException
+    }
+    val timeouts = results.count { it.exceptionOrNull() is TimeoutException }
+
+    assertThat(successes).isEqualTo(1)                // 한 명만 성공
+    assertThat(businessFailures).isEqualTo(threadCount - 1) // 나머지는 중복 예외
+    assertThat(timeouts).isZero()                     // 데드락·행 없음
+} finally {
+    executor.shutdown()
+    executor.awaitTermination(10, TimeUnit.SECONDS)
+}
 ```
 
 ---
@@ -178,7 +194,10 @@ class AttendanceApiV3PathContractTest {
                 .mapNotNull { method ->
                     val mapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping::class.java)
                         ?: return@mapNotNull null
-                    val authority = AnnotatedElementUtils.findMergedAnnotation(method, PreAuthorize::class.java)!!.value
+                    val authority = AnnotatedElementUtils
+                        .findMergedAnnotation(method, PreAuthorize::class.java)
+                        ?.value
+                        ?: "permitAll"   // @PreAuthorize 없는 엔드포인트는 permitAll 로 표기 (NPE 방지)
                     "${mapping.method.single()} ${mapping.path.firstOrNull().orEmpty()} $authority"
                 }
         }.toSet()

@@ -19,8 +19,16 @@ fun createSession(...): CustomResponse<SessionResponse> =
     CustomResponse.created(service.createSession(...))
 ```
 
-`CustomResponse.ok()` → 200, `CustomResponse.created()` → 201  
-No-content API는 `CustomResponse<Unit>` + `CustomResponse.ok(Unit)`.
+`CustomResponse.ok(data)` → 200 + data, `CustomResponse.created(data)` → 201 + data  
+No-content API는 **`CustomResponse.noContent()`** 사용 (data 필드 자체가 없음).
+
+```kotlin
+// 본문 반환 없음
+fun deleteSession(...): CustomResponse<Nothing> =
+    CustomResponse.noContent().also { service.deleteSession(...) }
+```
+
+> ⚠️ `CustomResponse.ok(Unit)`은 쓰지 않는다. `data: {}` 가 응답에 포함되어 No-content 의미가 아니다.
 
 ---
 
@@ -80,9 +88,10 @@ enum class AttendanceExceptionCode(
 
 ## URL 버전 정책
 
-- `/v3/` — 현재 기수 기반 신규 API 기준.
-- `/v1/` — 레거시 `src/` 모듈 호환. 신규 작성 금지.
-- 같은 도메인에 v1·v3 혼재 가능 (레거시 유지용).
+- `/v3/` — 신규 표준. 새 엔드포인트는 전부 `/v3/`로 시작.
+- `/v1/` · `/v2/` — application 모듈에 현재 운영 중 (출석·세션 피드백·사유서·공지 등). 레거시 아님.
+- **버전 올리기 규칙**: DTO·파라미터·응답 구조가 바뀌면 버전을 올린다(`/v2/` → `/v3/`). 기존 버전은 유지한 채 배포 → 프론트 작업 완료 후 기존 버전 삭제.
+- 같은 도메인에 v1·v2·v3 혼재 가능 (버전 전환 중).
 
 ---
 
