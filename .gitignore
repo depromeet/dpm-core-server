@@ -61,6 +61,7 @@ secrets/
 # IDE / agent 로컬 설정
 CLAUDE.local.md
 .claude/settings.local.json
+.agents/memory/local.md
 .cursor/*
 # 프로젝트 공유 스킬만 추적
 !.cursor/skills/

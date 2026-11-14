@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ROOT=$(git rev-parse --show-toplevel 2>/dev/null); LESSONS=$(grep -v '^#\\|^$\\|^---\\|^형식\\|^교정' \"$ROOT/.claude/memory/project.md\" 2>/dev/null | grep '^- ' | tail -10); if [ -n \"$LESSONS\" ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"[Session Context] 최근 교정 사항:\\n%s\"}}' \"$(printf '%s' \"$LESSONS\" | sed 's/\"/\\\\\"/g; s/$/\\\\n/' | tr -d '\\n')\"; fi"
+            "command": "ROOT=$(git rev-parse --show-toplevel 2>/dev/null); LESSONS=$(grep -v '^#\\|^$\\|^---\\|^형식\\|^교정' \"$ROOT/.agents/memory/project.md\" 2>/dev/null | grep '^- ' | tail -10); if [ -n \"$LESSONS\" ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"[Session Context] 최근 교정 사항:\\n%s\"}}' \"$(printf '%s' \"$LESSONS\" | sed 's/\"/\\\\\"/g; s/$/\\\\n/' | tr -d '\\n')\"; fi"
           }
         ]
       }

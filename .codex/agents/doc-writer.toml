@@ -3,6 +3,7 @@ description = "PR 본문·SQL 헤더·API 스펙·커밋 메시지 등 문서를
 
 context = [
   "AGENTS.md",
+  ".agents/memory/project.md",
   ".agents/skills/git-workflow/SKILL.md",
   ".agents/skills/db-migration/SKILL.md",
 ]

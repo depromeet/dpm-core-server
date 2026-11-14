@@ -3,6 +3,7 @@ description = "단일 Kotlin 파일을 헥사고날 규칙·API 패턴에 맞게
 
 context = [
   "AGENTS.md",
+  ".agents/memory/project.md",
   ".agents/skills/hexagonal-arch/SKILL.md",
   ".agents/skills/api-design/SKILL.md",
 ]
