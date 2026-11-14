@@ -17,14 +17,18 @@ feature-planner가 확정한 계획을 받아 구현한다.
 worktree 사용 시:
 ```bash
 git worktree add <경로> -b <브랜치명>
-# 포트 충돌 방지: 워크트리 루트에 .env 작성
-echo "SERVER_PORT=8081" > <경로>/.env
+cd <경로>                              # ← 이후 모든 작업은 반드시 이 경로에서 진행
+# 포트 충돌 방지: bootRun 실행 인자로 포트 지정
+# (bootRun은 application/.env만 읽으므로 워크트리 루트 .env는 적용되지 않음)
+# 실행 예: ./gradlew :application:bootRun --args='--server.port=8081'
 ```
 
 일반 브랜치:
 ```bash
 git checkout -b feat/<설명> develop
 ```
+
+> **중요:** `git worktree add`는 현재 디렉터리를 변경하지 않는다. 반드시 `cd <경로>` 후 이후 명령을 실행해야 의도한 브랜치·워크트리에 반영된다.
 
 ---
 
@@ -60,12 +64,19 @@ Agent(doc-writer):  PR 본문 초안 작성                         ← 동시�
 
 ### domain
 
+허용 범위: **Port 인터페이스, aggregate, Value Object, enum** (프레임워크 의존 금지).
+
 ```kotlin
-// Port 인터페이스만. 프레임워크 의존 금지.
+// Port 인터페이스
 interface SessionFeedbackPersistencePort {
     fun save(feedback: SessionFeedback): SessionFeedback
     fun findBySessionIdAndMemberId(sessionId: Long, memberId: Long): SessionFeedback?
 }
+
+// Aggregate / VO / enum도 domain 모듈에 작성
+class SessionFeedback(...) { ... }        // aggregate
+data class SessionFeedbackId(val value: Long)  // VO
+enum class SessionFeedbackStatus { ... }       // enum
 ```
 
 - `@Service` / `@Repository` / `@Transactional` 사용 불가
@@ -202,14 +213,18 @@ touch db/pending/$(date +%y%m%d%H%M)_<설명>.sql
 [ ] domain 레이어에 프레임워크 어노테이션 없음
 [ ] application에서 persistence 직접 import 없음
 [ ] Controller / Api 파일 분리됨
-[ ] CustomResponse.ok() / created() 래핑됨
+[ ] CustomResponse 래핑 — 데이터 반환은 ok(data) / created(data), 본문 없음은 noContent()
 [ ] 에러코드 형식 준수 (도메인-HTTP상태코드-순번)
 [ ] 단위 테스트 작성 (Fake 포트 패턴)
 [ ] 신규 API면 계약 테스트 작성
 [ ] 다기수 영향 있으면 통합 테스트에 페르소나 케이스 포함
 [ ] DB 변경 있으면 db/pending/ SQL 파일 작성
-[ ] ktlint 통과 (PostToolUse 훅이 자동 실행)
+[ ] ./gradlew :application:test 통과 확인 (직접 실행)
+[ ] ./gradlew ktlintCheck 통과 확인 (직접 실행 — 훅에 의존하지 말 것)
+[ ] DB 변경 있으면 ./gradlew :application:mysqlIntegrationTest 실행 여부 기록
 ```
 
-완료 후 구현한 파일 목록을 요약해서 출력한다.
+> `mysqlIntegrationTest`는 환경변수(`DPM_IT_MYSQL_URL` 등) 없으면 silently skip된다. "실행했음" 또는 "환경 없어 skip" 둘 중 하나를 명시해야 한다.
+
+완료 후 구현한 파일 목록 + 테스트 실행 결과(통과/실패/skip)를 요약해서 출력한다.
 springboot-kotlin-reviewer 에이전트가 이어서 검토한다.

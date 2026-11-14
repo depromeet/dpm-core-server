@@ -28,9 +28,9 @@ description: 단일 Kotlin 파일을 헥사고날 규칙·API 패턴에 맞게 �
 
 | 파일 위치 | 필수 규칙 |
 |---|---|
-| `domain/` | 프레임워크 어노테이션 금지, Port 인터페이스만 정의 |
+| `domain/` | 프레임워크 어노테이션 금지. Port 인터페이스, aggregate, Value Object, enum 허용 |
 | `application/service` | Port만 의존, Entity 직접 참조 금지 |
-| `application/controller` | `CustomResponse.ok()` 래핑, `@PreAuthorize` 필수 |
+| `application/controller` | `CustomResponse` 래핑 (data 반환 `ok(data)` / 본문 없음 `noContent()`), `@PreAuthorize` 필수 |
 | `application/api` | Swagger `@Operation` 필수, Controller와 파일 분리 |
 | `persistence/` | Port 구현체, JPA + jOOQ 혼용 가능 |
 | `entity/` | `@Entity` + JPA 어노테이션만 |
