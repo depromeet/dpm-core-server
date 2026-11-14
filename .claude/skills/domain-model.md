@@ -20,8 +20,8 @@ description: dpm-core-server 도메인 용어·상태값. 출석/피드백 상�
 PENDING → PRESENT    (출석 코드 인증)
 PENDING → LATE       (지각 코드 인증 / 운영진 수동)
 PENDING → ABSENT     (자동 결석 처리 / 운영진 수동)
-PENDING, ABSENT, LATE → EXCUSED_ABSENT (결석 사유서 제출 → 즉시 전환)
-EXCUSED_ABSENT → (유지)  반려해도 출석 상태 유지, 사유서 상태만 REJECTED
+PENDING, ABSENT, LATE → EXCUSED_ABSENT (운영진이 사유서 승인)
+검토 대기 중 미출석 → 19시 배치에서 ABSENT, 이후 승인되면 EXCUSED_ABSENT
 ```
 
 | 값 | 설명 |
@@ -33,9 +33,10 @@ EXCUSED_ABSENT → (유지)  반려해도 출석 상태 유지, 사유서 상태
 | `EXCUSED_ABSENT` | 인정 결석 |
 
 **결석 사유서 플로우**:
-1. 멤버 제출 → 즉시 `EXCUSED_ABSENT` 전환
-2. 운영진 반려 → 사유서 상태만 `REJECTED`, 출석은 `EXCUSED_ABSENT` 유지 (주의)
-3. 인정 취소하려면: 멤버가 직접 삭제(`releaseExcusedAbsence`) 또는 운영진 수동 변경
+1. 디퍼 제출·재제출 → 사유서 `PENDING`, 출석은 그대로
+2. 운영진 승인 → 사유서 `APPROVED` + 출석 `EXCUSED_ABSENT` (한 트랜잭션)
+3. 운영진 반려 → 사유서 `REJECTED`, 출석은 그대로. 디퍼가 다시 제출할 수 있음
+4. 디퍼는 `PENDING`·`REJECTED` 사유서만 수정·삭제할 수 있음 (`APPROVED`는 불가)
 
 ---
 
@@ -45,7 +46,7 @@ EXCUSED_ABSENT → (유지)  반려해도 출석 상태 유지, 사유서 상태
 |---|---|
 | `NOT_TARGET` | 출석 명단 없음 / 피드백 form 미개설(startAt=null) |
 | `ATTENDANCE_INCOMPLETE` | 출석 명단 있으나 `PENDING` |
-| `AVAILABLE` | 출석(PRESENT/LATE) + form 진행 중 + 미제출 |
+| `AVAILABLE` | 출석(PRESENT/LATE) 또는 미인정 출석(ABSENT + `lateParticipatedAt != null`) + form 진행 중 + 미제출 |
 | `BEFORE_START` | form 개설됐으나 아직 시작 전 |
 | `SUBMITTED` | 이미 제출 완료 |
 | `EXPIRED` | form 종료 후 미제출 |
@@ -62,9 +63,18 @@ EXCUSED_ABSENT → (유지)  반려해도 출석 상태 유지, 사유서 상태
 
 ---
 
-## 권한 판정 (JWT permissions)
+## 권한 판정 (매 요청 DB 조회)
 
-JWT `permissions` 배열 = **activeCohortId 역할만** 포함 (`CurrentCohortRoleResolver`).
+권한은 JWT claim이 아니라 **매 요청마다 DB에서 조회**한다 (`JwtTokenProvider.getAuthentication()`).
+
+```kotlin
+// JwtTokenProvider.kt
+val permissions = roleQueryUseCase
+    .getPermissionsByMemberId(MemberId(memberId))
+    .map { SimpleGrantedAuthority(it) }
+```
+
+`RoleQueryUseCase.getPermissionsByMemberId()` 는 **activeCohortId 역할만** 조회한다 (`CurrentCohortRoleResolver`). JWT는 memberId만 운반하고, 권한은 서버가 매 요청 계산한다.
 
 | 역할 | 조건 |
 |---|---|

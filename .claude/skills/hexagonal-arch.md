@@ -7,17 +7,26 @@ description: dpm-core-server 레이어 의존 방향, Port 네이밍 규칙(Pers
 
 ## 모듈 의존 방향
 
+실제 `build.gradle.kts` 기준 의존 관계:
+
 ```
-domain
-  ↑
-application  ←→  (persistence / entity 는 application에 의존)
-  ↑
-persistence
-  ↑
-entity
+entity ──▶ persistence ──▶ domain
+                             ▲
+                             │
+          application ───────┘
+             │
+             └──▶ persistence   (DI 조립용)
 ```
 
-단방향. `domain`이 `application`을 import하거나, `application`이 `persistence` 패키지를 직접 참조하면 위반.
+- `domain` 은 어디에도 의존하지 않는다.
+- `persistence` 는 `domain` + `entity` 에 의존.
+- `application` 은 `domain` + `persistence` 에 의존 (실제 구현체 주입을 위해).
+- `entity` 는 JPA Entity 정의만 포함, 다른 모듈 의존 없음.
+
+위반 예시:
+- `domain`이 `application`을 import → 역방향 의존
+- `application` 코드에서 `core.persistence.*` 패키지의 **구현체 클래스**를 직접 import → Port 인터페이스로만 접근해야 함
+- `application`이 JPA `@Entity` 클래스를 직접 참조 → aggregate 변환 레이어에서만 다뤄야 함
 
 ---
 

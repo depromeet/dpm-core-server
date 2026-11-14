@@ -24,12 +24,18 @@ description: 빌드·테스트·포맷 Gradle 커맨드, 테스트 태그 사용
 ### 통합 테스트만 (MySQL 필요)
 
 ```bash
-./gradlew mysqlIntegrationTest
+# 환경변수 필수. 미설정 시 @EnabledIfEnvironmentVariable 로 silently skip된다.
+# 실제 연결 정보는 CLAUDE.local.md 참고
+DPM_IT_MYSQL_URL='...' \
+DPM_IT_MYSQL_USERNAME='...' \
+DPM_IT_MYSQL_PASSWORD='...' \
+./gradlew :application:mysqlIntegrationTest
 ```
 
 - `@Tag("mysql-integration")` 붙은 테스트만 실행
 - 로컬 MySQL이 떠 있어야 함
 - 실행 순서: `test` → `mysqlIntegrationTest` (shouldRunAfter 설정)
+- **현재 CI는 실행하지 않음** → PR 올리기 전 수동 실행 결과를 PR 본문에 기록
 
 ### 전체 테스트
 
@@ -83,8 +89,8 @@ description: 빌드·테스트·포맷 Gradle 커맨드, 테스트 태그 사용
 ./gradlew ktlintCheck
 ```
 
-> `.kt` 파일 수정 시 PostToolUse 훅이 `ktlintFormat`을 자동 실행함.  
-> 수동 실행은 주로 한꺼번에 여러 파일을 고쳤을 때.
+> **PR 올리기 전**에 `ktlintCheck`로 포맷 검증을 한 번 돌린다. (설정된 PreToolUse 훅이 `git push`/`gh pr create` 직전에 자동으로 실행한다.)
+> `ktlintFormat`은 전체 모듈을 돌아서 느리므로, 편집 중에는 필요할 때만 수동 실행.
 
 ---
 

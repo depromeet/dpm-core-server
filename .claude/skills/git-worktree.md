@@ -33,17 +33,14 @@ git worktree add <경로> <기존-브랜치명>
 
 기본 포트는 `8080`. 워크트리에서 서버를 동시에 띄우면 충돌한다.
 
-**워크트리별 포트 지정 — `.env` 파일로 오버라이드:**
+**워크트리별 포트 지정 — 실행 인자로 지정 (권장):**
 
-워크트리 루트에 `.env` 파일을 만든다 (gitignore됨):
-```properties
-SERVER_PORT=8081
-```
-
-또는 실행 시 직접 지정:
 ```bash
-./gradlew bootRun --args='--server.port=8081'
+./gradlew :application:bootRun --args='--server.port=8081'
 ```
+
+> `.env` 는 `application/` 하위에서만 로드된다. 워크트리 루트에 `.env` 를 만들어도 `bootRun`에 적용되지 않으므로, 실행 인자 방식을 쓴다.  
+> 영구 설정이 필요하면 `application/.env` 에 `SERVER_PORT=8081` 추가 (해당 워크트리에만 적용되며 gitignore됨).
 
 **포트 번호 관례:**
 
