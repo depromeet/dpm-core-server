@@ -124,6 +124,6 @@ class AttendanceOverviewMySqlIntegrationTest { ... }
 
 | 항목 | 위치 |
 |---|---|
-| DB 연결 등 로컬 설정 | `application/src/main/resources/application-local.yml` (gitignore) |
+| DB 연결 등 로컬 설정 | `application/src/main/resources/application-local.yml` (현재 git tracked — 수정 시 커밋되지 않도록 `git update-index --assume-unchanged <파일>` 사용하거나 CLAUDE.local.md 참고) |
 | 출석 정책 설정 | `AttendancePolicyProperties` (application.yml 바인딩) |
 | 빌드 의존성 버전 | `gradle/libs.versions.toml` |
