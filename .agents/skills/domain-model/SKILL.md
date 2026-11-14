@@ -86,8 +86,8 @@ val permissions = roleQueryUseCase
 
 ## 다기수 멤버 (Multi-cohort)
 
-이전 기수 + 현재 기수 동시 소속. JWT에는 현재 기수 역할만 포함.  
-→ 자세한 시나리오·테스트 계정: `.claude/skills/testing-patterns.md` 섹션 4
+이전 기수 + 현재 기수 동시 소속. JWT에는 현재 기수 역할만 포함.
+→ 자세한 시나리오·테스트 계정: `.agents/skills/testing-patterns/SKILL.md` 섹션 4
 
 ---
 

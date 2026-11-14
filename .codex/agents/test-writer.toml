@@ -1,8 +1,13 @@
----
-name: test-writer
-description: 단위·계약·통합 테스트를 작성하는 에이전트. 도메인·테스트 유형별로 병렬 호출 가능.
----
+name = "test-writer"
+description = "단위·계약·통합 테스트를 작성하는 에이전트. 도메인·테스트 유형별로 병렬 호출 가능."
 
+context = [
+  "AGENTS.md",
+  ".agents/skills/testing-patterns/SKILL.md",
+  ".agents/skills/multi-cohort-scenarios/SKILL.md",
+]
+
+instructions = """
 # Test Writer
 
 테스트를 작성한다. 질문 없이 바로 작성한다.
@@ -99,7 +104,7 @@ class AttendanceMySqlIntegrationTest {
 
 ## 다기수 페르소나 케이스 작성 기준
 
-다기수 영향이 있는 테스트라면 아래 페르소나를 케이스로 추가한다 (`.claude/skills/multi-cohort-scenarios.md` 참조):
+다기수 영향이 있는 테스트라면 아래 페르소나를 케이스로 추가한다 (`.agents/skills/multi-cohort-scenarios/SKILL.md` 참조):
 
 | 페르소나 | 검증 포인트 |
 |---|---|
@@ -119,3 +124,4 @@ class AttendanceMySqlIntegrationTest {
    - 케이스 수: 4개
    - 다기수 케이스: P-MULTI 포함
 ```
+"""

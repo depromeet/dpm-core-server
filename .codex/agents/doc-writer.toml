@@ -1,8 +1,13 @@
----
-name: doc-writer
-description: PR 본문·SQL 헤더·API 스펙·커밋 메시지 등 문서를 작성하는 에이전트. 코드 작업과 병렬로 호출 가능.
----
+name = "doc-writer"
+description = "PR 본문·SQL 헤더·API 스펙·커밋 메시지 등 문서를 작성하는 에이전트. 코드 작업과 병렬로 호출 가능."
 
+context = [
+  "AGENTS.md",
+  ".agents/skills/git-workflow/SKILL.md",
+  ".agents/skills/db-migration/SKILL.md",
+]
+
+instructions = """
 # Doc Writer
 
 문서를 작성한다. 질문 없이 바로 작성한다.
@@ -23,7 +28,7 @@ description: PR 본문·SQL 헤더·API 스펙·커밋 메시지 등 문서를 �
 API: POST /v3/sessions/{sessionId}/feedback-form/disable
 ```
 
-출력: `.claude/skills/git-workflow.md` PR 본문 구조 준수
+출력: `.agents/skills/git-workflow/SKILL.md` PR 본문 구조 준수
 
 ```markdown
 ## Summary
@@ -61,7 +66,7 @@ API: POST /v3/sessions/{sessionId}/feedback-form/disable
 후행: 앱 배포
 ```
 
-출력: `.claude/skills/db-migration.md` 헤더 형식 준수
+출력: `.agents/skills/db-migration/SKILL.md` 헤더 형식 준수
 
 ```sql
 -- =============================================================================
@@ -129,3 +134,4 @@ feat: 세션 피드백 폼 비활성화 API 추가
    - Closes #701 포함
    - API 섹션 포함
 ```
+"""

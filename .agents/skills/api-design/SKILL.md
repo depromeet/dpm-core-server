@@ -19,7 +19,7 @@ fun createSession(...): CustomResponse<SessionResponse> =
     CustomResponse.created(service.createSession(...))
 ```
 
-`CustomResponse.ok(data)` → 200 + data, `CustomResponse.created(data)` → 201 + data  
+`CustomResponse.ok(data)` → 200 + data, `CustomResponse.created(data)` → 201 + data
 No-content API는 **`CustomResponse.noContent()`** 사용 (data 필드 자체가 없음).
 
 ```kotlin
@@ -39,7 +39,7 @@ AttendanceQueryApi.kt      ← Swagger 선언만 (인터페이스)
 AttendanceQueryController.kt ← @RestController 구현체
 ```
 
-**Api 인터페이스** — Swagger 어노테이션, `@Tag`, `@Operation`, `@ApiResponses` 담당.  
+**Api 인터페이스** — Swagger 어노테이션, `@Tag`, `@Operation`, `@ApiResponses` 담당.
 **Controller** — `@RestController`, `@PreAuthorize`, `@GetMapping` 등 HTTP 매핑 담당. Api 인터페이스를 `implements`.
 
 ---
@@ -62,7 +62,7 @@ class AttendanceQueryController : AttendanceQueryApi {
 - `@CurrentMemberId` — SecurityContext에서 memberId 주입.
 - `hasAuthority('...')` 권한 목록: `create:attendance`, `read:attendance`, `update:attendance`, `create:session`, `read:session`, `update:member`, `read:member` 등.
 - 로그인 여부만 확인: `isAuthenticated()`.
-- 권한 판정은 `CLAUDE.md` 도메인 규칙 / `.claude/skills/testing-patterns.md` 다기수 매트릭스 참조.
+- 권한 판정은 `AGENTS.md` 도메인 규칙 / `.agents/skills/testing-patterns/SKILL.md` 다기수 매트릭스 참조.
 
 ---
 
@@ -131,7 +131,7 @@ fun getSessionRoster(
 
 ## QA 계정 필터링
 
-집계·목록 쿼리에서 `signupEmail LIKE '%@dpm.test'` 계정을 제외한다.  
+집계·목록 쿼리에서 `signupEmail LIKE '%@dpm.test'` 계정을 제외한다.
 로그인·마이페이지 등 개인 쿼리는 제외하지 않는다.
 
 ---

@@ -1,8 +1,13 @@
----
-name: code-writer
-description: 단일 Kotlin 파일을 헥사고날 규칙·API 패턴에 맞게 작성하는 에이전트. 여러 파일을 병렬로 작성할 때 도메인당 하나씩 호출한다.
----
+name = "code-writer"
+description = "단일 Kotlin 파일을 헥사고날 규칙·API 패턴에 맞게 작성하는 에이전트. 여러 파일을 병렬로 작성할 때 도메인당 하나씩 호출한다."
 
+context = [
+  "AGENTS.md",
+  ".agents/skills/hexagonal-arch/SKILL.md",
+  ".agents/skills/api-design/SKILL.md",
+]
+
+instructions = """
 # Code Writer
 
 단일 파일(클래스 하나)을 작성한다. 질문 없이 바로 작성한다.
@@ -24,7 +29,7 @@ description: 단일 Kotlin 파일을 헥사고날 규칙·API 패턴에 맞게 �
 
 ## 작성 규칙
 
-**레이어별 규칙 적용 (`.claude/skills/hexagonal-arch.md` 기준):**
+**레이어별 규칙 적용 (`.agents/skills/hexagonal-arch/SKILL.md` 기준):**
 
 | 파일 위치 | 필수 규칙 |
 |---|---|
@@ -52,3 +57,4 @@ description: 단일 Kotlin 파일을 헥사고날 규칙·API 패턴에 맞게 �
    - 의존 Port: AttendancePersistencePort
    - 주의사항: QA 계정 필터 적용됨
 ```
+"""

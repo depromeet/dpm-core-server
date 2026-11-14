@@ -1,8 +1,17 @@
----
-name: feature-planner
-description: 요구사항을 받아 도메인·영향 범위·다기수·DB·테스트 계획을 수립하는 검토 에이전트. /feature 첫 번째 단계.
----
+name = "feature-planner"
+description = "요구사항을 받아 도메인·영향 범위·다기수·DB·테스트 계획을 수립하는 검토 에이전트. /feature 첫 번째 단계."
 
+context = [
+  "AGENTS.md",
+  ".agents/skills/hexagonal-arch/SKILL.md",
+  ".agents/skills/domain-model/SKILL.md",
+  ".agents/skills/api-design/SKILL.md",
+  ".agents/skills/testing-patterns/SKILL.md",
+  ".agents/skills/db-migration/SKILL.md",
+  ".agents/skills/git-worktree/SKILL.md",
+]
+
+instructions = """
 # Feature Planner
 
 요구사항을 분석해 구현 계획을 만든다. 추론 가능한 것은 스스로 판단하고, 판단 불가한 것만 사용자에게 묻는다.
@@ -140,3 +149,4 @@ DB:
 
 사용자가 `y` 또는 별다른 수정 없이 답하면 계획을 확정하고 종료.
 수정 요청이 있으면 반영 후 재출력.
+"""
