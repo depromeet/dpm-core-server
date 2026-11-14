@@ -80,18 +80,20 @@ description: 교정 사항을 practice 규칙으로 변환하고 저장 위치�
 ✗ [잘못한 것] → ✓ [올바른 것]
 
 어디에 저장할까요?
-  a) project.md  — 이 프로젝트 세션 메모 (팀 미공유)
-  b) CLAUDE.md   — 팀 공유 규칙 (커밋 대상)
-  c) 스킬 승격   — .claude/skills/<파일>.md
-  d) 패스        — 저장 안 함
+  a) CLAUDE.local.md — 비공유·개인 메모 (gitignore, 팀에 공개 안 됨)
+  b) CLAUDE.md       — 팀 공유 규칙 (커밋 대상)
+  c) 스킬 승격       — .claude/skills/<파일>.md (팀 공유)
+  d) 패스            — 저장 안 함
 ```
 
 ### 4단계: 저장
 
-**a 선택 → `.claude/memory/project.md` append:**
+**a 선택 → `CLAUDE.local.md` append (git tracked 아님):**
 ```
 - 2026-01-15: ✗ PR base를 main으로 → ✓ develop으로
 ```
+
+> ⚠️ 비공유 교훈은 `CLAUDE.local.md` 에 저장한다. `.claude/memory/project.md` 는 git tracked 이므로 커밋 시 함께 올라가 "비공유" 보장이 되지 않는다.
 
 **b 선택 → `CLAUDE.md` 관련 섹션에 한 줄 추가.**  
 섹션이 없으면 "## 교정 규칙" 생성 후 추가.
@@ -116,10 +118,10 @@ AI:    📌 규칙 후보:
        ✗ PR base 브랜치를 main으로 설정 → ✓ develop으로 설정
 
        어디에 저장할까요?
-         a) project.md  — 이 프로젝트 세션 메모 (팀 미공유)
-         b) CLAUDE.md   — 팀 공유 규칙 (커밋 대상)
-         c) 스킬 승격   — .claude/skills/git-workflow.md
-         d) 패스        — 저장 안 함
+         a) CLAUDE.local.md — 비공유·개인 메모 (gitignore)
+         b) CLAUDE.md       — 팀 공유 규칙 (커밋 대상)
+         c) 스킬 승격       — .claude/skills/git-workflow.md
+         d) 패스            — 저장 안 함
 
 사용자: c
 
@@ -153,10 +155,10 @@ AI:    📌 규칙 후보:
        ✗ application 레이어에서 JPA Entity 직접 참조 → ✓ Port 인터페이스만 의존
 
        어디에 저장할까요?
-         a) project.md  — 이 프로젝트 세션 메모 (팀 미공유)
-         b) CLAUDE.md   — 팀 공유 규칙 (커밋 대상)
-         c) 스킬 승격   — .claude/skills/hexagonal-arch.md
-         d) 패스        — 저장 안 함
+         a) CLAUDE.local.md — 비공유·개인 메모 (gitignore)
+         b) CLAUDE.md       — 팀 공유 규칙 (커밋 대상)
+         c) 스킬 승격       — .claude/skills/hexagonal-arch.md
+         d) 패스            — 저장 안 함
 ```
 
 ---
@@ -167,9 +169,8 @@ AI:    📌 규칙 후보:
 |---|---|
 | 이 프로젝트 고유 사항. 다른 팀원도 알아야 함 | **b** (CLAUDE.md) |
 | 헥사고날·API·테스트 등 패턴 계열 규칙 | **c** (관련 스킬) |
-| 개인 발견이거나 아직 팀 합의 전 | **a** (project.md) |
+| 개인 발견·아직 팀 합의 전·시크릿·로컬 경로 | **a** (CLAUDE.local.md) |
 | 맥락 없이 한 번 실수, 재발 가능성 낮음 | **d** (패스) |
-| 개인 설정·시크릿·로컬 경로 | CLAUDE.local.md (별도, 직접 편집) |
 
 ---
 
