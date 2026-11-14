@@ -1,0 +1,108 @@
+name = "feature"
+description = "요구사항을 받아 플래닝→구현→리뷰→PR까지 멀티 단계로 진행하는 피처 개발 워크플로우 오케스트레이터. Claude Code의 /feature 커맨드와 동일하게 동작."
+
+context = [
+  "AGENTS.md",
+  ".agents/memory/project.md",
+  ".codex/agents/feature-planner.toml",
+  ".codex/agents/feature-implementer.toml",
+  ".codex/agents/springboot-kotlin-reviewer.toml",
+  ".agents/skills/hexagonal-arch/SKILL.md",
+  ".agents/skills/domain-model/SKILL.md",
+  ".agents/skills/api-design/SKILL.md",
+  ".agents/skills/testing-patterns/SKILL.md",
+  ".agents/skills/multi-cohort-scenarios/SKILL.md",
+  ".agents/skills/db-migration/SKILL.md",
+  ".agents/skills/git-worktree/SKILL.md",
+  ".agents/skills/git-workflow/SKILL.md",
+  ".agents/skills/dev-commands/SKILL.md",
+]
+
+instructions = """
+# Feature Workflow
+
+세 에이전트 단계를 순서대로 실행한다.
+각 단계의 세부 지침은 context에 포함된 에이전트 파일(`feature-planner.toml` 등)의 `instructions` 섹션을 그대로 따른다.
+
+```
+Phase 1: feature-planner     (요구사항 분석, 계획 수립, 사용자 승인)
+                                ↓ 승인
+Phase 2: feature-implementer  (구현, 테스트, DB 마이그레이션)
+                                ↓
+Phase 3: springboot-kotlin-reviewer (아키텍처·다기수·도메인·보안 검토)
+                                ↓
+Phase 4: 커밋·PR (사용자가 "커밋해줘" / "PR 올려줘" 명시 시에만)
+```
+
+---
+
+## Phase 1 — feature-planner 단계 실행
+
+`.codex/agents/feature-planner.toml` 의 `instructions` 를 그대로 적용한다.
+
+- Figma URL 있으면 UI 분석 → 요구사항 추출
+- 도메인·영향 레이어·다기수 여부·DB 변경 추론
+- 추론 불가한 것만 질문 (worktree 여부 포함)
+- 구현 계획 출력: 파일 목록, API 스펙, 테스트 케이스, 다기수 시나리오, DB 변경, worktree 사용 여부
+
+사용자가 `y` 하면 Phase 2 진행. 수정 요청 시 계획 반영 후 재승인.
+
+---
+
+## Phase 2 — feature-implementer 단계 실행
+
+`.codex/agents/feature-implementer.toml` 의 `instructions` 를 그대로 적용한다.
+
+- worktree/브랜치 생성 (계획에 따라)
+- domain → persistence → application 순으로 구현
+- 단위 테스트 (Fake 포트 패턴)
+- 계약 테스트 (신규 API)
+- 통합 테스트 (복잡한 쿼리, 다기수 시나리오)
+- DB 마이그레이션 SQL 작성 (변경 있을 때)
+
+**완료 조건 (반드시 실행):**
+```bash
+./gradlew :application:test
+./gradlew ktlintCheck
+```
+
+완료 후 구현 파일 목록 + 테스트 실행 결과 요약 출력.
+
+---
+
+## Phase 3 — springboot-kotlin-reviewer 단계 실행
+
+`.codex/agents/springboot-kotlin-reviewer.toml` 의 `instructions` 를 그대로 적용한다.
+
+**🔴 BLOCK 이슈 → feature-implementer 단계로 되돌아가 재작업 → 테스트·ktlintCheck 재실행 → 리뷰 재실행**
+
+**🟡 WARN 이하 → 목록 사용자에게 보여주고 계속 진행 여부 확인**
+
+---
+
+## Phase 4 — 커밋·PR (명시적 지시 시에만)
+
+- `"커밋해줘"` → 커밋만
+- `"PR 올려줘"` / `"PR까지"` → 커밋 + PR 생성
+
+**reviewer 결정:**
+```bash
+AUTHOR=$(git config user.name)
+REVIEWER_FLAGS=""
+[ "$AUTHOR" != "hwistlezz" ] && REVIEWER_FLAGS="$REVIEWER_FLAGS --reviewer hwistlezz"
+[ "$AUTHOR" != "cowboysj" ]  && REVIEWER_FLAGS="$REVIEWER_FLAGS --reviewer cowboysj"
+
+git push -u origin HEAD
+
+gh pr create \\
+  --base develop \\
+  --assignee "@me" \\
+  $REVIEWER_FLAGS \\
+  --label "<커밋 타입에 맞는 label>" \\
+  --title "<type>: <설명>" \\
+  --body "..."
+```
+
+PR 본문: `.agents/skills/git-workflow/SKILL.md` PR 본문 구조 사용.
+Summary에 **테스트 실행 결과** (어떤 테스트, 통과/실패/skip 건수) 포함 필수.
+"""

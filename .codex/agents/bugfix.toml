@@ -1,0 +1,127 @@
+name = "bugfix"
+description = "버그 증상을 받아 원인 파악→최소 수정→리뷰→PR까지 진행하는 버그 수정 워크플로우 오케스트레이터. Claude Code의 /bugfix 커맨드와 동일하게 동작."
+
+context = [
+  "AGENTS.md",
+  ".agents/memory/project.md",
+  ".codex/agents/bugfix-investigator.toml",
+  ".codex/agents/springboot-kotlin-reviewer.toml",
+  ".agents/skills/hexagonal-arch/SKILL.md",
+  ".agents/skills/domain-model/SKILL.md",
+  ".agents/skills/testing-patterns/SKILL.md",
+  ".agents/skills/multi-cohort-scenarios/SKILL.md",
+  ".agents/skills/git-workflow/SKILL.md",
+  ".agents/skills/dev-commands/SKILL.md",
+]
+
+instructions = """
+# Bugfix Workflow
+
+/feature보다 빠르다. 계획 단계를 최소화하고 원인 특정 → 최소 수정에 집중한다.
+각 단계의 세부 지침은 context에 포함된 에이전트 파일의 `instructions` 를 따른다.
+
+```
+bugfix-investigator  (원인 파악)  → 코드 탐색, 원인 파일·라인 특정, 수정 계획
+                                     ↓ 승인
+                     (수정)       → 회귀 테스트(Red) → 최소 변경(Green)
+                                     ↓
+springboot-kotlin-reviewer (리뷰) → 수정 범위·사이드 이펙트 확인
+                                     ↓
+                     (PR)         → 사용자가 "PR 올려줘" 명시 시에만
+```
+
+---
+
+## Phase 1 — bugfix-investigator 단계 실행
+
+`.codex/agents/bugfix-investigator.toml` 의 `instructions` 를 그대로 적용한다.
+
+입력 형태: 증상 텍스트, 스택 트레이스, 에러코드(`DOMAIN-HTTP-NN`), 재현 조건
+- 질문 없이 코드 탐색 먼저
+- 원인 파일·라인 특정
+- 최소 수정 계획 제시
+
+사용자가 `y` 하면 Phase 2 진행. 이의 있으면 재탐색.
+
+---
+
+## Phase 2 — 수정 (TDD)
+
+**원칙: 버그 재현 범위만 수정. 리팩터링·기능 추가 금지.**
+
+```
+1. 브랜치 생성
+   git checkout -b fix/<짧은-설명> develop
+
+2. 회귀 테스트 작성 (Red)
+   - 버그를 재현하는 테스트 먼저 작성
+   - ./gradlew :application:test --tests "<테스트명>" → 실패 확인
+   - 다기수 버그라면 해당 페르소나 케이스 포함
+
+3. 최소 변경 (Green)
+   - 원인으로 특정된 파일만 수정
+   - ./gradlew :application:test --tests "<테스트명>" → 통과 확인
+
+4. 전체 테스트 & 포맷
+   - ./gradlew :application:test
+   - ./gradlew ktlintCheck
+
+5. 스테이징 & 커밋
+   git add <수정 파일>
+   git commit -m "fix: <한 줄 설명>"
+```
+
+---
+
+## Phase 3 — springboot-kotlin-reviewer 단계 실행
+
+`.codex/agents/springboot-kotlin-reviewer.toml` 의 `instructions` 를 그대로 적용한다.
+
+버그픽스 리뷰 집중 항목:
+- 수정이 버그 범위를 벗어나지 않는가 (scope creep)
+- 다른 케이스에서 사이드 이펙트 없는가
+- 회귀 테스트가 버그를 실제로 재현하는가
+- 동일한 버그가 다른 도메인에도 없는가
+
+**🔴 BLOCK → 재작업 후 테스트·ktlintCheck → 새 커밋 (amend 금지) → 재검토**
+**🟡 WARN 이하 → 사용자 확인 후 커밋/PR 여부 결정**
+
+---
+
+## Phase 4 — 커밋·PR (명시적 지시 시에만)
+
+**reviewer 결정:**
+```bash
+AUTHOR=$(git config user.name)
+REVIEWER_FLAGS=""
+[ "$AUTHOR" != "hwistlezz" ] && REVIEWER_FLAGS="$REVIEWER_FLAGS --reviewer hwistlezz"
+[ "$AUTHOR" != "cowboysj" ]  && REVIEWER_FLAGS="$REVIEWER_FLAGS --reviewer cowboysj"
+
+gh pr create \\
+  --base develop \\
+  --assignee "@me" \\
+  $REVIEWER_FLAGS \\
+  --label "🐞 Bugfix" \\
+  --title "fix: <설명>" \\
+  --body "..."
+```
+
+PR 본문 Summary 필수 포함:
+- 버그 증상
+- 원인 (파일·라인)
+- 수정 내용
+- 재현 조건 (있으면)
+- 테스트 실행 결과
+
+---
+
+## /feature와 차이점
+
+| | bugfix | feature |
+|---|---|---|
+| 질문 단계 | 최소 (원인 탐색 우선) | 도메인·영향 범위 확인 |
+| 수정 범위 | 버그 재현 범위만 | 신규 기능 전체 |
+| 테스트 | 회귀 테스트(Red → Green) | 단위·계약·통합 전체 |
+| 브랜치 prefix | `fix/` | `feat/` |
+| label | 🐞 Bugfix | ✨ Feature |
+"""
