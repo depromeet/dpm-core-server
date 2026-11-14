@@ -2,33 +2,51 @@
   "hooks": {
     "SessionStart": [
       {
-        "command": "ROOT=$(git rev-parse --show-toplevel 2>/dev/null); LESSONS=$(grep -v '^#\\|^$\\|^---\\|^형식\\|^교정' \"$ROOT/.claude/memory/project.md\" 2>/dev/null | grep '^- ' | tail -10); if [ -n \"$LESSONS\" ]; then echo '[Session Context] 최근 교정 사항:'; echo \"$LESSONS\"; fi; true",
-        "description": "세션 시작 시 project.md 최근 교정 사항 에코"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ROOT=$(git rev-parse --show-toplevel 2>/dev/null); LESSONS=$(grep -v '^#\\|^$\\|^---\\|^형식\\|^교정' \"$ROOT/.claude/memory/project.md\" 2>/dev/null | grep '^- ' | tail -10); if [ -n \"$LESSONS\" ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"[Session Context] 최근 교정 사항:\\n%s\"}}' \"$(printf '%s' \"$LESSONS\" | sed 's/\"/\\\\\"/g; s/$/\\\\n/' | tr -d '\\n')\"; fi"
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "FILE=${CLAUDE_TOOL_INPUT_FILE_PATH:-}; if [[ \"$FILE\" == */CLAUDE.md || \"$FILE\" == */.claude/skills/*.md ]]; then echo '[Lesson Guard] CLAUDE.md 또는 skills를 직접 수정하려 합니다. /lesson 흐름을 거쳤나요? 아니라면 Deny로 중단하세요.'; fi; true",
-        "description": "CLAUDE.md·skills 직접 수정 시 /lesson 흐름 확인 알림"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); if [[ \"$FILE\" == */CLAUDE.md || \"$FILE\" == */.claude/skills/*.md ]]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[Lesson Guard] CLAUDE.md 또는 skills를 직접 수정하려 합니다. /lesson 흐름을 거쳤나요? 아니라면 Deny로 중단하세요.\"}}'; fi"
+          }
+        ]
       },
       {
         "matcher": "Bash",
-        "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'gh pr create' && echo '[Multi-Cohort Check] PR 생성 전 다기수·다역할 영향도를 확인하세요.\n  체크리스트: .claude/skills/multi-cohort-scenarios.md\n  페르소나: P-GUEST-OLD / P-DEEPER / P-ORGANIZER / P-MULTI / P-GUEST-ORG-OLD' || true; true",
-        "description": "PR 생성 전 multi-cohort 시나리오 체크리스트 상기"
-      }
-    ],
-    "PostToolUse": [
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=$(python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))\" 2>/dev/null); if echo \"$CMD\" | grep -q 'gh pr create'; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[Multi-Cohort Check] PR 생성 전 다기수·다역할 영향도를 확인하세요.\\n  체크리스트: .claude/skills/multi-cohort-scenarios.md\\n  페르소나: P-GUEST-OLD / P-DEEPER / P-ORGANIZER / P-MULTI / P-GUEST-ORG-OLD\"}}'; fi"
+          }
+        ]
+      },
       {
-        "matcher": "Edit|Write",
-        "command": "FILE=${CLAUDE_TOOL_INPUT_FILE_PATH:-}; [[ \"$FILE\" == *.kt ]] && cd \"$(git rev-parse --show-toplevel)\" && ./gradlew ktlintFormat -q 2>/dev/null || true",
-        "description": "ktlint 포맷 (Kotlin 파일 수정 시)"
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=$(python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))\" 2>/dev/null); if echo \"$CMD\" | grep -qE '(git push|gh pr create)'; then ROOT=$(git rev-parse --show-toplevel 2>/dev/null); cd \"$ROOT\" && ./gradlew ktlintCheck -q >/tmp/claude-ktlint.log 2>&1; if [ $? -ne 0 ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[ktlintCheck] 포맷 위반이 있습니다. ./gradlew ktlintFormat 후 다시 시도하세요. 로그: /tmp/claude-ktlint.log\"},\"permissionDecision\":\"ask\"}'; fi; fi"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "command": "echo '[Lesson Loop] 이번 세션에 교정 사항이 있었다면 /lesson 으로 규칙화를 고려하세요. 없으면 무시.'",
-        "description": "세션 종료 시 /lesson 사용 상기"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[Lesson Loop] 이번 세션에 교정 사항이 있었다면 /lesson 으로 규칙화를 고려하세요. 없으면 무시.'"
+          }
+        ]
       }
     ]
   }
