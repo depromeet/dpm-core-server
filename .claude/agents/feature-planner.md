@@ -34,7 +34,8 @@ description: 요구사항을 받아 도메인·영향 범위·다기수·DB·테
 - 기수·팀·역할 → `cohort`
 - 멤버·로그인·권한 → `member`
 - 공지 → `announcement`
-- 뒷풀이 → `afterParty`
+
+> `afterParty`, `bill`, `gathering`은 미사용 도메인 — 요구사항에서 자동 매핑하지 않는다.
 
 **영향 레이어**
 - 조회 API 신규 → domain Port + application QueryService + Controller/Api
@@ -66,7 +67,10 @@ description: 요구사항을 받아 도메인·영향 범위·다기수·DB·테
 1. git worktree로 작업할까요?
    (다른 브랜치 작업 중이라면 필요. 예라면 경로를 알려주세요.)
 
-2. PR까지 올릴까요, 로컬 커밋까지만 할까요?
+2. 커밋/PR은 어디까지 할까요?
+   - "구현만" : 로컬 변경만, 커밋·PR 없음
+   - "커밋해줘" : 커밋만, PR은 사용자가 명시할 때
+   - "PR까지" : 커밋 + 푸시 + PR 생성
 
 [추론 불가한 항목만 추가 — 도메인·레이어는 묻지 않음]
 ```
@@ -85,6 +89,8 @@ description: 요구사항을 받아 도메인·영향 범위·다기수·DB·테
 브랜치: feat/<짧은-설명>
 도메인: <도메인>
 다기수 영향: 있음 / 없음
+Worktree: 사용(<경로>) / 미사용
+커밋/PR 정책: 구현만 / 커밋까지 / PR까지
 
 [구현 파일]
 domain:
