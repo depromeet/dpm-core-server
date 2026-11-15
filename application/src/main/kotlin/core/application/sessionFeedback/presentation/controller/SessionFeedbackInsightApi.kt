@@ -29,17 +29,17 @@ interface SessionFeedbackInsightApi {
             ApiResponse(
                 responseCode = "400",
                 description = "SESSION_FEEDBACK-400-03 피드백 OFF",
-                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+                content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
             ),
             ApiResponse(
                 responseCode = "403",
                 description = "GLOBAL-403-01 권한 없음",
-                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+                content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
             ),
             ApiResponse(
                 responseCode = "404",
                 description = "SESSION-404-01 세션 없음",
-                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+                content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
             ),
         ],
     )

@@ -1,7 +1,9 @@
 package core.application.member.presentation.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import core.application.common.configuration.OperationIdCustomizer
 import core.application.common.configuration.SwaggerConfig
+import core.application.common.configuration.SwaggerConvertersConfig
 import core.application.common.exception.GlobalExceptionHandler
 import core.application.member.application.service.MemberActivityService
 import core.application.member.application.service.MemberAdmissionService
@@ -49,6 +51,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextImpl
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.web.WebAppConfiguration
 import org.springframework.test.web.servlet.MockMvc
@@ -66,6 +69,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @SpringJUnitConfig(MemberManagementContractControllerTest.Config::class)
 @WebAppConfiguration
+@TestPropertySource(
+    properties = [
+        // 운영 설정과 동일하게 맞춰서 OpenAPI 스펙 회귀를 테스트에서 잡는다.
+        "springdoc.default-produces-media-type=application/json",
+        "springdoc.api-docs.version=openapi_3_0",
+    ],
+)
 class MemberManagementContractControllerTest {
     @Autowired lateinit var context: WebApplicationContext
 
@@ -233,6 +243,62 @@ class MemberManagementContractControllerTest {
     }
 
     @Test
+    fun `OpenAPI 스펙은 status 필드를 문자열로 선언하고 data는 required 다`() {
+        val document = loadApiDocs()
+        val schemas = document["components"]["schemas"]
+        val wrapperNames = schemas.fieldNames().asSequence().filter { it.startsWith("CustomResponse") }.toList()
+        assertTrue(wrapperNames.isNotEmpty(), "CustomResponse* 스키마가 하나도 없다")
+        wrapperNames.forEach { name ->
+            val status = schemas[name]["properties"]["status"]
+            assertEquals("string", status["type"].asText(), "$name.status 는 string 이어야 한다")
+            assertFalse(status.has("enum"), "$name.status 에 enum 이 남아있다")
+        }
+        val required = schemas["CustomResponseMemberBadgesResponse"]["required"].map { it.asText() }
+        assertTrue(required.contains("data"), "data 는 required 여야 한다: $required")
+    }
+
+    @Test
+    fun `OpenAPI 스펙 응답 content 는 schema 가 비지 않는다`() {
+        val document = loadApiDocs()
+        val paths = document["paths"]
+        val empties = mutableListOf<String>()
+        paths.fieldNames().forEach { path ->
+            val methods = paths[path]
+            methods.fieldNames().forEach { method ->
+                val responses = methods[method]["responses"] ?: return@forEach
+                responses.fieldNames().forEach { status ->
+                    val content = responses[status]["content"] ?: return@forEach
+                    content.fieldNames().forEach { mediaType ->
+                        val schema = content[mediaType]["schema"]
+                        if (schema == null || schema.isEmpty) {
+                            empties.add("$method $path $status $mediaType")
+                        }
+                    }
+                }
+            }
+        }
+        assertTrue(empties.isEmpty(), "schema 없는 응답 content:\n${empties.joinToString("\n")}")
+    }
+
+    @Test
+    fun `OpenAPI 스펙 operationId 는 JVM 맹글링 접미사를 포함하지 않는다`() {
+        val document = loadApiDocs()
+        val paths = document["paths"]
+        val mangled = mutableListOf<String>()
+        val mangling = Regex("-[A-Za-z0-9_]+$")
+        paths.fieldNames().forEach { path ->
+            val methods = paths[path]
+            methods.fieldNames().forEach { method ->
+                val id = methods[method]["operationId"]?.asText() ?: return@forEach
+                if (mangling.containsMatchIn(id)) mangled.add("$method $path -> $id")
+            }
+        }
+        assertTrue(mangled.isEmpty(), "맹글링 접미사가 남아있다:\n${mangled.joinToString("\n")}")
+    }
+
+    private fun loadApiDocs() = mapper.readTree(mvc.perform(get("/v3/api-docs")).andExpect(status().isOk).andReturn().response.contentAsString)
+
+    @Test
     fun `단건 일괄 삭제는 성공 계약과 실제 서비스 호출을 제공한다`() {
         mvc.perform(authenticated(delete("/v3/members/1"), "delete:member", actorMemberId = 3))
             .andExpect(status().isOk).andExpect(jsonPath("$.code").value("GLOBAL-200-01"))
@@ -358,6 +424,8 @@ class MemberManagementContractControllerTest {
         MemberBadgeController::class,
         GlobalExceptionHandler::class,
         SwaggerConfig::class,
+        SwaggerConvertersConfig::class,
+        OperationIdCustomizer::class,
         SpringDocConfiguration::class,
         SpringDocConfigProperties::class,
         SpringDocWebMvcConfiguration::class,

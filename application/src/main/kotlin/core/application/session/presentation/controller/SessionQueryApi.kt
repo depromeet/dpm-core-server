@@ -41,6 +41,7 @@ interface SessionQueryApi {
                 content = [
                     Content(
                         mediaType = "application/json",
+                        schema = Schema(ref = "#/components/schemas/CustomResponseNextSessionHomeResponse"),
                         examples = [
                             ExampleObject(
                                 name = "AVAILABLE",
@@ -107,7 +108,7 @@ interface SessionQueryApi {
             ApiResponse(
                 responseCode = "401",
                 description = "비로그인",
-                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+                content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
             ),
         ],
     )
@@ -130,12 +131,12 @@ interface SessionQueryApi {
             ApiResponse(
                 responseCode = "401",
                 description = "인증 토큰이 유효하지 않음",
-                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+                content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
             ),
             ApiResponse(
                 responseCode = "403",
                 description = "세션 조회 권한 없음 또는 비로그인 (GLOBAL-403-01)",
-                content = [Content(schema = Schema(implementation = CustomResponse::class))],
+                content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
             ),
         ],
     )
