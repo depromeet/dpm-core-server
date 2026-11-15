@@ -108,7 +108,16 @@ write_files:
           listen 80 default_server;
           listen [::]:80 default_server;
           server_name ${domain};
-          return 301 https://$host$request_uri;
+
+          # 인증서 갱신(HTTP-01 webroot)용 경로만 리다이렉트하지 않는다
+          location ^~ /.well-known/acme-challenge/ {
+              root /var/www/html;
+              default_type text/plain;
+          }
+
+          location / {
+              return 301 https://$host$request_uri;
+          }
       }
 
       server {
