@@ -13,11 +13,16 @@
 | `.claude/skills/dev-commands.md` | Gradle 커맨드, 테스트 실행, jOOQ 재생성 |
 | `.claude/skills/db-migration.md` | db/pending/ SQL 작성 규칙, 파일명 형식, 배포 순서 |
 | `.claude/skills/git-worktree.md` | 병렬 작업 시 worktree 생성·포트 조정·정리 |
+| `.claude/skills/openapi-spec.md` | OpenAPI(`/v3/api-docs`) 스펙 작성·점검 규칙 |
 
 ## 코드 리뷰
 
 Spring Boot + Kotlin PR 리뷰가 필요하면 `.claude/agents/springboot-kotlin-reviewer.md` 에이전트를 호출한다.
 체크 항목: 헥사고날 위반, Kotlin 관용구, 트랜잭션·동시성, 도메인 상태 전이 오류, 보안.
+
+## 교정 규칙
+
+- ✗ 에러 응답 `@ApiResponse` content에 `Schema(implementation = CustomResponse::class)` → ✓ `Schema(ref = "#/components/schemas/CustomResponseVoid")` (raw 제네릭 참조는 `data: unknown`이 됨)
 
 ## 학습 루프
 
