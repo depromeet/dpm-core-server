@@ -69,6 +69,7 @@ interface SessionFeedbackCommandApi {
                 content = [
                     Content(
                         mediaType = "application/json",
+                        schema = Schema(ref = "#/components/schemas/CustomResponseVoid"),
                         examples = [
                             ExampleObject(
                                 name = "성공",

@@ -27,28 +27,52 @@ class ResponseModelConverter : ModelConverter {
         if (raw != CustomResponse::class.java) return next(chain, type, context)
 
         val t: Type = p.actualTypeArguments.firstOrNull() ?: return next(chain, type, context)
-        val tSchema = context.resolve(AnnotatedType(t))
+        val isVoid = (t as? Class<*>)?.let { it == Void::class.java || it == Void.TYPE } == true
+
+        val dataProperty: Schema<*>? =
+            if (isVoid) {
+                null
+            } else {
+                val resolved = context.resolve(AnnotatedType(t))
+                val componentName = resolved?.name ?: fallbackName(t)
+                if (resolved != null && componentName != null && resolved.`$ref` == null) {
+                    // context.resolve 가 전체 스키마를 반환할 때가 있다. components 로 등록해야 data 가 $ref 로 참조된다.
+                    context.defineModel(componentName, resolved)
+                    Schema<Any>().`$ref`("#/components/schemas/$componentName")
+                } else {
+                    resolved
+                }
+            }
 
         // Wrapper must not reuse the data DTO name (e.g. SessionListResponse), or OpenAPI
         // components overwrite the DTO and clients bind success types to the wrong status codes.
         val dataSchemaName =
-            tSchema.name
-                ?: (t as? Class<*>)?.simpleName
-                ?: (t as? ParameterizedType)?.rawType.let { (it as? Class<*>)?.simpleName }
-                ?: "Anonymous"
+            if (isVoid) {
+                "Void"
+            } else {
+                dataProperty?.`$ref`?.substringAfterLast('/')
+                    ?: fallbackName(t)
+                    ?: "Anonymous"
+            }
         val wrapperSchemaName = "CustomResponse$dataSchemaName"
 
-        val s =
-            ObjectSchema().apply {
-                name = wrapperSchemaName
-                addProperty("status", StringSchema())
-                addProperty("message", StringSchema())
-                addProperty("code", StringSchema())
-                addProperty("data", tSchema)
+        return ObjectSchema().apply {
+            name = wrapperSchemaName
+            addProperty("status", StringSchema())
+            addProperty("message", StringSchema())
+            addProperty("code", StringSchema())
+            if (!isVoid && dataProperty != null) {
+                addProperty("data", dataProperty)
+                required = listOf("status", "message", "code", "data")
+            } else {
+                required = listOf("status", "message", "code")
             }
-
-        return s
+        }
     }
+
+    private fun fallbackName(t: Type): String? =
+        (t as? Class<*>)?.simpleName
+            ?: ((t as? ParameterizedType)?.rawType as? Class<*>)?.simpleName
 
     private fun unwrapKnownWrappers(type: Type): Type {
         var current = type

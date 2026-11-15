@@ -53,6 +53,15 @@ spring:
             user-name-attribute: id
 
 
+springdoc:
+  # 반환 타입 스키마가 */* 대신 application/json 에 들어가도록 한다. useReturnTypeSchema + Content(examples) 조합에서
+  # 두 키(*/*, application/json)로 갈라지는 문제를 해결한다.
+  default-produces-media-type: application/json
+  # OpenAPI 3.1 은 type 대신 types=[..., "null"] 을 쓰도록 바꿔 클라이언트 생성기 호환성이 떨어진다.
+  # @Schema(nullable=true) 가 nullable:true 로 그대로 나오도록 3.0 으로 고정한다.
+  api-docs:
+    version: openapi_3_0
+
 management:
   endpoints:
     web:
