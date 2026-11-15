@@ -131,12 +131,19 @@ nginx 는 HTTP 설정으로 시작한다. 인증서를 받은 뒤 HTTPS 설정�
 
 ```bash
 # DNS 가 이 서버를 가리킨 뒤 (HTTP-01)
-sudo certbot certonly --webroot -w /var/www/html -d <domain>   # 또는 --nginx
+sudo certbot certonly --webroot -w /var/www/html -d <domain>
 sudo dpm-enable-tls
 ```
 
 DNS 전환 전에 미리 받으려면 `--manual --preferred-challenges dns` 로 TXT 레코드 인증을 쓴다.
-갱신은 `certbot.timer` 가 하고, 갱신 후 nginx 를 다시 읽는다.
+이렇게 받은 인증서는 자동 갱신되지 않으므로, DNS 전환 뒤 위의 `--webroot` 명령에
+`--cert-name <domain> --force-renewal` 을 붙여 한 번 다시 발급한다.
+
+HTTPS 설정의 80 포트는 `/.well-known/acme-challenge/` 만 리다이렉트하지 않는다.
+갱신은 `certbot.timer` 가 하고, 갱신 후 nginx 를 다시 읽는다. `sudo certbot renew --dry-run` 으로 확인한다.
+
+Cloudflare 프록시(오렌지 구름)를 쓰는 호스트는 HTTPS 를 Cloudflare 가 처리한다.
+SSL 모드가 Flexible 이면 서버는 HTTP 설정 그대로 두고 `dpm-enable-tls` 를 실행하지 않는다 (리다이렉트 루프).
 
 ### 백업 확인
 
