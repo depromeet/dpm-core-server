@@ -17,7 +17,7 @@ interface GatheringApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식별 멤버 참여 여부 조회 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,

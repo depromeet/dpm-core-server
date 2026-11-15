@@ -17,7 +17,7 @@ interface AfterPartyCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 조사 추가 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "회식 참여 조사 생성 API",
@@ -31,7 +31,7 @@ interface AfterPartyCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 초대 추가 성공 (inviteTagName 기반)",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "회식 초대 추가 API (inviteTagName 기반)",
@@ -45,7 +45,7 @@ interface AfterPartyCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 조사 변경 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "회식 참여 조사 업데이트 API",
@@ -60,7 +60,7 @@ interface AfterPartyCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "열려 있는 회식 초대 보상 처리 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "열려 있는 회식 초대 보상 API (dev)",
@@ -71,7 +71,7 @@ interface AfterPartyCommandApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 여부 미제출자 알림 발송 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "회식 참여 여부 미제출자 알림 발송 API",

@@ -11,5 +11,4 @@ enum class SessionFeedbackAspect(
     PLACE_AND_ACCESS,
     ETC(requiresText = true),
     NOTHING(exclusive = true),
-    ;
 }

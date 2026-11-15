@@ -21,7 +21,7 @@ interface AfterPartyQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 초대 태그 목록",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -63,7 +63,7 @@ interface AfterPartyQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 조사 목록",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -114,7 +114,7 @@ interface AfterPartyQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 참여 조사 상세 조회",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,

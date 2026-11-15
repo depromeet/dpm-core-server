@@ -24,7 +24,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "푸시 토큰 등록 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -52,7 +52,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "푸시 토큰 삭제 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -80,7 +80,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "모든 푸시 토큰 삭제 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -107,7 +107,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "Expo 커스텀 알림 테스트 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -132,7 +132,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "Expo 알림 테스트 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -180,7 +180,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "알림 타입 목록 조회 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -213,7 +213,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "태그 기반 Expo 커스텀 알림 테스트 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -267,7 +267,7 @@ interface NotificationApi {
     @ApiResponse(
         responseCode = "200",
         description = "태그 기반 Expo 알림 테스트 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,

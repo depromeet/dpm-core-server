@@ -19,7 +19,7 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 목록",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -60,7 +60,7 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "공지/과제 상세",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -106,7 +106,7 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버들 공지/과제 읽음 여부 조회 상세",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
@@ -163,7 +163,7 @@ interface AnnouncementQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "멤버들 과제 제출 현황 조회",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,

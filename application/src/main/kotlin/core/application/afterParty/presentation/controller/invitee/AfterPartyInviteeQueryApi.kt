@@ -15,7 +15,7 @@ interface AfterPartyInviteeQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "회식 초대자 목록 조회",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,
