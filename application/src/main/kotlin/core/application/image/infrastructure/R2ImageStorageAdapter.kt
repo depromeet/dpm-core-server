@@ -152,7 +152,8 @@ class R2ImageStorageAdapter(
             } catch (e: S3Exception) {
                 if (e.statusCode() !in PRECONDITION_STATUSES) throw e
                 logger.info {
-                    "R2 copy 조건 불일치: $sourceKey -> $destinationKey, status=${e.statusCode()}, requestId=${e.requestId()}"
+                    "R2 copy 조건 불일치: $sourceKey -> $destinationKey, " +
+                        "status=${e.statusCode()}, requestId=${e.requestId()}"
                 }
                 CopyStart.PreconditionFailed
             }
