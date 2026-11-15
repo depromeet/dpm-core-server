@@ -1,0 +1,12 @@
+# cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars 는 git-ignore 된다. 실제 값은 여기에만 둔다.
+
+# 콘솔 > Governance > Tenancy details 의 OCID
+tenancy_ocid = "ocid1.tenancy.oc1..<your-tenancy-ocid>"
+
+# `oci os ns get` 로 확인
+object_storage_namespace = "<your-object-storage-namespace>"
+
+# DNS 컷오버 단계에서만 채운다.
+# cloudflare_zone_id = "<zone-id>"
+# dns_cutover_envs   = ["dev"]

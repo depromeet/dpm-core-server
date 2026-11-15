@@ -72,3 +72,6 @@ docs/superpowers/
 
 # 구조 안내 문서 (로컬 작업 문서)
 docs/architecture/
+
+# 로컬 DB 덤프 (prod 데이터 포함)
+db/dumps/

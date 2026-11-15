@@ -1,0 +1,28 @@
+# Terraform 로컬 산출물
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# 실제 값/비밀 (예시 파일 terraform.tfvars.example 만 커밋한다)
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+*.pem
+*.key
+*.p8
+*.env
+.env*
+!.env.example
+
+# .terraform.lock.hcl 은 커밋한다 (provider 버전 고정)
