@@ -1,0 +1,314 @@
+#cloud-config
+# Terraform templatefile. 템플릿 변수: env, domain, backup_bucket, backup_namespace, region
+# 주의: 셸의 $${VAR} 는 템플릿에서 $${...} 로 이스케이프해야 한다. 가능하면 $VAR 형태를 쓴다.
+#
+# 역할: 런타임만 준비한다. app.jar / .env / DB 계정 / 데이터는 여기서 다루지 않는다.
+
+package_update: true
+package_upgrade: false
+packages:
+  - openjdk-21-jre-headless
+  - nginx
+  - certbot
+  - python3-certbot-dns-cloudflare
+  - python3-venv
+  - iptables-persistent
+  - curl
+  - jq
+
+write_files:
+  # ---- sshd: 키 인증만 ----
+  - path: /etc/ssh/sshd_config.d/99-dpm.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      MaxAuthTries 3
+
+  # ---- MySQL: 1GB 메모리용 설정 ----
+  - path: /etc/mysql/mysql.conf.d/zz-dpm.cnf
+    permissions: "0644"
+    content: |
+      [mysqld]
+      bind-address            = 127.0.0.1
+      mysqlx                  = OFF
+      performance_schema      = OFF
+      innodb_buffer_pool_size = 128M
+      innodb_log_buffer_size  = 8M
+      max_connections         = 30
+      tmp_table_size          = 16M
+      max_heap_table_size     = 16M
+      table_open_cache        = 400
+      skip-name-resolve
+      default-time-zone       = '+09:00'
+
+  # 데이터 볼륨이 마운트되지 않았으면 MySQL 을 띄우지 않는다 (부트 디스크에 빈 DB 생성 방지)
+  - path: /etc/systemd/system/mysql.service.d/require-mount.conf
+    permissions: "0644"
+    content: |
+      [Unit]
+      RequiresMountsFor=/var/lib/mysql
+
+  # ---- 앱 ----
+  - path: /etc/systemd/system/dpm@.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=dpm-core (%i)
+      After=network-online.target mysql.service
+      Wants=network-online.target
+      Requires=mysql.service
+      ConditionPathExists=/opt/dpm/%i/app.jar
+
+      [Service]
+      User=dpm
+      Group=dpm
+      WorkingDirectory=/opt/dpm/%i
+      # .env 는 systemd 가 아니라 Spring(spring.config.import=optional:file:.env)이 WorkingDirectory 에서 읽는다.
+      # (iwinv 의 기존 dpm@.service 와 동일)
+      Environment=SPRING_PROFILES_ACTIVE=%i
+      Environment=SERVER_ADDRESS=127.0.0.1
+      Environment="JAVA_OPTS=-Xms128m -Xmx320m -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=64m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError -Duser.timezone=Asia/Seoul"
+      ExecStart=/bin/sh -c 'exec /usr/bin/java $JAVA_OPTS -Dloader.main=core.application.CoreApplicationKt -cp /opt/dpm/%i/app.jar org.springframework.boot.loader.launch.PropertiesLauncher'
+      SuccessExitStatus=143
+      Restart=on-failure
+      RestartSec=10
+      TimeoutStartSec=300
+      TimeoutStopSec=60
+
+      [Install]
+      WantedBy=multi-user.target
+
+  # ---- nginx: HTTP 단계 (인증서 발급 전) ----
+  - path: /etc/nginx/sites-available/dpm-http
+    permissions: "0644"
+    content: |
+      server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+          server_name ${domain};
+          client_max_body_size 20m;
+
+          location / {
+              proxy_pass http://127.0.0.1:8080;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_read_timeout 60s;
+          }
+      }
+
+  # ---- nginx: HTTPS 단계 (dpm-enable-tls 실행 후) ----
+  - path: /etc/nginx/sites-available/dpm-https
+    permissions: "0644"
+    content: |
+      server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+          server_name ${domain};
+          return 301 https://$host$request_uri;
+      }
+
+      server {
+          # Ubuntu 24.04 의 nginx 1.24 는 `http2 on;` 지시어(1.25.1+)를 모른다.
+          listen 443 ssl http2;
+          listen [::]:443 ssl http2;
+          server_name ${domain};
+          client_max_body_size 20m;
+
+          ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
+          ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_session_cache shared:SSL:5m;
+
+          location / {
+              proxy_pass http://127.0.0.1:8080;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_read_timeout 60s;
+          }
+      }
+
+  # 인증서(DNS-01)를 받은 뒤 실행: sudo dpm-enable-tls
+  - path: /usr/local/sbin/dpm-enable-tls
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      set -eu
+      test -f /etc/letsencrypt/live/${domain}/fullchain.pem || {
+        echo "인증서가 없다. 먼저 certbot certonly --dns-cloudflare -d ${domain} 를 실행한다." >&2
+        exit 1
+      }
+      ln -sfn /etc/nginx/sites-available/dpm-https /etc/nginx/sites-enabled/dpm
+      nginx -t
+      systemctl reload nginx
+      echo "HTTPS 활성화 완료: ${domain}"
+
+  # 인증서 갱신 후 nginx 재적용
+  - path: /etc/letsencrypt/renewal-hooks/deploy/reload-nginx
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      systemctl reload nginx
+
+  # ---- 백업: mysqldump → Object Storage (instance-principal) ----
+  # /root/.my.cnf 에 백업 계정이 있어야 동작한다 (README 참고).
+  - path: /usr/local/sbin/dpm-backup
+    permissions: "0750"
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      ENV=${env}
+      BUCKET=${backup_bucket}
+      NS=${backup_namespace}
+      REGION=${region}
+      DIR=/var/backups/dpm
+      LOCAL_KEEP_DAYS=3
+
+      test -f /root/.my.cnf || { echo "/root/.my.cnf 없음: 백업 계정 미설정" >&2; exit 1; }
+      mountpoint -q /var/lib/mysql || { echo "/var/lib/mysql 미마운트" >&2; exit 1; }
+
+      case "$ENV" in
+        prod) SCHEMA=dpm_core ;;
+        dev)  SCHEMA=dpm_core_dev ;;
+        *) echo "unknown env: $ENV" >&2; exit 1 ;;
+      esac
+
+      mkdir -p "$DIR"; chmod 700 "$DIR"
+      TS=$(date +%Y%m%d-%H%M%S)
+      FILE="$DIR/$SCHEMA-$TS.sql.gz"
+
+      mysqldump --defaults-file=/root/.my.cnf --single-transaction --routines --triggers --events \
+        --set-gtid-purged=OFF --databases "$SCHEMA" | gzip -6 > "$FILE.tmp"
+      mv "$FILE.tmp" "$FILE"
+
+      /opt/oci-cli/bin/oci os object put --auth instance_principal --region "$REGION" \
+        --namespace "$NS" --bucket-name "$BUCKET" \
+        --name "$ENV/$(basename "$FILE")" --file "$FILE" --no-overwrite
+
+      find "$DIR" -name '*.sql.gz' -mtime +"$LOCAL_KEEP_DAYS" -delete
+      echo "backup ok: $ENV/$(basename "$FILE")"
+
+  - path: /etc/cron.d/dpm-backup
+    permissions: "0644"
+    content: |
+      SHELL=/bin/bash
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      # 매일 04:00 KST (서버 TZ = Asia/Seoul)
+      0 4 * * * root /usr/local/sbin/dpm-backup >> /var/log/dpm-backup.log 2>&1
+
+  - path: /etc/logrotate.d/dpm-backup
+    permissions: "0644"
+    content: |
+      /var/log/dpm-backup.log {
+        weekly
+        rotate 8
+        compress
+        missingok
+        notifempty
+      }
+
+  # ---- 부트스트랩 (runcmd 에서 1회 실행) ----
+  - path: /usr/local/sbin/dpm-bootstrap
+    permissions: "0750"
+    content: |
+      #!/bin/bash
+      set -euxo pipefail
+      export DEBIAN_FRONTEND=noninteractive
+
+      timedatectl set-timezone Asia/Seoul
+
+      # 1) swap 2GB
+      if ! swapon --show | grep -q /swapfile; then
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+        grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+      fi
+      echo 'vm.swappiness=10' > /etc/sysctl.d/99-dpm.conf
+      sysctl --system
+
+      # 2) sshd 설정 반영 (24.04 는 socket activation 이라 /run/sshd 가 아직 없을 수 있다)
+      install -d -m 755 /run/sshd
+      sshd -t
+      systemctl restart ssh || systemctl restart sshd
+
+      # 3) iptables: OCI Ubuntu 이미지는 INPUT 에 REJECT 규칙이 있다. 그 앞에 80/443 허용을 넣는다.
+      for port in 80 443; do
+        if ! iptables -C INPUT -p tcp -m state --state NEW --dport "$port" -j ACCEPT 2>/dev/null; then
+          pos=$(iptables -L INPUT --line-numbers -n | awk '$2 == "REJECT" {print $1; exit}')
+          if [ -n "$pos" ]; then
+            iptables -I INPUT "$pos" -p tcp -m state --state NEW --dport "$port" -j ACCEPT
+          else
+            iptables -A INPUT -p tcp -m state --state NEW --dport "$port" -j ACCEPT
+          fi
+        fi
+      done
+      netfilter-persistent save
+
+      # 4) 데이터 볼륨: Terraform 이 인스턴스 생성 후에 붙이므로 나타날 때까지 기다린다.
+      DEV=/dev/oracleoci/oraclevdb
+      for i in $(seq 1 120); do
+        [ -b "$DEV" ] && break
+        sleep 5
+      done
+      [ -b "$DEV" ] || { echo "데이터 볼륨 $DEV 가 10분 안에 붙지 않았다. MySQL 설치를 중단한다." >&2; exit 1; }
+
+      # 파일시스템이 없을 때만 포맷한다 (재실행·볼륨 재사용 시 데이터 보존)
+      if ! blkid "$DEV" >/dev/null 2>&1; then
+        mkfs.ext4 -L dpm-data "$DEV"
+      fi
+      UUID=$(blkid -s UUID -o value "$DEV")
+      mkdir -p /data
+      grep -q "UUID=$UUID" /etc/fstab || echo "UUID=$UUID /data ext4 defaults,nofail 0 2" >> /etc/fstab
+      mountpoint -q /data || mount /data
+
+      # ext4 루트의 lost+found 때문에 MySQL 초기화가 실패하므로 하위 디렉터리를 bind mount 한다.
+      mkdir -p /data/mysql /var/lib/mysql
+      grep -q '^/data/mysql ' /etc/fstab || \
+        echo '/data/mysql /var/lib/mysql none bind,nofail,x-systemd.requires-mounts-for=/data 0 0' >> /etc/fstab
+      systemctl daemon-reload
+      mountpoint -q /var/lib/mysql || mount /var/lib/mysql
+
+      # 5) MySQL 8.4 LTS (공식 저장소): 기존 iwinv 서버가 8.4 이고, Ubuntu 기본 8.0 은 2026-04 지원 종료.
+      #    마운트 이후 설치해야 데이터 디렉터리가 볼륨에 생긴다.
+      install -d -m 755 /etc/apt/keyrings
+      curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2025 -o /tmp/mysql.key
+      fpr=$(gpg --show-keys --with-colons /tmp/mysql.key | awk -F: '/^fpr/{print $10; exit}')
+      [ "$fpr" = "BCA43417C3B485DD128EC6D4B7B3B788A8D3785C" ] || { echo "MySQL 서명 키 fingerprint 불일치: $fpr" >&2; exit 1; }
+      gpg --dearmor < /tmp/mysql.key > /etc/apt/keyrings/mysql.gpg
+      echo "deb [signed-by=/etc/apt/keyrings/mysql.gpg] http://repo.mysql.com/apt/ubuntu noble mysql-8.4-lts mysql-tools" > /etc/apt/sources.list.d/mysql.list
+      apt-get update
+      apt-get install -y mysql-community-server
+      systemctl enable --now mysql
+
+      # 6) 앱 사용자/디렉터리
+      id dpm >/dev/null 2>&1 || useradd --system --home-dir /opt/dpm --shell /usr/sbin/nologin dpm
+      install -d -o dpm -g dpm -m 750 /opt/dpm /opt/dpm/${env}
+      systemctl daemon-reload
+      systemctl enable dpm@${env}   # app.jar 가 생기기 전에는 ConditionPathExists 로 건너뛴다
+
+      # 7) nginx (HTTP 단계)
+      rm -f /etc/nginx/sites-enabled/default
+      ln -sfn /etc/nginx/sites-available/dpm-http /etc/nginx/sites-enabled/dpm
+      nginx -t
+      systemctl enable nginx
+      systemctl reload nginx || systemctl restart nginx
+
+      # 8) 백업용 OCI CLI (venv). 백업 시각에만 실행되므로 상시 메모리를 쓰지 않는다.
+      if [ ! -x /opt/oci-cli/bin/oci ]; then
+        python3 -m venv /opt/oci-cli
+        /opt/oci-cli/bin/pip install --no-cache-dir --quiet oci-cli
+      fi
+
+      echo "dpm bootstrap done (${env})"
+
+runcmd:
+  - [ /usr/local/sbin/dpm-bootstrap ]
+
+final_message: "dpm cloud-init finished after $UPTIME seconds"
