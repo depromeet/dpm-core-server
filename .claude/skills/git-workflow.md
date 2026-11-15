@@ -88,8 +88,10 @@ chore/<짧은-설명>
 | `✨ Feature` | `feat` | 새 기능 추가 |
 | `🐞 Bugfix` | `fix` | 버그 수정·핫픽스 |
 | `🔨 Refactor` | `refactor` | 동작 변경 없는 코드 개선 |
-| `📑 Docs` | `docs` / `chore` | 문서, 설정, 의존성 변경 |
+| `📑 Docs` | `docs` | 문서만 변경 |
+| `🔧 Chore` | `chore` | 빌드·설정·의존성 변경 |
 | `🔀 Deploy` | `ci` | 릴리스·운영 배포·CD 파이프라인 |
+| `🧪 Harness` | — | 에이전트 하네스·자동화 도구 관련 PR |
 | `🙋 Suggestion` | — | 논의·제안이 필요한 PR |
 
 `gh pr create` 시:

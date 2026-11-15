@@ -56,6 +56,15 @@ DPM_IT_MYSQL_URL='...' DPM_IT_MYSQL_USERNAME='...' DPM_IT_MYSQL_PASSWORD='...' \
 
 > `mysqlIntegrationTest`는 환경변수 없으면 silently skip되므로 "실행했는지" 를 명시해야 한다.
 
+**API 추가·변경 시 추가 확인:**
+
+신규 컨트롤러·`@ApiResponse` 수정이 있으면 아래를 반드시 실행한다.
+```bash
+./gradlew :application:test --tests "*.MemberManagementContractControllerTest"
+```
+실패 시 `.claude/skills/openapi-spec.md` 의 금지 패턴·체크리스트 확인 후 수정.
+주요 위반: `Schema(implementation = CustomResponse::class)` → `Schema(ref = "#/components/schemas/CustomResponseVoid")`
+
 완료 후 구현 파일 목록 + 테스트 실행 결과(통과/실패/skip)를 요약해서 출력.
 
 ---
@@ -142,3 +151,4 @@ Summary에 **테스트 실행 결과** 반드시 포함 (어떤 테스트를 돌
 | DB 마이그레이션 | `.claude/skills/db-migration.md` |
 | Worktree | `.claude/skills/git-worktree.md` |
 | 커밋·PR | `.claude/skills/git-workflow.md` |
+| OpenAPI 스펙 | `.claude/skills/openapi-spec.md` |
