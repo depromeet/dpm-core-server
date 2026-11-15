@@ -4,5 +4,4 @@ enum class SessionFeedbackQuestion {
     LIKED,
 
     IMPROVEMENT,
-    ;
 }

@@ -97,7 +97,15 @@ class SessionFeedbackEntity(
                 )
             val aspectEntities =
                 buildList {
-                    addAll(domainModel.likedAspects.map { SessionFeedbackAspectEntity.of(entity, SessionFeedbackQuestion.LIKED, it) })
+                    addAll(
+                        domainModel.likedAspects.map {
+                            SessionFeedbackAspectEntity.of(
+                                entity,
+                                SessionFeedbackQuestion.LIKED,
+                                it,
+                            )
+                        },
+                    )
                     addAll(
                         domainModel.improvementAspects.map {
                             SessionFeedbackAspectEntity.of(entity, SessionFeedbackQuestion.IMPROVEMENT, it)

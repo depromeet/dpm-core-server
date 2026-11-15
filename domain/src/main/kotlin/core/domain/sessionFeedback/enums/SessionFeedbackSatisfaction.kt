@@ -8,5 +8,4 @@ enum class SessionFeedbackSatisfaction(
     NEUTRAL(3),
     DISSATISFIED(2),
     VERY_DISSATISFIED(1),
-    ;
 }

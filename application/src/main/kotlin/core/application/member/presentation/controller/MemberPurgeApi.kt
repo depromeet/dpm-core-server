@@ -1,10 +1,12 @@
 package core.application.member.presentation.controller
 
 import core.application.common.exception.CustomResponse
+import core.application.member.presentation.response.MemberDeletionBlockedResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -29,6 +31,7 @@ interface MemberPurgeApi {
             content = [
                 Content(
                     mediaType = "application/json",
+                    schema = Schema(implementation = MemberDeletionBlockedResponse::class),
                     examples = [ExampleObject(value = MEMBER_DELETION_BLOCKED_SINGLE_EXAMPLE)],
                 ),
             ],

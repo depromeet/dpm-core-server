@@ -28,12 +28,12 @@ interface MemberBadgeApi {
         ApiResponse(
             responseCode = "403",
             description = "멤버 관리 권한 없음",
-            content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
         ),
         ApiResponse(
             responseCode = "404",
             description = "현재 기수 없음",
-            content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
         ),
     )
     fun getBadges(): CustomResponse<MemberBadgesResponse>
@@ -52,17 +52,17 @@ interface MemberBadgeApi {
         ApiResponse(
             responseCode = "400",
             description = "잘못된 카드, 기수 ID 또는 버전. 미래 버전 포함",
-            content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
         ),
         ApiResponse(
             responseCode = "403",
             description = "멤버 관리 권한 없음",
-            content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
         ),
         ApiResponse(
             responseCode = "409",
             description = "관리 기수가 변경됨. NEW 조회 필요",
-            content = [Content(schema = Schema(implementation = CustomResponse::class))],
+            content = [Content(schema = Schema(ref = "#/components/schemas/CustomResponseVoid"))],
         ),
     )
     fun acknowledge(

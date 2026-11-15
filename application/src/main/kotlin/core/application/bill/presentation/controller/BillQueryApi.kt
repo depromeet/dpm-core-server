@@ -57,7 +57,7 @@ interface BillQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "정산서 멤버별 최종 금액 조회 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "정산서 멤버별 최종 금액 조회 API",
@@ -70,7 +70,7 @@ interface BillQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "이전에 제출한 정산 참여 여부 조회 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "이전에 제출한 정산 참여 여부 조회 API",
@@ -84,7 +84,7 @@ interface BillQueryApi {
     @ApiResponse(
         responseCode = "200",
         description = "정산 참여 제출 여부 조회 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
     )
     @Operation(
         summary = "정산 참여 제출 여부 조회 API",
