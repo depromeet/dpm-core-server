@@ -13,7 +13,7 @@ interface MemberPartApi {
     @ApiResponse(
         responseCode = "200",
         description = "파트 선택지 조회 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = "application/json",

@@ -8,8 +8,8 @@ import core.domain.announcement.vo.AssignmentId
 import core.domain.cohort.vo.CohortId
 import core.entity.announcement.AssignmentEntity
 import org.jooq.DSLContext
-import org.jooq.dsl.tables.references.ANNOUNCEMENT_ASSIGNMENTS
 import org.jooq.dsl.tables.references.ANNOUNCEMENTS
+import org.jooq.dsl.tables.references.ANNOUNCEMENT_ASSIGNMENTS
 import org.jooq.dsl.tables.references.ASSIGNMENTS
 import org.springframework.stereotype.Repository
 import java.time.Instant

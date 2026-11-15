@@ -52,8 +52,11 @@ interface ImageApi {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "완료. data: imageId, contentType, size, fileName",
-                useReturnTypeSchema = true,),
+            ApiResponse(
+                responseCode = "200",
+                description = "완료. data: imageId, contentType, size, fileName",
+                useReturnTypeSchema = true,
+            ),
             ApiResponse(
                 responseCode = "202",
                 description = "검증 또는 확정 저장 중. 같은 요청을 다시 보냅니다",
@@ -91,8 +94,11 @@ interface ImageApi {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "data: url, expiresAt (Cache-Control: no-store)",
-                useReturnTypeSchema = true,),
+            ApiResponse(
+                responseCode = "200",
+                description = "data: url, expiresAt (Cache-Control: no-store)",
+                useReturnTypeSchema = true,
+            ),
             ApiResponse(responseCode = "401", description = "로그인 필요"),
             ApiResponse(responseCode = "404", description = "없거나, 운영진이 아닌데 본인 이미지가 아님"),
             ApiResponse(responseCode = "503", description = "이미지 저장소 사용 불가"),

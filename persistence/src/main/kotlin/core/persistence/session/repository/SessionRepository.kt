@@ -107,9 +107,7 @@ class SessionRepository(
             }
     }
 
-    private fun toUtcLocalDateTime(instant: Instant): LocalDateTime =
-        LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
+    private fun toUtcLocalDateTime(instant: Instant): LocalDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC)
 
-    private fun toUtcInstant(localDateTime: LocalDateTime): Instant =
-        localDateTime.atZone(ZoneOffset.UTC).toInstant()
+    private fun toUtcInstant(localDateTime: LocalDateTime): Instant = localDateTime.atZone(ZoneOffset.UTC).toInstant()
 }

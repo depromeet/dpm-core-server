@@ -13,8 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 @Tag(name = "Role", description = "역할 API")
 interface RoleApi {
-    @ApiResponse(responseCode = "200", description = "역할 목록 조회 성공",
-                useReturnTypeSchema = true,)
+    @ApiResponse(
+        responseCode = "200",
+        description = "역할 목록 조회 성공",
+        useReturnTypeSchema = true,
+    )
     @Operation(
         summary = "역할 목록 조회 API",
         description =
@@ -26,8 +29,11 @@ interface RoleApi {
         cohort: String?,
     ): CustomResponse<RoleListResponse>
 
-    @ApiResponse(responseCode = "200", description = "멤버 역할 조회 성공",
-                useReturnTypeSchema = true,)
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버 역할 조회 성공",
+        useReturnTypeSchema = true,
+    )
     @Operation(
         summary = "멤버 역할 조회 API",
         description = "memberId에 부여된 역할 목록을 조회합니다.",
@@ -37,8 +43,11 @@ interface RoleApi {
         memberId: MemberId,
     ): CustomResponse<MemberRoleResponse>
 
-    @ApiResponse(responseCode = "200", description = "멤버 목록 역할 조회 성공",
-                useReturnTypeSchema = true,)
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버 목록 역할 조회 성공",
+        useReturnTypeSchema = true,
+    )
     @Operation(
         summary = "멤버 목록 역할 조회 API",
         description = "memberIds에 포함된 멤버들의 역할 목록을 조회합니다.",
@@ -48,8 +57,11 @@ interface RoleApi {
         memberIds: List<Long>,
     ): CustomResponse<MemberRoleListResponse>
 
-    @ApiResponse(responseCode = "200", description = "멤버 역할 변경 성공",
-                useReturnTypeSchema = true,)
+    @ApiResponse(
+        responseCode = "200",
+        description = "멤버 역할 변경 성공",
+        useReturnTypeSchema = true,
+    )
     @Operation(
         summary = "멤버 기수별 역할 변경 API",
         description = "지정한 기수에 대해 멤버의 역할(CORE/ORGANIZER/DEEPER)을 교체합니다.",

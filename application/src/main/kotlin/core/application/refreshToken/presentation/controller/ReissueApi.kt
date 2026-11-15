@@ -22,7 +22,7 @@ interface ReissueApi {
     @ApiResponse(
         responseCode = "200",
         description = "토큰 재발급 성공",
-                useReturnTypeSchema = true,
+        useReturnTypeSchema = true,
         content = [
             Content(
                 mediaType = APPLICATION_JSON_VALUE,

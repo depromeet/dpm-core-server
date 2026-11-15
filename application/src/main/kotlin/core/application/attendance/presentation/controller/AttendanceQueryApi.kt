@@ -228,8 +228,9 @@ interface AttendanceQueryApi {
 
     @Operation(
         summary = "세션별 나의 출석 상세 조회",
-        description = "지각 마감 후 attendance.canRegisterLateParticipation이 true이면 코드 입력 버튼을 열어주세요. " +
-            "등록에 성공하거나 세션 당일 19:00(한국 시간)이 되면 false입니다.",
+        description =
+            "지각 마감 후 attendance.canRegisterLateParticipation이 true이면 코드 입력 버튼을 열어주세요. " +
+                "등록에 성공하거나 세션 당일 19:00(한국 시간)이 되면 false입니다.",
     )
     @ApiResponses(
         value = [
