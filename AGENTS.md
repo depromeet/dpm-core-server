@@ -2,10 +2,14 @@
 
 ## 커밋·PR 작업자
 
-- GitHub PR **작업자(co-authors)** / 커밋 작성자에 Cursor를 넣지 않는다.
-- `Co-authored-by: Cursor <cursoragent@cursor.com>` trailer를 커밋 메시지에 포함하지 않는다.
-- `Made with Cursor` 문구를 커밋·PR 본문에 넣지 않는다.
-- 커밋 후 trailer가 붙었다면 제거하고, 이미 push됐으면 `--force-with-lease`로 맞춘다 (이 저장소 작업 브랜치에 한함, `main`/`master` force 금지).
+AI 도구를 공동 커밋자(co-author)로 절대 넣지 않는다. 아래 항목 모두 포함:
+
+- `Co-authored-by: Claude ...` / `Co-Authored-By: Claude ...` trailer 금지
+- `Co-authored-by: Cursor <cursoragent@cursor.com>` trailer 금지
+- `Co-authored-by: Copilot <...>` / `Co-authored-by: GitHub Copilot <...>` trailer 금지
+- `Co-authored-by: ChatGPT <...>` 및 기타 AI 도구 trailer 금지
+- `Made with Cursor` / `Generated with Claude Code` 등 AI 도구 광고 문구 금지
+- 커밋 후 trailer가 붙었다면 즉시 제거하고, push됐으면 `--force-with-lease`로 덮는다 (작업 브랜치에 한함, `main`/`master` force 금지).
 
 ---
 
