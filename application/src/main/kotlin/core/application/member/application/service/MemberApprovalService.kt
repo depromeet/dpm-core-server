@@ -2,6 +2,7 @@ package core.application.member.application.service
 
 import core.application.common.exception.BusinessException
 import core.application.member.application.exception.InvalidMemberApprovalException
+import core.application.member.application.exception.InvalidMemberManagementTeamException
 import core.application.member.application.exception.MemberApprovalTargetNotAllowedException
 import core.application.member.application.exception.MemberDeletedException
 import core.application.member.application.exception.MemberExceptionCode
@@ -9,6 +10,7 @@ import core.application.member.application.exception.MemberNotFoundException
 import core.domain.authorization.port.inbound.RoleQueryUseCase
 import core.domain.authorization.vo.RoleType
 import core.domain.cohort.port.inbound.CohortQueryUseCase
+import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.member.aggregate.MemberCohort
 import core.domain.member.enums.MemberStatus
 import core.domain.member.port.outbound.MemberCohortPersistencePort
@@ -30,11 +32,21 @@ class MemberApprovalService(
     private val roleQueries: RoleQueryUseCase,
     private val initializer: MemberActivationInitializer,
     private val activities: MemberActivityService,
+    private val cohortTeams: CohortPersistencePort,
 ) {
+    /**
+     * 가입 대기자와 지난 기수 승인 회원을 현재 기수에 승인한다. 지난 기수 소속과 기록은 유지한다.
+     * [memberType]·[teamId]는 새로 현재 기수에 들어가는 회원에게만 적용하며, 생략하면 디퍼·팀 미배정이다.
+     */
     @TrackMemberBadges
-    fun approve(memberIds: List<Long?>) {
+    fun approve(
+        memberIds: List<Long?>,
+        memberType: String? = null,
+        teamId: Long? = null,
+    ) {
         if (memberIds.isEmpty() || memberIds.any { it == null || it <= 0 } ||
-            memberIds.distinct().size != memberIds.size
+            memberIds.distinct().size != memberIds.size ||
+            (memberType != null && memberType !in TYPES) || (teamId != null && teamId < 0)
         ) {
             throw InvalidMemberApprovalException()
         }
@@ -64,18 +76,28 @@ class MemberApprovalService(
             targets.filter {
                 it.status == MemberStatus.PENDING || cohortId.value !in it.cohortIds
             }.map { it.memberId }
+        val assignedTeamId = teamId?.takeIf { it != 0L }
+        if (assignedTeamId != null && cohortTeams.findTeamsByCohortId(cohortId).none { it.id == assignedTeamId }) {
+            throw InvalidMemberManagementTeamException()
+        }
         if (pendingIds.isEmpty()) return
-        val roleId = roleQueries.findIdByName(RoleType.Deeper.code)
-        roles.replaceCurrentCohortRoles(pendingIds, cohortId.value, roleId)
-        teams.replaceCurrentCohortTeams(pendingIds, cohortId.value, null)
+        val roleId = roleQueries.findIdByName(memberType ?: RoleType.Deeper.code)
+        val changedAssociationMemberIds =
+            roles.replaceCurrentCohortRoles(pendingIds, cohortId.value, roleId) +
+                // 과제 제출 초기화가 현재 기수 팀을 읽으므로 초기화 전에 팀을 저장한다.
+                teams.replaceCurrentCohortTeams(pendingIds, cohortId.value, assignedTeamId)
         pendingIds.forEach {
             memberCohorts.save(MemberCohort.of(MemberId(it), cohortId))
             activities.activate(it, cohortId.value)
         }
-        members.updateManagementFields(pendingIds, false, null, MemberStatus.ACTIVE, emptySet())
+        members.updateManagementFields(pendingIds, false, null, MemberStatus.ACTIVE, changedAssociationMemberIds)
         members.resetApprovalWelcome(targets.filter { it.status == MemberStatus.PENDING }.map { it.memberId })
 
         // 신규 승인 경로는 초기화까지 같은 트랜잭션에 포함한다. 실패하면 승인도 취소된다.
         pendingIds.forEach { initializer.initialize(MemberId(it), cohortId) }
+    }
+
+    private companion object {
+        val TYPES = setOf(RoleType.Deeper.code, RoleType.Organizer.code, RoleType.Core.code)
     }
 }

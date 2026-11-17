@@ -252,6 +252,42 @@ class MemberApprovalControllerTest {
         }
     }
 
+    @Test
+    fun `운영진 코어 타입 지정은 권한 부여 권한이 있어야 하고 디퍼 지정은 승인 권한만으로 가능하다`() {
+        `when`(members.lockApprovalTargets(listOf(1L))).thenReturn(listOf(MemberApprovalTarget(1, MemberStatus.INACTIVE, setOf(18))))
+        listOf("ORGANIZER", "CORE").forEach { type ->
+            mvc.perform(request("""{"members":[1],"memberType":"$type"}""")).andExpect(status().isForbidden)
+        }
+        verifyNoInteractions(members, initializer, roleQueries)
+        `when`(roleQueries.findIdByName("CORE")).thenReturn(3)
+        mvc.perform(request("""{"members":[1],"memberType":"CORE","teamId":0}""", "create:member", "update:authorization"))
+            .andExpect(status().isOk)
+        verify(roleQueries).findIdByName("CORE")
+        mvc.perform(request("""{"members":[1],"memberType":"DEEPER"}""")).andExpect(status().isOk)
+        mvc.perform(request("""{"members":[1],"memberType":null}""")).andExpect(status().isOk)
+        verify(roleQueries, org.mockito.Mockito.times(2)).findIdByName("DEEPER")
+    }
+
+    @Test
+    fun `소문자 타입은 권한 확인 전에 400으로 거절한다`() {
+        mvc.perform(request("""{"members":[1],"memberType":"organizer"}""")).andExpect(status().isBadRequest)
+        verifyNoInteractions(members, initializer, roleQueries)
+    }
+
+    @Test
+    fun `잘못된 타입과 팀 ID 형식은 400으로 거절한다`() {
+        listOf(
+            """{"members":[1],"memberType":"MASTER"}""",
+            """{"members":[1],"memberType":"UNASSIGNED"}""",
+            """{"members":[1],"teamId":-1}""",
+            """{"members":[1],"teamId":"70"}""",
+            """{"members":[1],"teamId":1.5}""",
+        ).forEach { body ->
+            mvc.perform(request(body, "create:member", "update:authorization")).andExpect(status().isBadRequest)
+        }
+        verifyNoInteractions(members, initializer, roleQueries)
+    }
+
     private fun legacyRequest(
         path: String,
         body: String,
@@ -263,11 +299,13 @@ class MemberApprovalControllerTest {
 
     private fun request(
         body: String,
-        authority: String = "create:member",
+        vararg authorities: String = arrayOf("create:member"),
     ): MockHttpServletRequestBuilder =
         patch(PATH).contentType(MediaType.APPLICATION_JSON).content(body).requestAttr(
             RequestAttributeSecurityContextRepository.DEFAULT_REQUEST_ATTR_NAME,
-            SecurityContextImpl(UsernamePasswordAuthenticationToken("operator", null, listOf(SimpleGrantedAuthority(authority)))),
+            SecurityContextImpl(
+                UsernamePasswordAuthenticationToken("operator", null, authorities.map { SimpleGrantedAuthority(it) }),
+            ),
         )
 
     @Configuration
@@ -321,6 +359,9 @@ class MemberApprovalControllerTest {
         @Bean fun roleQueries(): RoleQueryUseCase = mock(RoleQueryUseCase::class.java)
 
         @Bean fun initializer(): MemberActivationInitializer = mock(MemberActivationInitializer::class.java)
+
+        @Bean
+        fun cohortTeams(): core.domain.cohort.port.outbound.CohortPersistencePort = mock(core.domain.cohort.port.outbound.CohortPersistencePort::class.java)
 
         @Bean
         fun security(http: HttpSecurity): SecurityFilterChain =
