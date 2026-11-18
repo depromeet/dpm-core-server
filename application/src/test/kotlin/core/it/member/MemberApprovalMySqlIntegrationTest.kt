@@ -95,6 +95,7 @@ import java.util.concurrent.atomic.AtomicLong
     MemberRoleRepository::class,
     MemberTeamRepository::class,
     MemberCohortRepository::class,
+    core.persistence.cohort.repository.CohortRepository::class,
     MemberApprovalService::class,
     MemberActivationInitializer::class,
     MemberQueryService::class,
@@ -413,6 +414,47 @@ class MemberApprovalMySqlIntegrationTest {
         val eventCount = jdbc.queryForObject("select count(*) from member_activity_events where member_id = 4", Int::class.java)
         service.approve(listOf(4))
         assertThat(jdbc.queryForObject("select count(*) from member_activity_events where member_id = 4", Int::class.java)).isEqualTo(eventCount)
+    }
+
+    @Test
+    fun `지난 기수 회원에게 지정한 타입과 팀으로 현재 기수를 추가하고 지난 기수 기록은 유지한다`() {
+        jdbc.update("update members set status = 'INACTIVE' where member_id = 3")
+        jdbc.update("insert into member_teams (member_id, team_id) values (3, 180)")
+        jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (3, 1, 18, now(6))")
+        `when`(roleQueryUseCase.findIdByName("ORGANIZER")).thenReturn(2)
+
+        service.approve(listOf(3), memberType = "ORGANIZER", teamId = 191)
+
+        assertThat(jdbc.queryForList("select cohort_id from member_cohorts where member_id = 3 order by cohort_id", Long::class.java))
+            .containsExactly(18L, 19L)
+        assertThat(jdbc.queryForList("select team_id from member_teams where member_id = 3 order by team_id", Long::class.java))
+            .containsExactly(180L, 191L)
+        assertThat(
+            jdbc.queryForList(
+                "select concat(role_id, ':', cohort_id) from member_roles where member_id = 3 and deleted_at is null order by cohort_id",
+                String::class.java,
+            ),
+        ).containsExactly("1:18", "2:19")
+        assertThat(jdbc.queryForObject("select status from member_cohort_activities where member_id = 3 and cohort_id = 19", String::class.java))
+            .isEqualTo("ACTIVE")
+        listOf("attendances", "announcement_reads", "assignment_submissions").forEach {
+            assertThat(count(it, 3)).describedAs(it).isEqualTo(1)
+        }
+        assertThat(jdbc.queryForObject("select team_id from assignment_submissions where member_id = 3", Long::class.java))
+            .isEqualTo(191L)
+    }
+
+    @Test
+    fun `지난 기수 팀 ID로 현재 기수를 추가하면 어떤 기록도 남기지 않는다`() {
+        jdbc.update("update members set status = 'INACTIVE' where member_id = 3")
+
+        assertThatThrownBy { service.approve(listOf(3), teamId = 180) }
+            .isInstanceOf(core.application.member.application.exception.InvalidMemberManagementTeamException::class.java)
+
+        assertThat(jdbc.queryForList("select cohort_id from member_cohorts where member_id = 3", Long::class.java)).containsExactly(18L)
+        assertThat(count("member_teams", 3)).isZero()
+        assertThat(count("member_roles", 3)).isZero()
+        assertThat(count("attendances", 3)).isZero()
     }
 
     private fun assertInitialized(memberId: Long) {

@@ -15,12 +15,15 @@ import org.springframework.web.bind.annotation.RestController
 class MemberApprovalController(
     private val service: MemberApprovalService,
 ) : MemberApprovalApi {
-    @PreAuthorize("hasAuthority('create:member')")
+    @PreAuthorize(
+        "hasAuthority('create:member') and " +
+            "(#request.memberType == null or #request.memberType == 'DEEPER' or hasAuthority('update:authorization'))",
+    )
     @PatchMapping("/whitelist")
     override fun approve(
         @Valid @RequestBody request: MemberApprovalRequest,
     ): CustomResponse<Void> {
-        service.approve(request.members)
+        service.approve(request.members, request.memberType, request.teamId)
         return CustomResponse.ok()
     }
 }

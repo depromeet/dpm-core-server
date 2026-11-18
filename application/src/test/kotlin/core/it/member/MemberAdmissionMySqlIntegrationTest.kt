@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicLong
     MemberProfileService::class,
     MemberProfileRepository::class,
     MemberApprovalService::class,
+    core.persistence.cohort.repository.CohortRepository::class,
     MemberRoleRepository::class,
     MemberTeamRepository::class,
     MemberCohortRepository::class,
