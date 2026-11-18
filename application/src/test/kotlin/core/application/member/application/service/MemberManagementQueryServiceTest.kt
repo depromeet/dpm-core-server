@@ -43,7 +43,15 @@ class MemberManagementQueryServiceTest {
     private val activities = mock(core.domain.member.port.outbound.MemberActivityPersistencePort::class.java)
     private val resolver = CurrentCohortRoleResolver(mock(CohortQueryService::class.java), mock(MemberCohortPersistencePort::class.java), roles, activities)
     private val cohortPort = mock(CohortPersistencePort::class.java)
-    private val service = MemberManagementQueryService(MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities), cohorts, cohortPort, members)
+    private val memberCohorts = mock(MemberCohortPersistencePort::class.java)
+    private val service =
+        MemberManagementQueryService(
+            MemberManagementTargetQueryService(members, roles, attendance, resolver, AttendanceGraduationEvaluator(), activities),
+            cohorts,
+            cohortPort,
+            members,
+            memberCohorts,
+        )
     private val updatedAt = Instant.parse("2026-10-06T02:00:00Z")
     private val source =
         listOf(
@@ -102,6 +110,51 @@ class MemberManagementQueryServiceTest {
         assertThat(response.summary.graduationRiskCount).isEqualTo(2)
         assertThat(response.lastUpdatedAt).isEqualTo(updatedAt)
         assertThat(response.members.single().duplicateSuspected).isFalse()
+    }
+
+    @Test
+    fun `현재 페이지 멤버에게만 소속 기수 전체를 기수 번호 오름차순으로 붙인다`() {
+        `when`(memberCohorts.findCohortIdsByMemberIds(listOf(1L, 2L))).thenReturn(mapOf(1L to listOf(19L, 4L, 18L), 2L to listOf(19L)))
+        `when`(cohortPort.findAll()).thenReturn(
+            listOf(
+                core.domain.cohort.aggregate.Cohort(id = CohortId(4), value = "9"),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(18), value = "18"),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(19), value = "19", isActive = true),
+            ),
+        )
+
+        val response = service.getOverview(MemberManagementRequest(excludeStaff = false, size = 2))
+
+        assertThat(response.members.map { it.memberId }).containsExactly(1L, 2L)
+        assertThat(response.members[0].participatedCohorts.map { it.cohortNumber }).containsExactly("9", "18", "19")
+        assertThat(response.members[0].participatedCohorts.map { it.cohortId }).containsExactly(4L, 18L, 19L)
+        assertThat(response.members[1].participatedCohorts.map { it.cohortNumber }).containsExactly("19")
+        verify(memberCohorts).findCohortIdsByMemberIds(listOf(1L, 2L))
+    }
+
+    @Test
+    fun `소속 기수는 0번 특수 기수와 없는 기수를 빼고 중복을 합치며 숫자가 아닌 값은 마지막에 둔다`() {
+        `when`(memberCohorts.findCohortIdsByMemberIds(listOf(1L))).thenReturn(mapOf(1L to listOf(19L, 0L, 99L, 19L, 30L, 18L)))
+        `when`(cohortPort.findAll()).thenReturn(
+            listOf(
+                core.domain.cohort.aggregate.Cohort(id = CohortId(0), value = "0"),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(18), value = " 18 "),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(19), value = "19", isActive = true),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(30), value = "특별"),
+            ),
+        )
+
+        val member = service.getOverview(MemberManagementRequest(excludeStaff = false, size = 1)).members.single()
+
+        assertThat(member.participatedCohorts.map { it.cohortId }).containsExactly(18L, 19L, 30L)
+    }
+
+    @Test
+    fun `빈 페이지는 소속 기수를 조회하지 않는다`() {
+        val response = service.getOverview(MemberManagementRequest(page = 99))
+
+        assertThat(response.members).isEmpty()
+        verifyNoInteractions(memberCohorts)
     }
 
     @Test
@@ -393,8 +446,9 @@ class MemberManagementQueryServiceTest {
         verify(members).findManagementMembers(19)
         verify(roles).findActiveRoleAssignmentsByMemberIds(source.map { it.memberId })
         verify(attendance).findMemberAttendances(19, emptyList())
-        verifyNoMoreInteractions(cohorts, members, roles, attendance)
-        verifyNoInteractions(cohortPort)
+        verify(cohortPort).findAll()
+        verify(memberCohorts).findCohortIdsByMemberIds(org.mockito.ArgumentMatchers.anyList())
+        verifyNoMoreInteractions(cohorts, members, roles, attendance, cohortPort, memberCohorts)
     }
 
     @Test

@@ -76,5 +76,19 @@ data class MemberManagementResponse(
             nullable = true,
         )
         val activityStatus: MemberActivityStatus? = null,
-    )
+        @field:Schema(
+            description =
+                "소속된 기수 전체(행 펼침용). 기수 번호 오름차순이며 조회 기수와 무관하게 모든 소속을 포함합니다. " +
+                    "가입 대기자는 신청한 현재 기수가 포함될 수 있습니다",
+        )
+        val participatedCohorts: List<ParticipatedCohort> = emptyList(),
+    ) {
+        @Schema(name = "MemberManagementParticipatedCohort")
+        data class ParticipatedCohort(
+            @field:Schema(description = "기수 ID. GET /v1/cohorts의 cohortId")
+            val cohortId: Long,
+            @field:Schema(description = "기수 번호. 예: 19")
+            val cohortNumber: String,
+        )
+    }
 }
