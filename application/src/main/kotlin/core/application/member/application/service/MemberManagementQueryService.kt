@@ -127,16 +127,28 @@ class MemberManagementQueryService(
         )
     }
 
-    /** 행 펼침에 쓰는 소속 기수 전체를 현재 페이지 멤버만 조회해 붙인다. 기수 번호 오름차순이다. */
+    /**
+     * 행 펼침에 쓰는 소속 기수 전체를 현재 페이지 멤버만 조회해 붙인다. 기수 번호 오름차순이다.
+     * 0번 기수는 MASTER·GUEST 역할용 특수 슬롯이라 제외하고, 숫자가 아닌 기수 값은 마지막에 둔다.
+     */
     private fun withParticipatedCohorts(page: List<MemberSummary>): List<MemberSummary> {
         if (page.isEmpty()) return page
         val cohortIdsByMember = memberCohorts.findCohortIdsByMemberIds(page.map { it.memberId })
         val cohortsById = cohortPersistencePort.findAll().associateBy { it.id?.value }
         return page.map { member ->
             val participated =
-                cohortIdsByMember[member.memberId].orEmpty().distinct().mapNotNull { id ->
-                    cohortsById[id]?.let { MemberSummary.ParticipatedCohort(cohortId = id, cohortNumber = it.value) }
-                }.sortedWith(compareBy({ it.cohortNumber.toLongOrNull() ?: Long.MAX_VALUE }, { it.cohortId }))
+                cohortIdsByMember[member.memberId].orEmpty().distinct()
+                    .mapNotNull {
+                            id ->
+                        cohortsById[id]?.let {
+                            MemberSummary.ParticipatedCohort(
+                                cohortId = id,
+                                cohortNumber = it.value,
+                            )
+                        }
+                    }
+                    .filterNot { cohortNumber(it.cohortNumber) == 0L }
+                    .sortedWith(compareBy({ cohortNumber(it.cohortNumber) ?: Long.MAX_VALUE }, { it.cohortId }))
             member.copy(participatedCohorts = participated)
         }
     }
@@ -147,7 +159,10 @@ class MemberManagementQueryService(
         return requested
     }
 
+    private fun cohortNumber(value: String): Long? = value.trim().takeIf { NUMERIC_COHORT.matches(it) }?.toLongOrNull()
+
     private companion object {
+        val NUMERIC_COHORT = Regex("\\d+")
         val STAFF_TYPES = setOf(RoleType.Core.code, RoleType.Organizer.code)
         val RISK_STATUSES = setOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)
     }

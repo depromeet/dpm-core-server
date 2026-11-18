@@ -133,6 +133,23 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
+    fun `소속 기수는 0번 특수 기수와 없는 기수를 빼고 중복을 합치며 숫자가 아닌 값은 마지막에 둔다`() {
+        `when`(memberCohorts.findCohortIdsByMemberIds(listOf(1L))).thenReturn(mapOf(1L to listOf(19L, 0L, 99L, 19L, 30L, 18L)))
+        `when`(cohortPort.findAll()).thenReturn(
+            listOf(
+                core.domain.cohort.aggregate.Cohort(id = CohortId(0), value = "0"),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(18), value = " 18 "),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(19), value = "19", isActive = true),
+                core.domain.cohort.aggregate.Cohort(id = CohortId(30), value = "특별"),
+            ),
+        )
+
+        val member = service.getOverview(MemberManagementRequest(excludeStaff = false, size = 1)).members.single()
+
+        assertThat(member.participatedCohorts.map { it.cohortId }).containsExactly(18L, 19L, 30L)
+    }
+
+    @Test
     fun `빈 페이지는 소속 기수를 조회하지 않는다`() {
         val response = service.getOverview(MemberManagementRequest(page = 99))
 
