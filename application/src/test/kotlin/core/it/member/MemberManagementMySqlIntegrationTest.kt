@@ -174,7 +174,7 @@ class MemberManagementMySqlIntegrationTest {
 
         // 수료 판정은 현재 기수 DEEPER만 한다. 최신 유효 기록이 PRESENT인 1번은 NORMAL이고,
         // CORE인 2번과 역할이 삭제된 8번은 판정 대상이 아니라 NORMAL 필터에 나오지 않는다.
-        val normal = service.getOverview(MemberManagementRequest(excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.NORMAL)))
+        val normal = service.getOverview(MemberManagementRequest(graduationStatuses = listOf(AttendanceGraduationStatus.NORMAL)))
         assertThat(normal.members.map { it.memberId }).containsExactly(1L)
         assertThat(normal.totalElements).isEqualTo(1)
         val risk = service.getOverview(MemberManagementRequest(graduationStatuses = listOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)))
@@ -228,7 +228,7 @@ class MemberManagementMySqlIntegrationTest {
         rows.forEach { row ->
             assertThat(jdbc.queryForObject("select signup_email from members where member_id = ?", String::class.java, row.memberId)).isEqualTo("member${row.memberId}@example.com")
         }
-        val response = service.getOverview(MemberManagementRequest(excludeStaff = false))
+        val response = service.getOverview(MemberManagementRequest())
         assertThat(response.members.single { it.memberId == 1L }.loginMethod).isEqualTo(LoginMethod.KAKAO)
         assertThat(response.totalElements).isEqualTo(7)
         assertThat(response.summary.totalMemberCount).isEqualTo(7)
@@ -241,7 +241,7 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(pending.members.single().email).isEqualTo("password3@example.com")
         assertThat(service.getOverview(MemberManagementRequest(search = " KAKAO1@EXAMPLE.COM ")).members.single().memberId).isEqualTo(1L)
         listOf("member1@example.com", "apple1@example.com", "old-kakao8@example.com", "apple7@example.com").forEach { hiddenEmail ->
-            assertThat(service.getOverview(MemberManagementRequest(search = hiddenEmail, excludeStaff = false)).members).isEmpty()
+            assertThat(service.getOverview(MemberManagementRequest(search = hiddenEmail)).members).isEmpty()
         }
     }
 
