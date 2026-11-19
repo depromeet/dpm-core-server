@@ -74,13 +74,9 @@ class MemberManagementQueryService(
                         }
                 }
                 .filter { member ->
-                    // 전환 기간에는 memberTypes를 우선하고, 생략하면 기존 excludeStaff 기준을 따른다.
+                    // 생략하거나 빈 리스트면 타입 필터를 적용하지 않는다.
                     val memberTypes = request.memberTypes.orEmpty()
-                    if (memberTypes.isNotEmpty()) {
-                        memberTypes.any { it?.name == member.memberType }
-                    } else {
-                        !request.excludeStaff || member.memberType !in STAFF_TYPES
-                    }
+                    memberTypes.isEmpty() || memberTypes.any { it?.name == member.memberType }
                 }
                 .filter { !request.missingInformationOnly || it.missingInformation }
                 .filter {
@@ -163,7 +159,6 @@ class MemberManagementQueryService(
 
     private companion object {
         val NUMERIC_COHORT = Regex("\\d+")
-        val STAFF_TYPES = setOf(RoleType.Core.code, RoleType.Organizer.code)
         val RISK_STATUSES = setOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)
     }
 }

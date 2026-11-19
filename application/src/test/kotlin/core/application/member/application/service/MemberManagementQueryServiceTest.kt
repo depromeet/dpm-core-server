@@ -123,7 +123,7 @@ class MemberManagementQueryServiceTest {
             ),
         )
 
-        val response = service.getOverview(MemberManagementRequest(excludeStaff = false, size = 2))
+        val response = service.getOverview(MemberManagementRequest(size = 2))
 
         assertThat(response.members.map { it.memberId }).containsExactly(1L, 2L)
         assertThat(response.members[0].participatedCohorts.map { it.cohortNumber }).containsExactly("9", "18", "19")
@@ -144,7 +144,7 @@ class MemberManagementQueryServiceTest {
             ),
         )
 
-        val member = service.getOverview(MemberManagementRequest(excludeStaff = false, size = 1)).members.single()
+        val member = service.getOverview(MemberManagementRequest(size = 1)).members.single()
 
         assertThat(member.participatedCohorts.map { it.cohortId }).containsExactly(18L, 19L, 30L)
     }
@@ -200,7 +200,7 @@ class MemberManagementQueryServiceTest {
             listOf(attendanceRow(1, 3), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5), attendanceRow(7)),
         )
 
-        val approved = service.getOverview(MemberManagementRequest(excludeStaff = false))
+        val approved = service.getOverview(MemberManagementRequest())
         assertThat(approved.members.map { it.memberId }).doesNotContain(8L, 9L)
         assertThat(approved.summary.totalMemberCount).isEqualTo(5)
         assertThat(approved.summary.deeperCount).isEqualTo(2)
@@ -228,9 +228,9 @@ class MemberManagementQueryServiceTest {
         @Suppress("UNCHECKED_CAST")
         val statuses = listOf(AttendanceGraduationStatus.NORMAL, null) as List<AttendanceGraduationStatus>
         val response = service.getOverview(MemberManagementRequest(graduationStatuses = statuses))
-        assertThat(response.totalElements).isEqualTo(1)
-        assertThat(response.members.map { it.memberId }).containsExactly(5L)
-        assertThat(response.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
+        assertThat(response.totalElements).isEqualTo(3)
+        assertThat(response.members.map { it.memberId }).containsExactly(3L, 4L, 5L)
+        assertThat(response.members.map { it.graduationStatus }).containsOnly(AttendanceGraduationStatus.NORMAL)
         val pending = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, graduationStatuses = statuses))
         assertThat(pending.totalElements).isZero()
         assertThat(pending.members).isEmpty()
@@ -247,30 +247,27 @@ class MemberManagementQueryServiceTest {
     }
 
     @Test
-    fun `미배정과 활동 정지 필터를 조합하고 기본 조회는 운영진 코어만 제외한다`() {
-        assertThat(service.getOverview(MemberManagementRequest()).members.map { it.memberId }).containsExactly(1L, 2L, 5L)
+    fun `미배정과 활동 정지 필터를 조합하고 기본 조회는 모든 멤버 타입을 포함한다`() {
+        assertThat(service.getOverview(MemberManagementRequest()).members.map { it.memberId }).containsExactly(1L, 2L, 3L, 4L, 5L)
         val result = service.getOverview(MemberManagementRequest(missingInformationOnly = true, parts = listOf("UNASSIGNED"), teamNumbers = listOf(0), activityStatuses = listOf(ActivityStatus.INACTIVE)))
         assertThat(result.members.single().memberId).isEqualTo(5)
         assertThat(result.members.single().memberType).isEqualTo("UNASSIGNED")
         assertThat(result.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
-        assertThat(service.getOverview(MemberManagementRequest(excludeStaff = false)).members).hasSize(5)
     }
 
     @Test
-    fun `멤버 타입은 선택한 값끼리 OR로 거르고 excludeStaff보다 우선한다`() {
+    fun `멤버 타입은 선택한 값끼리 OR로 거르고 생략하거나 비우면 전체를 조회한다`() {
         fun ids(request: MemberManagementRequest) = service.getOverview(request).members.map { it.memberId }
 
         assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.ORGANIZER)))).containsExactly(4L)
         assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.ORGANIZER, MemberType.CORE)))).containsExactly(3L, 4L)
         assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.UNASSIGNED)))).containsExactly(5L)
-        // 디퍼와 미배정 선택은 기존 기본 조회(운영진·코어 제외)와 같은 범위다.
-        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.DEEPER, MemberType.UNASSIGNED))))
-            .isEqualTo(ids(MemberManagementRequest()))
-        // 네 타입을 모두 고르면 excludeStaff=false와 같은 범위다.
+        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.DEEPER, MemberType.UNASSIGNED)))).containsExactly(1L, 2L, 5L)
+        // 네 타입을 모두 고르는 것과 생략·빈 리스트는 같은 범위다.
         assertThat(ids(MemberManagementRequest(memberTypes = MemberType.entries)))
-            .isEqualTo(ids(MemberManagementRequest(excludeStaff = false)))
-        assertThat(ids(MemberManagementRequest(memberTypes = listOf(MemberType.CORE), excludeStaff = true))).containsExactly(3L)
-        assertThat(ids(MemberManagementRequest(memberTypes = emptyList()))).containsExactly(1L, 2L, 5L)
+            .isEqualTo(ids(MemberManagementRequest()))
+            .containsExactly(1L, 2L, 3L, 4L, 5L)
+        assertThat(ids(MemberManagementRequest(memberTypes = emptyList()))).isEqualTo(ids(MemberManagementRequest()))
     }
 
     @Test
@@ -287,9 +284,9 @@ class MemberManagementQueryServiceTest {
     @Test
     fun `미승인 탭에서 네 타입을 모두 고르면 운영진 코어 포함 조회와 같은 범위다`() {
         val all = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, memberTypes = MemberType.entries))
-        val legacy = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING, excludeStaff = false))
-        assertThat(all.members.map { it.memberId }).containsExactlyElementsOf(legacy.members.map { it.memberId }).isNotEmpty()
-        assertThat(all.totalElements).isEqualTo(legacy.totalElements)
+        val unfiltered = service.getOverview(MemberManagementRequest(approvalStatus = ApprovalStatus.PENDING))
+        assertThat(all.members.map { it.memberId }).containsExactlyElementsOf(unfiltered.members.map { it.memberId }).isNotEmpty()
+        assertThat(all.totalElements).isEqualTo(unfiltered.totalElements)
     }
 
     @Test
@@ -304,7 +301,7 @@ class MemberManagementQueryServiceTest {
                 }
             }
         `when`(members.findManagementMembers(19)).thenReturn(candidates)
-        val request = MemberManagementRequest(parts = listOf("WEB", "DESIGN"), teamNumbers = listOf(1, 2), excludeStaff = false, page = 2, size = 1)
+        val request = MemberManagementRequest(parts = listOf("WEB", "DESIGN"), teamNumbers = listOf(1, 2), page = 2, size = 1)
         val response = service.getOverview(request)
         assertThat(response.totalElements).isEqualTo(2)
         assertThat(response.members.single().memberId).isEqualTo(2L)
@@ -321,7 +318,7 @@ class MemberManagementQueryServiceTest {
         `when`(attendance.findMemberAttendances(19, emptyList())).thenReturn(
             listOf(attendanceRow(1, 3), attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5, 5), attendanceRow(7, 5)),
         )
-        val request = MemberManagementRequest(excludeStaff = false)
+        val request = MemberManagementRequest()
         val normal = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.NORMAL)))
         assertThat(normal.members.map { it.memberId }).containsExactly(3L, 4L)
         val risk = service.getOverview(request.copy(activityStatuses = listOf(ActivityStatus.AT_RISK)))
@@ -374,7 +371,7 @@ class MemberManagementQueryServiceTest {
                 member(10, "", MemberPart.WEB),
             )
         `when`(members.findManagementMembers(19)).thenReturn(candidates)
-        val result = service.getOverview(MemberManagementRequest(excludeStaff = false)).members.associateBy { it.memberId }
+        val result = service.getOverview(MemberManagementRequest()).members.associateBy { it.memberId }
         assertThat(result.filterValues { it.duplicateSuspected }.keys).containsExactlyInAnyOrder(1L, 2L)
         assertThat(result.getValue(2).name).isEqualTo("  닉네임  ")
         assertThat(result.filterKeys { it !in setOf(1L, 2L) }.values.map { it.duplicateSuspected }).containsOnly(false)
@@ -455,7 +452,7 @@ class MemberManagementQueryServiceTest {
     fun `과거 기수를 지정하면 그 기수의 소속 팀 역할 활동 상태와 요약으로 조회한다`() {
         stubPastCohort()
 
-        val response = service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false))
+        val response = service.getOverview(MemberManagementRequest(cohortId = 18))
 
         assertThat(response.cohortId).isEqualTo(18)
         // 19기 역할은 18기 조회에서 유효하지 않고, 18기 운영진 역할만 운영진으로 보인다.
@@ -480,20 +477,20 @@ class MemberManagementQueryServiceTest {
             listOf(attendanceRow(2, 5), attendanceRow(3), attendanceRow(4), attendanceRow(5)),
         )
 
-        val response = service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false))
+        val response = service.getOverview(MemberManagementRequest(cohortId = 18))
 
         assertThat(response.members.associate { it.memberId to it.graduationStatus }).containsExactlyInAnyOrderEntriesOf(
             mapOf(1L to null, 2L to AttendanceGraduationStatus.COMPLETED, 3L to AttendanceGraduationStatus.COMPLETED, 4L to AttendanceGraduationStatus.COMPLETED, 5L to AttendanceGraduationStatus.COMPLETED),
         )
         assertThat(response.summary.graduationRiskCount).isZero()
         listOf(AttendanceGraduationStatus.NORMAL, AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE).forEach { status ->
-            assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false, graduationStatuses = listOf(status))).totalElements)
+            assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, graduationStatuses = listOf(status))).totalElements)
                 .isZero()
         }
-        assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.COMPLETED))).totalElements)
+        assertThat(service.getOverview(MemberManagementRequest(cohortId = 18, graduationStatuses = listOf(AttendanceGraduationStatus.COMPLETED))).totalElements)
             .isEqualTo(4)
         // 활성 기수는 기존처럼 출석으로 판정한다.
-        assertThat(service.getOverview(MemberManagementRequest(excludeStaff = false)).members.map { it.graduationStatus })
+        assertThat(service.getOverview(MemberManagementRequest()).members.map { it.graduationStatus })
             .doesNotContain(AttendanceGraduationStatus.COMPLETED)
     }
 

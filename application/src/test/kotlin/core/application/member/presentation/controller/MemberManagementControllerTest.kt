@@ -201,17 +201,19 @@ class MemberManagementControllerTest {
     }
 
     @Test
-    fun `멤버 타입을 반복 파라미터와 쉼표로 전달하고 생략하면 기존 기본값을 유지한다`() {
+    fun `멤버 타입을 반복 파라미터와 쉼표로 전달하고 제거된 excludeStaff는 무시한다`() {
         mvc.perform(authenticated("update:member").param("memberTypes", "ORGANIZER", "CORE")).andExpect(status().isOk)
         mvc.perform(authenticated("update:member").param("memberTypes", "DEEPER,UNASSIGNED")).andExpect(status().isOk)
         mvc.perform(authenticated("update:member")).andExpect(status().isOk)
+        mvc.perform(authenticated("update:member").param("excludeStaff", "true")).andExpect(status().isOk)
         val requests = mockingDetails(service).invocations.map { it.arguments.single() as MemberManagementRequest }
         assertThat(requests.map { it.memberTypes }).containsExactly(
             listOf(MemberType.ORGANIZER, MemberType.CORE),
             listOf(MemberType.DEEPER, MemberType.UNASSIGNED),
             null,
+            null,
         )
-        assertThat(requests.last().excludeStaff).isTrue()
+        assertThat(requests[2]).isEqualTo(requests[3])
     }
 
     @Test
