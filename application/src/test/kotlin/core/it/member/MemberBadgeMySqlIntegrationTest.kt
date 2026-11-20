@@ -196,7 +196,7 @@ class MemberBadgeMySqlIntegrationTest {
         jdbc.update("insert into member_badge_memberships (cohort_id,card,member_id) values (18,'PENDING',1), (19,'INCOMPLETE',1)")
         val beforeMembers = jdbc.queryForList("select * from members order by member_id")
         val root = generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }.first { java.nio.file.Files.isDirectory(it.resolve("db")) }
-        val sql = java.nio.file.Files.readString(root.resolve("db/pending/2610300100_pending_submission_badges.sql"))
+        val sql = java.nio.file.Files.readString(root.resolve("db/release/2610301220/2610300100_pending_submission_badges.sql"))
 
         fun applySql() {
             jdbc.execute(
@@ -229,6 +229,7 @@ class MemberBadgeMySqlIntegrationTest {
     @CsvSource("single", "bulk", "purge")
     fun `출석 수정과 영구 삭제가 겹쳐도 배지 잠금 역전 없이 모두 커밋한다`(operation: String) {
         jdbc.update("update members set status = 'ACTIVE'")
+        grantCurrentCohortDeeperRoles()
         MemberActivityFixtures.seed(jdbc)
         jdbc.update("insert into roles (role_id, name) values (4, 'MASTER')")
         jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) values (3, 4, null, now(6))")
@@ -498,6 +499,7 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `세션 생성 출석 생성과 출석 변경 세션 삭제가 수료 카드에 함께 반영된다`() {
         jdbc.update("update members set status = 'ACTIVE'")
+        grantCurrentCohortDeeperRoles()
         MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
         repeat(2) { index ->
@@ -521,6 +523,7 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `출석률 분모 변경만으로 수료 위험이나 NEW가 생기지 않는다`() {
         jdbc.update("update members set status = 'ACTIVE'")
+        grantCurrentCohortDeeperRoles()
         MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
         val command = SessionCreateCommand(Instant.parse("2026-11-01T03:00:00Z"), 1, "온라인", "테스트 세션", true)
@@ -539,6 +542,7 @@ class MemberBadgeMySqlIntegrationTest {
     @Test
     fun `자동 마감과 늦게 처리된 마감 전 인증도 NEW 전이를 저장한다`() {
         jdbc.update("update members set status = 'ACTIVE'")
+        grantCurrentCohortDeeperRoles()
         MemberActivityFixtures.seed(jdbc)
         badges.getBadges()
         val start = Instant.parse("2026-11-01T03:00:00Z")
@@ -767,6 +771,11 @@ class MemberBadgeMySqlIntegrationTest {
             CountDownLatch(1).await(20, TimeUnit.MILLISECONDS)
         }
         error("Cohort rename did not wait for activation lock")
+    }
+
+    /** 출석 집계는 현재 기수 DEEPER만 대상으로 하므로, 직접 승인 상태로 바꾼 회원에게 승인 시와 같은 역할을 준다. */
+    private fun grantCurrentCohortDeeperRoles() {
+        jdbc.update("insert into member_roles (member_id, role_id, cohort_id, granted_at) select member_id, 1, 19, now(6) from members")
     }
 
     private fun card(card: MemberBadgeCard = MemberBadgeCard.PENDING) = badges.getBadges().cards.single { it.card == card }

@@ -14,6 +14,7 @@ import core.domain.cohort.port.outbound.CohortPersistencePort
 import core.domain.cohort.vo.CohortId
 import core.domain.member.enums.MemberActivityStatus
 import core.domain.member.enums.MemberStatus
+import core.domain.member.port.outbound.MemberCohortPersistencePort
 import core.domain.member.port.outbound.MemberPersistencePort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,6 +25,7 @@ class MemberManagementQueryService(
     private val cohorts: CohortQueryUseCase,
     private val cohortPersistencePort: CohortPersistencePort,
     private val members: MemberPersistencePort,
+    private val memberCohorts: MemberCohortPersistencePort,
 ) {
     @Transactional(readOnly = true)
     fun getOverview(request: MemberManagementRequest): MemberManagementResponse {
@@ -72,13 +74,9 @@ class MemberManagementQueryService(
                         }
                 }
                 .filter { member ->
-                    // 전환 기간에는 memberTypes를 우선하고, 생략하면 기존 excludeStaff 기준을 따른다.
+                    // 생략하거나 빈 리스트면 타입 필터를 적용하지 않는다.
                     val memberTypes = request.memberTypes.orEmpty()
-                    if (memberTypes.isNotEmpty()) {
-                        memberTypes.any { it?.name == member.memberType }
-                    } else {
-                        !request.excludeStaff || member.memberType !in STAFF_TYPES
-                    }
+                    memberTypes.isEmpty() || memberTypes.any { it?.name == member.memberType }
                 }
                 .filter { !request.missingInformationOnly || it.missingInformation }
                 .filter {
@@ -121,8 +119,34 @@ class MemberManagementQueryService(
             page = request.page,
             size = request.size,
             lastUpdatedAt = allMembers.mapNotNull { it.updatedAt }.maxOrNull(),
-            members = filtered.drop(offset).take(request.size),
+            members = withParticipatedCohorts(filtered.drop(offset).take(request.size)),
         )
+    }
+
+    /**
+     * 행 펼침에 쓰는 소속 기수 전체를 현재 페이지 멤버만 조회해 붙인다. 기수 번호 오름차순이다.
+     * 0번 기수는 MASTER·GUEST 역할용 특수 슬롯이라 제외하고, 숫자가 아닌 기수 값은 마지막에 둔다.
+     */
+    private fun withParticipatedCohorts(page: List<MemberSummary>): List<MemberSummary> {
+        if (page.isEmpty()) return page
+        val cohortIdsByMember = memberCohorts.findCohortIdsByMemberIds(page.map { it.memberId })
+        val cohortsById = cohortPersistencePort.findAll().associateBy { it.id?.value }
+        return page.map { member ->
+            val participated =
+                cohortIdsByMember[member.memberId].orEmpty().distinct()
+                    .mapNotNull {
+                            id ->
+                        cohortsById[id]?.let {
+                            MemberSummary.ParticipatedCohort(
+                                cohortId = id,
+                                cohortNumber = it.value,
+                            )
+                        }
+                    }
+                    .filterNot { cohortNumber(it.cohortNumber) == 0L }
+                    .sortedWith(compareBy({ cohortNumber(it.cohortNumber) ?: Long.MAX_VALUE }, { it.cohortId }))
+            member.copy(participatedCohorts = participated)
+        }
     }
 
     /** 지정한 기수가 있어야 조회한다. 소속·팀·역할·활동 상태는 이 기수 기준으로 계산한다. */
@@ -131,8 +155,10 @@ class MemberManagementQueryService(
         return requested
     }
 
+    private fun cohortNumber(value: String): Long? = value.trim().takeIf { NUMERIC_COHORT.matches(it) }?.toLongOrNull()
+
     private companion object {
-        val STAFF_TYPES = setOf(RoleType.Core.code, RoleType.Organizer.code)
+        val NUMERIC_COHORT = Regex("\\d+")
         val RISK_STATUSES = setOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)
     }
 }

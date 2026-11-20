@@ -449,6 +449,7 @@ class MemberMergeMySqlIntegrationTest {
         MemberTeamRepository::class,
         MemberCohortRepository::class,
         MemberApprovalService::class,
+        core.persistence.cohort.repository.CohortRepository::class,
         MemberAccountService::class,
         MemberMergeService::class,
         MemberIdentityLockService::class,

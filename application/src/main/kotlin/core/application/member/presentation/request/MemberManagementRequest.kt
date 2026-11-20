@@ -35,11 +35,9 @@ data class MemberManagementRequest(
     @field:Schema(
         description =
             "멤버 타입 다중 선택. DEEPER=디퍼, ORGANIZER=운영진, CORE=코어, UNASSIGNED=타입 미배정. " +
-                "지정하면 excludeStaff보다 우선합니다. 생략하거나 빈 리스트면 excludeStaff 기준으로 조회합니다",
+                "생략하거나 빈 리스트면 타입과 무관하게 전체를 조회합니다",
     )
     val memberTypes: List<MemberType?>? = null,
-    @field:Schema(description = "운영진·코어 제외. 기본 true. memberTypes를 지정하면 무시하며 어드민 전환 후 제거 예정")
-    val excludeStaff: Boolean = true,
     @field:Schema(description = "true이면 승인 멤버 중 파트·팀·타입이 하나라도 미배정인 멤버만 조회")
     val missingInformationOnly: Boolean = false,
     @field:Schema(description = "수료 상태 필터. 위험 카드는 AT_RISK, IMPOSSIBLE을 함께 전달. 미평가 회원은 제외")

@@ -47,6 +47,9 @@ import java.time.Instant
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class, MemberManagementQueryService::class, core.application.member.application.service.MemberManagementTargetQueryService::class, AttendanceGraduationEvaluator::class)
 class MemberManagementMySqlIntegrationTest {
+    // 출석 서비스가 운영진 출석 인증 차단에 쓰는 빈. 회원 시나리오에서는 호출하지 않는다.
+    @MockitoBean lateinit var memberAccessService: core.application.member.application.service.access.MemberAccessService
+
     @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 
     @Autowired lateinit var jdbc: JdbcTemplate
@@ -169,10 +172,11 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(response.summary.missingInformationCount).isEqualTo(2)
         assertThat(response.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.NORMAL)
 
-        // 최신 유효 기록이 PRESENT인 1번, 출석 기록 없는 2번, 삭제된 기록만 있는 8번은 모두 NORMAL이다.
-        val normal = service.getOverview(MemberManagementRequest(excludeStaff = false, graduationStatuses = listOf(AttendanceGraduationStatus.NORMAL)))
-        assertThat(normal.members.map { it.memberId }).containsExactly(1L, 2L, 8L)
-        assertThat(normal.totalElements).isEqualTo(3)
+        // 수료 판정은 현재 기수 DEEPER만 한다. 최신 유효 기록이 PRESENT인 1번은 NORMAL이고,
+        // CORE인 2번과 역할이 삭제된 8번은 판정 대상이 아니라 NORMAL 필터에 나오지 않는다.
+        val normal = service.getOverview(MemberManagementRequest(graduationStatuses = listOf(AttendanceGraduationStatus.NORMAL)))
+        assertThat(normal.members.map { it.memberId }).containsExactly(1L)
+        assertThat(normal.totalElements).isEqualTo(1)
         val risk = service.getOverview(MemberManagementRequest(graduationStatuses = listOf(AttendanceGraduationStatus.AT_RISK, AttendanceGraduationStatus.IMPOSSIBLE)))
         assertThat(risk.members.single().memberId).isEqualTo(7L)
         assertThat(risk.members.single().graduationStatus).isEqualTo(AttendanceGraduationStatus.IMPOSSIBLE)
@@ -224,7 +228,7 @@ class MemberManagementMySqlIntegrationTest {
         rows.forEach { row ->
             assertThat(jdbc.queryForObject("select signup_email from members where member_id = ?", String::class.java, row.memberId)).isEqualTo("member${row.memberId}@example.com")
         }
-        val response = service.getOverview(MemberManagementRequest(excludeStaff = false))
+        val response = service.getOverview(MemberManagementRequest())
         assertThat(response.members.single { it.memberId == 1L }.loginMethod).isEqualTo(LoginMethod.KAKAO)
         assertThat(response.totalElements).isEqualTo(7)
         assertThat(response.summary.totalMemberCount).isEqualTo(7)
@@ -237,7 +241,7 @@ class MemberManagementMySqlIntegrationTest {
         assertThat(pending.members.single().email).isEqualTo("password3@example.com")
         assertThat(service.getOverview(MemberManagementRequest(search = " KAKAO1@EXAMPLE.COM ")).members.single().memberId).isEqualTo(1L)
         listOf("member1@example.com", "apple1@example.com", "old-kakao8@example.com", "apple7@example.com").forEach { hiddenEmail ->
-            assertThat(service.getOverview(MemberManagementRequest(search = hiddenEmail, excludeStaff = false)).members).isEmpty()
+            assertThat(service.getOverview(MemberManagementRequest(search = hiddenEmail)).members).isEmpty()
         }
     }
 
@@ -286,8 +290,9 @@ class MemberManagementMySqlIntegrationTest {
             }.toMap()
         val overview = members.findAllOrderedByHighestCohortAndStatus(true, current.value)
         assertThat(overview.filter { it.memberId in expected }.associate { it.memberId to it.isAdmin }).isEqualTo(expected)
+        // 운영진 출석 목록은 현재 기수 DEEPER만 보여준다. 단건 조회는 역할과 무관하게 관리자 표시를 유지한다.
         val attendance = attendances.findMemberAttendances(current.value, emptyList())
-        assertThat(attendance.associate { it.id to it.isAdmin }).isEqualTo(expected)
+        assertThat(attendance.associate { it.id to it.isAdmin }).isEqualTo(mapOf(63503L to false))
         expected.forEach { (id, admin) ->
             assertThat(attendances.findDetailMemberAttendance(id, current.value)?.isAdmin).isEqualTo(admin)
         }

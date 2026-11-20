@@ -56,6 +56,9 @@ import java.util.concurrent.atomic.AtomicLong
 @SpringBootTest(classes = [AttendanceMySqlIntegrationTestApplication::class], webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(core.application.member.application.service.MemberActivityService::class, core.persistence.member.repository.MemberActivityRepository::class, MemberRepository::class, MemberRoleRepository::class, MemberTeamRepository::class, MemberManagementCommandService::class, RoleCommandService::class, MemberRoleService::class, MemberCohortRepository::class, CurrentCohortRoleResolver::class)
 class MemberManagementUpdateMySqlIntegrationTest {
+    // 출석 서비스가 운영진 출석 인증 차단에 쓰는 빈. 회원 시나리오에서는 호출하지 않는다.
+    @MockitoBean lateinit var memberAccessService: core.application.member.application.service.access.MemberAccessService
+
     @MockitoBean lateinit var feedbackForms: core.application.sessionFeedback.application.service.SessionFeedbackFormCommandService
 
     @Autowired lateinit var jdbc: JdbcTemplate

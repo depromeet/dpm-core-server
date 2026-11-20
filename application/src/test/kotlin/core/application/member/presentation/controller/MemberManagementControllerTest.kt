@@ -84,7 +84,14 @@ class MemberManagementControllerTest {
     @Test
     fun `조회 권한이 있으면 닉네임 표시 이메일과 중복 여부를 기존 응답 형식으로 반환한다`() {
         val member = MemberManagementResponse.MemberSummary(1, 19, "홍길동", "kakao@example.com", "SERVER", "DEEPER", 1, MemberStatus.ACTIVE, false, null, true, null, LoginMethod.KAKAO)
-        val missingEmail = member.copy(memberId = 2, name = "별명", email = null, duplicateSuspected = false)
+        val missingEmail =
+            member.copy(
+                memberId = 2,
+                name = "별명",
+                email = null,
+                duplicateSuspected = false,
+                participatedCohorts = listOf(MemberManagementResponse.MemberSummary.ParticipatedCohort(18, "18"), MemberManagementResponse.MemberSummary.ParticipatedCohort(19, "19")),
+            )
         val response = MemberManagementResponse(19, MemberManagementResponse.Summary(2, 2, 0, 0, 0, 0, 0), 2, 1, 20, null, listOf(member, missingEmail))
         `when`(service.getOverview(MemberManagementRequest())).thenReturn(response)
         val result =
@@ -97,6 +104,9 @@ class MemberManagementControllerTest {
                 .andExpect(jsonPath("$.data.members[0].email").value("kakao@example.com"))
                 .andExpect(jsonPath("$.data.members[0].duplicateSuspected").value(true))
                 .andExpect(jsonPath("$.data.members[1].duplicateSuspected").value(false))
+                .andExpect(jsonPath("$.data.members[0].participatedCohorts").isEmpty)
+                .andExpect(jsonPath("$.data.members[1].participatedCohorts[1].cohortId").value(19))
+                .andExpect(jsonPath("$.data.members[1].participatedCohorts[1].cohortNumber").value("19"))
                 .andReturn()
         assertThat(result.response.contentAsString).contains("\"email\":null")
         assertThat(result.response.contentAsString).doesNotContain("\"signupEmail\":")
@@ -110,7 +120,8 @@ class MemberManagementControllerTest {
         assertThat(current).containsKeys("MemberManagementSummary", "MemberManagementTotals")
         assertThat(current).doesNotContainKey("MemberSummary")
         val properties = current["MemberManagementSummary"]!!.properties
-        assertThat(properties).containsKeys("name", "email", "duplicateSuspected", "loginMethod").doesNotContainKey("signupEmail")
+        assertThat(properties).containsKeys("name", "email", "duplicateSuspected", "loginMethod", "participatedCohorts").doesNotContainKey("signupEmail")
+        assertThat(current).containsKey("MemberManagementParticipatedCohort")
         assertThat(properties["name"]!!.description).isEqualTo("닉네임")
         assertThat(properties["email"]!!.nullable).isTrue()
         assertThat(properties["loginMethod"]!!.nullable).isTrue()
@@ -190,17 +201,19 @@ class MemberManagementControllerTest {
     }
 
     @Test
-    fun `멤버 타입을 반복 파라미터와 쉼표로 전달하고 생략하면 기존 기본값을 유지한다`() {
+    fun `멤버 타입을 반복 파라미터와 쉼표로 전달하고 제거된 excludeStaff는 무시한다`() {
         mvc.perform(authenticated("update:member").param("memberTypes", "ORGANIZER", "CORE")).andExpect(status().isOk)
         mvc.perform(authenticated("update:member").param("memberTypes", "DEEPER,UNASSIGNED")).andExpect(status().isOk)
         mvc.perform(authenticated("update:member")).andExpect(status().isOk)
+        mvc.perform(authenticated("update:member").param("excludeStaff", "true")).andExpect(status().isOk)
         val requests = mockingDetails(service).invocations.map { it.arguments.single() as MemberManagementRequest }
         assertThat(requests.map { it.memberTypes }).containsExactly(
             listOf(MemberType.ORGANIZER, MemberType.CORE),
             listOf(MemberType.DEEPER, MemberType.UNASSIGNED),
             null,
+            null,
         )
-        assertThat(requests.last().excludeStaff).isTrue()
+        assertThat(requests[2]).isEqualTo(requests[3])
     }
 
     @Test
